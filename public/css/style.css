@@ -468,22 +468,120 @@ input[type=color] {
     animation: pop 0.3s;
 }
 
+/* ── Mobile Responsive: Quiz Console ────────────────────────────────────── */
 @media (max-width: 768px) {
-    #question-panel {
-        min-width: 90%;
+
+    /* Quiz card — allow it to grow taller so options aren't squished */
+    #quiz-card {
+        height: auto !important;
+        min-height: 220px !important;
+        max-height: 55vh !important;
     }
+
+    /* Question text: readable size, 3 lines max */
+    #question-text {
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        padding: 5px 10px 4px !important;
+        -webkit-line-clamp: 3 !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* ── CORE FIX: switch to single-column stacked list ── */
     #answer-btns {
-        flex-wrap: wrap;
-        width: 90%;
-        justify-content: center;
-        bottom: 20px;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        padding: 6px 10px 8px !important;
+        grid-template-columns: unset !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
+
+    /* Each button: full width, min 48px touch target, left-aligned */
     .answer-btn {
-        width: 45%;
-        height: 50px;
+        width: 100% !important;
+        min-height: 48px !important;
+        height: auto !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        white-space: normal !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        text-align: left !important;
+        box-sizing: border-box !important;
     }
+
+    /* Badge: fixed square, never shrinks */
+    .opt-badge {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        flex-shrink: 0 !important;
+        font-size: 13px !important;
+        border-radius: 5px !important;
+    }
+
+    /* Option text: fills remaining space, wraps naturally */
+    .opt-text {
+        flex: 1 1 auto !important;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+        min-width: 0 !important;
+    }
+
+    /* HP bars: shrink on mobile */
+    #hp-bars {
+        gap: 8px !important;
+    }
+    .hp-bar-wrap, .hp-track {
+        min-width: 100px !important;
+        width: 100px !important;
+    }
+
     .game-title {
         font-size: 20px;
+    }
+}
+
+/* Extra small screens (≤480px) — very narrow phones */
+@media (max-width: 480px) {
+    #question-text {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+    }
+
+    .answer-btn {
+        font-size: 12px !important;
+        padding: 7px 10px !important;
+        min-height: 44px !important;
+    }
+
+    .opt-badge {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        font-size: 11px !important;
+    }
+
+    .opt-text {
+        font-size: 12px !important;
+    }
+
+    #answer-btns {
+        gap: 5px !important;
+        padding: 5px 8px 6px !important;
     }
 }
 
