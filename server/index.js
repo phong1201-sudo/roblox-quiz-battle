@@ -19,10 +19,14 @@ const PORT   = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 
-// ── Upload directories ────────────────────────────────────────────────────────
-const uploadDir = path.join(__dirname, 'uploads');
-const skinsDir  = path.join(__dirname, '../public/skins');
-[uploadDir, skinsDir].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
+
+// ── Ensure runtime directories exist (important for Render ephemeral FS) ─────
+const uploadDir   = path.join(__dirname, 'uploads');
+const skinsDir    = path.join(__dirname, '../public/skins');
+const questionsDir = path.join(__dirname, '../data/questions');
+[uploadDir, skinsDir, questionsDir].forEach(d => {
+  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+});
 
 // Multer for .docx question files (temp dest, then deleted)
 const docxUpload = multer({ dest: uploadDir });
@@ -505,6 +509,7 @@ io.on('connection', (socket) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log(`[Quiz-Battle 3D] Server listening on http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+server.listen(PORT, HOST, () => {
+  console.log(`[Quiz-Battle 3D] Server listening on ${HOST}:${PORT}`);
 });

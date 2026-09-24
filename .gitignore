@@ -1,6 +1,13 @@
-﻿node_modules/
+node_modules/
 .DS_Store
+
+# Runtime user data — ephemeral on Render, local-only
 data/users.json
+data/users.json.tmp
+
+# Uploaded temp files
 uploads/
 *.tmp
+
+# Environment
 .env
