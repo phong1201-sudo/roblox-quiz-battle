@@ -1,0 +1,519 @@
+[
+  {
+    "id": 1,
+    "text": "Khối lượng riêng của một chất được xác định bằng:",
+    "options": [
+      "Khối lượng của một vật bất kỳ làm bằng chất đó.",
+      "Khối lượng của một đơn vị thể tích chất đó.",
+      "Trọng lượng của một mét khối chất đó.",
+      "Thể tích của một kilôgam chất đó."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 2,
+    "text": "Công thức tính khối lượng riêng D theo khối lượng m và thể tích V là:",
+    "options": [
+      "D = m / V",
+      "D = m . V",
+      "D = V / m",
+      "D = p / S"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 3,
+    "text": "Đơn vị hợp pháp của khối lượng riêng trong hệ đo lường SI là:",
+    "options": [
+      "g/cm³",
+      "kg/m³",
+      "N/m³",
+      "Pa"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 4,
+    "text": "Mối liên hệ chuyển đổi đơn vị giữa 1 g/cm³ và kg/m³ là:",
+    "options": [
+      "1 g/cm³ = 0,001 kg/m³",
+      "1 g/cm³ = 100 kg/m³",
+      "1 g/cm³ = 1000 kg/m³",
+      "1 g/cm³ = 10 kg/m³"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 5,
+    "text": "Một khối sắt có thể tích 0,02 m³. Biết khối lượng riêng của sắt là 7800 kg/m³, khối lượng của khối sắt đó là:",
+    "options": [
+      "78 kg",
+      "156 kg",
+      "390 kg",
+      "15,6 kg"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 6,
+    "text": "Biết khối lượng riêng của nhôm là 2700 kg/m³. Một vật làm bằng nhôm có khối lượng 13,5 kg thì có thể tích là:",
+    "options": [
+      "0,005 m³",
+      "0,05 m³",
+      "0,5 m³",
+      "0,02 m³"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 7,
+    "text": "Đại lượng cho biết trọng lượng của một mét khối một chất được gọi là:",
+    "options": [
+      "Khối lượng riêng",
+      "Trọng lượng riêng",
+      "Áp suất",
+      "Lực đẩy Archimedes"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 8,
+    "text": "Mối liên hệ giữa trọng lượng riêng d (N/m³) và khối lượng riêng D (kg/m³) của cùng một chất là:",
+    "options": [
+      "d = D / 10",
+      "d = 10 . D",
+      "d = 10 / D",
+      "d = 100 . D"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 9,
+    "text": "Để xác định khối lượng riêng của một chất lỏng như dầu ăn trong phòng thực hành, người ta cần dùng bộ dụng cụ nào?",
+    "options": [
+      "Lực kế và thước dây",
+      "Nhiệt kế và áp kế",
+      "Cân điện tử và bình chia độ",
+      "Lực kế và đồng hồ bấm giây"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 10,
+    "text": "Một chai dầu ăn có thể tích 500 cm³, biết khối lượng riêng của dầu ăn là 880 kg/m³. Khối lượng dầu ăn trong chai là:",
+    "options": [
+      "0,88 kg",
+      "0,44 kg",
+      "4,4 kg",
+      "440 kg"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 11,
+    "text": "Khi đun nóng một lượng chất lỏng đựng trong bình thủy tinh, khối lượng riêng của chất lỏng sẽ thay đổi như thế nào?",
+    "options": [
+      "Tăng lên vì khối lượng tăng.",
+      "Giảm đi vì thể tích chất lỏng nở ra tăng lên.",
+      "Không thay đổi.",
+      "Lúc đầu tăng sau đó giảm."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 12,
+    "text": "Khi dùng bình chia độ và cân để đo khối lượng riêng của một hòn đá nhỏ không thấm nước, thể tích hòn đá được tính bằng:",
+    "options": [
+      "Thể tích nước ban đầu trong bình.",
+      "Hiệu số giữa thể tích nước dâng lên khi thả hòn đá vào và thể tích nước ban đầu.",
+      "Tổng thể tích nước ban đầu và thể tích bình.",
+      "Thể tích hòn đá đo bằng thước dây."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 13,
+    "text": "Áp lực là gì?",
+    "options": [
+      "Lực kéo có phương song song với mặt bị ép.",
+      "Lực ép có phương vuông góc với mặt bị ép.",
+      "Lực tác dụng theo phương nằm ngang bất kỳ.",
+      "Lực làm quay một vật quanh một trục cố định."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 14,
+    "text": "Trong các trường hợp sau, trường hợp nào lực tác dụng đóng vai trò là áp lực?",
+    "options": [
+      "Trọng lực của quả cầu treo trên sợi dây.",
+      "Trọng lượng của một người đứng thẳng trên mặt sàn nhà.",
+      "Lực kéo xe làm xe chuyển động trên đường.",
+      "Lực hút của nam châm lên miếng sắt nằm ngang."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 15,
+    "text": "Áp suất được định nghĩa là:",
+    "options": [
+      "Độ lớn của lực ép tác dụng lên toàn bộ mặt đất.",
+      "Độ lớn của áp lực trên một đơn vị diện tích bị ép.",
+      "Tích của áp lực và diện tích mặt bị ép.",
+      "Lực đẩy tác dụng lên vật nhúng trong chất lỏng."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 16,
+    "text": "Công thức tính áp suất p trên một bề mặt bị ép S khi chịu áp lực F là:",
+    "options": [
+      "p = F . S",
+      "p = F / S",
+      "p = S / F",
+      "p = d . h / S"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 17,
+    "text": "Đơn vị đo áp suất trong hệ SI là Pascan (Pa), trong đó 1 Pa tương đương với:",
+    "options": [
+      "1 N . m²",
+      "1 N/m²",
+      "1 kg/m³",
+      "1 N/cm²"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 18,
+    "text": "Một áp lực 900 N tác dụng vuông góc lên một diện tích bị ép là 0,3 m² sẽ gây ra áp suất bằng:",
+    "options": [
+      "270 Pa",
+      "3000 Pa",
+      "300 Pa",
+      "30 Pa"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 19,
+    "text": "Để tăng áp suất tác dụng lên một bề mặt bị ép, người ta có thể thực hiện biện pháp nào sau đây?",
+    "options": [
+      "Giảm áp lực và tăng diện tích bị ép.",
+      "Tăng áp lực hoặc giảm diện tích bị ép.",
+      "(C)",
+      "Giảm áp lực và giảm trọng lượng vật."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 20,
+    "text": "Mũi đinh hay lưỡi dao thường được mài nhọn hoặc làm rất mỏng nhằm mục đích gì?",
+    "options": [
+      "Giảm áp lực tác dụng.",
+      "Tăng diện tích bị ép.",
+      "Tăng áp suất giúp đinh đâm sâu hoặc dao cắt dễ dàng.",
+      "Giảm khối lượng riêng của dụng cụ."
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 21,
+    "text": "Bánh của các loại xe máy xúc, xe cút kít hay xe xích bánh sắt thường làm bằng dải xích bản rộng nhằm mục đích:",
+    "options": [
+      "Tăng áp suất để xe chạy nhanh hơn.",
+      "Tăng diện tích tiếp xúc để giảm áp suất, giúp xe không bị sa lún vào đất mềm.",
+      "Tăng áp lực của xe lên mặt đường.",
+      "Giảm trọng lượng của toàn bộ xe."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 22,
+    "text": "Người đi trên tuyết thường mang giày đi tuyết có phần đế rất rộng để:",
+    "options": [
+      "Tăng lực ma sát với tuyết.",
+      "Tăng diện tích bị ép nhằm giảm áp suất, tránh bị chìm vào lớp tuyết xốp.",
+      "Tăng áp lực lên mặt tuyết.",
+      "Giảm trọng lượng cơ thể."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 23,
+    "text": "Một người đứng cả hai chân lên mặt sàn gây ra áp suất p. Khi người đó co một chân lên khỏi mặt sàn thì áp suất tác dụng lên mặt sàn sẽ:",
+    "options": [
+      "(A)",
+      "Tăng lên gấp đôi.",
+      "Không thay đổi.",
+      "Giảm đi bốn lần."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 24,
+    "text": "Áp suất chất lỏng gây ra tại một điểm trong lòng chất lỏng tác dụng theo phương nào?",
+    "options": [
+      "Chỉ theo phương thẳng đứng từ trên xuống.",
+      "Chỉ theo phương nằm ngang.",
+      "Theo mọi phương lên đáy bình, thành bình và các vật nằm trong lòng nó.",
+      "Chỉ theo phương vuông góc với thành bình."
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 25,
+    "text": "Công thức tính áp suất chất lỏng p tại điểm có độ sâu h so với mặt thoáng là (d là trọng lượng riêng chất lỏng):",
+    "options": [
+      "p = d . h",
+      "p = D . h",
+      "p = d / h",
+      "p = F / h"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 26,
+    "text": "Trong công thức tính áp suất chất lỏng p = d . h, đơn vị bắt buộc của độ sâu h là:",
+    "options": [
+      "mét (m)",
+      "xen-ti-mét (cm)",
+      "đề-xi-mét (dm)",
+      "mi-li-mét (mm)"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 27,
+    "text": "Trong lòng một chất lỏng đứng yên, áp suất tại các điểm nằm trên cùng một mặt phẳng nằm ngang thì:",
+    "options": [
+      "Khác nhau tùy thuộc hình dạng thành bình.",
+      "Bằng nhau.",
+      "Điểm nào gần tâm bình hơn thì lớn hơn.",
+      "Điểm nào ở sâu hơn thì nhỏ hơn."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 28,
+    "text": "Càng xuống sâu trong lòng chất lỏng thì áp suất chất lỏng sẽ:",
+    "options": [
+      "Càng tăng.",
+      "Càng giảm.",
+      "Không thay đổi.",
+      "Tăng giảm thất thường."
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 29,
+    "text": "Thợ lặn khi lặn sâu dưới lòng biển phải mặc bộ quần áo lặn chịu lực chuyên dụng chủ yếu để:",
+    "options": [
+      "Để tiết kiệm vật liệu xây dựng.",
+      "Càng xuống sâu áp suất chất lỏng càng lớn, chân đập cần dày để chịu lực ép lớn.",
+      "Để tạo tính thẩm mỹ cho công trình.",
+      "Giúp nước chảy qua đập nhanh hơn."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 30,
+    "text": "Trong một bình thông nhau chứa cùng một chất lỏng đứng yên, mực chất lỏng ở các nhánh khác nhau sẽ:",
+    "options": [
+      "Nhánh to có mực chất lỏng cao hơn nhánh nhỏ.",
+      "Luôn ở cùng một độ cao.",
+      "Nhánh nhỏ có mực chất lỏng cao hơn nhánh to.",
+      "Phụ thuộc vào hình dạng đáy bình."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 31,
+    "text": "Nguyên lý hoạt động của máy nén thủy lực (máy dùng chất lỏng) dựa trên tính chất cơ bản nào của chất lỏng?",
+    "options": [
+      "Chất lỏng có khối lượng riêng không đổi.",
+      "Áp suất tác dụng lên chất lỏng được truyền nguyên vẹn theo mọi hướng trong lòng chất lỏng.",
+      "Chất lỏng có lực đẩy Archimedes rất lớn.",
+      "Chất lỏng nở vì nhiệt lớn hơn chất rắn."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 32,
+    "text": "Trong máy nén thủy lực, diện tích pít-tông lớn S2 gấp 50 lần diện tích pít-tông nhỏ S1. Khi tác dụng lực F1 = 100 N lên pít-tông nhỏ thì lực F2 thu được ở pít-tông lớn là:",
+    "options": [
+      "2 N",
+      "5000 N",
+      "500 N",
+      "50 N"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 33,
+    "text": "Áp suất khí quyển là áp suất do:",
+    "options": [
+      "Các vật trên Trái Đất đè lên bầu không khí.",
+      "Lớp không khí bao quanh Trái Đất tác dụng lên mọi vật trên Trái Đất theo mọi phương.",
+      "Mặt Trời tác dụng lên bầu khí quyển.",
+      "Hơi nước trong không khí ngưng tụ lại gây ra."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 34,
+    "text": "Hiện tượng nào dưới đây KHÔNG phải do áp suất khí quyển gây ra?",
+    "options": [
+      "Dùng ống nhựa nhỏ để hút nước từ cốc lên miệng.",
+      "Rót nước từ ấm trà ra tách dễ dàng nhờ có lỗ hở nhỏ trên nắp ấm.",
+      "Cắm ống thủy tinh ngập trong nước, bịt đầu trên kéo lên thấy nước không chảy ra.",
+      "Quả bóng bàn bị bẹp thả vào nước nóng phồng trở lại."
+    ],
+    "correctIndex": 3
+  },
+  {
+    "id": 35,
+    "text": "Càng lên cao so với mặt nước biển thì áp suất khí quyển sẽ:",
+    "options": [
+      "Càng tăng vì không khí càng dày đặ",
+      "Càng giảm vì mật độ không khí càng thưa thớt.",
+      "Không thay đổi.",
+      "Lúc tăng lúc giảm không theo quy luật."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 36,
+    "text": "Khi đi máy bay lúc cất cánh hoặc hạ cánh, hành khách thường có cảm giác bị ù tai hoặc tức ngự",
+    "options": [
+      "Tiếng ồn động cơ máy bay quá lớn.",
+      "Sự thay đổi áp suất khí quyển đột ngột gây mất cân bằng áp suất hai bên màng nhĩ.",
+      "Nhiệt độ trong khoang máy bay giảm nhanh.",
+      "Vận tốc máy bay thay đổi đột ngột."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 37,
+    "text": "Để khắc phục triệu chứng ù tai khi thay đổi độ cao hoặc áp suất đột ngột, động tác nào giúp cân bằng áp suất hai bên màng nhĩ?",
+    "options": [
+      "Nuốt nước bọt hoặc ngáp.",
+      "Bịt chặt hai mắt.",
+      "Thở thật nhanh và sâu.",
+      "Lắc mạnh đầu sang hai bên."
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 38,
+    "text": "Nhà du hành vũ trụ khi làm việc ngoài khoảng không vũ trụ phải mặc bộ trang phục bảo hộ chuyên dụng vì:",
+    "options": [
+      "N/m³",
+      "g/cm³",
+      "mmHg (milimét thủy ngân) hoặc atm",
+      "kg/m³"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 39,
+    "text": "Mọi vật khi nhúng chìm hoặc nổi một phần trong chất lỏng đều chịu tác dụng của lực đẩy Archimedes có phương và chiều như thế nào?",
+    "options": [
+      "Phương nằm ngang, chiều từ trái sang phải.",
+      "Phương thẳng đứng, chiều từ dưới lên trên.",
+      "Phương thẳng đứng, chiều từ trên xuống dưới.",
+      "Phương nghiêng góc 45 độ."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 40,
+    "text": "Độ lớn của lực đẩy Archimedes tác dụng lên vật nhúng trong chất lỏng được tính theo công thức nào (d là trọng lượng riêng chất lỏng, V là thể tích phần ngập)?",
+    "options": [
+      "FA = d . V",
+      "FA = D . V",
+      "FA = m . g",
+      "FA = p . S"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 41,
+    "text": "Trong công thức FA = d . V, đại lượng V đại diện cho:",
+    "options": [
+      "17 N",
+      "3 N",
+      "70 N",
+      "0,7 N"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 42,
+    "text": "Hai thỏi nhôm và thép có thể tích bằng nhau cùng được nhúng chìm hoàn toàn trong cùng một bình nướ",
+    "options": [
+      "Thỏi thép chịu lực đẩy lớn hơn vì thép nặng hơn nhôm.",
+      "Thỏi nhôm chịu lực đẩy lớn hơn vì nhôm nhẹ hơn.",
+      "Hai thỏi chịu lực đẩy Archimedes bằng nhau vì thể tích chiếm chỗ trong nước bằng nhau.",
+      "Không so sánh được do thiếu độ sâu."
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 43,
+    "text": "Một thỏi đồng được nhúng chìm lần lượt vào nước và vào dầu ăn. Biết trọng lượng riêng của nước lớn hơn dầu ăn. Lực đẩy Archimedes tác dụng lên thỏi đồng lớn hơn khi nhúng vào:",
+    "options": [
+      "Nước",
+      "Dầu ăn",
+      "Bằng nhau trong cả hai môi trường",
+      "Không so sánh được"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "id": 44,
+    "text": "Một vật nhúng trong chất lỏng sẽ bị chìm xuống đáy bình khi:",
+    "options": [
+      "Lực đẩy Archimedes lớn hơn trọng lượng của vật (FA > P).",
+      "Lực đẩy Archimedes nhỏ hơn trọng lượng của vật (FA < P).",
+      "Lực đẩy Archimedes bằng trọng lượng của vật (FA = P).",
+      "Trọng lượng riêng của chất lỏng lớn hơn trọng lượng riêng của vật."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 45,
+    "text": "Điều kiện để một vật nổi lên trên mặt chất lỏng là trọng lượng riêng của vật (dvật) và chất lỏng (dchất lỏng) thỏa mãn:",
+    "options": [
+      "dvật > dchất lỏng",
+      "dvật < dchất lỏng",
+      "dvật = dchất lỏng",
+      "dvật không phụ thuộc dchất lỏng"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 46,
+    "text": "Khi một quả bóng nhựa nổi và đứng yên trên mặt nước, độ lớn của lực đẩy Archimedes FA lúc này bằng:",
+    "options": [
+      "Trọng lượng riêng của chất lỏng.",
+      "Trọng lượng P của quả bóng.",
+      "Hiệu giữa trọng lượng vật và lực cản.",
+      "Bằng 0."
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 47,
+    "text": "Tàu thủy làm bằng vỏ thép rất nặng nhưng vẫn nổi được trên mặt nước là nhờ:",
+    "options": [
+      "Khối lượng riêng của thép nhỏ hơn nướ",
+      "Tàu được thiết kế rỗng bên trong làm tăng thể tích chiếm chỗ, giúp trọng lượng riêng trung bình của toàn bộ tàu nhỏ hơn trọng lượng riêng của nướ",
+      "Động cơ tàu liên tục đẩy tàu nổi lên.",
+      "Áp suất không khí dưới đáy tàu nâng tàu lên."
+    ],
+    "correctIndex": 1
+  }
+]

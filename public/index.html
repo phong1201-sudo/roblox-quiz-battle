@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Battle 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="ui-root">
+        <!-- Menu Screen -->
+        <div id="screen-menu" class="screen">
+            <div class="panel">
+                <h1 class="game-title">Quiz Battle 3D</h1>
+                <p class="game-subtitle">Voxel trivia mayhem</p>
+                
+                <input type="text" id="player-name" placeholder="Enter Name..." maxlength="12">
+                <input type="color" id="player-color" value="#ff6b35">
+                
+                <button id="btn-create" class="btn btn-primary">Create Room</button>
+                <button id="btn-join-screen" class="btn btn-success">Join Room</button>
+            </div>
+        </div>
+
+        <!-- Join Screen -->
+        <div id="screen-join" class="screen">
+            <div class="panel">
+                <h2 class="game-title">Join Game</h2>
+                <input type="text" id="room-code-input" placeholder="ROOM CODE" maxlength="4" style="text-transform:uppercase">
+                
+                <button id="btn-join-room" class="btn btn-primary">Join</button>
+                <button id="btn-back-join" class="btn btn-danger">Back</button>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="screen-lobby" class="screen">
+            <div class="panel">
+                <h2>Room Code: <span class="room-code" id="lobby-room-code"></span></h2>
+                
+                <div id="upload-section">
+                  <div style="display:flex; gap:4px; margin-bottom:8px;">
+                    <button id="tab-file" class="btn btn-tab active" style="flex:1; font-size:7px;">📄 File (.docx)</button>
+                    <button id="tab-paste" class="btn btn-tab" style="flex:1; font-size:7px;">📋 Paste Text</button>
+                  </div>
+
+                  <!-- File tab -->
+                  <div id="pane-file">
+                    <input type="file" id="file-upload" accept=".docx">
+                    <button id="btn-upload" class="btn" style="margin-top:6px;">Upload</button>
+                    <div id="upload-status" class="upload-status"></div>
+                  </div>
+
+                  <!-- Paste tab -->
+                  <div id="pane-paste" style="display:none;">
+                    <textarea id="paste-text" rows="6"
+                      placeholder="Paste quiz text here…&#10;Câu 1. What is …&#10;A. …  B. …  C. …  D. …"
+                      style="width:100%; background:#111; color:#eee; border:2px solid #00b4d8; font-size:8px; padding:6px; resize:vertical; font-family:monospace;"></textarea>
+                    <button id="btn-preview" class="btn btn-primary" style="margin-top:6px;">🔍 Preview &amp; Load</button>
+                    <div id="paste-status" class="upload-status"></div>
+                    <!-- Preview list -->
+                    <div id="paste-preview" style="display:none; margin-top:8px; max-height:160px; overflow-y:auto; background:#0a0a1e; border:1px solid #333; padding:6px;">
+                      <div id="paste-preview-list"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Game Mode Selector (host only, shown/hidden via JS) -->
+                <div id="mode-selector" style="display:none; flex-direction:column; gap:8px;">
+                  <label style="font-size:8px; color:#aaa;">Game Mode:</label>
+                  <div style="display:flex; gap:8px;">
+                    <button id="btn-mode-pve" class="btn btn-mode">👾 Boss Fight</button>
+                    <button id="btn-mode-pvp" class="btn btn-mode">⚔ 1v1 PvP</button>
+                  </div>
+                </div>
+
+                <!-- ═══ AVATAR SECTION (all players) ═══ -->
+                <!-- ═══ AVATAR / WARDROBE SECTION — populated by lobby.js ═══ -->
+                <div id="avatar-section" style="display:flex; flex-direction:column; gap:8px;">
+                  <!-- Wardrobe customizer injected here by lobby.js init() -->
+                </div>
+
+                <h3 style="font-family:'Be Vietnam Pro',sans-serif; font-size:14px;">👥 Người chơi:</h3>
+                <ul id="player-list"></ul>
+                
+                <button id="btn-start" class="btn btn-success" style="display:none">▶ Bắt đầu</button>
+                <button id="btn-back-menu" class="btn btn-danger">← Quay lại</button>
+            </div>
+        </div>
+
+        <!-- Game Screen — strict 75/25 split -->
+        <div id="screen-game" class="screen">
+
+            <!-- ── TOP 75%: Arena / Three.js Canvas ─────────────────────── -->
+            <div id="arena-viewport">
+
+                <!-- Three.js canvas fills this div -->
+                <canvas id="game-canvas"></canvas>
+
+                <!-- Timer bar (top of arena) -->
+                <div id="timer-bar">
+                    <div id="timer-fill"></div>
+                </div>
+
+                <!-- Boss info panel (top right) -->
+                <div id="boss-info">
+                    <span class="boss-stage">STAGE 1</span>
+                    <span class="boss-name">Stone Golem</span>
+                </div>
+
+                <!-- HP Bars (top center of arena) -->
+                <div id="hp-bars">
+                    <div class="hp-bar-wrap" id="hp-bar-player">
+                        <div class="hp-label" id="hp-label-player">YOU</div>
+                        <div class="hp-track">
+                            <div class="hp-fill" id="hp-fill-player" style="background:#06d6a0; width:100%;"></div>
+                        </div>
+                        <div class="hp-val" id="hp-val-player">10</div>
+                    </div>
+                    <div class="hp-vs">VS</div>
+                    <div class="hp-bar-wrap right" id="hp-bar-enemy">
+                        <div class="hp-label" id="hp-label-enemy">BOSS</div>
+                        <div class="hp-track">
+                            <div class="hp-fill" id="hp-fill-enemy" style="background:#ef233c; width:100%;"></div>
+                        </div>
+                        <div class="hp-val" id="hp-val-enemy">10</div>
+                    </div>
+                </div>
+
+                <!-- Feedback overlay (ĐÚNG / SAI flash) -->
+                <div id="answer-feedback"></div>
+            </div><!-- /#arena-viewport -->
+
+            <!-- ── BOTTOM 25%: Quiz Console ──────────────────────────────── -->
+            <div id="quiz-card">
+                <div id="question-header">
+                    <span id="question-number">Q 1/10</span>
+                </div>
+                <div id="question-text">Đang tải câu hỏi...</div>
+
+                <div id="answer-btns">
+                    <button class="answer-btn" id="btn-answer-a" data-answer="A">
+                        <span class="opt-badge opt-a">A</span>
+                        <span class="opt-text">—</span>
+                    </button>
+                    <button class="answer-btn" id="btn-answer-b" data-answer="B">
+                        <span class="opt-badge opt-b">B</span>
+                        <span class="opt-text">—</span>
+                    </button>
+                    <button class="answer-btn" id="btn-answer-c" data-answer="C">
+                        <span class="opt-badge opt-c">C</span>
+                        <span class="opt-text">—</span>
+                    </button>
+                    <button class="answer-btn" id="btn-answer-d" data-answer="D">
+                        <span class="opt-badge opt-d">D</span>
+                        <span class="opt-text">—</span>
+                    </button>
+                </div>
+            </div><!-- /#quiz-card -->
+
+        </div><!-- /#screen-game -->
+
+        <!-- Results Screen -->
+        <div id="screen-results" class="screen">
+            <div id="verdict-banner" style="display:none;"></div>
+            <h1 class="game-title pop">Game Over!</h1>
+            
+            <div id="podium">
+                <div class="podium-block podium-2" id="podium-2"></div>
+                <div class="podium-block podium-1" id="podium-1"></div>
+                <div class="podium-block podium-3" id="podium-3"></div>
+            </div>
+
+            <table id="leaderboard">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>HP Remaining</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body"></tbody>
+            </table>
+
+            <button id="btn-play-again" class="btn btn-primary" style="margin-top: 16px;">Play Again</button>
+            <button id="btn-back-menu-results" class="btn btn-danger">Main Menu</button>
+        </div>
+
+        <!-- Perfect Rating Reward Modal -->
+        <div id="reward-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100; align-items:center; justify-content:center; flex-direction:column; gap:16px; pointer-events:all;">
+          <div style="background:rgba(10,10,30,0.97); border:4px solid gold; padding:40px; text-align:center; display:flex; flex-direction:column; gap:16px; align-items:center;">
+            <div style="font-size:64px;">🏆</div>
+            <div class="game-title" style="color:gold; text-shadow:3px 3px 0 #ff6b35;">PERFECT!</div>
+            <p style="font-size:9px; color:#aaa; line-height:2;">You answered every question correctly!<br>The boss was utterly defeated!</p>
+            <button id="reward-modal-close" class="btn btn-success">Claim Reward</button>
+          </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
