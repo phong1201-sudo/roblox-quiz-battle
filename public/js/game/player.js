@@ -271,16 +271,34 @@ export function playPunch()        { playAttack(null,null); }
 // COMBAT — dispatch by player's equipped element
 // ─────────────────────────────────────────────────────────────────────────────
 export function playAttack(onHitMoment, onDone) {
-  if (!playerGroup) return;
+  // Safety: if scene not initialised, fire callbacks immediately so combatBusy never sticks
+  if (!playerGroup) { if (onHitMoment) onHitMoment(); if (onDone) onDone(); return; }
   const el  = activeElement || null;
   const dur = el==='thunder'?1.1 : el==='frost'?1.05 : el==='fire'?1.0 : 0.9;
+  // Hard safety timeout: if animation never completes, release lock after (dur+1.5)s
+  clearTimeout(window._combatSafetyTimer);
+  window._combatSafetyTimer = setTimeout(() => {
+    if (anim.active) {
+      console.warn('[player] Combat safety timeout fired — releasing combatBusy');
+      _resetAll(); anim.active = false;
+      if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
+    }
+  }, (dur + 1.5) * 1000);
   anim = { active:true, type:el||'default', t:0, duration:dur,
            onHit:onHitMoment||null, onDone:onDone||null,
            hitFired:false, _hitEmitted:false };
 }
 
 export function playRushMiss(onDone) {
-  if (!playerGroup) return;
+  if (!playerGroup) { if (onDone) onDone(); return; }
+  clearTimeout(window._combatSafetyTimer);
+  window._combatSafetyTimer = setTimeout(() => {
+    if (anim.active) {
+      console.warn('[player] Combat safety timeout fired (miss) — releasing combatBusy');
+      _resetAll(); anim.active = false;
+      if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
+    }
+  }, 2500);
   anim = { active:true, type:'miss', t:0, duration:0.85,
            onHit:null, onDone:onDone||null, hitFired:false, _hitEmitted:false };
 }

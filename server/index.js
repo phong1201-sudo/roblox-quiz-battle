@@ -49,9 +49,18 @@ const skinUpload = multer({
 });
 
 // ── Auth Endpoints ────────────────────────────────────────────────────────────
+// NOTE: data/users.json is ephemeral on Render (wiped on redeploy).
+// Admin "God Father" is re-seeded automatically by db.js on every startup.
+// Regular player accounts must re-register after a server restart on Render.
 
 /** POST /api/register  { username, password } → { ok, user } */
 app.post('/api/register', (req, res) => {
+  const { username, password } = req.body || {};
+  const result = db.register(username, password);
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+app.post('/api/auth/register', (req, res) => {   // alias
   const { username, password } = req.body || {};
   const result = db.register(username, password);
   if (!result.ok) return res.status(400).json(result);
@@ -64,6 +73,21 @@ app.post('/api/login', (req, res) => {
   const result = db.login(username, password);
   if (!result.ok) return res.status(401).json(result);
   res.json(result);
+});
+app.post('/api/auth/login', (req, res) => {      // alias
+  const { username, password } = req.body || {};
+  const result = db.login(username, password);
+  if (!result.ok) return res.status(401).json(result);
+  res.json(result);
+});
+
+/** POST /api/auth/check  { userId } → { ok, user } — validate a cached session */
+app.post('/api/auth/check', (req, res) => {
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ ok: false, error: 'userId required' });
+  const result = db.getUser(Number(userId));
+  if (!result) return res.status(404).json({ ok: false, error: 'Session expired — please log in again.' });
+  res.json({ ok: true, user: result });
 });
 
 /** POST /api/unlock-set  { userId, setId } → { ok, user } (full set, legacy) */

@@ -182,4 +182,11 @@ function _public(u) {
   };
 }
 
-module.exports = { register, login, unlockPiece, unlockSet, updateStage, FULL_SET_PIECES };
+function getUser(userId) {
+  const data = _load();
+  const user = data.users[userId];
+  if (!user) return null;
+  return _public(user);
+}
+
+module.exports = { register, login, getUser, unlockPiece, unlockSet, updateStage, FULL_SET_PIECES };

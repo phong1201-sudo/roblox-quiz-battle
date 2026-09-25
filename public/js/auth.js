@@ -284,7 +284,33 @@ export function init() {
         // Use _onLoginSuccess so screen activation + badge fire consistently
         // Defer so DOMContentLoaded finishes wiring event listeners first
         setTimeout(() => _onLoginSuccess(user), 0);
-        return true;   // already logged in
+
+        // ── Validate session against server in background ──────────────────
+        // If server restarted (Render ephemeral DB), user won't exist → force re-login
+        fetch('/api/auth/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id }),
+        }).then(r => r.json()).then(data => {
+          if (!data.ok) {
+            console.warn('[auth] Server session invalid — re-login required:', data.error);
+            _clearSession();
+            document.getElementById('user-badge')?.remove();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            showAuthModal();
+          } else {
+            // Refresh user data from server (unlockedSets may have changed)
+            _saveSession(data.user);
+            if (window.__rebuildSetPicker) {
+              const avatarSection = document.getElementById('avatar-section');
+              if (avatarSection) window.__rebuildSetPicker(avatarSection);
+            }
+          }
+        }).catch(() => {
+          // Network error — keep local session, don't disrupt UX
+        });
+
+        return true;   // already logged in (pending server confirmation)
       }
     }
   } catch(e) {}

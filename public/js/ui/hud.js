@@ -114,48 +114,66 @@ export function updateHpBars(hp, bossHp) {
 // Show question
 // ─────────────────────────────────────────────────────────────────────────────
 export function showQuestion(data) {
-  myAnswer = null;
-  restoreQuizCard();
+  try {
+    myAnswer = null;
+    restoreQuizCard();
 
-  const qNum = document.getElementById('question-number');
-  if (qNum) qNum.textContent = `Q ${data.index} / ${data.total}`;
+    // ── Hard-reset all buttons: override any lingering disabled/opacity state ──
+    ['a','b','c','d'].forEach(l => {
+      const btn = document.getElementById(`btn-answer-${l}`);
+      if (!btn) return;
+      btn.disabled = false;
+      btn.style.pointerEvents = 'auto';
+      btn.style.opacity = '1';
+      btn.className = 'answer-btn';
+    });
 
-  const qText = document.getElementById('question-text');
-  if (qText) qText.textContent = data.question;
+    const qNum = document.getElementById('question-number');
+    if (qNum) qNum.textContent = `Q ${data.index ?? '?'} / ${data.total ?? '?'}`;
 
-  const LABELS  = ['A', 'B', 'C', 'D'];
-  const CLASSES = ['opt-a', 'opt-b', 'opt-c', 'opt-d'];
+    const qText = document.getElementById('question-text');
+    if (qText) qText.textContent = data.question || '(Câu hỏi không có nội dung)';
 
-  // data.options is a plain array after shuffle: ["text0","text1","text2","text3"]
-  // Fallback to object form {A,B,C,D} for any unshuffled edge case
-  const optsArray = Array.isArray(data.options)
-    ? data.options
-    : LABELS.map(l => (data.options && data.options[l]) || '');
+    const LABELS  = ['A', 'B', 'C', 'D'];
+    const CLASSES = ['opt-a', 'opt-b', 'opt-c', 'opt-d'];
 
-  LABELS.forEach((opt, i) => {
-    const btn = document.getElementById(`btn-answer-${opt.toLowerCase()}`);
-    if (!btn) return;
-    const rawText = optsArray[i] || '';
-    btn.innerHTML = '';
-    const badge = document.createElement('span');
-    badge.className = `opt-badge ${CLASSES[i]}`;
-    badge.textContent = opt;
-    const content = document.createElement('span');
-    content.className = 'opt-text';
-    content.textContent = rawText;
-    btn.appendChild(badge);
-    btn.appendChild(content);
-    btn.disabled = false;
-    btn.className = 'answer-btn';
-  });
+    // data.options is a plain array after shuffle: ["text0","text1","text2","text3"]
+    // Fallback to object form {A,B,C,D} for any unshuffled edge case
+    const optsArray = Array.isArray(data.options)
+      ? data.options
+      : LABELS.map(l => (data.options && data.options[l]) || '');
 
-  clearFeedback();
-  startTimer(data.timeLimit || 30, () => {
-    if (!myAnswer) {
-      socket.emit('submit_answer', { code: currentState.code, answer: null });
-      disableButtons();
-    }
-  });
+    LABELS.forEach((opt, i) => {
+      const btn = document.getElementById(`btn-answer-${opt.toLowerCase()}`);
+      if (!btn) return;
+      const rawText = (optsArray[i] != null ? String(optsArray[i]) : '') || `—`;
+      btn.innerHTML = '';
+      const badge = document.createElement('span');
+      badge.className = `opt-badge ${CLASSES[i]}`;
+      badge.textContent = opt;
+      const content = document.createElement('span');
+      content.className = 'opt-text';
+      content.textContent = rawText;
+      btn.appendChild(badge);
+      btn.appendChild(content);
+      btn.disabled = false;
+      btn.style.pointerEvents = 'auto';
+      btn.style.opacity = '1';
+      btn.className = 'answer-btn';
+    });
+
+    clearFeedback();
+    startTimer(data.timeLimit || 30, () => {
+      if (!myAnswer) {
+        socket.emit('submit_answer', { code: currentState.code, answer: null });
+        disableButtons();
+      }
+    });
+  } catch(err) {
+    console.error('[hud] showQuestion error:', err);
+    // Fallback: force-enable all buttons so player isn't stuck
+    enableButtons();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -339,6 +357,16 @@ function disableButtons() {
   ['a','b','c','d'].forEach(l => {
     const btn = document.getElementById(`btn-answer-${l}`);
     if (btn) btn.disabled = true;
+  });
+}
+
+function enableButtons() {
+  ['a','b','c','d'].forEach(l => {
+    const btn = document.getElementById(`btn-answer-${l}`);
+    if (!btn) return;
+    btn.disabled = false;
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
   });
 }
 
