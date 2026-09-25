@@ -155,10 +155,11 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
     return res.status(400).json({ ok: false, error: 'Không có file được tải lên' });
 
   try {
-    const parsed = await questionParser.parseDocx(req.file.path);
+    // parseDocx now returns { questions, dropped } instead of bare array
+    const { questions: parsed, dropped } = await questionParser.parseDocx(req.file.path);
     fs.unlinkSync(req.file.path);
 
-    // Convert to bank format
+    // Convert to bank format { id, text, options[], correctIndex }
     const incoming = parsed.map((q, i) => ({
       id:           i + 1,
       text:         q.question,
@@ -181,6 +182,7 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
       total:   result.total,
       added:   result.added,
       skipped: result.skipped,
+      dropped: dropped || [],          // list of "Câu X" labels with no answer marker
     });
   } catch (e) {
     console.error('[admin/upload]', e.message);
@@ -232,7 +234,7 @@ app.post('/upload', docxUpload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Invalid room code' });
     }
 
-    const questions = await questionParser.parseDocx(req.file.path);
+    const { questions, dropped } = await questionParser.parseDocx(req.file.path);
     roomManager.setQuestions(roomCode, questions);
     roomManager.incrementPackIndex(roomCode);
     const room2 = roomManager.getRoom(roomCode);
@@ -248,6 +250,7 @@ app.post('/upload', docxUpload.single('file'), async (req, res) => {
 
     res.json({
       questionCount: questions.length,
+      dropped: dropped || [],
       bossIndex: bossIdx,
       bossElement,
       packNumber: room2 ? room2.packIndex : 1,

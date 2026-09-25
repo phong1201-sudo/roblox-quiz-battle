@@ -3,59 +3,74 @@ const mammoth = require('mammoth');
 // ─────────────────────────────────────────────────────────────────────────────
 // Core parser — works on plain text (from docx extraction or direct paste)
 //
-// HANDLES BOTH:
-//   • Multi-line format — each option on its own line
-//   • Single-line format — everything on one line, e.g.:
-//       "1. Question text A. Opt1 B. Opt2 C. Opt3 D. Opt4"
+// HANDLES:
+//   • Multi-line: each option on its own line
+//   • Single-line: "1. Question A. Opt1 B. Opt2 C. Opt3 D. Opt4"
+//   • No-space: "A.Nước" treated as label=A, text="Nước"
+//   • Lowercase labels: "a. text" or "a) text"
+//   • Asterisk before/after: "*A. text" or "A. text*"
+//   • Explicit answer line: "Đáp án: B" / "Answer: B" / "ANS: B"
+//   • Bold via HTML enrichment from mammoth
+//   • Answer-key block at file bottom: "1. A   2. B ..."
+//   • Falls back to correctIndex=0 (option A) when no answer detected —
+//     never silently drops a question that has 4 valid options.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * @param {string} rawText
- * @returns {{ question, options:{A,B,C,D}, answer, correctIndex }[]}
+ * @returns {{ question, options:{A,B,C,D}, answer, correctIndex, _num, _answerDetected }[]}
  */
 function parseText(rawText) {
   if (!rawText || typeof rawText !== 'string') return [];
 
-  // ── Normalise ─────────────────────────────────────────────────────────────
+  // ── Normalise whitespace / smart quotes ──────────────────────────────────
   let text = rawText
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .replace(/\u00A0/g, ' ')
     .replace(/\u2019/g, "'")
-    .replace(/[\u201C\u201D]/g, '"');
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2013|\u2014/g, '-');
 
-  // ── Utility: strip asterisks and trim ─────────────────────────────────────
+  // ── Utility: strip asterisks and trim ───────────────────────────────────
   const strip = (s) => (s || '').replace(/\*/g, '').trim();
 
-  // ── Option separator regex ────────────────────────────────────────────────
-  // Matches: "A." "A)" "A:" "[A]" "(A)" — upper or lower, with optional star
-  // Used to inject newlines so single-line quizzes parse correctly.
-  //
-  // IMPORTANT: this must NOT match the question-number prefix (e.g. "1. ").
-  // We guard it by requiring the letter to be A-D/a-d only.
-  const OPTION_SEP = /(?<!\d)(\*?\s*[\[(]?\b([A-Da-d])[\].):])\s+(?=\S)/g;
-
-  // Pre-process: inject '\n' before every option marker so multi-line and
-  // single-line formats are treated identically.
-  text = text.replace(OPTION_SEP, (match, full, letter) => {
-    // Don't inject inside the answer-key block (heuristic: 4+ digits already seen)
-    return '\n' + full + ' ';
-  });
-
   // ── Answer-key block at the bottom ──────────────────────────────────────
+  // Matches: "Đáp án: 1.A 2.B..." or "Answer key: 1-A ..."
   const answerKey = {};
-  const ansKeyRe  = /(?:đ[aá]p\s*[aá]n|answer\s*key|answers?)\s*[:\-]?\s*([\s\S]+)/i;
-  const keyMatch  = text.match(ansKeyRe);
+  const ansKeyBlockRe = /(?:đ[aá]p\s*[aá]n|answer\s*key|answers?)\s*[:\-]?\s*([\s\S]+)/i;
+  const keyMatch = text.match(ansKeyBlockRe);
   if (keyMatch) {
     const tokens = keyMatch[1].matchAll(/(\d+)\s*[-–./]?\s*([A-Da-d])/gi);
     for (const t of tokens) answerKey[t[1]] = t[2].toUpperCase();
   }
 
-  // ── Split into question blocks ────────────────────────────────────────────
-  // A block starts with: optional Vietnamese prefix + a number + separator
-  // e.g. "Câu 1." / "1." / "Bài 2:" / "Question 3)"
-  const qStartRe = /^(?:(?:c[a\u00e2]u(?:\s*h[o\u1ecf]i)?|b[a\u00e2]i|question)\s+)?(\d+)\s*[./:)\-]/i;
+  // ── Option separator: inject newlines before "A." "B)" etc. so that
+  //    single-line quizzes parse identically to multi-line ones.
+  //    Handles no-space (A.Nước), upper+lower, all separator styles.
+  // Guard: letter must not be immediately preceded by a digit (avoids "1.A" in answer keys)
+  const OPTION_SEP = /(?<!\d)(\*?\s*[\[(]?\b([A-Da-d])[.\]):])(?=\S|\s)/g;
+  text = text.replace(OPTION_SEP, (match, full, letter) => '\n' + full + ' ');
 
+  // ── Question-start regex ─────────────────────────────────────────────────
+  // Matches: "Câu 1." / "1." / "Bài 2:" / "Q3)" / "Question 4-" etc.
+  // Extra patterns vs old parser:
+  //   \bQ\b before number, hyphen/em-dash as separator
+  const qStartRe =
+    /^(?:(?:c[aâ]u(?:\s*h[oỏ]i)?|b[aâ]i|question|\bq)\s+)?(\d+)\s*[./:)\-–—]/i;
+
+  // ── Per-option regexes (more flexible than before) ───────────────────────
+  //   Handles: A. | A) | A: | [A] | (A) | a. | A.NoSpace
+  const optLineRe   = /^[\[(]?([A-Da-d])[.\]):]\s*(.*)/;   // normal
+  const starStartRe = /^\*\s*[\[(]?([A-Da-d])[.\]):]\s*(.*)/; // *A. text
+  const starEndRe   = /^[\[(]?([A-Da-d])[.\]):]\s*(.*?)\s*\*\s*$/; // A. text*
+  // Explicit answer line patterns
+  const answerLineRe =
+    /^(?:ANS|answer|đ[áa]p\s*[áa]n|dap\s*an)\s*[:\-]\s*([A-Da-d])\s*$/i;
+
+  const OPTION_ORDER = ['A', 'B', 'C', 'D'];
+
+  // ── Split into lines, gather question blocks ─────────────────────────────
   const lines = text.split('\n');
   const blocks = [];
   let current = null;
@@ -64,10 +79,9 @@ function parseText(rawText) {
     const line = rawLine.trim();
     if (!line) continue;
 
-    // A line that is ONLY an option marker (A. / *B) / [C] etc.)
-    // should never be treated as a question start.
+    // An option line starts with A-D letter — never treat as question start
     const isOptionLine =
-      /^[\[(]?\*?[A-Da-d][\].):\s]/.test(line) && !/^\d/.test(line);
+      /^[\[(]?\*?[A-Da-d][.\]):\s]/.test(line) && !/^\d/.test(line);
 
     if (!isOptionLine && qStartRe.test(line)) {
       if (current) blocks.push(current);
@@ -79,86 +93,95 @@ function parseText(rawText) {
   }
   if (current) blocks.push(current);
 
-  // ── Per-block option regexes ──────────────────────────────────────────────
-  // A line that begins with an option letter (with or without leading star)
-  const optLineRe    = /^[\[(]?([A-Da-d])[\].):\s]\s*(.*)/;   // A. text | A: text | A) text | [A] text
-  const starStartRe  = /^\*\s*[\[(]?([A-Da-d])[\].):\s]\s*(.*)/; // *B. text
-  const starEndRe    = /^[\[(]?([A-Da-d])[\].):\s]\s*(.*?)\s*\*\s*$/; // B. text*
-
-  const OPTION_ORDER = ['A', 'B', 'C', 'D'];
-
-  // ── Parse each block ──────────────────────────────────────────────────────
+  // ── Parse each block ─────────────────────────────────────────────────────
   const questions = [];
 
   for (const block of blocks) {
     const { num, lines: bLines } = block;
-    if (bLines.some(l => ansKeyRe.test(l))) continue; // skip answer-key block
+
+    // Skip the answer-key block itself
+    if (bLines.some(l => ansKeyBlockRe.test(l))) continue;
 
     let qText          = '';
     const options      = {};
     let detectedAnswer = null;
+    let answerDetected = false;   // track whether we found an explicit marker
 
     for (let i = 0; i < bLines.length; i++) {
       const line = bLines[i];
 
-      // ── Line 0: extract question stem ──────────────────────────────────
+      // ── Line 0: extract question stem ────────────────────────────────────
       if (i === 0) {
         qText = strip(
-          line.replace(/^(?:(?:c[a\u00e2]u(?:\s*h[o\u1ecf]i)?|b[a\u00e2]i|question)\s+)?\d+\s*[./:)\-]\s*/i, '')
+          line.replace(
+            /^(?:(?:c[aâ]u(?:\s*h[oỏ]i)?|b[aâ]i|question|\bq)\s+)?\d+\s*[./:)\-–—]\s*/i,
+            ''
+          )
         );
         // Inline ANS: tag (rare but supported)
         const ansInline = qText.match(/\bANS\s*:\s*([A-D])\b/i);
         if (ansInline) {
           detectedAnswer = ansInline[1].toUpperCase();
+          answerDetected = true;
           qText = qText.replace(/\bANS\s*:.*$/i, '').trim();
         }
         continue;
       }
 
-      // ── Standalone answer-marker line ───────────────────────────────────
-      const ansLine = line.match(/^(?:ANS|answer|đ[aá]p\s*[aá]n|dap\s*an)\s*[:\-]\s*([A-D])\s*$/i);
-      if (ansLine) { detectedAnswer = ansLine[1].toUpperCase(); continue; }
+      // ── Explicit answer line ──────────────────────────────────────────────
+      const ansLineM = line.match(answerLineRe);
+      if (ansLineM) {
+        detectedAnswer = ansLineM[1].toUpperCase();
+        answerDetected = true;
+        continue;
+      }
 
-      // ── Star-before option (*B. text) → correct answer ──────────────────
+      // ── Star-before option (*A. text → correct) ───────────────────────────
       const ss = line.match(starStartRe);
       if (ss) {
-        const key      = ss[1].toUpperCase();
-        options[key]   = strip(ss[2]);
+        const key = ss[1].toUpperCase();
+        options[key] = strip(ss[2]);
         detectedAnswer = key;
+        answerDetected = true;
         continue;
       }
 
-      // ── Star-after option (B. text*) → correct answer ───────────────────
+      // ── Star-after option (A. text* → correct) ────────────────────────────
       const se = line.match(starEndRe);
       if (se) {
-        const key      = se[1].toUpperCase();
-        options[key]   = strip(se[2]);
+        const key = se[1].toUpperCase();
+        options[key] = strip(se[2]);
         detectedAnswer = key;
+        answerDetected = true;
         continue;
       }
 
-      // ── Normal option line (A. / A) / A: / [A]) ─────────────────────────
+      // ── Normal option line ────────────────────────────────────────────────
       const om = line.match(optLineRe);
       if (om) {
         options[om[1].toUpperCase()] = strip(om[2]);
         continue;
       }
 
-      // ── Continuation of question stem ────────────────────────────────────
+      // ── Continuation of question stem (before any option seen) ────────────
       if (Object.keys(options).length === 0) {
         qText += ' ' + strip(line);
       }
     }
 
-    // Answer-key block fallback
-    if (!detectedAnswer && num && answerKey[num]) {
+    // ── Answer-key block fallback ─────────────────────────────────────────
+    if (!answerDetected && num && answerKey[num]) {
       detectedAnswer = answerKey[num];
+      answerDetected = true;
     }
 
-    // Safe default
-    if (!detectedAnswer) detectedAnswer = 'A';
+    // ── Default to A if no marker found — NEVER drop the question ─────────
+    if (!detectedAnswer) {
+      detectedAnswer = 'A';
+      // answerDetected stays false so caller knows this was a fallback
+    }
 
-    // Fill any missing options
+    // Fill any missing options with placeholder
     for (const k of OPTION_ORDER) {
       if (!options[k]) options[k] = `(${k})`;
     }
@@ -167,10 +190,12 @@ function parseText(rawText) {
 
     if (qText.trim()) {
       questions.push({
-        question:     qText.trim(),
-        options,          // { A, B, C, D } — zero asterisks guaranteed
-        answer:       detectedAnswer,
+        question:      qText.trim(),
+        options,
+        answer:        detectedAnswer,
         correctIndex,
+        _num:          num,            // original question number (for drop reporting)
+        _answerDetected: answerDetected,
       });
     }
   }
@@ -179,7 +204,8 @@ function parseText(rawText) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rich-docx parser — uses mammoth for bold detection
+// Rich-docx parser — uses mammoth for bold/underline detection
+// Returns { questions, dropped }
 // ─────────────────────────────────────────────────────────────────────────────
 async function parseDocx(filePath) {
   const [rawResult, htmlResult] = await Promise.all([
@@ -191,24 +217,44 @@ async function parseDocx(filePath) {
   let questions = parseText(rawText);
 
   if (htmlResult) {
-    const html = htmlResult.value;
-    const enriched = html
+    // Map bold runs to asterisk markers (our star-correct convention)
+    const html = htmlResult.value
       .replace(/<strong>([\s\S]*?)<\/strong>/g, (_, inner) => `*${inner}`)
+      .replace(/<u>([\s\S]*?)<\/u>/g, (_, inner) => `*${inner}`)   // underline = answer too
       .replace(/<[^>]+>/g, '\n');
-    const enrichedQs = parseText(enriched);
-    const richCount  = enrichedQs.filter(q => q.answer !== 'A').length;
-    const plainCount = questions.filter(q => q.answer !== 'A').length;
+    const enrichedQs = parseText(html);
+
+    // Prefer enriched parse if it found more explicit answer markers
+    const richCount  = enrichedQs.filter(q => q._answerDetected).length;
+    const plainCount = questions.filter(q => q._answerDetected).length;
     if (richCount > plainCount) questions = enrichedQs;
   }
 
   if (questions.length < 1) {
     throw new Error(
-      'No questions could be parsed from the file. ' +
-      'Supported: numbered questions (1., Câu 1:, Bài 1:) with A/B/C/D options ' +
-      'and optional * or ANS: answer markers — inline or multi-line.'
+      'Không tìm thấy câu hỏi nào trong file. ' +
+      'Định dạng hỗ trợ: câu hỏi đánh số (1., Câu 1:, Bài 1:) ' +
+      'với đáp án A/B/C/D và dấu * hoặc "Đáp án:" để đánh dấu đáp án đúng.'
     );
   }
-  return questions;
+
+  // Build list of questions that had no explicit answer marker (fallback to A)
+  const dropped = questions
+    .filter(q => !q._answerDetected)
+    .map(q => q._num ? `Câu ${q._num}` : q.question.substring(0, 40));
+
+  if (dropped.length > 0) {
+    console.warn(
+      `[parser] ${dropped.length} câu không tìm thấy dấu đáp án — mặc định A: ${dropped.join(', ')}`
+    );
+  }
+
+  // Strip internal meta fields before returning
+  const clean = questions.map(({ question, options, answer, correctIndex }) =>
+    ({ question, options, answer, correctIndex })
+  );
+
+  return { questions: clean, dropped };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

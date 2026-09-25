@@ -705,6 +705,64 @@ function _showToast(msg, isError = false) {
   setTimeout(() => t.remove(), 4000);
 }
 
+// ── Dropped-questions warning modal ──────────────────────────────────────────
+function _showDroppedWarning(totalInFile, parsedOk, dropped) {
+  document.getElementById('dropped-warning')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'dropped-warning';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:99999;
+    background:rgba(5,3,20,0.88);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Be Vietnam Pro','Nunito',sans-serif;
+  `;
+
+  const box = document.createElement('div');
+  box.style.cssText = `
+    background:linear-gradient(160deg,#1a0a00,#2a1000);
+    border:2px solid #ffcc00;border-radius:12px;
+    padding:24px 28px;max-width:500px;width:92vw;
+    display:flex;flex-direction:column;gap:12px;
+    box-shadow:0 0 40px rgba(255,204,0,0.2),0 8px 40px rgba(0,0,0,0.8);
+  `;
+
+  box.innerHTML = `
+    <div style="font-size:22px;text-align:center;">⚠️</div>
+    <div style="font-size:14px;font-weight:900;color:#ffcc00;text-align:center;">
+      Cảnh báo: ${dropped.length} câu chưa nhận dạng được đáp án
+    </div>
+    <div style="font-size:12px;color:#ddd;line-height:1.6;">
+      Đã tải thành công <strong style="color:#06d6a0">${parsedOk}/${totalInFile} câu</strong>.
+      ${dropped.length} câu sau đây <em>không có dấu đáp án</em>
+      (dấu <code>*</code>, chữ đậm, hoặc dòng <code>Đáp án: X</code>)
+      — đã tự động đặt đáp án mặc định là <strong>A</strong>:
+    </div>
+    <div style="
+      background:rgba(0,0,0,0.4);border:1px solid rgba(255,204,0,0.25);
+      border-radius:6px;padding:10px 14px;
+      font-size:11px;color:#ffcc00;line-height:1.8;word-break:break-word;
+      max-height:120px;overflow-y:auto;
+    ">${dropped.join(' • ')}</div>
+    <div style="font-size:11px;color:#aaa;text-align:center;">
+      Vui lòng kiểm tra định dạng A, B, C, D của các câu trên trong file .docx
+      rồi tải lại.
+    </div>
+    <button id="dropped-ok-btn" style="
+      margin-top:4px;padding:9px 0;border-radius:7px;border:none;cursor:pointer;
+      background:linear-gradient(135deg,#ffcc00,#ff8800);
+      color:#111;font-family:'Be Vietnam Pro',sans-serif;
+      font-size:13px;font-weight:800;
+    ">Đã hiểu — Đóng</button>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  box.querySelector('#dropped-ok-btn').onclick = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
 function _buildAdminDashboard(container, gameState) {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
@@ -874,6 +932,12 @@ function _buildAdminDashboard(container, gameState) {
         statusEl.textContent = `✓ ${modeLabel}: +${d.added} mới, bỏ qua ${d.skipped} trùng`;
         countBadge.textContent = `📊 Hiện có: ${d.total} câu`;
         _showToast(`Đã cập nhật thành công ${b.labelFull}: Hiện có ${d.total} câu hỏi`);
+
+        // ── Show dropped-questions warning if any ────────────────────────
+        if (d.dropped && d.dropped.length > 0) {
+          _showDroppedWarning(d.total + d.dropped.length, d.total, d.dropped);
+        }
+
         fileInput.value = '';
       } catch(e) {
         statusEl.style.color = '#ef233c';
