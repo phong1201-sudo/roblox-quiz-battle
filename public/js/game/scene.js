@@ -7,6 +7,7 @@ import * as Effects       from './effects.js';
 import * as Boss          from './boss.js';
 import { socket }         from '../socket.js';
 import * as hud           from '../ui/hud.js';
+import * as Audio         from '../audio.js';
 
 let scene, camera, renderer;
 let clock    = new THREE.Clock();
@@ -181,6 +182,14 @@ function runAttackSequence(ev) {
 
   Player.playAttack(
     () => {
+      // ── Elemental SFX at hit impact moment ──────────────────────────────
+      try {
+        if      (element === 'thunder') Audio.playThunder();
+        else if (element === 'fire')    Audio.playFire();
+        else if (element === 'frost')   Audio.playFrost();
+        else                            Audio.playSlash();
+      } catch(e) {}
+
       // Basic hit sparks always
       Effects.spawnHitSpark(BOSS_VFX_POS);
       Boss.playBossHurt();

@@ -1,5 +1,6 @@
 import { socket } from '../socket.js';
 import { applyThunderSet, addUnlockedSet } from './lobby.js';
+import * as Audio from '../audio.js';
 
 let currentState;
 let currentTimer = null;
@@ -27,6 +28,10 @@ export function init(gameState) {
     if (btn) {
       btn.onclick = () => {
         if (btn.disabled) return;
+        // Bootstrap BGM on first player interaction (browser autoplay policy)
+        Audio.bootstrapOnInteraction && Audio.startBgm && (() => {
+          try { Audio.startBgm(); } catch(e) {}
+        })();
         myAnswer = opt;
         socket.emit('submit_answer', { code: currentState.code, answer: opt });
         disableButtons();
@@ -196,6 +201,7 @@ export function showResult(data) {
 
   if (myAnswer === data.correctAnswer) {
     showFeedback(true);
+    try { Audio.playCorrect(); } catch(e) {}
     if (isThunder) {
       showCombatText(`⚡ CHÉM SÉT! -${dmg}`, '#00ffff');
     } else {
@@ -203,7 +209,13 @@ export function showResult(data) {
     }
   } else {
     showFeedback(false);
+    try { Audio.playWrong(); } catch(e) {}
     showCombatText('💥 MISS', '#ef233c');
+  }
+
+  // Victory fanfare when boss is defeated
+  if (data.bossHp === 0) {
+    setTimeout(() => { try { Audio.playVictory(); } catch(e) {} }, 300);
   }
 
   // Handle milestone loot drops

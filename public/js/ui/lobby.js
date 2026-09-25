@@ -1032,23 +1032,25 @@ function _buildAdminDashboard(container, gameState) {
   };
   wrap.appendChild(launchBtn);
 
-  // 5-question dev test
+  // ── 5-question dev test ───────────────────────────────────────────────────
   const devBtn = document.createElement('button');
   devBtn.textContent = '🧪 Dev Run (5 câu test)';
-  devBtn.style.cssText = 'font-size:10px;padding:4px 12px;border:1.5px solid #ff4444;background:rgba(100,0,0,0.6);color:#ff4444;border-radius:4px;cursor:pointer;font-weight:700;font-family:"Be Vietnam Pro",sans-serif;width:100%;';
+  devBtn.style.cssText = 'font-size:10px;padding:4px 12px;border:1.5px solid #ff4444;background:rgba(100,0,0,0.6);color:#ff4444;border-radius:4px;cursor:pointer;font-weight:700;font-family:"Be Vietnam Pro",sans-serif;width:100%;margin-top:4px;';
   const devStatus = document.createElement('div');
   devStatus.style.cssText = 'font-size:9px;color:#888;text-align:center;font-family:"Be Vietnam Pro",sans-serif;';
-  devBtn.onclick = async () => {
-    devStatus.textContent = 'Đang tải…';
-    try {
-      const r = await fetch(`/api/dev-questions?code=${gameState.code}`, { method:'POST' });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || 'failed');
-      devStatus.textContent = `✓ ${d.questionCount} câu hỏi dev đã tải!`;
-      devStatus.style.color = '#06d6a0';
-      if (window.gameState) { window.gameState.bossIndex=0; window.gameState.bossElement=null; }
-    } catch(e) { devStatus.textContent='Lỗi: '+e.message; devStatus.style.color='#ef233c'; }
+
+  devBtn.onclick = () => {
+    // Emit start_game with difficulty='dev' — server will sample 5 Qs and set bossHp=5
+    socket.emit('set_mode', { code: gameState.code, mode: 'pve' });
+    socket.emit('start_game', {
+      code:       gameState.code,
+      element:    adminBoss,   // use currently selected boss element
+      difficulty: 'dev',       // special: 5 questions, bossHp=5
+    });
+    devStatus.textContent = `⚡ Dev launch: ${adminBoss} / 5 câu`;
+    devStatus.style.color = '#ffcc00';
   };
+
   wrap.appendChild(devBtn);
   wrap.appendChild(devStatus);
 

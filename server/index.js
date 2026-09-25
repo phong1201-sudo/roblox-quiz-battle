@@ -474,9 +474,10 @@ io.on('connection', (socket) => {
 
       // ── Load questions from bank if element + difficulty provided ──────────
       const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
+      const VALID_DIFFS   = ['easy', 'medium', 'hard', 'dev'];
       const bossIdx = BOSS_ELEMENTS.indexOf(element);
 
-      if (element && difficulty && questionBank.getBankSize(element) > 0) {
+      if (element && VALID_DIFFS.includes(difficulty) && questionBank.getBankSize(element) > 0) {
         // Sample from bank — already shuffled with randomized options
         const bankQuestions = questionBank.sampleQuestions(element, difficulty);
         if (bankQuestions.length > 0) {
@@ -485,6 +486,13 @@ io.on('connection', (socket) => {
           room.bossIndex   = bossIdx >= 0 ? bossIdx : 0;
           room.difficulty  = difficulty;
         }
+      } else if (difficulty === 'dev') {
+        // Dev mode but bank is empty — use first 5 demo questions
+        const demo = questionParser.getDemoQuestions().slice(0, 5);
+        room.questions   = demo;
+        room.bossElement = element || null;
+        room.bossIndex   = bossIdx >= 0 ? bossIdx : 0;
+        room.difficulty  = 'dev';
       } else if (element && bossIdx >= 0) {
         // Element chosen but bank empty — use existing uploaded questions or demo
         room.bossElement = element;
@@ -497,7 +505,7 @@ io.on('connection', (socket) => {
         room.questions = questionParser.getDemoQuestions();
       }
 
-      // Initialise HP from question count
+      // Initialise HP from question count (dev → 5 Qs → bossHp=5, totalHp=5)
       roomManager.initHp(code);
 
       io.to(code).emit('game_started');

@@ -4,6 +4,7 @@ import * as lobby  from './ui/lobby.js';
 import * as hud    from './ui/hud.js';
 import * as results from './ui/results.js';
 import * as scene  from './game/scene.js';
+import * as Audio  from './audio.js';
 
 // ─── Track whether Three.js scene has been initialised yet ───────────────────
 let sceneReady = false;
@@ -36,6 +37,10 @@ function makeGameState(base) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // ── Audio: mount toggle button + register first-interaction bootstrap ──
+    Audio.mountAudioToggle();
+    Audio.bootstrapOnInteraction();
 
     // ── Always activate menu screen first — auth modal overlays it ───────────
     showScreen('menu');

@@ -12,6 +12,7 @@ const DIFFICULTY_CONFIG = {
   easy:   { count: 20, bossHpMultiplier: 1 },
   medium: { count: 30, bossHpMultiplier: 1 },
   hard:   { count: 50, bossHpMultiplier: 1 },
+  dev:    { count:  5, bossHpMultiplier: 1 },  // God Father quick test: 5 questions
 };
 
 // ── Internal: load raw bank from disk ────────────────────────────────────────
