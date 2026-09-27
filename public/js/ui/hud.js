@@ -85,8 +85,15 @@ function initHpBars(gameState) {
 
   const hpValPlayer = document.getElementById('hp-val-player');
   const hpValEnemy  = document.getElementById('hp-val-enemy');
-  if (hpValPlayer) hpValPlayer.textContent = '100%';
-  if (hpValEnemy)  hpValEnemy.textContent  = '100%';
+  const total = gameState.totalHp || 10;
+  if (hpValPlayer) hpValPlayer.textContent = `${total}/${total}`;
+  if (hpValEnemy) {
+    if (gameState.mode === 'pve') {
+      hpValEnemy.textContent = ''; // CRITICAL: Never display numbers/percentages for Boss HP bar
+    } else {
+      hpValEnemy.textContent = `${total}/${total}`;
+    }
+  }
 }
 
 export function setBossVisualHpPercent(pct) {
@@ -99,7 +106,11 @@ export function setBossVisualHpPercent(pct) {
     hpFillEnemy.style.backgroundColor = visualBossHpPercent > 60 ? '#06d6a0' : visualBossHpPercent > 30 ? '#ffbe0b' : '#ef233c';
   }
   if (hpValEnemy) {
-    hpValEnemy.textContent = `${Math.round(visualBossHpPercent)}%`;
+    if (window.gameState?.mode === 'pve' || !window.gameState?.mode) {
+      hpValEnemy.textContent = ''; // Pure clean colored progress bar
+    } else {
+      hpValEnemy.textContent = `${Math.round(visualBossHpPercent)}%`;
+    }
   }
 }
 
@@ -127,6 +138,8 @@ export function updateHpBars(hp, bossHp) {
       const pct = Math.max(0, Math.min(100, (bossHp / totalHp) * 100));
       setBossVisualHpPercent(pct);
     }
+    const hpValEnemy = document.getElementById('hp-val-enemy');
+    if (hpValEnemy) hpValEnemy.textContent = '';
   } else {
     // PvP 1v1
     const hpFillEnemy = document.getElementById('hp-fill-enemy');

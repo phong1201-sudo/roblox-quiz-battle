@@ -758,7 +758,28 @@ export function getRotation()      { return { y: playerGroup ? playerGroup.rotat
 export function getActiveElement() { return activeElement; }
 export function applySkin()        {}
 export function switchToCutout()   {}
-export function playDodge()        {}
+export function playDodge(onDone) {
+  if (!playerGroup) { if (onDone) onDone(); return; }
+  clearTimeout(window._combatSafetyTimer);
+  window._combatSafetyTimer = setTimeout(() => {
+    if (anim.active && anim.type === 'dodge') {
+      console.warn('[player] Combat safety timeout — releasing dodge');
+      _resetAll(); anim.active = false;
+      if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
+    }
+  }, 1200);
+
+  anim = {
+    active: true,
+    type: 'dodge',
+    t: 0,
+    duration: 0.45,
+    onHit: null,
+    onDone: onDone || null,
+    hitFired: false,
+    _hitEmitted: false,
+  };
+}
 export function playPunch()        { playAttack(null,null); }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -801,8 +822,8 @@ export function playRushMiss(onDone) {
            onHit:null, onDone:onDone||null, hitFired:false, _hitEmitted:false };
 }
 
-export function playHurt() {
-  if (!playerGroup) return;
+export function playHurt(onDone) {
+  if (!playerGroup) { if (onDone) onDone(); return; }
   if (is3DModelMode) {
     if (characterModel) {
       characterModel.traverse((c) => {
@@ -819,11 +840,19 @@ export function playHurt() {
       if (m?.material) m.material.color.setHex(0xFF3333);
     });
   }
+
+  // Stagger backward
+  playerGroup.position.x = HOME_X - 0.7;
+
   let shakes = 0;
   const iv = setInterval(() => {
-    if (playerGroup) playerGroup.position.x = HOME_X + (Math.random()-0.5)*0.4;
-    if (++shakes >= 6) { clearInterval(iv); if (playerGroup) playerGroup.position.x = HOME_X; }
-  }, 40);
+    if (playerGroup) playerGroup.position.x = (HOME_X - 0.7) + (Math.random()-0.5)*0.3;
+    if (++shakes >= 6) {
+      clearInterval(iv);
+      if (playerGroup) playerGroup.position.x = HOME_X;
+    }
+  }, 45);
+
   setTimeout(() => {
     if (is3DModelMode) {
       if (characterModel) {
@@ -842,7 +871,9 @@ export function playHurt() {
       if (hatMat)   hatMat.color.setHex(getEquipColor('hat'));
       if (shirtMat) shirtMat.color.setHex(getEquipColor('shirt'));
     }
-  }, 300);
+    if (playerGroup) playerGroup.position.x = HOME_X;
+    if (onDone) onDone();
+  }, 350);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -890,6 +921,7 @@ export function updatePlayer(deltaTime, camera) {
       case 'frost':   _animFrost(prog, deltaTime);   break;
       case 'fire':    _animFire(prog, deltaTime);    break;
       case 'miss':    _animMiss(prog, deltaTime);    break;
+      case 'dodge':   _animDodge(prog, deltaTime);   break;
       default:        _animNormal(prog, deltaTime);  break;
     }
 
@@ -1349,6 +1381,23 @@ function _animMiss(prog, dt) {
     playerGroup.rotation.y=FACE_Y;
     if (rightShoulderPivot) { rightShoulderPivot.rotation.x=THREE.MathUtils.lerp(Math.PI/3,0,t); rightShoulderPivot.rotation.z=THREE.MathUtils.lerp(0.2,0,t); }
     _runLimbs(dt,12);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ⑥ DODGE — Evasive Leap Back
+// ═════════════════════════════════════════════════════════════════════════════
+function _animDodge(prog, dt) {
+  const LEAP_BACK = -1.6;
+  const LEAP_UP   =  1.5;
+  const t = Math.sin(prog * Math.PI);
+  playerGroup.position.x = HOME_X + LEAP_BACK * t;
+  playerGroup.position.y = HOME_Y + LEAP_UP * t;
+  playerGroup.rotation.z = -0.35 * Math.sin(prog * Math.PI * 2);
+  if (is3DModelMode || is2DMode) {
+    playerGroup.rotation.y = 0;
+  } else {
+    playerGroup.rotation.y = FACE_Y;
   }
 }
 

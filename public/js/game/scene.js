@@ -175,20 +175,7 @@ function processNextEvent() {
   if (pendingEvents.length === 0) { combatBusy = false; return; }
   combatBusy = true;
   const ev = pendingEvents.shift();
-  if      (ev.type === 'attack') runAttackSequence(ev);
-  else if (ev.type === 'dodge')  runDodgeSequence(ev);
-  else { combatBusy = false; processNextEvent(); }
-}
-
-function runAttackSequence(ev) {
-  Combat.runAttack(ev, () => {
-    combatBusy = false;
-    processNextEvent();
-  });
-}
-
-function runDodgeSequence(ev) {
-  Combat.runDodge(ev, () => {
+  Combat.executeCombatTurn(ev, () => {
     combatBusy = false;
     processNextEvent();
   });

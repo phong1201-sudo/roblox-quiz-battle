@@ -1,6 +1,8 @@
 // THREE is available as a global from the CDN script tag
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import * as Effects from './effects.js';
+import * as Audio from '../audio.js';
 
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -649,6 +651,125 @@ export function updateBoss(deltaTime) {
       if (prog<0.5) { baseY=BOSS_HOME.y+Math.sin(prog/0.5*Math.PI)*3.0; posX=BOSS_HOME.x+prog/0.5*3.0*anim.dodgeDir; }
       else { posX=BOSS_HOME.x+(1-(prog-0.5)/0.5)*3.0*anim.dodgeDir; }
       if (prog>=1.0) anim.active=false;
+    } else if (anim.type==='attack') {
+      const el = anim.attackElement || 'thunder';
+      if (el === 'frost') {
+        // ❄️ Frost Boss: Leaps forward across arena and slams down towards player
+        if (prog < 0.25) {
+          // Windup: crouch back
+          const t = prog / 0.25;
+          posX = BOSS_HOME.x + 0.5 * t;
+          baseY = BOSS_HOME.y - 0.2 * t;
+          bossGroup.rotation.z = 0.12 * t;
+        } else if (prog < 0.55) {
+          // Leap across arena to x = -0.8
+          const t = (prog - 0.25) / 0.30;
+          posX = THREE.MathUtils.lerp(BOSS_HOME.x + 0.5, -0.8, t);
+          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 3.4;
+          bossGroup.rotation.z = -0.25 * Math.sin(t * Math.PI);
+        } else if (prog < 0.70) {
+          // Impact / slam pose on ground
+          posX = -0.8;
+          baseY = BOSS_HOME.y;
+          bossGroup.rotation.z = 0;
+          if (!anim.peakFired) {
+            anim.peakFired = true;
+            Effects.spawnBossFrostSlam(new THREE.Vector3(-0.8, 0.2, 0));
+            try { Audio.playSlash?.(); } catch (e) {}
+            if (anim.onPeak) anim.onPeak();
+          }
+        } else {
+          // Leap back to BOSS_HOME
+          const t = (prog - 0.70) / 0.30;
+          posX = THREE.MathUtils.lerp(-0.8, BOSS_HOME.x, t);
+          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 1.8;
+          bossGroup.rotation.z = 0.15 * Math.sin(t * Math.PI);
+        }
+        if (prog >= 1.0) {
+          anim.active = false;
+          bossGroup.rotation.z = 0;
+          if (anim.onComplete) anim.onComplete();
+        }
+      } else if (el === 'fire') {
+        // 🔥 Fire Boss: Slams hammer hard into ground; wave of erupting fire geysers shoots across floor
+        if (prog < 0.30) {
+          // Windup raise hammer
+          const t = prog / 0.30;
+          baseY = BOSS_HOME.y + 0.5 * t;
+          bossGroup.rotation.z = -0.18 * t;
+        } else if (prog < 0.45) {
+          // Slam down
+          const t = (prog - 0.30) / 0.15;
+          baseY = BOSS_HOME.y + 0.5 * (1 - t) - 0.2 * Math.sin(t * Math.PI);
+          bossGroup.rotation.z = 0.22 * t;
+          if (!anim.vfxFired && prog >= 0.36) {
+            anim.vfxFired = true;
+            try { Audio.playFire?.(); } catch(e) {}
+            Effects.triggerShake(0.3, 0.3);
+            Effects.spawnBossFireWave(new THREE.Vector3(BOSS_HOME.x, 0, 0), new THREE.Vector3(-2.8, 0, 0), () => {
+              if (!anim.peakFired) {
+                anim.peakFired = true;
+                if (anim.onPeak) anim.onPeak();
+              }
+            });
+          }
+        } else {
+          // Recovery
+          const t = (prog - 0.45) / 0.55;
+          baseY = BOSS_HOME.y;
+          bossGroup.rotation.z = THREE.MathUtils.lerp(0.22, 0, t);
+        }
+        if (prog >= 0.70 && !anim.peakFired) {
+          anim.peakFired = true;
+          if (anim.onPeak) anim.onPeak();
+        }
+        if (prog >= 1.0) {
+          anim.active = false;
+          bossGroup.rotation.z = 0;
+          if (anim.onComplete) anim.onComplete();
+        }
+      } else {
+        // ⚡ Thunder Boss: Raises staff and shoots directed beam/stream of crackling lightning
+        if (prog < 0.30) {
+          // Windup raise staff
+          const t = prog / 0.30;
+          baseY = BOSS_HOME.y + 0.4 * t;
+          bossGroup.rotation.z = -0.12 * t;
+        } else if (prog < 0.65) {
+          // Firing beam
+          baseY = BOSS_HOME.y + 0.4;
+          bossGroup.rotation.z = -0.12;
+          if (!anim.vfxFired) {
+            anim.vfxFired = true;
+            try { Audio.playThunder?.(); } catch(e) {}
+            Effects.spawnBossLightningBeam(
+              new THREE.Vector3(BOSS_HOME.x - 0.5, 4.0, 0),
+              new THREE.Vector3(-3.0, 1.5, 0),
+              350,
+              () => {
+                if (!anim.peakFired) {
+                  anim.peakFired = true;
+                  if (anim.onPeak) anim.onPeak();
+                }
+              }
+            );
+          }
+        } else {
+          // Lower staff
+          const t = (prog - 0.65) / 0.35;
+          baseY = BOSS_HOME.y + 0.4 * (1 - t);
+          bossGroup.rotation.z = -0.12 * (1 - t);
+        }
+        if (prog >= 0.65 && !anim.peakFired) {
+          anim.peakFired = true;
+          if (anim.onPeak) anim.onPeak();
+        }
+        if (prog >= 1.0) {
+          anim.active = false;
+          bossGroup.rotation.z = 0;
+          if (anim.onComplete) anim.onComplete();
+        }
+      }
     }
   }
   bossGroup.position.set(posX, baseY, BOSS_HOME.z);
@@ -698,6 +819,24 @@ export function playBossDodge() {
   anim.active=true; anim.type='dodge'; anim.t=0; anim.duration=0.6; anim.dodgeDir=1;
 }
 
+export function playBossAttack(element, onPeak, onComplete) {
+  if (!bossGroup) {
+    if (onPeak) onPeak();
+    if (onComplete) onComplete();
+    return;
+  }
+  const el = element || currentBossData?.element || 'thunder';
+  anim.active = true;
+  anim.type = 'attack';
+  anim.attackElement = el;
+  anim.t = 0;
+  anim.duration = (el === 'frost') ? 1.05 : (el === 'fire') ? 0.95 : 0.88;
+  anim.onPeak = onPeak || null;
+  anim.onComplete = onComplete || null;
+  anim.peakFired = false;
+  anim.vfxFired = false;
+}
+
 let currentHpPercent = 100;
 
 export function setBossHpPercent(pct) {
@@ -717,8 +856,9 @@ export function setBossHpPercent(pct) {
   hpCtx.fillStyle = fillColor;
   hpCtx.fillRect(2, 2, (W - 4) * ratio, H - 4);
   hpCtx.fillStyle = '#fff';
-  hpCtx.font = 'bold 18px monospace';
-  hpCtx.fillText(`${currentBossData?.name || 'BOSS'}  ${Math.round(currentHpPercent)}%`, 8, H - 9);
+  hpCtx.font = 'bold 20px monospace';
+  // Pure clean name, no percentages or numbers
+  hpCtx.fillText(`${currentBossData?.name || 'BOSS'}`, 12, H - 14);
   hpBarTexture.needsUpdate = true;
 
   if (currentHpPercent <= 0 && !isDefeated) {

@@ -652,9 +652,9 @@ const resolveQuestion = (code) => {
   // ③ HP snapshot
   io.to(code).emit('hp_update', { hp, bossHp });
 
-  // ④ Advance after review delay
   setTimeout(() => {
-    const nextQ = roomManager.nextQuestion(code);
+    const allDead = room.mode === 'pve' && Array.from(room.players.values()).every(p => (p.hp ?? 0) <= 0);
+    const nextQ = allDead ? null : roomManager.nextQuestion(code);
     if (nextQ) {
       sendQuestion(code);
     } else {

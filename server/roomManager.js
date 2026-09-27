@@ -266,8 +266,8 @@ class RoomManager {
     if (room.mode === 'pve') {
       // ── PvE ───────────────────────────────────────────────────────────────
       for (const p of room.players.values()) {
+        const hasFullSet = checkHasFullSet(p);
         if (isCorrect(p.answer)) {
-          const hasFullSet = checkHasFullSet(p);
           // Exactly 1 question step per correct answer, so boss reaches 0 HP precisely on the final question
           room.bossHp = Math.max(0, room.bossHp - 1);
 
@@ -280,6 +280,7 @@ class RoomManager {
 
           combatEvents.push({
             type: 'attack',
+            isCorrect: true,
             attackerId: p.id,
             victimId: 'boss',
             damage: 1,
@@ -288,11 +289,25 @@ class RoomManager {
             element: room.bossElement || null,
             totalQuestions: room.totalHp,
             currentBossHp: room.bossHp,
+            remainingPlayerHp: p.hp,
           });
         } else {
+          // Player failed to answer correctly: takes hit from boss
+          // Normal set: takes -2 HP. Full elemental set: takes -1 HP.
+          const playerDmg = hasFullSet ? 1 : 2;
+          p.hp = Math.max(0, p.hp - playerDmg);
+
           combatEvents.push({
             type: 'dodge',
-            targetId: 'boss',
+            isCorrect: false,
+            targetId: p.id,
+            victimId: p.id,
+            attackerId: 'boss',
+            playerDamage: playerDmg,
+            hasFullSet,
+            equippedSet: p.equippedSet || null,
+            element: room.bossElement || null,
+            remainingPlayerHp: p.hp,
             totalQuestions: room.totalHp,
             currentBossHp: room.bossHp,
           });
@@ -361,6 +376,8 @@ class RoomManager {
   getPveVerdict(code) {
     const room = this.rooms.get(code);
     if (!room) return 'DEFEAT';
+    const allDead = Array.from(room.players.values()).every(p => (p.hp ?? 0) <= 0);
+    if (allDead) return 'DEFEAT';
     if (room.bossHp === 0) return 'PERFECT';
     if (room.bossHp <= Math.floor(room.totalHp * 0.5)) return 'VICTORY';
     return 'DEFEAT';

@@ -361,6 +361,122 @@ export function freezeBossInIce(bossPosition, duration = 400, onShatter) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 👾 BOSS ATTACK VFX
+// ─────────────────────────────────────────────────────────────────────────────
+export function spawnBossFrostSlam(slamPos) {
+  if (!sceneRef) return;
+  triggerShake(0.4, 0.35);
+  screenFlash('rgba(180,230,255,0.4)', 0.4);
+  const cols = [0x88ddff, 0xcceeff, 0xffffff];
+  for (let i = 0; i < 20; i++) {
+    const angle = (i / 20) * Math.PI * 2;
+    const sp = 4 + Math.random() * 8;
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(0.25, 0.25, 0.25),
+      new THREE.MeshBasicMaterial({ color: cols[i % cols.length], transparent: true, opacity: 0.9 })
+    );
+    m.position.copy(slamPos);
+    sceneRef.add(m);
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(Math.cos(angle) * sp, 2.5 + Math.random() * 5, Math.sin(angle) * sp * 0.5),
+      life: 0.55,
+      maxLife: 0.55,
+    });
+  }
+}
+
+export function spawnBossFireWave(startPos, targetPos, onImpact) {
+  if (!sceneRef) { if (onImpact) onImpact(); return; }
+  const steps = 7;
+  const dx = (targetPos.x - startPos.x) / steps;
+  for (let i = 0; i <= steps; i++) {
+    const delay = i * 60;
+    setTimeout(() => {
+      if (!sceneRef) return;
+      const x = startPos.x + dx * i;
+      const cols = [0xff2200, 0xff6600, 0xffcc00];
+      for (let k = 0; k < 6; k++) {
+        const h = 0.6 + Math.random() * 1.6;
+        const m = new THREE.Mesh(
+          new THREE.BoxGeometry(0.35, h, 0.35),
+          new THREE.MeshBasicMaterial({ color: cols[k % cols.length], transparent: true, opacity: 0.9 })
+        );
+        m.position.set(x + (Math.random() - 0.5) * 0.4, h / 2, (Math.random() - 0.5) * 0.5);
+        sceneRef.add(m);
+        particles.push({
+          mesh: m,
+          life: 0.38,
+          maxLife: 0.38,
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 1.5, 3 + Math.random() * 4, (Math.random() - 0.5) * 1.5),
+        });
+      }
+      if (i === steps && onImpact) {
+        onImpact();
+      }
+    }, delay);
+  }
+}
+
+export function spawnBossLightningBeam(startPos, targetPos, duration = 350, onImpact) {
+  if (!sceneRef) { if (onImpact) onImpact(); return; }
+  const steps = 12;
+
+  const buildBeamPoints = () => {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = startPos.x + (targetPos.x - startPos.x) * t;
+      const y = startPos.y + (targetPos.y - startPos.y) * t + ((i > 0 && i < steps) ? (Math.random() - 0.5) * 0.9 : 0);
+      const z = startPos.z + (targetPos.z - startPos.z) * t + ((i > 0 && i < steps) ? (Math.random() - 0.5) * 0.6 : 0);
+      pts.push(x, y, z);
+    }
+    return new Float32Array(pts);
+  };
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(buildBeamPoints(), 3));
+  const mat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 3 });
+  const line = new THREE.Line(geo, mat);
+  sceneRef.add(line);
+
+  let elapsed = 0;
+  let impactFired = false;
+  const interval = setInterval(() => {
+    elapsed += 30;
+    if (elapsed >= 90 && !impactFired) {
+      impactFired = true;
+      if (onImpact) onImpact();
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(buildBeamPoints(), 3));
+    geo.attributes.position.needsUpdate = true;
+
+    // Sparks at target
+    if (Math.random() < 0.6) {
+      const spk = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.18, 0.18),
+        new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x00ffff : 0xffff00 })
+      );
+      spk.position.copy(targetPos);
+      sceneRef.add(spk);
+      particles.push({
+        mesh: spk,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 6, (Math.random() - 0.2) * 5, (Math.random() - 0.5) * 3),
+        life: 0.3,
+        maxLife: 0.3,
+      });
+    }
+
+    if (elapsed >= duration) {
+      clearInterval(interval);
+      if (sceneRef) sceneRef.remove(line);
+      geo.dispose();
+      mat.dispose();
+    }
+  }, 30);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Legacy
 // ─────────────────────────────────────────────────────────────────────────────
 export function punishWrong() {
