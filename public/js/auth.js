@@ -243,13 +243,29 @@ function _onLoginSuccess(user) {
 }
 
 function _renderUserBadge(user) {
+  // Remove old badge AND old standalone bar if present
   document.getElementById('user-badge')?.remove();
+
+  // Ensure the shared top-user-bar container exists
+  let bar = document.querySelector('.top-user-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.className = 'top-user-bar';
+    bar.style.cssText = `
+      position: fixed;
+      top: 10px; right: 12px;
+      z-index: 9100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `;
+    document.body.appendChild(bar);
+  }
 
   const badge = document.createElement('div');
   badge.id = 'user-badge';
   const isAdmin = user.role === 'admin';
   badge.style.cssText = `
-    position:fixed;top:10px;right:12px;z-index:9000;
     display:flex;align-items:center;gap:8px;
     background:rgba(10,8,28,0.92);
     border:1.5px solid ${isAdmin ? '#ff4444' : '#ffcc00'};
@@ -264,7 +280,7 @@ function _renderUserBadge(user) {
     <span style="color:#666;font-size:9px;">${isAdmin ? 'ADMIN' : `${(user.unlockedSets||[]).length}/3 bộ`}</span>
     <button id="btn-logout" style="margin-left:4px;font-size:9px;padding:2px 7px;border:1px solid #444;background:rgba(255,255,255,0.06);color:#aaa;border-radius:10px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;">Đăng xuất</button>
   `;
-  document.body.appendChild(badge);
+  bar.appendChild(badge);
 
   badge.querySelector('#btn-logout').onclick = () => {
     if (!confirm('Đăng xuất?')) return;

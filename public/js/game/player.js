@@ -172,6 +172,185 @@ function _buildEquippedCharacter() {
 
   // ── Elemental aura ────────────────────────────────────────────────────────
   if (activeElement) _buildElementalAura(activeElement);
+
+  // Fire Set: attach 2D painted sprite billboard
+  if (activeElement === 'fire') _buildFireSprite();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIRE SET 2D SPRITE — Canvas-painted kid character + fireblade billboard
+// ─────────────────────────────────────────────────────────────────────────────
+let _fireSprite     = null;   // THREE.Mesh (PlaneGeometry + CanvasTexture)
+let _fireSpriteCtx  = null;   // canvas 2d ctx
+let _fireSpriteTime = 0;      // for breathing animation
+let _fireSlashArc   = null;   // arc trail mesh visible during slash
+let _fireSlashT     = 0;      // slash arc progress [0..1]
+
+/**
+ * Draw the full kid-warrior sprite to the canvas.
+ * @param {number} breathY  small vertical offset for idle breathing
+ * @param {number} slashAng right arm swing angle in radians (0 = rest, -1.2 = full swing)
+ */
+function _drawFireSprite(breathY = 0, slashAng = 0) {
+  const cx = _fireSpriteCtx;
+  if (!cx) return;
+  const W = 256, H = 256;
+  cx.clearRect(0, 0, W, H);
+
+  const cx2 = W / 2;
+  const bY  = breathY;   // breathing offset applied to torso-up
+
+  // ── Hair / spiky crown (orange-red) ──────────────────────────────────────
+  cx.fillStyle = '#e63000';
+  // Spikes
+  const spikes = [[-12,-8],[0,-14],[12,-8],[-20,2],[20,2]];
+  for (const [dx,dy] of spikes) {
+    cx.beginPath();
+    cx.moveTo(cx2+dx,   60 + bY + dy - 12);
+    cx.lineTo(cx2+dx-8, 60 + bY + dy + 6);
+    cx.lineTo(cx2+dx+8, 60 + bY + dy + 6);
+    cx.closePath(); cx.fill();
+  }
+
+  // ── Head (skin) ───────────────────────────────────────────────────────────
+  cx.fillStyle = '#ffcba4';
+  cx.fillRect(cx2-20, 60 + bY, 40, 40);
+
+  // ── Eyes ─────────────────────────────────────────────────────────────────
+  cx.fillStyle = '#222';
+  cx.fillRect(cx2-14, 70 + bY, 10, 10);
+  cx.fillRect(cx2+4,  70 + bY, 10, 10);
+  // Eye shine
+  cx.fillStyle = '#fff';
+  cx.fillRect(cx2-12, 71 + bY, 3, 3);
+  cx.fillRect(cx2+6,  71 + bY, 3, 3);
+
+  // ── Mouth (determined grin) ────────────────────────────────────────────────
+  cx.strokeStyle = '#a05030'; cx.lineWidth = 2;
+  cx.beginPath();
+  cx.moveTo(cx2-8, 90 + bY); cx.quadraticCurveTo(cx2, 96 + bY, cx2+8, 90 + bY);
+  cx.stroke();
+
+  // ── Body / shirt (dark red) ────────────────────────────────────────────────
+  cx.fillStyle = '#cc2200';
+  cx.fillRect(cx2-22, 100 + bY, 44, 45);
+  // Belt buckle
+  cx.fillStyle = '#ffaa00';
+  cx.fillRect(cx2-6, 140 + bY, 12, 8);
+
+  // ── Pants (dark brown) ────────────────────────────────────────────────────
+  cx.fillStyle = '#441100';
+  cx.fillRect(cx2-20, 145 + bY, 18, 50);
+  cx.fillRect(cx2+2,  145 + bY, 18, 50);
+
+  // ── Shoes (orange) ────────────────────────────────────────────────────────
+  cx.fillStyle = '#ff5500';
+  cx.fillRect(cx2-22, 193 + bY, 22, 12);
+  cx.fillRect(cx2,    193 + bY, 22, 12);
+
+  // ── Left arm (skin) ───────────────────────────────────────────────────────
+  cx.fillStyle = '#ffcba4';
+  cx.fillRect(cx2-38, 100 + bY, 16, 40);
+
+  // ── Right arm + FIREBLADE (animated by slashAng) ─────────────────────────
+  cx.save();
+  // Pivot = right shoulder
+  const shoulderX = cx2 + 22;
+  const shoulderY = 103 + bY;
+  cx.translate(shoulderX, shoulderY);
+  cx.rotate(slashAng);
+
+  // Arm
+  cx.fillStyle = '#ffcba4';
+  cx.fillRect(-8, 0, 16, 42);
+
+  // Fireblade: glowing orange-red blade
+  const bladeGrad = cx.createLinearGradient(0, 42, 0, 42 + 90);
+  bladeGrad.addColorStop(0,   '#ff8800');
+  bladeGrad.addColorStop(0.4, '#ff3300');
+  bladeGrad.addColorStop(0.8, '#ffee00');
+  bladeGrad.addColorStop(1,   'rgba(255,100,0,0)');
+  cx.fillStyle = bladeGrad;
+  // Blade shape: tapered rectangle
+  cx.beginPath();
+  cx.moveTo(-6, 42);
+  cx.lineTo(6, 42);
+  cx.lineTo(3, 42 + 90);
+  cx.lineTo(-3, 42 + 90);
+  cx.closePath(); cx.fill();
+
+  // Blade edge glow
+  cx.strokeStyle = '#ffcc00'; cx.lineWidth = 1.5;
+  cx.stroke();
+
+  // Crossguard
+  cx.fillStyle = '#aa4400';
+  cx.fillRect(-14, 38, 28, 8);
+
+  // Grip wrapping
+  cx.fillStyle = '#660000';
+  cx.fillRect(-4, 22, 8, 20);
+
+  cx.restore();
+
+  // ── Flame arc trail (shown during slash) ──────────────────────────────────
+  if (slashAng < -0.3) {
+    const alpha = Math.min(1, (-slashAng - 0.3) * 2);
+    cx.save();
+    cx.globalAlpha = alpha * 0.75;
+    const arcGrad = cx.createRadialGradient(shoulderX, shoulderY, 20, shoulderX, shoulderY, 90);
+    arcGrad.addColorStop(0,   'rgba(255,200,0,0.9)');
+    arcGrad.addColorStop(0.5, 'rgba(255,80,0,0.5)');
+    arcGrad.addColorStop(1,   'rgba(255,0,0,0)');
+    cx.fillStyle = arcGrad;
+    cx.beginPath();
+    cx.moveTo(shoulderX, shoulderY);
+    cx.arc(shoulderX, shoulderY, 90, -Math.PI * 0.9, slashAng + 0.1);
+    cx.closePath();
+    cx.fill();
+    cx.restore();
+  }
+}
+
+function _buildFireSprite() {
+  // Remove old sprite if any
+  if (_fireSprite) { playerGroup.remove(_fireSprite); _fireSprite = null; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  _fireSpriteCtx = canvas.getContext('2d');
+  _drawFireSprite();
+
+  const tex  = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+
+  const mat  = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, alphaTest: 0.05,
+    side: THREE.DoubleSide, depthWrite: false,
+  });
+  const geo  = new THREE.PlaneGeometry(3.2, 3.2);
+  _fireSprite = new THREE.Mesh(geo, mat);
+  // Position sprite to roughly cover the 3D model
+  _fireSprite.position.set(0, 0.5, 0.35);  // slightly in front of 3D model
+  playerGroup.add(_fireSprite);
+  _fireSpriteTime = 0;
+}
+
+/** Called every frame from updatePlayer when Fire set is active */
+function _updateFireSprite(deltaTime, slashAng = 0) {
+  if (!_fireSprite || !_fireSpriteCtx) return;
+  _fireSpriteTime += deltaTime;
+
+  const breathY = Math.sin(_fireSpriteTime * 2.0) * 2.5;   // ±2.5px breathing
+  _drawFireSprite(breathY, slashAng);
+
+  // Update the canvas texture
+  _fireSprite.material.map.needsUpdate = true;
+
+  // Billboard: always face camera
+  if (_fireSprite.parent) {
+    _fireSprite.rotation.y = -playerGroup.rotation.y;
+  }
 }
 
 // ─── Sword builder ────────────────────────────────────────────────────────────
@@ -378,6 +557,15 @@ export function updatePlayer(deltaTime, camera) {
     // Gentle idle arm sway
     if (leftArm)            leftArm.rotation.x            =  Math.sin(Date.now()*0.0015)*0.06;
     if (rightShoulderPivot) rightShoulderPivot.rotation.x = -Math.sin(Date.now()*0.0015)*0.06;
+  }
+
+  // Fire Set 2D sprite: update breathing / slash angle every frame
+  if (activeElement === 'fire' && _fireSprite) {
+    // Mirror the shoulder pivot rotation into the 2D sprite's slash angle
+    const shoulderRot = rightShoulderPivot ? rightShoulderPivot.rotation.x : 0;
+    // Map shoulder.x rotation to 2D canvas angle: pivot forward = negative = slash swing
+    const slashAng2D = shoulderRot * 0.65;
+    _updateFireSprite(deltaTime, slashAng2D);
   }
 }
 
