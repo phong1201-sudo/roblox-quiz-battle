@@ -173,30 +173,24 @@ function _buildEquippedCharacter() {
   // ── Elemental aura ────────────────────────────────────────────────────────
   if (activeElement) _buildElementalAura(activeElement);
 
-  // Fire Set: attach 2D painted sprite billboard
-  if (activeElement === 'fire') _buildFireSprite();
+  // Elemental art: attach custom 2D body billboard if available
+  _attachCharacterBodySprite();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ELEMENTAL 2D SPRITE SYSTEM — Canvas-painted + admin-uploaded image billboard
-// Each element can have an admin-uploaded image at /assets/characters/{element}.png
-// White pixels are removed on load via canvas alpha masking.
-// Auto-slice: left 35% = weaponSprite (sword), right 65% = bodySprite (character).
-// Falls back to procedural canvas art if no image is available.
+// ELEMENTAL 2D ART SYSTEM (BODY & WEAPON SPRITES)
 // ─────────────────────────────────────────────────────────────────────────────
-let _fireSprite     = null;   // THREE.Mesh (PlaneGeometry + CanvasTexture)
-let _fireSpriteCtx  = null;   // canvas 2d ctx (null when using real image texture)
-let _fireSpriteTime = 0;      // for breathing animation
-let _fireSlashArc   = null;   // arc trail mesh visible during slash
-let _fireSlashT     = 0;      // slash arc progress [0..1]
+let _characterBodyMesh = null;
 
-// Per-element uploaded-image cache: element -> { bodyMesh, weaponMesh, loaded:bool }
-const _elemSprites = { thunder: null, fire: null, frost: null };
+// Texture cache: { [element]: { body: THREE.CanvasTexture|null, weapon: THREE.CanvasTexture|null } }
+const _artCache = {
+  thunder: { body: null, weapon: null },
+  fire:    { body: null, weapon: null },
+  frost:   { body: null, weapon: null },
+};
 
 /**
- * Remove white background from an image drawn to a canvas and return
- * a new canvas with those pixels made transparent.
- * threshold: 0-255, how close to white counts as background (default 220)
+ * Remove near-white background (#FFFFFF -> alpha transparent)
  */
 function _removeWhiteBg(srcCanvas, threshold = 220) {
   const out = document.createElement('canvas');
@@ -217,383 +211,147 @@ function _removeWhiteBg(srcCanvas, threshold = 220) {
 }
 
 /**
- * Load an element's character image, remove white bg, slice into
- * body (right 65%) and weapon (left 35%) canvases, and build Two
- * THREE.Mesh billboards that replace/augment the 3D model.
- * Returns a promise that resolves when done (or rejects if no image).
+ * Load body or weapon texture for an element with fallback paths
  */
-function _loadElementSprite(element) {
-  return new Promise((resolve, reject) => {
+function _loadArtTexture(element, type) {
+  return new Promise((resolve) => {
+    if (!element || !['thunder', 'fire', 'frost'].includes(element)) return resolve(null);
+    if (!['body', 'weapon'].includes(type)) return resolve(null);
+
+    const urls = [];
+    if (type === 'body') {
+      urls.push(`/assets/characters/${element}_body.png`);
+      urls.push(`/assets/characters/${element}.png`);
+      urls.push(`/assets/characters/${element}.jpg`);
+      if (element === 'fire') {
+        urls.push('/assets/characters/fireblade.png');
+        urls.push('/assets/characters/fireblade(cho%20game)_0.jpg');
+      }
+    } else {
+      urls.push(`/assets/characters/${element}_weapon.png`);
+      urls.push(`/assets/characters/${element}_weapon.jpg`);
+    }
+
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      // Draw full image to temp canvas
-      const full = document.createElement('canvas');
-      full.width  = img.naturalWidth  || img.width;
-      full.height = img.naturalHeight || img.height;
-      const fc = full.getContext('2d');
-      fc.drawImage(img, 0, 0);
 
-      // Remove white background
-      const cleaned = _removeWhiteBg(full, 230);
-      const W = cleaned.width, H = cleaned.height;
-
-      // Slice: weapon = left 35%, body = right 65%
-      const splitX = Math.floor(W * 0.35);
-
-      const weaponCanvas = document.createElement('canvas');
-      weaponCanvas.width  = splitX;
-      weaponCanvas.height = H;
-      weaponCanvas.getContext('2d').drawImage(cleaned, 0, 0, splitX, H, 0, 0, splitX, H);
-
-      const bodyCanvas = document.createElement('canvas');
-      bodyCanvas.width  = W - splitX;
-      bodyCanvas.height = H;
-      bodyCanvas.getContext('2d').drawImage(cleaned, splitX, 0, W - splitX, H, 0, 0, W - splitX, H);
-
-      resolve({ weaponCanvas, bodyCanvas, fullCanvas: cleaned });
-    };
-    img.onerror = () => reject(new Error(`No image for element: ${element}`));
-
-    // Try server-uploaded image first (admin uploaded), then fireblade alias (for fire)
-    const paths = [
-      `/assets/characters/${element}.png`,
-      `/assets/characters/${element}.jpg`,
-      element === 'fire' ? '/assets/characters/fireblade.png' : null,
-    ].filter(Boolean);
-
-    let tried = 0;
+    let idx = 0;
     const tryNext = () => {
-      if (tried >= paths.length) { reject(new Error('No image found')); return; }
-      img.src = paths[tried++];
+      if (idx >= urls.length) return resolve(null);
+      img.src = urls[idx++];
     };
-    img.onerror = tryNext;   // override to try next path
+
     img.onload = () => {
-      // Re-set proper onload before the draw step
-      const fullCanvas = document.createElement('canvas');
-      fullCanvas.width  = img.naturalWidth  || img.width;
-      fullCanvas.height = img.naturalHeight || img.height;
-      const fc = fullCanvas.getContext('2d');
-      fc.drawImage(img, 0, 0);
-      const cleaned = _removeWhiteBg(fullCanvas, 230);
-      const W = cleaned.width, H = cleaned.height;
-      const splitX = Math.floor(W * 0.35);
-      const weaponCanvas = document.createElement('canvas');
-      weaponCanvas.width  = splitX;
-      weaponCanvas.height = H;
-      weaponCanvas.getContext('2d').drawImage(cleaned, 0, 0, splitX, H, 0, 0, splitX, H);
-      const bodyCanvas = document.createElement('canvas');
-      bodyCanvas.width  = W - splitX;
-      bodyCanvas.height = H;
-      bodyCanvas.getContext('2d').drawImage(cleaned, splitX, 0, W - splitX, H, 0, 0, W - splitX, H);
-      resolve({ weaponCanvas, bodyCanvas, fullCanvas: cleaned });
+      try {
+        const cleanCanvas = _cleanWhiteBackground(img);
+        const tex = new THREE.CanvasTexture(cleanCanvas);
+        tex.needsUpdate = true;
+        if (!_artCache[element]) _artCache[element] = { body: null, weapon: null };
+        _artCache[element][type] = tex;
+        console.log(`[player] Loaded custom ${type} art for ${element}`);
+        resolve(tex);
+      } catch (err) {
+        console.warn(`[player] Error processing art for ${element} ${type}:`, err);
+        tryNext();
+      }
     };
+    img.onerror = tryNext;
     tryNext();
   });
 }
 
-/**
- * Build body + weapon sprite meshes from canvas slices and attach to playerGroup.
- * Stores refs in _elemSprites[element].
- */
-function _buildElementSpriteFromCanvases(element, weaponCanvas, bodyCanvas) {
-  // Remove old sprites if any
-  const old = _elemSprites[element];
-  if (old) {
-    if (old.bodyMesh   && playerGroup) playerGroup.remove(old.bodyMesh);
-    if (old.weaponMesh && playerGroup) playerGroup.remove(old.weaponMesh);
+function _cleanWhiteBackground(img) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width;
+  c.height = img.naturalHeight || img.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const imgData = ctx.getImageData(0, 0, c.width, c.height);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] > 220 && d[i + 1] > 220 && d[i + 2] > 220) {
+      d[i + 3] = 0;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return c;
+}
+
+function _attachCharacterBodySprite() {
+  if (_characterBodyMesh && playerGroup) {
+    playerGroup.remove(_characterBodyMesh);
+    _characterBodyMesh = null;
+  }
+  if (!activeElement) {
+    _set3DModelVisible(true);
+    return;
   }
 
-  const makeMesh = (canvas, w, h, posX, posZ) => {
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.needsUpdate = true;
+  const tex = _artCache[activeElement]?.body;
+  if (tex) {
+    const geo = new THREE.PlaneGeometry(3.0, 3.2);
     const mat = new THREE.MeshBasicMaterial({
-      map: tex, transparent: true, alphaTest: 0.05,
-      side: THREE.DoubleSide, depthWrite: false,
+      map: tex,
+      transparent: true,
+      alphaTest: 0.05,
+      side: THREE.DoubleSide,
+      depthWrite: false,
     });
-    const geo  = new THREE.PlaneGeometry(w, h);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(posX, 0.5, posZ);
-    return mesh;
-  };
-
-  // Body: right panel, slightly behind weapon
-  const bodyMesh   = makeMesh(bodyCanvas,   2.2, 3.2,  0.0,  0.3);
-  // Weapon: left panel, offset left (will be rotated during slash)
-  const weaponMesh = makeMesh(weaponCanvas, 0.9, 3.2, -0.8,  0.35);
-  // Weapon pivot group for slash rotation
-  const weaponPivot = new THREE.Group();
-  weaponPivot.position.set(-0.4, 0.0, 0.35);
-  weaponPivot.add(weaponMesh);
-  weaponMesh.position.set(-0.45, 0, 0);
-
-  if (playerGroup) {
-    playerGroup.add(bodyMesh);
-    playerGroup.add(weaponPivot);
+    _characterBodyMesh = new THREE.Mesh(geo, mat);
+    _characterBodyMesh.position.set(0, 0.45, 0.2);
+    playerGroup.add(_characterBodyMesh);
+    _set3DModelVisible(false);
+  } else {
+    _set3DModelVisible(true);
+    _loadArtTexture(activeElement, 'body').then(loadedTex => {
+      if (loadedTex && activeElement && playerGroup) {
+        _attachCharacterBodySprite();
+      }
+    });
   }
+}
 
-  _elemSprites[element] = { bodyMesh, weaponMesh, weaponPivot, loaded: true };
-  console.log(`[player] Elemental sprite loaded for: ${element}`);
+function _set3DModelVisible(vis) {
+  if (headMesh)  headMesh.visible  = vis;
+  if (torsoMesh) torsoMesh.visible = vis;
+  if (leftArm)   leftArm.visible   = vis;
+  if (leftLeg)   leftLeg.visible   = vis;
+  if (rightLeg)  rightLeg.visible  = vis;
+  if (rightShoulderPivot) {
+    const armBox = rightShoulderPivot.children.find(c => c !== swordGroup);
+    if (armBox) armBox.visible = vis;
+  }
 }
 
 // Listen for admin hot-reload events
 if (typeof window !== 'undefined') {
-  window.addEventListener('character-image-updated', (ev) => {
-    const { element, url } = ev.detail || {};
+  const onArtUpdated = (ev) => {
+    const { element, type } = ev.detail || {};
     if (!element) return;
-    // Force re-build if this element is currently active
-    _elemSprites[element] = null;   // invalidate cache
-    if (activeElement === element) {
-      _loadElementSprite(element)
-        .then(({ weaponCanvas, bodyCanvas }) => _buildElementSpriteFromCanvases(element, weaponCanvas, bodyCanvas))
-        .catch(() => {});
+    if (_artCache[element]) {
+      if (type) _artCache[element][type] = null;
+      else _artCache[element] = { body: null, weapon: null };
     }
-  });
-}
-
-/**
- * Draw the full kid-warrior sprite to the canvas.
- * @param {number} breathY  small vertical offset for idle breathing
- * @param {number} slashAng right arm swing angle in radians (0 = rest, -1.2 = full swing)
- */
-function _drawFireSprite(breathY = 0, slashAng = 0) {
-  const cx = _fireSpriteCtx;
-  if (!cx) return;
-  const W = 256, H = 256;
-  cx.clearRect(0, 0, W, H);
-
-  const cx2 = W / 2;
-  const bY  = breathY;   // breathing offset applied to torso-up
-
-  // ── Hair / spiky crown (orange-red) ──────────────────────────────────────
-  cx.fillStyle = '#e63000';
-  // Spikes
-  const spikes = [[-12,-8],[0,-14],[12,-8],[-20,2],[20,2]];
-  for (const [dx,dy] of spikes) {
-    cx.beginPath();
-    cx.moveTo(cx2+dx,   60 + bY + dy - 12);
-    cx.lineTo(cx2+dx-8, 60 + bY + dy + 6);
-    cx.lineTo(cx2+dx+8, 60 + bY + dy + 6);
-    cx.closePath(); cx.fill();
-  }
-
-  // ── Head (skin) ───────────────────────────────────────────────────────────
-  cx.fillStyle = '#ffcba4';
-  cx.fillRect(cx2-20, 60 + bY, 40, 40);
-
-  // ── Eyes ─────────────────────────────────────────────────────────────────
-  cx.fillStyle = '#222';
-  cx.fillRect(cx2-14, 70 + bY, 10, 10);
-  cx.fillRect(cx2+4,  70 + bY, 10, 10);
-  // Eye shine
-  cx.fillStyle = '#fff';
-  cx.fillRect(cx2-12, 71 + bY, 3, 3);
-  cx.fillRect(cx2+6,  71 + bY, 3, 3);
-
-  // ── Mouth (determined grin) ────────────────────────────────────────────────
-  cx.strokeStyle = '#a05030'; cx.lineWidth = 2;
-  cx.beginPath();
-  cx.moveTo(cx2-8, 90 + bY); cx.quadraticCurveTo(cx2, 96 + bY, cx2+8, 90 + bY);
-  cx.stroke();
-
-  // ── Body / shirt (dark red) ────────────────────────────────────────────────
-  cx.fillStyle = '#cc2200';
-  cx.fillRect(cx2-22, 100 + bY, 44, 45);
-  // Belt buckle
-  cx.fillStyle = '#ffaa00';
-  cx.fillRect(cx2-6, 140 + bY, 12, 8);
-
-  // ── Pants (dark brown) ────────────────────────────────────────────────────
-  cx.fillStyle = '#441100';
-  cx.fillRect(cx2-20, 145 + bY, 18, 50);
-  cx.fillRect(cx2+2,  145 + bY, 18, 50);
-
-  // ── Shoes (orange) ────────────────────────────────────────────────────────
-  cx.fillStyle = '#ff5500';
-  cx.fillRect(cx2-22, 193 + bY, 22, 12);
-  cx.fillRect(cx2,    193 + bY, 22, 12);
-
-  // ── Left arm (skin) ───────────────────────────────────────────────────────
-  cx.fillStyle = '#ffcba4';
-  cx.fillRect(cx2-38, 100 + bY, 16, 40);
-
-  // ── Right arm + FIREBLADE (animated by slashAng) ─────────────────────────
-  cx.save();
-  // Pivot = right shoulder
-  const shoulderX = cx2 + 22;
-  const shoulderY = 103 + bY;
-  cx.translate(shoulderX, shoulderY);
-  cx.rotate(slashAng);
-
-  // Arm
-  cx.fillStyle = '#ffcba4';
-  cx.fillRect(-8, 0, 16, 42);
-
-  // Fireblade: glowing orange-red blade
-  const bladeGrad = cx.createLinearGradient(0, 42, 0, 42 + 90);
-  bladeGrad.addColorStop(0,   '#ff8800');
-  bladeGrad.addColorStop(0.4, '#ff3300');
-  bladeGrad.addColorStop(0.8, '#ffee00');
-  bladeGrad.addColorStop(1,   'rgba(255,100,0,0)');
-  cx.fillStyle = bladeGrad;
-  // Blade shape: tapered rectangle
-  cx.beginPath();
-  cx.moveTo(-6, 42);
-  cx.lineTo(6, 42);
-  cx.lineTo(3, 42 + 90);
-  cx.lineTo(-3, 42 + 90);
-  cx.closePath(); cx.fill();
-
-  // Blade edge glow
-  cx.strokeStyle = '#ffcc00'; cx.lineWidth = 1.5;
-  cx.stroke();
-
-  // Crossguard
-  cx.fillStyle = '#aa4400';
-  cx.fillRect(-14, 38, 28, 8);
-
-  // Grip wrapping
-  cx.fillStyle = '#660000';
-  cx.fillRect(-4, 22, 8, 20);
-
-  cx.restore();
-
-  // ── Flame arc trail (shown during slash) ──────────────────────────────────
-  if (slashAng < -0.3) {
-    const alpha = Math.min(1, (-slashAng - 0.3) * 2);
-    cx.save();
-    cx.globalAlpha = alpha * 0.75;
-    const arcGrad = cx.createRadialGradient(shoulderX, shoulderY, 20, shoulderX, shoulderY, 90);
-    arcGrad.addColorStop(0,   'rgba(255,200,0,0.9)');
-    arcGrad.addColorStop(0.5, 'rgba(255,80,0,0.5)');
-    arcGrad.addColorStop(1,   'rgba(255,0,0,0)');
-    cx.fillStyle = arcGrad;
-    cx.beginPath();
-    cx.moveTo(shoulderX, shoulderY);
-    cx.arc(shoulderX, shoulderY, 90, -Math.PI * 0.9, slashAng + 0.1);
-    cx.closePath();
-    cx.fill();
-    cx.restore();
-  }
-}
-
-// Track whether we've already tried to load the real image
-let _firebladePngTried  = false;
-let _firebladePngLoaded = false;
-
-function _buildFireSprite() {
-  // Remove old sprite if any
-  if (_fireSprite) { playerGroup.remove(_fireSprite); _fireSprite = null; }
-  _fireSpriteCtx = null;
-  _fireSpriteTime = 0;
-
-  // ── Load admin-uploaded character image as BODY-ONLY billboard ───────────
-  // The 3D elemental sword is ALWAYS rendered by _buildSword() on rightShoulderPivot.
-  // This sprite is purely the character's body/avatar image, white-bg removed.
-  const paths = [
-    '/assets/characters/fire.png',
-    '/assets/characters/fire.jpg',
-    '/assets/characters/fireblade.png',           // legacy fireblade alias
-    '/assets/characters/fireblade(cho%20game)_0.jpg',
-  ];
-
-  const geo = new THREE.PlaneGeometry(3.0, 3.0);
-  let tried = 0;
-
-  const tryLoad = () => {
-    if (tried >= paths.length) {
-      // No image — use procedural canvas art
-      _buildFireSpriteCanvas(geo);
-      return;
-    }
-    const src = paths[tried++];
-    const img = new window.Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      // Draw image, remove white background, mount as billboard
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth || img.width;
-      c.height = img.naturalHeight || img.height;
-      const cx = c.getContext('2d');
-      cx.drawImage(img, 0, 0);
-      // White-bg removal
-      const id = cx.getImageData(0, 0, c.width, c.height);
-      const d  = id.data;
-      for (let i = 0; i < d.length; i += 4) {
-        if (d[i] > 220 && d[i+1] > 220 && d[i+2] > 220) d[i+3] = 0;
+    Promise.all([
+      _loadArtTexture(element, 'body'),
+      _loadArtTexture(element, 'weapon'),
+    ]).then(() => {
+      if (activeElement === element && playerGroup) {
+        _buildEquippedCharacter();
       }
-      cx.putImageData(id, 0, 0);
-      const tex = new THREE.CanvasTexture(c);
-      tex.needsUpdate = true;
-      const mat = new THREE.MeshBasicMaterial({
-        map: tex, transparent: true, alphaTest: 0.05,
-        side: THREE.DoubleSide, depthWrite: false,
-      });
-      if (_fireSprite) playerGroup.remove(_fireSprite);
-      _fireSprite = new THREE.Mesh(geo, mat);
-      _fireSprite.position.set(0, 0.5, 0.35);
-      _fireSpriteCtx = null;   // image mode — no canvas redraw needed
-      playerGroup.add(_fireSprite);
-      console.log('[player] Fire body sprite loaded:', src);
-    };
-    img.onerror = tryLoad;
-    img.src = src;
+    });
   };
-  tryLoad();
-}
+  window.addEventListener('character-art-updated', onArtUpdated);
+  window.addEventListener('character-image-updated', onArtUpdated);
 
-/** Procedural canvas fallback (used when no image is available) */
-function _buildFireSpriteCanvas(geo) {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 256;
-  _fireSpriteCtx = canvas.getContext('2d');
-  _drawFireSprite();
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-
-  const mat = new THREE.MeshBasicMaterial({
-    map: tex, transparent: true, alphaTest: 0.05,
-    side: THREE.DoubleSide, depthWrite: false,
+  // Pre-load existing textures on startup
+  ['thunder', 'fire', 'frost'].forEach(el => {
+    _loadArtTexture(el, 'body');
+    _loadArtTexture(el, 'weapon');
   });
-  _fireSprite = new THREE.Mesh(geo || new THREE.PlaneGeometry(3.2, 3.2), mat);
-  _fireSprite.position.set(0, 0.5, 0.35);
-  playerGroup.add(_fireSprite);
 }
 
-/**
- * Called every frame from updatePlayer when Fire set is active.
- * slashAng: shoulder pivot rotation.x from the anim system (0=rest, ~-1.2=full swing)
- */
-function _updateFireSprite(deltaTime, slashAng = 0) {
-  _fireSpriteTime += deltaTime;
 
-  // ── Element sprite system (image-loaded body + weapon pivot) ─────────────
-  const es = _elemSprites['fire'];
-  if (es?.loaded) {
-    // Rotate weapon pivot to simulate slash: map slashAng → rotation range 0..1.4 rad
-    if (es.weaponPivot) {
-      const targetRot = slashAng * -0.75;   // negative = forward swing (60-90°)
-      es.weaponPivot.rotation.z = targetRot;
-    }
-    // Billboard both meshes to face camera
-    const camY = playerGroup.rotation.y;
-    if (es.bodyMesh)    es.bodyMesh.rotation.y    = -camY;
-    if (es.weaponPivot) es.weaponPivot.rotation.y = -camY;
-    return;
-  }
-
-  // ── Procedural canvas fallback ────────────────────────────────────────────
-  if (!_fireSprite) return;
-  if (_fireSpriteCtx) {
-    const breathY = Math.sin(_fireSpriteTime * 2.0) * 2.5;
-    _drawFireSprite(breathY, slashAng);
-    _fireSprite.material.map.needsUpdate = true;
-  }
-  if (_fireSprite.parent) {
-    _fireSprite.rotation.y = -playerGroup.rotation.y;
-  }
-}
 
 
 // ─── Sword builder ────────────────────────────────────────────────────────────
@@ -601,6 +359,28 @@ function _buildSword() {
   swordGroup = new THREE.Group();
   swordGroup.position.set(0, -0.9, 0.1);
   swordGroup.rotation.x = Math.PI / 6;
+
+  // ── Custom 2D Weapon Sprite (if uploaded for this element) ─────────────────
+  if (activeElement && _artCache[activeElement]?.weapon) {
+    const wGeo = new THREE.PlaneGeometry(0.75, 1.8);
+    wGeo.translate(0, 0.8, 0); // hilt at bottom (pivot at hand)
+    const wMat = new THREE.MeshBasicMaterial({
+      map: _artCache[activeElement].weapon,
+      transparent: true,
+      alphaTest: 0.05,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const customSword = new THREE.Mesh(wGeo, wMat);
+    customSword.rotation.y = Math.PI / 2; // face camera
+    swordGroup.position.set(0, -0.9, 0.1);
+    swordGroup.rotation.x = Math.PI / 5;  // point upward and forward
+    swordGroup.add(customSword);
+    swordGroup._customWeapon = customSword;
+    rightShoulderPivot.add(swordGroup);
+    return;
+  }
+
 
   if (activeElement === 'thunder') {
     // ── Thunder Blade: jagged lightning katana ────────────────────────────
@@ -735,15 +515,17 @@ export function applyElementalSet(element) {
     window.gameState.thunderSet  = element === 'thunder';
     // damagePerHit determined server-side from inventory hasFullSet check
   }
-  if (playerGroup) _buildEquippedCharacter();
-  // Pre-load element sprite (async, non-blocking)
-  if (element && !_elemSprites[element]) {
-    _loadElementSprite(element)
-      .then(({ weaponCanvas, bodyCanvas }) => {
-        _buildElementSpriteFromCanvases(element, weaponCanvas, bodyCanvas);
-      })
-      .catch(() => { /* No image — 3D box model is used instead */ });
+  if (element) {
+    Promise.all([
+      _loadArtTexture(element, 'body'),
+      _loadArtTexture(element, 'weapon'),
+    ]).then(() => {
+      if (activeElement === element && playerGroup) {
+        _buildEquippedCharacter();
+      }
+    });
   }
+  if (playerGroup) _buildEquippedCharacter();
 }
 export function applyThunderSet() { applyElementalSet('thunder'); }
 
@@ -897,14 +679,9 @@ export function updatePlayer(deltaTime, camera) {
     }
   }
 
-  // Fire Set sprite update (element sprite system or procedural canvas)
-  if (activeElement === 'fire') {
-    const shoulderRot = rightShoulderPivot ? rightShoulderPivot.rotation.x : 0;
-    const slashAng2D  = shoulderRot * 0.65;
-    if (_fireSprite) _updateFireSprite(deltaTime, slashAng2D);
-    // Also update element sprite system weapon pivot
-    const es = _elemSprites?.['fire'];
-    if (es?.loaded) _updateFireSprite(deltaTime, slashAng2D);
+  // Billboard custom character body plane to camera if present
+  if (_characterBodyMesh && _characterBodyMesh.parent) {
+    _characterBodyMesh.rotation.y = -playerGroup.rotation.y;
   }
 }
 

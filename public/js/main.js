@@ -214,8 +214,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Derive bossElement from bossIndex so BGM can pick the right track
             const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
             window.gameState.bossElement = BOSS_ELEMENTS[data.bossIndex] || 'thunder';
+
+            if (data.equippedSet !== undefined) {
+                window.gameState.equippedSet = data.equippedSet;
+                if (data.testGear === 'full') {
+                    if (!window.gameState.inventory) window.gameState.inventory = {};
+                    window.gameState.inventory[data.equippedSet] = ['weapon', 'outfit'];
+                } else if (data.testGear === 'normal') {
+                    if (!window.gameState.inventory) window.gameState.inventory = {};
+                    window.gameState.inventory[data.equippedSet] = [];
+                }
+            }
         }
     });
+
 
     on('combat_event', (data) => { if (scene.onCombatEvent) scene.onCombatEvent(data); });
 

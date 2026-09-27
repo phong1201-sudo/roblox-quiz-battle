@@ -976,100 +976,138 @@ function _buildAdminDashboard(container, gameState) {
   // Fetch counts on mount
   refreshAllCounts();
 
-  // ── Character Image Upload section ────────────────────────────────────────
-  wrap.appendChild(mkHead('🎨 Ảnh Nhân Vật (Character Art)'));
+  // ── Character & Weapon Art Upload section ─────────────────────────────────
+  wrap.appendChild(mkHead('🎨 Ảnh Nhân Vật & Vũ Khí (Art Upload)'));
 
   const charNote = document.createElement('div');
   charNote.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;line-height:1.6;padding:4px 0;';
-  charNote.textContent = 'Tải ảnh nhân vật cho từng nguyên tố. Ảnh sẽ được cắt tự động: trái (35%) = kiếm, phải (65%) = người. Nền trắng sẽ bị xóa.';
+  charNote.textContent = 'Tải ảnh Thân Nhân Vật và Vũ Khí cho từng hệ nguyên tố. Nền trắng sẽ tự động được lọc trong suốt. Nếu chưa tải ảnh, game sẽ dùng mô hình 3D mặc định.';
   wrap.appendChild(charNote);
 
   const charGrid = document.createElement('div');
-  charGrid.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+  charGrid.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
 
   const CHAR_DEFS = [
-    { id:'thunder', label:'⚡ Nhân Vật Sét',  color:'#00cfff', rgb:'0,207,255' },
-    { id:'fire',    label:'🔥 Nhân Vật Lửa', color:'#ff8c42', rgb:'255,140,66' },
-    { id:'frost',   label:'❄️ Nhân Vật Băng', color:'#88ddff', rgb:'136,221,255' },
+    { id:'thunder', label:'⚡ Hệ Sét (Thunder)', color:'#00cfff', rgb:'0,207,255' },
+    { id:'fire',    label:'🔥 Hệ Lửa (Fire)',    color:'#ff8c42', rgb:'255,140,66' },
+    { id:'frost',   label:'❄️ Hệ Băng (Frost)',   color:'#88ddff', rgb:'136,221,255' },
   ];
 
-  // Load existing character images
-  const charPreviews = {};
-  fetch('/api/admin/character/list').then(r => r.json()).then(list => {
-    for (const [el, url] of Object.entries(list)) {
-      if (url && charPreviews[el]) {
-        charPreviews[el].src   = url + '?t=' + Date.now();
-        charPreviews[el].style.display = 'block';
+  const artPreviews = {
+    thunder: { body: null, weapon: null },
+    fire:    { body: null, weapon: null },
+    frost:   { body: null, weapon: null },
+  };
+
+  // Fetch current art list on mount
+  fetch('/api/admin/art/list').then(r => r.json()).then(list => {
+    for (const [el, data] of Object.entries(list)) {
+      if (data?.body && artPreviews[el]?.body) {
+        artPreviews[el].body.src = data.body + '?t=' + Date.now();
+        artPreviews[el].body.style.display = 'block';
+      }
+      if (data?.weapon && artPreviews[el]?.weapon) {
+        artPreviews[el].weapon.src = data.weapon + '?t=' + Date.now();
+        artPreviews[el].weapon.style.display = 'block';
       }
     }
   }).catch(() => {});
 
   CHAR_DEFS.forEach(c => {
     const card = document.createElement('div');
-    card.style.cssText = `background:rgba(${c.rgb},0.06);border:1.5px solid rgba(${c.rgb},0.25);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;`;
+    card.style.cssText = `background:rgba(${c.rgb},0.06);border:1.5px solid rgba(${c.rgb},0.3);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;`;
 
-    // Label + preview row
-    const topRow = document.createElement('div');
-    topRow.style.cssText = 'display:flex;align-items:center;gap:10px;';
+    // Element Header
+    const cardTitle = document.createElement('div');
+    cardTitle.style.cssText = `font-size:12px;font-weight:900;color:${c.color};font-family:'Be Vietnam Pro',sans-serif;`;
+    cardTitle.textContent = c.label;
+    card.appendChild(cardTitle);
 
-    const lbl = document.createElement('span');
-    lbl.style.cssText = `font-size:12px;font-weight:800;color:${c.color};font-family:'Be Vietnam Pro',sans-serif;flex:1;`;
-    lbl.textContent = c.label;
+    // Two upload rows: 1. Body, 2. Weapon
+    const TYPES = [
+      { type: 'body',   name: '👤 Ảnh Thân (Body Sprite)',   btnText: 'Tải Lên Thân' },
+      { type: 'weapon', name: '⚔️ Ảnh Vũ Khí (Weapon Sprite)', btnText: 'Tải Lên Kiếm' },
+    ];
 
-    // Thumbnail preview
-    const thumb = document.createElement('img');
-    thumb.style.cssText = 'width:56px;height:56px;object-fit:contain;border-radius:6px;border:1.5px solid rgba(255,255,255,0.15);background:#111;display:none;';
-    charPreviews[c.id] = thumb;
+    TYPES.forEach(t => {
+      const rowBox = document.createElement('div');
+      rowBox.style.cssText = 'background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;';
 
-    topRow.appendChild(lbl);
-    topRow.appendChild(thumb);
-    card.appendChild(topRow);
+      const rowTop = document.createElement('div');
+      rowTop.style.cssText = 'display:flex;align-items:center;gap:10px;';
 
-    // File input
-    const fileInp = document.createElement('input');
-    fileInp.type = 'file';
-    fileInp.accept = 'image/*';
-    fileInp.style.cssText = 'font-size:10px;color:#ccc;font-family:"Be Vietnam Pro",sans-serif;width:100%;';
-    card.appendChild(fileInp);
+      const typeLabel = document.createElement('span');
+      typeLabel.style.cssText = 'font-size:11px;font-weight:700;color:#ddd;font-family:"Be Vietnam Pro",sans-serif;flex:1;';
+      typeLabel.textContent = t.name;
 
-    // Upload button + status
-    const upRow = document.createElement('div');
-    upRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
+      const thumb = document.createElement('img');
+      thumb.style.cssText = 'width:48px;height:48px;object-fit:contain;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#050510;display:none;';
+      artPreviews[c.id][t.type] = thumb;
 
-    const upBtn = document.createElement('button');
-    upBtn.style.cssText = `flex:1;padding:6px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,rgba(${c.rgb},0.5),rgba(${c.rgb},0.25));border:1.5px solid ${c.color};color:#fff;font-family:'Be Vietnam Pro',sans-serif;`;
-    upBtn.textContent = '🖼 Tải Lên Ảnh Nhân Vật';
+      rowTop.appendChild(typeLabel);
+      rowTop.appendChild(thumb);
+      rowBox.appendChild(rowTop);
 
-    const charStatus = document.createElement('span');
-    charStatus.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;';
+      const fileInp = document.createElement('input');
+      fileInp.type = 'file';
+      fileInp.accept = 'image/*';
+      fileInp.style.cssText = 'font-size:10px;color:#aaa;font-family:"Be Vietnam Pro",sans-serif;width:100%;';
+      rowBox.appendChild(fileInp);
 
-    upRow.appendChild(upBtn);
-    upRow.appendChild(charStatus);
-    card.appendChild(upRow);
-    charGrid.appendChild(card);
+      const actionRow = document.createElement('div');
+      actionRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
 
-    upBtn.addEventListener('click', async () => {
-      if (!fileInp.files[0]) { charStatus.textContent = '⚠ Chọn ảnh trước!'; charStatus.style.color = '#ffcc00'; return; }
-      charStatus.textContent = '⏳ Đang tải…'; charStatus.style.color = '#aaa';
-      upBtn.disabled = true;
-      const fd = new FormData();
-      fd.append('image', fileInp.files[0]);
-      fd.append('element', c.id);
-      try {
-        const r = await fetch('/api/admin/character/upload', { method: 'POST', body: fd });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Upload failed');
-        charStatus.textContent = '✓ Đã lưu!'; charStatus.style.color = '#06d6a0';
-        thumb.src   = d.url + '?t=' + Date.now();
-        thumb.style.display = 'block';
-        // Notify game engine to reload character texture
-        window.dispatchEvent(new CustomEvent('character-image-updated', { detail: { element: c.id, url: d.url } }));
-        _showToast(`Ảnh nhân vật ${c.label} đã cập nhật thành công`);
-      } catch(e) {
-        charStatus.textContent = '✗ ' + e.message; charStatus.style.color = '#ef233c';
-      }
-      upBtn.disabled = false;
+      const upBtn = document.createElement('button');
+      upBtn.style.cssText = `flex:1;padding:5px 8px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,rgba(${c.rgb},0.45),rgba(${c.rgb},0.2));border:1px solid ${c.color};color:#fff;font-family:'Be Vietnam Pro',sans-serif;`;
+      upBtn.textContent = `📤 ${t.btnText}`;
+
+      const statusEl = document.createElement('span');
+      statusEl.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;';
+
+      actionRow.appendChild(upBtn);
+      actionRow.appendChild(statusEl);
+      rowBox.appendChild(actionRow);
+
+      upBtn.addEventListener('click', async () => {
+        if (!fileInp.files[0]) {
+          statusEl.textContent = '⚠ Chọn ảnh!';
+          statusEl.style.color = '#ffcc00';
+          return;
+        }
+        statusEl.textContent = '⏳ Đang tải…';
+        statusEl.style.color = '#aaa';
+        upBtn.disabled = true;
+
+        const fd = new FormData();
+        fd.append('image', fileInp.files[0]);
+        fd.append('element', c.id);
+        fd.append('type', t.type);
+
+        try {
+          const r = await fetch('/api/admin/art/upload', { method: 'POST', body: fd });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error || 'Upload failed');
+          statusEl.textContent = '✓ Đã lưu!';
+          statusEl.style.color = '#06d6a0';
+          thumb.src = d.url + '?t=' + Date.now();
+          thumb.style.display = 'block';
+
+          // Notify game engine
+          window.dispatchEvent(new CustomEvent('character-art-updated', {
+            detail: { element: c.id, type: t.type, url: d.url }
+          }));
+          _showToast(`Đã cập nhật ${t.name} cho ${c.label}`);
+        } catch (e) {
+          statusEl.textContent = '✗ ' + e.message;
+          statusEl.style.color = '#ef233c';
+        }
+        upBtn.disabled = false;
+      });
+
+      card.appendChild(rowBox);
     });
+
+    charGrid.appendChild(card);
   });
 
   wrap.appendChild(charGrid);
@@ -1087,9 +1125,14 @@ function _buildAdminDashboard(container, gameState) {
     { id:'medium', label:'TB (30)',  color:'#ffcc00' },
     { id:'hard',   label:'Khó (50)', color:'#ef233c' },
   ];
+  const GEARS = [
+    { id:'normal', label:'🔘 Đồ thường (1 hit)' },
+    { id:'full',   label:'✨ Full bộ 2 món (Chém + Chiêu 2 hit)' },
+  ];
 
-  let adminBoss = 'thunder';
-  let adminDiff = 'easy';
+  let adminBoss     = 'thunder';
+  let adminDiff     = 'easy';
+  let adminTestGear = 'full'; // Default to full so user can easily test the 2-hit!
 
   const devRow1 = document.createElement('div');
   devRow1.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
@@ -1121,12 +1164,40 @@ function _buildAdminDashboard(container, gameState) {
   });
   wrap.appendChild(devRow2);
 
+  // Equipment toggle group
+  const devRow3 = document.createElement('div');
+  devRow3.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+  GEARS.forEach((g) => {
+    const btn = document.createElement('button');
+    btn.textContent = g.label;
+    const isSelected = g.id === adminTestGear;
+    btn.style.cssText = `flex:1;font-size:10px;padding:6px 10px;border:1.5px solid ${isSelected ? (g.id==='full'?'#ffd700':'#00b4d8') : '#555'};color:${isSelected ? (g.id==='full'?'#ffd700':'#fff') : '#888'};background:${isSelected ? (g.id==='full'?'rgba(255,215,0,0.18)':'rgba(0,180,216,0.18)') : 'transparent'};border-radius:5px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;font-weight:700;`;
+    btn.onclick = () => {
+      devRow3.querySelectorAll('button').forEach(x => {
+        x.style.background = 'transparent';
+        x.style.borderColor = '#555';
+        x.style.color = '#888';
+      });
+      adminTestGear = g.id;
+      btn.style.background = g.id === 'full' ? 'rgba(255,215,0,0.18)' : 'rgba(0,180,216,0.18)';
+      btn.style.borderColor = g.id === 'full' ? '#ffd700' : '#00b4d8';
+      btn.style.color = g.id === 'full' ? '#ffd700' : '#fff';
+    };
+    devRow3.appendChild(btn);
+  });
+  wrap.appendChild(devRow3);
+
   const launchBtn = document.createElement('button');
   launchBtn.style.cssText = 'background:linear-gradient(135deg,#ff4444,#aa0000);color:#fff;font-size:12px;font-weight:800;padding:10px;border:none;border-radius:7px;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;width:100%;';
   launchBtn.textContent = '⚡ Bắt Đầu (God Father Launch)';
   launchBtn.onclick = () => {
     socket.emit('set_mode', { code: gameState.code, mode: 'pve' });
-    socket.emit('start_game', { code: gameState.code, element: adminBoss, difficulty: adminDiff });
+    socket.emit('start_game', {
+      code: gameState.code,
+      element: adminBoss,
+      difficulty: adminDiff,
+      testGear: adminTestGear
+    });
   };
   wrap.appendChild(launchBtn);
 
@@ -1138,14 +1209,14 @@ function _buildAdminDashboard(container, gameState) {
   devStatus.style.cssText = 'font-size:9px;color:#888;text-align:center;font-family:"Be Vietnam Pro",sans-serif;';
 
   devBtn.onclick = () => {
-    // Emit start_game with difficulty='dev' — server will sample 5 Qs and set bossHp=5
     socket.emit('set_mode', { code: gameState.code, mode: 'pve' });
     socket.emit('start_game', {
       code:       gameState.code,
-      element:    adminBoss,   // use currently selected boss element
-      difficulty: 'dev',       // special: 5 questions, bossHp=5
+      element:    adminBoss,
+      difficulty: 'dev',
+      testGear:   adminTestGear
     });
-    devStatus.textContent = `⚡ Dev launch: ${adminBoss} / 5 câu`;
+    devStatus.textContent = `⚡ Dev launch: ${adminBoss} / 5 câu / ${adminTestGear === 'full' ? 'Full Set (2 hit)' : 'Đồ thường (1 hit)'}`;
     devStatus.style.color = '#ffcc00';
   };
 
@@ -1153,6 +1224,7 @@ function _buildAdminDashboard(container, gameState) {
   wrap.appendChild(devStatus);
 
   container.appendChild(wrap);
+
 }
 
 

@@ -69,9 +69,62 @@ app.get('/api/admin/character/list', (req, res) => {
   const dir = path.join(__dirname, '../public/assets/characters');
   const result = {};
   for (const el of ['thunder', 'fire', 'frost']) {
-    // Search for element.png / element.jpg / element.jpeg
     const found = ['.png', '.jpg', '.jpeg'].map(ext => path.join(dir, `${el}${ext}`)).find(f => fs.existsSync(f));
     result[el] = found ? `/assets/characters/${path.basename(found)}` : null;
+  }
+  res.json(result);
+});
+
+// ── Admin: dual art upload — body + weapon per element ────────────────────────
+// POST /api/admin/art/upload  { element, type:'body'|'weapon', image }
+// Saves as public/assets/characters/{element}_{type}.png
+const artStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../public/assets/characters');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const element = (req.body?.element || req.query?.element || 'unknown').toLowerCase();
+    const type    = (req.body?.type    || req.query?.type    || 'body'   ).toLowerCase();
+    const safeEl  = ['thunder','fire','frost'].includes(element) ? element : 'unknown';
+    const safeTyp = ['body','weapon'].includes(type) ? type : 'body';
+    cb(null, `${safeEl}_${safeTyp}.png`);
+  },
+});
+const artUpload = multer({
+  storage: artStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files accepted'));
+  },
+});
+
+app.post('/api/admin/art/upload', artUpload.single('image'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    const element = (req.body?.element || '').toLowerCase();
+    const type    = (req.body?.type    || '').toLowerCase();
+    if (!['thunder','fire','frost'].includes(element))
+      return res.status(400).json({ error: 'Invalid element' });
+    if (!['body','weapon'].includes(type))
+      return res.status(400).json({ error: 'Invalid type (must be body or weapon)' });
+    const url = `/assets/characters/${element}_${type}.png`;
+    res.json({ ok: true, url, element, type, filename: req.file.filename });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/art/list', (req, res) => {
+  const dir = path.join(__dirname, '../public/assets/characters');
+  const result = {};
+  for (const el of ['thunder', 'fire', 'frost']) {
+    result[el] = {
+      body:   fs.existsSync(path.join(dir, `${el}_body.png`))   ? `/assets/characters/${el}_body.png`   : null,
+      weapon: fs.existsSync(path.join(dir, `${el}_weapon.png`)) ? `/assets/characters/${el}_weapon.png` : null,
+    };
   }
   res.json(result);
 });
@@ -544,7 +597,7 @@ io.on('connection', (socket) => {
     } catch (e) { console.error('[set_mode]', e.message); }
   });
 
-  socket.on('start_game', ({ code, element, difficulty }) => {
+  socket.on('start_game', ({ code, element, difficulty, testGear }) => {
     try {
       const room = roomManager.startGame(code, socket.id);
 
@@ -554,7 +607,6 @@ io.on('connection', (socket) => {
       const bossIdx = BOSS_ELEMENTS.indexOf(element);
 
       if (element && VALID_DIFFS.includes(difficulty) && questionBank.getBankSize(element) > 0) {
-        // Sample from bank — already shuffled with randomized options
         const bankQuestions = questionBank.sampleQuestions(element, difficulty);
         if (bankQuestions.length > 0) {
           room.questions   = bankQuestions;
@@ -563,29 +615,51 @@ io.on('connection', (socket) => {
           room.difficulty  = difficulty;
         }
       } else if (difficulty === 'dev') {
-        // Dev mode but bank is empty — use first 5 demo questions
         const demo = questionParser.getDemoQuestions().slice(0, 5);
         room.questions   = demo;
         room.bossElement = element || null;
         room.bossIndex   = bossIdx >= 0 ? bossIdx : 0;
         room.difficulty  = 'dev';
       } else if (element && bossIdx >= 0) {
-        // Element chosen but bank empty — use existing uploaded questions or demo
         room.bossElement = element;
         room.bossIndex   = bossIdx;
         room.difficulty  = difficulty || 'medium';
       }
 
-      // Fallback to uploaded questions or demo
       if (!room.questions || room.questions.length === 0) {
         room.questions = questionParser.getDemoQuestions();
       }
 
-      // Initialise HP from question count (dev → 5 Qs → bossHp=5, totalHp=5)
+      // ── Dev gear override: set player inventory for full-set / normal testing ─
+      if (testGear && element) {
+        for (const p of room.players.values()) {
+          if (testGear === 'full') {
+            // Force full set: weapon + outfit for the chosen element
+            if (!p.inventory) p.inventory = { thunder: [], fire: [], frost: [] };
+            p.inventory[element] = ['weapon', 'outfit'];
+            p.equippedSet = element;
+            console.log(`[testGear] Player ${p.name} forced full set for ${element}`);
+          } else if (testGear === 'normal') {
+            // Force incomplete: empty inventory
+            if (!p.inventory) p.inventory = { thunder: [], fire: [], frost: [] };
+            p.inventory[element] = [];
+            p.equippedSet = element;
+            console.log(`[testGear] Player ${p.name} forced normal gear for ${element}`);
+          }
+        }
+      }
+
+      // Initialise HP from question count
       roomManager.initHp(code);
 
       io.to(code).emit('game_started');
-      io.to(code).emit('game_mode_set', { mode: room.mode, totalHp: room.totalHp, bossIndex: room.bossIndex || 0 });
+      io.to(code).emit('game_mode_set', {
+        mode: room.mode,
+        totalHp: room.totalHp,
+        bossIndex: room.bossIndex || 0,
+        testGear: testGear || null,
+        equippedSet: (testGear && element) ? element : undefined,
+      });
 
       const nextQ = roomManager.nextQuestion(code);
       if (nextQ) sendQuestion(code);
@@ -594,6 +668,7 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: e.message });
     }
   });
+
 
   socket.on('submit_answer', ({ code, answer }) => {
     try {
