@@ -88,15 +88,31 @@ let bossHammer = null;
 let customBossBone = null;
 let defeatCompleteCallbacks = [];
 
-// Universal Procedural Boss Arm Pivot
+// Universal Procedural Boss Arm Pivot & Compound Limb Hierarchy
+export let bossCombatArmCompound = null;
 export let bossArmPivot = null;
+export function getBossCombatArmCompound() {
+  return bossCombatArmCompound || bossArmPivot || getBossArmPivot();
+}
 export function getBossArmPivot() {
-  return bossArmPivot || bossArmRightPivot || customBossBone;
+  return bossCombatArmCompound || bossArmPivot || bossArmRightPivot || customBossBone;
 }
 
 // ── Visual Socket & Pivot Calibration Configuration ───────────────────────────
 const DEFAULT_BOSS_SOCKETS = {
   boss: {
+    shoulderX: -1.8,
+    shoulderY: 2.2,
+    shoulderZ: 0.2,
+    weapon: {
+      offsetX: 0.0,
+      offsetY: -0.6,
+      offsetZ: 0.5,
+      rotX: 0.0,
+      rotY: -1.5708,
+      rotZ: 0.5236,
+      angle: 30
+    },
     thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
     fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
     frost:   { handX: -0.9, handY: 1.3, handZ: 0.1 }
@@ -291,71 +307,80 @@ function _setupBossArmPivot(element) {
     bossArmPivot.parent.remove(bossArmPivot);
   }
   bossArmPivot = null;
+  bossCombatArmCompound = null;
 
   if (element !== 'fire' && element !== 'frost') return;
   if (!bossGroup) return;
 
-  const bCfg = _bossSocketsConfig?.boss?.[element] || { handX: -0.9, handY: 1.3, handZ: 0.1 };
-  const wCfg = _bossSocketsConfig?.weapon?.boss_hammer || { hiltX: 0.0, hiltY: -0.6, hiltZ: 0.0 };
-
-  bossArmPivot = new THREE.Group();
-  bossArmPivot.name = 'BossArmPivot';
-
-  let posX = bCfg.handX ?? -0.9;
-  let posY = bCfg.handY ?? 1.3;
-  let posZ = bCfg.handZ ?? 0.1;
+  const savedPivot = _bossSocketsConfig?.boss || {};
+  let shoulderX = savedPivot.shoulderX ?? -1.8;
+  let shoulderY = savedPivot.shoulderY ?? 2.2;
+  let shoulderZ = savedPivot.shoulderZ ?? 0.2;
 
   // If using procedural boss (height ~6.0 vs custom GLB 4.0), scale if in normalized 4.0 units
-  if (!isCustomBoss && posY < 2.0) {
-    posX = posX * 2.0;
-    posY = posY * 2.46;
-    posZ = posZ * 2.0;
+  if (!isCustomBoss && shoulderY < 2.0) {
+    shoulderX = shoulderX * 2.0;
+    shoulderY = shoulderY * 2.46;
+    shoulderZ = shoulderZ * 2.0;
   }
 
-  // Position at boss's arm/shoulder offset facing the arena/player (-X)
-  bossArmPivot.position.set(posX, posY, posZ);
-  bossArmPivot.rotation.set(0, 0, 0);
+  const savedWeapon = savedPivot.weapon || {};
+  const wOffsetX = savedWeapon.offsetX ?? 0.0;
+  const wOffsetY = savedWeapon.offsetY ?? -0.6;
+  const wOffsetZ = savedWeapon.offsetZ ?? 0.5;
+  const wAngle = savedWeapon.angle ?? 30;
+  const wRotX = savedWeapon.rotX ?? 0.0;
+  const wRotY = savedWeapon.rotY ?? (-Math.PI / 2);
+  const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
+
+  // Compound arm container
+  bossCombatArmCompound = new THREE.Group();
+  bossCombatArmCompound.name = 'BossCombatArmCompound';
+  bossCombatArmCompound.position.set(shoulderX, shoulderY, shoulderZ);
+  bossCombatArmCompound.rotation.set(0, 0, 0);
+  bossArmPivot = bossCombatArmCompound;
 
   const hammer = _createBossHammerMesh(element);
-  const hiltX = wCfg.hiltX || 0;
-  const hiltY = (wCfg.hiltY !== undefined ? wCfg.hiltY : -0.6) - 0.6;
-  const hiltZ = (wCfg.hiltZ || 0) + 0.5;
-  hammer.position.set(hiltX, hiltY, hiltZ);
+  hammer.position.set(wOffsetX, wOffsetY, wOffsetZ);
+  hammer.rotation.set(wRotX, wRotY, wRotZ);
 
-  bossArmPivot.add(hammer);
-  bossGroup.add(bossArmPivot);
-  console.log(`[boss] Universal procedural bossArmPivot mounted for ${element} boss at (${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
+  bossCombatArmCompound.add(hammer);
+  bossGroup.add(bossCombatArmCompound);
+  console.log(`[boss] Unified bossCombatArmCompound mounted for ${element} boss at (${shoulderX.toFixed(2)}, ${shoulderY.toFixed(2)}, ${shoulderZ.toFixed(2)}) with hammer offset (${wOffsetX}, ${wOffsetY}, ${wOffsetZ}) at ${wAngle}°`);
 }
 
 /**
- * Dedicated Boss Hammer Slam Tween (playGuaranteedBossHammerSlam):
- * - Phase 1 (Raise hammer high overhead ~150ms): { z: -Math.PI / 2.5, x: -Math.PI / 4 } (Quadratic.Out)
- * - Phase 2 (Smash down into floor ~130ms): { z: Math.PI / 3, x: Math.PI / 6 } (Quadratic.In), triggers onImpact()
- * - Phase 3 (Reset stance ~150ms): { z: 0, x: 0 }, triggers onComplete()
+ * Bulletproof Single-Rotation Boss Hammer Slam:
+ * - Giơ búa: Rotate compound arm backward/overhead +80 deg trong 160ms (Quadratic.Out)
+ * - Đập búa: Rotate compound arm đập mạnh xuống sàn -80 deg trong 130ms (Quadratic.In) -> Screen shake + lửa/băng phun trào
+ * - Hồi thế: Reset về tư thế chờ trong 150ms (Quadratic.Out)
  */
 export function playGuaranteedBossHammerSlam(element, onImpact, onComplete) {
-  const pivot = bossArmPivot || getBossArmPivot();
+  const pivot = bossCombatArmCompound || bossArmPivot || getBossArmPivot();
   if (!pivot) {
     if (onImpact) onImpact();
     if (onComplete) onComplete();
     return;
   }
 
-  // Phase 1 (Raise hammer high overhead ~150ms): { z: -Math.PI / 2.5, x: -Math.PI / 4 } (Quadratic.Out)
+  const raiseAngle = (80 * Math.PI) / 180;  // +80 deg backward/overhead
+  const smashAngle = (-80 * Math.PI) / 180; // -80 deg slam into floor
+
+  // Phase 1 (Giơ búa overhead +80 deg trong 160ms)
   new TWEEN.Tween(pivot.rotation)
-    .to({ z: -Math.PI / 2.5, x: -Math.PI / 4 }, 150)
+    .to({ z: raiseAngle }, 160)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2 (Smash down into floor ~130ms): { z: Math.PI / 3, x: Math.PI / 6 } (Quadratic.In), triggers onImpact()
+      // Phase 2 (Đập búa slam xuống sàn -80 deg trong 130ms) -> Screen shake + lửa/băng phun trào
       new TWEEN.Tween(pivot.rotation)
-        .to({ z: Math.PI / 3, x: Math.PI / 6 }, 130)
+        .to({ z: smashAngle }, 130)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           if (onImpact) onImpact();
 
-          // Phase 3 (Reset stance ~150ms): { z: 0, x: 0 } (Quadratic.Out), triggers onComplete()
+          // Phase 3 (Hồi thế về 0 deg trong 150ms)
           new TWEEN.Tween(pivot.rotation)
-            .to({ z: 0, x: 0 }, 150)
+            .to({ z: 0 }, 150)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
               if (onComplete) onComplete();

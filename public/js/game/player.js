@@ -55,15 +55,31 @@ let weaponModel = null;              // Root scene of loaded weapon GLB
 let weaponSocket = null;             // THREE.Group attached to character hand bone
 let handNode = null;                 // Left-hand bone or arm node
 
-// Universal Procedural Player Arm Pivot
+// Universal Procedural Player Arm Pivot & Compound Limb Hierarchy
+export let combatArmCompound = null;
 export let playerArmPivot = null;
+export function getCombatArmCompound() {
+  return combatArmCompound || playerArmPivot || getWeaponHandNode();
+}
 export function getPlayerArmPivot() {
-  return playerArmPivot || getWeaponHandNode();
+  return combatArmCompound || playerArmPivot || getWeaponHandNode();
 }
 
 // ── Visual Socket & Pivot Calibration Configuration ───────────────────────────
 const DEFAULT_PLAYER_SOCKETS = {
   player: {
+    shoulderX: -0.65,
+    shoulderY: 1.2,
+    shoulderZ: 0.0,
+    weapon: {
+      offsetX: 0.0,
+      offsetY: -0.4,
+      offsetZ: 0.1,
+      rotX: 0.0,
+      rotY: 1.5708,
+      rotZ: -0.7854,
+      angle: -45
+    },
     default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
@@ -461,21 +477,27 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
                await _loadGLTFModel(`/assets/models/default_weapon.gltf`);
   }
 
-  // Read socket configuration for player and weapon
-  const pCfg = _socketsConfig?.player?.[el] || _socketsConfig?.player?.default || { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 };
-  const wCfg = _socketsConfig?.weapon?.player_sword || { hiltX: 0.0, hiltY: -0.5, hiltZ: 0.0 };
+  // Read compound limb and weapon transform configuration
+  const savedPivot = _socketsConfig?.player || {};
+  const shoulderX = savedPivot.shoulderX ?? (savedPivot.default?.handX ? -Math.abs(savedPivot.default.handX) : -0.65);
+  const shoulderY = savedPivot.shoulderY ?? (savedPivot.default?.handY ?? 1.2);
+  const shoulderZ = savedPivot.shoulderZ ?? (savedPivot.default?.handZ ?? 0.0);
 
-  // Universal Procedural Arm Pivot Socketing with Dynamic Calibration
-  playerArmPivot = new THREE.Group();
-  playerArmPivot.name = 'PlayerArmPivot';
-  const handPosX = -Math.abs(pCfg.handX ?? 0.65);
-  const handPosY = pCfg.handY ?? 0.85;
-  const handPosZ = pCfg.handZ ?? 0.1;
-  playerArmPivot.position.set(handPosX, handPosY, handPosZ);
-  playerArmPivot.rotation.set(0, 0, 0);
+  const savedWeapon = savedPivot.weapon || {};
+  const wOffsetX = savedWeapon.offsetX ?? 0.0;
+  const wOffsetY = savedWeapon.offsetY ?? -0.4;
+  const wOffsetZ = savedWeapon.offsetZ ?? 0.1;
+  const wAngle = savedWeapon.angle ?? (savedPivot[el]?.weaponAngle ?? -45);
+  const wRotX = savedWeapon.rotX ?? 0.0;
+  const wRotY = savedWeapon.rotY ?? (Math.PI / 2);
+  const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
 
-  const weaponAngleDeg = pCfg.weaponAngle !== undefined ? pCfg.weaponAngle : -45;
-  const weaponAngleRad = (weaponAngleDeg * Math.PI) / 180;
+  // Compound arm container
+  combatArmCompound = new THREE.Group();
+  combatArmCompound.name = 'PlayerCombatArmCompound';
+  combatArmCompound.position.set(shoulderX, shoulderY, shoulderZ);
+  combatArmCompound.rotation.set(0, 0, 0);
+  playerArmPivot = combatArmCompound;
 
   if (weapGltf && weapGltf.scene) {
     weaponModel = weapGltf.scene.clone(true);
@@ -486,33 +508,29 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
     // Scale weapon to match blocky character proportions
     weaponModel.scale.set(2.2, 2.2, 2.2);
 
-    // Normalize geometry offset inside weaponModel with calibrated hilt offset
     const scaledBox = new THREE.Box3().setFromObject(weaponModel);
-    const hiltX = wCfg.hiltX || 0;
-    const hiltY = wCfg.hiltY !== undefined ? wCfg.hiltY : -0.5;
-    const hiltZ = wCfg.hiltZ || 0;
+    const localHiltX = - (scaledBox.min.x + scaledBox.max.x) / 2;
+    const localHiltY = - scaledBox.min.y;
+    const localHiltZ = - (scaledBox.min.z + scaledBox.max.z) / 2;
 
-    weaponModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2 + hiltX;
-    weaponModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2 + hiltZ;
-    weaponModel.position.y = - scaledBox.min.y + hiltY;
+    // Mount weapon as locked child with saved local offset
+    weaponModel.position.set(localHiltX + wOffsetX, localHiltY + wOffsetY, localHiltZ + wOffsetZ);
+    weaponModel.rotation.set(wRotX, wRotY, wRotZ);
 
-    // Orient sword blade pointing towards boss (+X direction) using calibrated angle:
-    weaponModel.rotation.set(0, Math.PI / 2, weaponAngleRad);
-
-    playerArmPivot.add(weaponModel);
+    combatArmCompound.add(weaponModel);
   } else {
     // Fallback procedural blade
     const bladeColor = el === 'fire' ? 0xff4400 : el === 'frost' ? 0x88ddff : el === 'thunder' ? 0x00cfff : 0xddaa33;
     const blade = makeBox(0.2, 2.2, 0.12, bladeColor);
-    blade.position.set(0, 0.8, 0);
-    blade.rotation.set(0, Math.PI / 2, weaponAngleRad);
-    playerArmPivot.add(blade);
+    blade.position.set(wOffsetX, 0.8 + wOffsetY, wOffsetZ);
+    blade.rotation.set(wRotX, wRotY, wRotZ);
+    combatArmCompound.add(blade);
   }
 
-  // Attach playerArmPivot directly to playerGroup
-  playerGroup.add(playerArmPivot);
-  weaponSocket = playerArmPivot;
-  console.log(`[player] Universal procedural playerArmPivot mounted at (${handPosX}, ${handPosY}, ${handPosZ}), sword blade oriented toward boss (+X) at ${weaponAngleDeg}°`);
+  // Attach combatArmCompound directly to playerGroup
+  playerGroup.add(combatArmCompound);
+  weaponSocket = combatArmCompound;
+  console.log(`[player] Unified combatArmCompound mounted at (${shoulderX}, ${shoulderY}, ${shoulderZ}) with weapon offset (${wOffsetX}, ${wOffsetY}, ${wOffsetZ}) at ${wAngle}°`);
 
   if (activeElement) _buildElementalAura(activeElement);
   console.log(`[player] 3D GLB model loaded & socketed for ${el}`);
@@ -910,13 +928,13 @@ export function getWeaponHandNode() {
 }
 
 /**
- * Dedicated weapon/arm swing Tween (playGuaranteedPlayerSlash):
- * - Phase 1 (Wind-up ~100ms): { z: Math.PI / 3, x: -Math.PI / 6 } (Quadratic.Out)
- * - Phase 2 (Heavy forward slash ~120ms): { z: -Math.PI / 3, x: Math.PI / 4 } (Quadratic.In), triggers onHit()
- * - Phase 3 (Return stance ~120ms): { z: 0, x: 0 }, triggers onComplete()
+ * Bulletproof Single-Rotation Slash Motion (playGuaranteedPlayerSlash):
+ * - Wind-up (Giương kiếm): Rotate combatArmCompound.rotation.z by +60 deg in 100ms (Quadratic.Out)
+ * - Slash Strike (Chém bổ xuống): Rotate combatArmCompound.rotation.z down to -75 deg in 120ms (Quadratic.In), triggers onHit()
+ * - Recover (Thu tay về): Reset rotation.z back to 0 in 100ms (Quadratic.Out), triggers onComplete()
  */
 export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
-  let pivot = playerArmPivot || getWeaponHandNode();
+  let pivot = combatArmCompound || playerArmPivot || getWeaponHandNode();
   let onHit = null;
   let onComplete = null;
 
@@ -935,21 +953,24 @@ export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
     return;
   }
 
-  // Phase 1 (Wind-up ~100ms): { z: Math.PI / 3, x: -Math.PI / 6 } (Quadratic.Out)
+  const windupAngle = (60 * Math.PI) / 180;   // +60 deg
+  const strikeAngle = (-75 * Math.PI) / 180;  // -75 deg
+
+  // Phase 1: Wind-up (Giương kiếm +60 deg trong 100ms)
   new TWEEN.Tween(pivot.rotation)
-    .to({ z: Math.PI / 3, x: -Math.PI / 6 }, 100)
+    .to({ z: windupAngle }, 100)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2 (Heavy forward slash ~120ms): { z: -Math.PI / 3, x: Math.PI / 4 } (Quadratic.In), triggers onHit()
+      // Phase 2: Slash Strike (Chém bổ xuống -75 deg trong 120ms) -> Trigger hit damage
       new TWEEN.Tween(pivot.rotation)
-        .to({ z: -Math.PI / 3, x: Math.PI / 4 }, 120)
+        .to({ z: strikeAngle }, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           if (onHit) onHit();
 
-          // Phase 3 (Return stance ~120ms): { z: 0, x: 0 } (Quadratic.Out), triggers onComplete()
+          // Phase 3: Recover (Thu tay về 0 deg trong 100ms)
           new TWEEN.Tween(pivot.rotation)
-            .to({ z: 0, x: 0 }, 120)
+            .to({ z: 0 }, 100)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
               if (onComplete) onComplete();

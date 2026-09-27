@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin 3D Visual Socket & Pivot Calibration | Quiz Battle 3D</title>
+  <title>Admin 3D Visual Socket & Compound Rigging | Quiz Battle 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=23.0">
+  <link rel="stylesheet" href="css/style.css?v=24.0">
   <script type="importmap">
   {
     "imports": {
@@ -28,7 +28,7 @@
       box-sizing: border-box;
     }
     .admin-container {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -38,7 +38,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.9);
       border: 2px solid #00b4d8;
       border-radius: 12px;
       padding: 16px 24px;
@@ -68,11 +68,11 @@
     }
     .calibration-layout {
       display: grid;
-      grid-template-columns: 1fr 380px;
+      grid-template-columns: 1fr 400px;
       gap: 16px;
-      min-height: 620px;
+      min-height: 640px;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 960px) {
       .calibration-layout {
         grid-template-columns: 1fr;
       }
@@ -85,7 +85,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      min-height: 520px;
+      min-height: 540px;
     }
     .viewport-canvas-wrap {
       flex: 1;
@@ -99,36 +99,81 @@
       top: 12px;
       left: 12px;
       pointer-events: none;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 8px 12px;
-      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 14px;
+      border-radius: 8px;
       font-size: 11px;
-      color: #94a3b8;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      line-height: 1.6;
     }
     .controls-card {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.9);
       border: 2px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+    }
+    .step-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .step-tab {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-align: center;
+    }
+    .step-tab.active {
+      background: #00b4d8;
+      color: #041019;
+      box-shadow: 0 2px 8px rgba(0, 180, 216, 0.4);
+    }
+    .step-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step-pane.hidden {
+      display: none;
+    }
+    .info-box {
+      font-size: 11px;
+      line-height: 1.5;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: rgba(0, 180, 216, 0.1);
+      border-left: 3px solid #00b4d8;
+      color: #94a3b8;
     }
     .control-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
     .control-label {
       font-size: 12px;
       font-weight: 700;
-      color: #94a3b8;
+      color: #cbd5e1;
       display: flex;
       justify-content: space-between;
     }
     .control-label span.val {
-      color: #00b4d8;
+      color: #00cfff;
       font-family: monospace;
       font-size: 13px;
     }
@@ -160,18 +205,18 @@
       color: #00b4d8;
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 6px;
-      padding: 6px;
+      padding: 5px 8px;
       font-size: 12px;
       font-family: monospace;
       text-align: right;
     }
-    .btn-save {
-      background: #06d6a0;
-      color: #052e16;
+    .btn-test {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
       border: none;
       border-radius: 8px;
-      padding: 12px 20px;
-      font-size: 14px;
+      padding: 10px 16px;
+      font-size: 12px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
@@ -179,25 +224,43 @@
       justify-content: center;
       gap: 8px;
       transition: all 0.2s;
-      margin-top: 10px;
     }
-    .btn-save:hover {
-      background: #05b586;
-      transform: translateY(-2px);
+    .btn-test:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+    .btn-save {
+      background: linear-gradient(135deg, #06d6a0, #00b4d8);
+      color: #052e16;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
       box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
     }
-    .btn-reset {
+    .btn-save:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px);
+    }
+    .btn-nav {
       background: rgba(255, 255, 255, 0.08);
       color: #cbd5e1;
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 12px;
+      padding: 8px 14px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .btn-reset:hover {
+    .btn-nav:hover {
       background: rgba(255, 255, 255, 0.15);
     }
     .status-toast {
@@ -231,8 +294,8 @@
       <div class="admin-title">
         <span style="font-size:24px;">🎯</span>
         <div>
-          <div>HỆ THỐNG CÂN CHỈNH KHỚP TAY &amp; CHUÔI VŨ KHÍ (3D SOCKET CALIBRATOR)</div>
-          <div style="font-size:11px; color:#64748b; font-weight:normal;">Trực quan hóa Grip Point &amp; Hilt Alignment cho Nhân Vật, Boss &amp; Vũ Khí</div>
+          <div>HỆ THỐNG CÂN CHỈNH KHỚP TAY &amp; KHÓA VŨ KHÍ 3D (COMPOUND RIGGING)</div>
+          <div style="font-size:11px; color:#64748b; font-weight:normal;">Định vị Khớp Vai/Tay &amp; Khóa Chặt Vũ Khí Cho Chuyển Động Chém / Đập Đơn Trục Uy Lực</div>
         </div>
       </div>
       <a href="/" class="back-btn">⬅️ Quay lại trò chơi</a>
@@ -244,91 +307,143 @@
         <div class="viewport-canvas-wrap" id="viewport-canvas-container"></div>
         <div class="viewport-overlay">
           <div>💡 <b>Chuột trái:</b> Xoay camera | <b>Cuộn chuột:</b> Thu phóng | <b>Chuột phải:</b> Di chuyển</div>
-          <div>📍 <b>Click vào mô hình:</b> Đặt trực tiếp điểm khớp (Anchor Marker)</div>
+          <div>📍 <b>Click vào mô hình (Bước 1):</b> Đặt Khớp Vai / Khớp xoay cánh tay</div>
         </div>
       </div>
 
-      <!-- Controls & Adjustment Sliders -->
+      <!-- Controls & 2-Step Configuration Card -->
       <div class="controls-card">
         <div class="control-group">
-          <label class="control-label">Chọn Mô Hình Cần Cân Chỉnh:</label>
+          <label class="control-label">Chọn Đối Tượng Cân Chỉnh:</label>
           <select id="select-model-target" class="select-model">
             <optgroup label="── 👤 Nhân Vật (Player) ──">
-              <option value="player.default" selected>Nhân vật Mặc Định (Player Default)</option>
-              <option value="player.thunder">Nhân vật Sét (Player Thunder)</option>
-              <option value="player.fire">Nhân vật Lửa (Player Fire)</option>
-              <option value="player.frost">Nhân vật Băng (Player Frost)</option>
+              <option value="player" selected>👤 Nhân vật (Áp dụng toàn bộ 4 trang phục)</option>
             </optgroup>
             <optgroup label="── 👾 Trùm Cuối (Boss) ──">
-              <option value="boss.thunder">Boss Sét (Thunder Boss)</option>
-              <option value="boss.fire">Boss Lửa (Fire Boss)</option>
-              <option value="boss.frost">Boss Băng (Frost Boss)</option>
-            </optgroup>
-            <optgroup label="── ⚔️ Chuôi Vũ Khí (Weapon Hilt) ──">
-              <option value="weapon.player_sword">Kiếm Nhân Vật (Player Sword Hilt)</option>
-              <option value="weapon.boss_hammer">Búa / Trượng Boss (Boss Hammer Hilt)</option>
+              <option value="boss">👾 Trùm Cuối (Boss Sét / Lửa / Băng)</option>
             </optgroup>
           </select>
         </div>
 
+        <!-- 2-Step Navigation Switcher -->
+        <div class="step-tabs">
+          <button id="btn-tab-step1" class="step-tab active">1️⃣ Bước 1: Khớp Vai/Tay</button>
+          <button id="btn-tab-step2" class="step-tab">2️⃣ Bước 2: Khóa Vũ Khí</button>
+        </div>
+
+        <!-- PANE 1: Step 1 - Shoulder Pivot -->
+        <div id="pane-step1" class="step-pane">
+          <div class="info-box">
+            📍 <b>Bước 1:</b> Click trực tiếp lên vai/cánh tay nhân vật hoặc kéo thanh trượt để đặt tâm xoay khớp vai (Shoulder Anchor). Tâm xoay này giữ nguyên cho cả 4 bộ trang phục.
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Tọa độ Vai X (Ngang):</span>
+              <span class="val" id="val-shoulder-x">-0.65</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-shoulder-x" min="-3.0" max="3.0" step="0.02" value="-0.65">
+              <input type="number" id="num-shoulder-x" step="0.02" value="-0.65">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Tọa độ Vai Y (Chiều cao):</span>
+              <span class="val" id="val-shoulder-y">1.20</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-shoulder-y" min="-1.0" max="5.0" step="0.02" value="1.20">
+              <input type="number" id="num-shoulder-y" step="0.02" value="1.20">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Tọa độ Vai Z (Trước / Sau):</span>
+              <span class="val" id="val-shoulder-z">0.00</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-shoulder-z" min="-3.0" max="3.0" step="0.02" value="0.00">
+              <input type="number" id="num-shoulder-z" step="0.02" value="0.00">
+            </div>
+          </div>
+
+          <button id="btn-goto-step2" class="btn-test" style="background:#00b4d8; color:#052e16; margin-top:8px;">
+            <span>➡️ Tiếp Tục: Sang Bước 2 Khóa Vũ Khí</span>
+          </button>
+        </div>
+
+        <!-- PANE 2: Step 2 - Attach & Offset Weapon to Hand -->
+        <div id="pane-step2" class="step-pane hidden">
+          <div class="info-box">
+            ⚔️ <b>Bước 2:</b> Căn chỉnh chuôi vũ khí vào lòng bàn tay. Vũ khí sẽ được khóa cứng trực tiếp vào cánh tay (`combatArmCompound`) để thực hiện cú chém xoay đơn trục uy lực.
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Dịch chuyển X (Offset X):</span>
+              <span class="val" id="val-offset-x">0.00</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-offset-x" min="-2.0" max="2.0" step="0.02" value="0.00">
+              <input type="number" id="num-offset-x" step="0.02" value="0.00">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Dịch chuyển Y (Offset Y):</span>
+              <span class="val" id="val-offset-y">-0.40</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-offset-y" min="-2.0" max="2.0" step="0.02" value="-0.40">
+              <input type="number" id="num-offset-y" step="0.02" value="-0.40">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Dịch chuyển Z (Offset Z):</span>
+              <span class="val" id="val-offset-z">0.10</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-offset-z" min="-2.0" max="2.0" step="0.02" value="0.10">
+              <input type="number" id="num-offset-z" step="0.02" value="0.10">
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Góc nghiêng ban đầu (Tilt Angle):</span>
+              <span class="val" id="val-tilt-angle">-45°</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-tilt-angle" min="-180" max="180" step="1" value="-45">
+              <input type="number" id="num-tilt-angle" step="1" value="-45">
+            </div>
+          </div>
+
+          <button id="btn-test-swing" class="btn-test" style="margin-top:4px;">
+            <span>⚔️ THỬ NGHIỆM VUNG KIẾM / ĐẬP BÚA (TEST SWING)</span>
+          </button>
+
+          <button id="btn-goto-step1" class="btn-nav">
+            <span>⬅️ Quay lại Bước 1 (Chỉnh Khớp Vai)</span>
+          </button>
+        </div>
+
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:4px 0;"></div>
 
-        <!-- Slider X -->
-        <div class="control-group">
-          <div class="control-label">
-            <span>Tọa độ X (Trục ngang)</span>
-            <span class="val" id="val-x">0.65</span>
-          </div>
-          <div class="slider-row">
-            <input type="range" id="slider-x" min="-3.0" max="3.0" step="0.01" value="0.65">
-            <input type="number" id="num-x" step="0.01" value="0.65">
-          </div>
-        </div>
-
-        <!-- Slider Y -->
-        <div class="control-group">
-          <div class="control-label">
-            <span>Tọa độ Y (Chiều cao)</span>
-            <span class="val" id="val-y">0.85</span>
-          </div>
-          <div class="slider-row">
-            <input type="range" id="slider-y" min="-2.0" max="5.0" step="0.01" value="0.85">
-            <input type="number" id="num-y" step="0.01" value="0.85">
-          </div>
-        </div>
-
-        <!-- Slider Z -->
-        <div class="control-group">
-          <div class="control-label">
-            <span>Tọa độ Z (Độ sâu)</span>
-            <span class="val" id="val-z">0.10</span>
-          </div>
-          <div class="slider-row">
-            <input type="range" id="slider-z" min="-3.0" max="3.0" step="0.01" value="0.10">
-            <input type="number" id="num-z" step="0.01" value="0.10">
-          </div>
-        </div>
-
-        <!-- Slider Angle -->
-        <div class="control-group" id="group-angle">
-          <div class="control-label">
-            <span>Góc quay (Rotation Angle - Độ)</span>
-            <span class="val" id="val-angle">-45°</span>
-          </div>
-          <div class="slider-row">
-            <input type="range" id="slider-angle" min="-180" max="180" step="1" value="-45">
-            <input type="number" id="num-angle" step="1" value="-45">
-          </div>
-        </div>
-
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="btn-reset-default" class="btn-reset" style="flex:1;">🔄 Đặt lại chuẩn</button>
+        <div style="display:flex; gap:8px;">
+          <button id="btn-reset-default" class="btn-nav" style="flex:1;">🔄 Đặt lại chuẩn</button>
         </div>
 
         <div id="status-toast" class="status-toast"></div>
 
         <button id="btn-save-sockets" class="btn-save">
-          <span>💾</span> LƯU THIẾT LẬP KHỚP
+          <span>💾</span> KHÓA VŨ KHÍ VÀO TAY &amp; LƯU LẠI
         </button>
       </div>
     </div>

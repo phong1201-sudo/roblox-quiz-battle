@@ -311,12 +311,36 @@ const socketsFilePath = path.join(__dirname, '../data/sockets.json');
 
 const DEFAULT_SOCKETS = {
   player: {
+    shoulderX: -0.65,
+    shoulderY: 1.2,
+    shoulderZ: 0.0,
+    weapon: {
+      offsetX: 0.0,
+      offsetY: -0.4,
+      offsetZ: 0.1,
+      rotX: 0.0,
+      rotY: 1.5708,
+      rotZ: -0.7854,
+      angle: -45
+    },
     default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     frost:   { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 }
   },
   boss: {
+    shoulderX: -1.8,
+    shoulderY: 2.2,
+    shoulderZ: 0.2,
+    weapon: {
+      offsetX: 0.0,
+      offsetY: -0.6,
+      offsetZ: 0.5,
+      rotX: 0.0,
+      rotY: -1.5708,
+      rotZ: 0.5236,
+      angle: 30
+    },
     thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
     fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
     frost:   { handX: -0.9, handY: 1.3, handZ: 0.1 }

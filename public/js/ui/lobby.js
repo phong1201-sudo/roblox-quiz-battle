@@ -1451,6 +1451,10 @@ function _buildAdminDashboard(container, gameState) {
   const calibBtnGroup = document.createElement('div');
   calibBtnGroup.style.cssText = 'display:flex;gap:8px;align-items:center;';
 
+  const btnTest = document.createElement('button');
+  btnTest.innerHTML = '⚔️ THỬ VUNG';
+  btnTest.style.cssText = 'font-size:10px;font-weight:800;padding:6px 12px;border-radius:6px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;';
+
   const btnReset = document.createElement('button');
   btnReset.textContent = '↺ Mặc Định';
   btnReset.style.cssText = 'font-size:10px;font-weight:700;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.1);color:#aaa;border:1px solid #555;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;';
@@ -1465,6 +1469,7 @@ function _buildAdminDashboard(container, gameState) {
   linkFullscreen.textContent = '🔗 Toàn Màn Hình';
   linkFullscreen.style.cssText = 'font-size:10px;color:#00cfff;text-decoration:none;padding:5px 8px;border:1px solid rgba(0,207,255,0.4);border-radius:6px;background:rgba(0,207,255,0.1);';
 
+  calibBtnGroup.appendChild(btnTest);
   calibBtnGroup.appendChild(btnReset);
   calibBtnGroup.appendChild(btnSave);
   calibBtnGroup.appendChild(linkFullscreen);
@@ -1562,6 +1567,7 @@ function _buildAdminDashboard(container, gameState) {
         sliderY: ctrlY.slider, numY: ctrlY.numInput, valY: ctrlY.valSpan,
         sliderZ: ctrlZ.slider, numZ: ctrlZ.numInput, valZ: ctrlZ.valSpan,
         groupAngle: ctrlAngle.row, sliderAngle: ctrlAngle.slider, numAngle: ctrlAngle.numInput, valAngle: ctrlAngle.valSpan,
+        btnTestSwing: btnTest,
         btnSave, btnReset, statusToast
       });
     } catch (e) {
