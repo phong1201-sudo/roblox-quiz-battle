@@ -19,6 +19,18 @@ const PORT   = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 
+// ── Alias: serve kid drawing as a clean /assets/characters/fireblade.png URL ──
+// The actual file has spaces/parens in the name — this avoids encoding headaches
+app.get('/assets/characters/fireblade.png', (req, res) => {
+  const src = path.join(__dirname, '../public/assets/characters/fireblade(cho game)_0.jpg');
+  if (fs.existsSync(src)) {
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.sendFile(src);
+  } else {
+    res.status(404).end();
+  }
+});
+
 
 // ── Ensure runtime directories exist (important for Render ephemeral FS) ─────
 const uploadDir   = path.join(__dirname, 'uploads');
@@ -440,17 +452,36 @@ const resolveQuestion = (code) => {
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
 
-  socket.on('create_room', ({ playerName, color, userId }) => {
+  socket.on('create_room', ({ playerName, color, userId, equippedSet, inventory }) => {
     try {
-      const { code, players, hostId } = roomManager.createRoom(socket.id, playerName, color, userId);
+      // Server-side inventory lookup as source of truth (fallback to client-sent)
+      let serverInventory = inventory || { thunder: [], fire: [], frost: [] };
+      if (userId) {
+        try {
+          const u = db.getUser(userId);
+          if (u?.inventory) serverInventory = u.inventory;
+        } catch(e) {}
+      }
+      const { code, players, hostId } = roomManager.createRoom(
+        socket.id, playerName, color, userId, equippedSet || null, serverInventory
+      );
       socket.join(code);
       socket.emit('room_created', { code, players, hostId });
     } catch (e) { console.error('[create_room]', e.message); }
   });
 
-  socket.on('join_room', ({ code, playerName, color, userId }) => {
+  socket.on('join_room', ({ code, playerName, color, userId, equippedSet, inventory }) => {
     try {
-      const { players, hostId } = roomManager.joinRoom(code, socket.id, playerName, color, userId);
+      let serverInventory = inventory || { thunder: [], fire: [], frost: [] };
+      if (userId) {
+        try {
+          const u = db.getUser(userId);
+          if (u?.inventory) serverInventory = u.inventory;
+        } catch(e) {}
+      }
+      const { players, hostId } = roomManager.joinRoom(
+        code, socket.id, playerName, color, userId, equippedSet || null, serverInventory
+      );
       socket.join(code);
       socket.to(code).emit('player_joined', { players });
       socket.emit('room_joined', { code, players, hostId });

@@ -12,7 +12,7 @@ class RoomManager {
     return code;
   }
 
-  createRoom(socketId, playerName, color, userId) {
+  createRoom(socketId, playerName, color, userId, equippedSet, inventory) {
     let code;
     do { code = this.generateCode(); } while (this.rooms.has(code));
 
@@ -41,13 +41,15 @@ class RoomManager {
       correctAnswerCount: 0,
       damagePerHit: 1,
       thunderSetUnlocked: false,
+      equippedSet:  equippedSet  || null,
+      inventory:    inventory    || { thunder: [], fire: [], frost: [] },
     });
 
     this.rooms.set(code, room);
     return { code, players: Array.from(room.players.values()), hostId: socketId };
   }
 
-  joinRoom(code, socketId, playerName, color, userId) {
+  joinRoom(code, socketId, playerName, color, userId, equippedSet, inventory) {
     const room = this.rooms.get(code);
     if (!room) throw new Error('Room not found');
     if (room.phase !== 'LOBBY') throw new Error('Game already in progress');
@@ -61,6 +63,8 @@ class RoomManager {
       correctAnswerCount: 0,
       damagePerHit: 1,
       thunderSetUnlocked: false,
+      equippedSet:  equippedSet  || null,
+      inventory:    inventory    || { thunder: [], fire: [], frost: [] },
     });
 
     return { code, players: Array.from(room.players.values()), hostId: room.hostId };
@@ -218,6 +222,17 @@ class RoomManager {
       return false;
     };
 
+    const FULL_SET_PIECES = ['hat', 'shirt', 'pants', 'shoes', 'weapon'];
+
+    /** Returns true if player has all 5 pieces of their equipped element */
+    const checkHasFullSet = (p) => {
+      const el = p.equippedSet || null;
+      if (!el) return false;
+      const inv = p.inventory?.[el];
+      if (!Array.isArray(inv)) return false;
+      return FULL_SET_PIECES.every(piece => inv.includes(piece));
+    };
+
     const answerCounts = { A:0, B:0, C:0, D:0 };
     const combatEvents = [];
 
@@ -229,7 +244,9 @@ class RoomManager {
       // ── PvE ───────────────────────────────────────────────────────────────
       for (const p of room.players.values()) {
         if (isCorrect(p.answer)) {
-          const dmg = p.damagePerHit || 1;
+          // Damage: 2 if player has ALL 5 pieces of their equipped elemental set, else 1
+          const hasFullSet = checkHasFullSet(p);
+          const dmg = hasFullSet ? 2 : 1;
           room.bossHp = Math.max(0, room.bossHp - dmg);
 
           p.correctAnswerCount = (p.correctAnswerCount || 0) + 1;
@@ -237,15 +254,6 @@ class RoomManager {
           if (RoomManager.MILESTONE_ITEMS[count]) {
             const milestone = { playerId: p.id, count, itemName: RoomManager.MILESTONE_ITEMS[count] };
             milestones.push(milestone);
-            if (count === 50 && !p.thunderSetUnlocked) {
-              p.thunderSetUnlocked = true;
-              p.damagePerHit = 2;
-              if (room.bossHpMultiplier < 2) {
-                room.bossHpMultiplier = 2;
-                const remaining = room.questions.length - room.currentIndex - 1;
-                room.bossHp += remaining;
-              }
-            }
           }
 
           combatEvents.push({
@@ -253,8 +261,9 @@ class RoomManager {
             attackerId: p.id,
             victimId: 'boss',
             damage: dmg,
-            lightning: p.thunderSetUnlocked,
-            element: room.bossElement || null,   // current boss element (thunder/fire/frost)
+            hasFullSet,
+            equippedSet: p.equippedSet || null,
+            element: room.bossElement || null,
           });
         } else {
           combatEvents.push({ type: 'dodge', targetId: 'boss' });

@@ -176,34 +176,37 @@ function processNextEvent() {
 }
 
 function runAttackSequence(ev) {
-  const dmg     = ev.damage || 1;
-  // Element = PLAYER'S equipped set only — never the boss
-  const element = Player.getActiveElement();
+  const dmg        = ev.damage || 1;
+  const hasFullSet = ev.hasFullSet || (dmg >= 2);   // full set = elemental double-hit
+  // Element = PLAYER'S equipped set from the event (authoritative from server)
+  const element    = ev.equippedSet || Player.getActiveElement();
 
   Player.playAttack(
     () => {
-      // ── Elemental SFX at hit impact moment ──────────────────────────────
-      try {
-        if      (element === 'thunder') Audio.playThunder();
-        else if (element === 'fire')    Audio.playFire();
-        else if (element === 'frost')   Audio.playFrost();
-        else                            Audio.playSlash();
-      } catch(e) {}
-
-      // Basic hit sparks always
+      // ── Always: basic slash SFX + hit spark ──────────────────────────────
+      try { Audio.playSlash(); } catch(e) {}
       Effects.spawnHitSpark(BOSS_VFX_POS);
       Boss.playBossHurt();
 
-      // Elemental follow-up only if player has that set equipped
-      if (element === 'thunder') {
-        Effects.triggerLightningSlash(BOSS_VFX_POS, `⚡ -${dmg}`);
-      } else if (element === 'fire') {
-        Effects.triggerFireBurst(BOSS_VFX_POS, `🔥 -${dmg}`);
-        Effects.triggerShake(0.4, 0.4);
-      } else if (element === 'frost') {
-        Effects.triggerFrostShatter(BOSS_VFX_POS, `❄️ -${dmg}`);
-        Effects.triggerShake(0.35, 0.4);
+      if (hasFullSet && element) {
+        // ── Full set: elemental SFX + elemental VFX (second hit) ─────────
+        try {
+          if      (element === 'thunder') Audio.playThunder();
+          else if (element === 'fire')    Audio.playFire();
+          else if (element === 'frost')   Audio.playFrost();
+        } catch(e) {}
+
+        if (element === 'thunder') {
+          Effects.triggerLightningSlash(BOSS_VFX_POS, `⚡ -${dmg}`);
+        } else if (element === 'fire') {
+          Effects.triggerFireBurst(BOSS_VFX_POS, `🔥 -${dmg}`);
+          Effects.triggerShake(0.4, 0.4);
+        } else if (element === 'frost') {
+          Effects.triggerFrostShatter(BOSS_VFX_POS, `❄️ -${dmg}`);
+          Effects.triggerShake(0.35, 0.4);
+        }
       } else {
+        // ── Normal / incomplete set: single slash, plain damage number ────
         Effects.spawnDamageNumber(BOSS_VFX_POS, `-${dmg} HP`, '#ffee44');
         Effects.triggerShake(0.18, 0.3);
       }

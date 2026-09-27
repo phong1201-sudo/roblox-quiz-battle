@@ -77,7 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // God Father flag from server role — no localStorage
         window._godFather = (user.role === 'admin');
 
-        emit('create_room', { playerName, color, userId: user.id });
+        emit('create_room', {
+            playerName,
+            color,
+            userId:       user.id,
+            equippedSet:  user.equippedSet  || null,
+            inventory:    user.inventory    || { thunder: [], fire: [], frost: [] },
+        });
     });
 
     const btnJoinScreen = document.getElementById('btn-join-screen');
@@ -93,7 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const code = document.getElementById('room-code-input').value.trim().toUpperCase();
         if (code.length !== 4) { alert('Room code must be 4 characters'); return; }
         const color = document.getElementById('player-color').value;
-        emit('join_room', { code, playerName: user.username, color, userId: user.id });
+        emit('join_room', {
+            code,
+            playerName:   user.username,
+            color,
+            userId:       user.id,
+            equippedSet:  user.equippedSet  || null,
+            inventory:    user.inventory    || { thunder: [], fire: [], frost: [] },
+        });
     });
 
     const btnBackJoin = document.getElementById('btn-back-join');

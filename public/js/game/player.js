@@ -326,8 +326,8 @@ function _buildFireSprite() {
   // ── Try the real kid-drawing image first ────────────────────────────────
   // Try the discovered filename, then a generic alias
   const FIREBLADE_PATHS = [
-    '/assets/characters/fireblade(cho%20game)_0.jpg',   // actual uploaded file
-    '/assets/characters/fireblade.png',                  // alias if renamed later
+    '/assets/characters/fireblade.png',                   // served by server alias route
+    '/assets/characters/fireblade(cho%20game)_0.jpg',    // direct fallback (URL-encoded)
   ];
 
   if (!_firebladePngTried) {
