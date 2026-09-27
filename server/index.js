@@ -214,6 +214,73 @@ const handleModelList = (req, res) => {
 app.get('/api/admin/model/list', handleModelList);
 app.get('/api/admin/models/list', handleModelList);
 
+// ── Admin: 3D Elemental Boss Upload (boss_thunder, boss_fire, boss_frost) ───
+// POST /api/admin/boss/upload { element: 'thunder'|'fire'|'frost', file }
+const bossUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    const isModel = /\.(glb|gltf|png|jpg|jpeg|webp)$/i.test(file.originalname) ||
+      file.mimetype.startsWith('image/') ||
+      ['model/gltf-binary', 'model/gltf+json', 'application/octet-stream', 'application/json'].includes(file.mimetype);
+    if (isModel) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận file định dạng 3D (.glb, .gltf) hoặc ảnh (.png, .jpg, .webp)'));
+  },
+});
+
+app.post('/api/admin/boss/upload', (req, res) => {
+  bossUpload.any()(req, res, (err) => {
+    if (err) return res.status(400).json({ success: false, error: err.message });
+    try {
+      const file = req.files?.[0];
+      if (!file) return res.status(400).json({ success: false, error: 'Chưa chọn file mô hình Boss' });
+      const element = (req.body?.element || req.query?.element || '').toLowerCase();
+      if (!['thunder', 'fire', 'frost'].includes(element))
+        return res.status(400).json({ success: false, error: 'Hệ không hợp lệ (phải là thunder, fire hoặc frost)' });
+
+      const modelsDir = path.join(__dirname, '../public/assets/models');
+      if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
+
+      const ext = path.extname(file.originalname).toLowerCase() || '.glb';
+      const targetFilename = `boss_${element}${ext}`;
+      const targetPath = path.join(modelsDir, targetFilename);
+
+      // Overwrite file
+      fs.writeFileSync(targetPath, file.buffer);
+
+      const url = `/assets/models/${targetFilename}?t=${Date.now()}`;
+      console.log(`[boss-model] Saved Boss asset: ${targetPath}`);
+      res.json({
+        success: true,
+        message: `Đã cập nhật mô hình Boss ${element}`,
+        filePath: targetPath,
+        url,
+        element,
+        filename: targetFilename
+      });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+});
+
+app.get('/api/admin/boss/status', (req, res) => {
+  const dir = path.join(__dirname, '../public/assets/models');
+  const result = {};
+  for (const el of ['thunder', 'fire', 'frost']) {
+    const glbExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(dir, `boss_${el}${ext}`)));
+    const imgExt = ['.png', '.jpg', '.jpeg', '.webp'].find(ext => fs.existsSync(path.join(dir, `boss_${el}${ext}`)));
+    if (glbExt) {
+      result[el] = { exists: true, type: '3d', ext: glbExt, url: `/assets/models/boss_${el}${glbExt}` };
+    } else if (imgExt) {
+      result[el] = { exists: true, type: 'image', ext: imgExt, url: `/assets/models/boss_${el}${imgExt}` };
+    } else {
+      result[el] = { exists: false, type: null, ext: null, url: null };
+    }
+  }
+  res.json(result);
+});
+
 // GET /api/admin/art/status: checks physical existence on disk
 app.get('/api/admin/art/status', (req, res) => {
   const dir = path.join(__dirname, '../public/assets/characters');

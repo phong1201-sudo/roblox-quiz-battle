@@ -1,4 +1,12 @@
 // THREE is available as a global from the CDN script tag
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Boss Roster — 3 elemental stages + 1 bonus
@@ -57,6 +65,17 @@ const BOSS_ROSTER = [
 // ─── Module state ─────────────────────────────────────────────────────────────
 let bossGroup = null;
 let bossScene = null;
+let proceduralRoot = null;
+let customBossModel = null;
+let customBossRoot = null;
+let isCustomBoss = false;
+let is2DBoss = false;
+let isDefeated = false;
+let customBossMaterials = [];
+let customBossOrigColors = [];
+let customBossOrigEmissives = [];
+let hpMesh = null;
+
 let allBodyParts = [], originalColors = [], accentParts = [];
 let hpCanvas, hpCtx, hpBarTexture;
 let idleTime = 0;
@@ -73,6 +92,10 @@ function makeMat(color, emissive) {
 }
 function box(w,h,d,mat) { return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); }
 function trackBody(mesh) { allBodyParts.push(mesh); originalColors.push(mesh.material.color.getHex()); }
+function addToBoss(mesh) {
+  if (proceduralRoot) proceduralRoot.add(mesh);
+  else if (bossGroup) bossGroup.add(mesh);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STAGE 1 — Thunder Golem
@@ -87,7 +110,7 @@ function buildThunderGolem(d) {
   // Head — square and massive
   const head = box(2.8, 2.6, 2.6, rock.clone());
   head.position.set(0, 6.2, 0);
-  trackBody(head); bossGroup.add(head);
+  trackBody(head); addToBoss(head);
 
   // Lightning-rod horns (tall thin prisms, yellow tips)
   for (const s of [-1,1]) {
@@ -131,7 +154,7 @@ function buildThunderGolem(d) {
 
   // Torso — heavy, with glowing seam stripes
   const torso = box(3.4, 3.8, 1.6, rock.clone());
-  torso.position.set(0, 2.4, 0); trackBody(torso); bossGroup.add(torso);
+  torso.position.set(0, 2.4, 0); trackBody(torso); addToBoss(torso);
 
   // Seam cracks on torso
   const tCrack = box(3.4,0.1,1.65, crack.clone());
@@ -142,7 +165,7 @@ function buildThunderGolem(d) {
   // Boulder shoulder pads with cyan trim
   for (const s of [-1,1]) {
     const pad = box(1.4,1.4,1.4, rock.clone());
-    pad.position.set(s*2.6,3.6,0); bossGroup.add(pad); trackBody(pad);
+    pad.position.set(s*2.6,3.6,0); addToBoss(pad); trackBody(pad);
     const trim = box(1.45,0.12,1.45, crack.clone());
     trim.position.set(0,0.65,0); pad.add(trim); accentParts.push(trim);
   }
@@ -150,7 +173,7 @@ function buildThunderGolem(d) {
   // Arms — thick rocky
   for (const s of [-1,1]) {
     const arm = box(1.2,3.2,1.2, rock.clone());
-    arm.position.set(s*2.5,1.8,0); trackBody(arm); bossGroup.add(arm);
+    arm.position.set(s*2.5,1.8,0); trackBody(arm); addToBoss(arm);
     // Seam on arm
     const aCrack = box(1.25,0.08,1.25, crack.clone());
     aCrack.position.set(0,0,0); arm.add(aCrack); accentParts.push(aCrack);
@@ -159,7 +182,7 @@ function buildThunderGolem(d) {
   // Legs — stocky
   for (const s of [-1,1]) {
     const leg = box(1.3,2.8,1.3, rock.clone());
-    leg.position.set(s*0.85,-1.4,0); trackBody(leg); bossGroup.add(leg);
+    leg.position.set(s*0.85,-1.4,0); trackBody(leg); addToBoss(leg);
   }
 }
 
@@ -176,7 +199,7 @@ function buildInfernoDemon(d) {
 
   // Head
   const head = box(2.4,2.4,2.4, body.clone());
-  head.position.set(0,5.8,0); trackBody(head); bossGroup.add(head);
+  head.position.set(0,5.8,0); trackBody(head); addToBoss(head);
 
   // Curved lava horns — two segments each
   for (const s of [-1,1]) {
@@ -215,7 +238,7 @@ function buildInfernoDemon(d) {
 
   // Torso — charcoal with magma lines
   const torso = box(3.0,3.6,1.5, body.clone());
-  torso.position.set(0,2.2,0); trackBody(torso); bossGroup.add(torso);
+  torso.position.set(0,2.2,0); trackBody(torso); addToBoss(torso);
 
   // Magma crack lines on torso
   for (const yOff of [0.5,-0.5]) {
@@ -229,7 +252,7 @@ function buildInfernoDemon(d) {
   // Magma shoulders (glowing rounded pads)
   for (const s of [-1,1]) {
     const pad = box(1.3,0.9,1.3, lava.clone());
-    pad.position.set(s*2.15,3.8,0); bossGroup.add(pad); accentParts.push(pad);
+    pad.position.set(s*2.15,3.8,0); addToBoss(pad); accentParts.push(pad);
     // Molten surface dimple
     const core = box(0.6,0.4,0.6, eye.clone());
     core.position.set(0,0.35,0); pad.add(core); accentParts.push(core);
@@ -238,7 +261,7 @@ function buildInfernoDemon(d) {
   // Arms with claw tips
   for (const s of [-1,1]) {
     const arm = box(1.1,3.2,1.1, body.clone());
-    arm.position.set(s*2.1,2.0,0); trackBody(arm); bossGroup.add(arm);
+    arm.position.set(s*2.1,2.0,0); trackBody(arm); addToBoss(arm);
     for (const c of [-1,1]) {
       const claw = box(0.3,0.6,0.3, lava.clone());
       claw.position.set(c*0.25,-1.8,0); arm.add(claw); accentParts.push(claw);
@@ -248,7 +271,7 @@ function buildInfernoDemon(d) {
   // Legs
   for (const s of [-1,1]) {
     const leg = box(1.2,3.0,1.2, body.clone());
-    leg.position.set(s*0.75,-1.5,0); trackBody(leg); bossGroup.add(leg);
+    leg.position.set(s*0.75,-1.5,0); trackBody(leg); addToBoss(leg);
   }
 }
 
@@ -265,7 +288,7 @@ function buildFrostTitan(d) {
 
   // Head — slightly wider, glacial
   const head = box(2.5,2.4,2.4, ice.clone());
-  head.position.set(0,5.9,0); trackBody(head); bossGroup.add(head);
+  head.position.set(0,5.9,0); trackBody(head); addToBoss(head);
 
   // Ice crown — jagged crystal spikes
   for (let i=0;i<5;i++) {
@@ -306,7 +329,7 @@ function buildFrostTitan(d) {
 
   // Torso — glacial with ice vein lines
   const torso = box(3.2,3.6,1.5, ice.clone());
-  torso.position.set(0,2.2,0); trackBody(torso); bossGroup.add(torso);
+  torso.position.set(0,2.2,0); trackBody(torso); addToBoss(torso);
 
   // Veins on torso
   const tv = box(3.25,0.06,1.55, vein.clone());
@@ -317,7 +340,7 @@ function buildFrostTitan(d) {
   // Jagged crystalline ice pauldrons
   for (const s of [-1,1]) {
     const base = box(1.6,1.0,1.6, ice.clone());
-    base.position.set(s*2.3,3.6,0); bossGroup.add(base); trackBody(base);
+    base.position.set(s*2.3,3.6,0); addToBoss(base); trackBody(base);
     // Crystal spikes on pauldrons
     for (let j=0;j<4;j++) {
       const sp = box(0.22,0.55+j*0.18,0.22, shard.clone());
@@ -330,7 +353,7 @@ function buildFrostTitan(d) {
   // Arms — icy, thick
   for (const s of [-1,1]) {
     const arm = box(1.15,3.0,1.15, ice.clone());
-    arm.position.set(s*2.15,2.0,0); trackBody(arm); bossGroup.add(arm);
+    arm.position.set(s*2.15,2.0,0); trackBody(arm); addToBoss(arm);
     // Ice vein stripe
     const av = box(1.2,0.07,1.2, vein.clone());
     av.position.set(0,0,0); arm.add(av); accentParts.push(av);
@@ -339,7 +362,7 @@ function buildFrostTitan(d) {
   // Legs
   for (const s of [-1,1]) {
     const leg = box(1.25,2.8,1.25, ice.clone());
-    leg.position.set(s*0.82,-1.4,0); trackBody(leg); bossGroup.add(leg);
+    leg.position.set(s*0.82,-1.4,0); trackBody(leg); addToBoss(leg);
   }
 }
 
@@ -353,7 +376,7 @@ function buildShadowKing(d) {
   const dark = makeMat(0x050008);
 
   const head = box(2.4,2.4,2.4, mat.clone());
-  head.position.set(0,5.8,0); trackBody(head); bossGroup.add(head);
+  head.position.set(0,5.8,0); trackBody(head); addToBoss(head);
 
   const hood = box(2.8,1.0,2.8, mat.clone());
   hood.position.set(0,1.6,0); head.add(hood); trackBody(hood);
@@ -374,21 +397,21 @@ function buildShadowKing(d) {
   const fang = box(0.16,0.28,0.1, gold.clone()); fang.position.set(-0.16,-0.32,1.28); head.add(fang); accentParts.push(fang);
 
   const torso = box(3.2,4.0,1.4, mat.clone());
-  torso.position.set(0,2.0,0); trackBody(torso); bossGroup.add(torso);
+  torso.position.set(0,2.0,0); trackBody(torso); addToBoss(torso);
   [[-2.05,0],[2.05,0]].forEach(([y,_])=>{ const t=box(3.4,0.3,1.5,gold.clone()); t.position.set(0,y,0); torso.add(t); accentParts.push(t); });
 
   for (const s of [-1,1]) {
     const arm = box(1.2,3.2,1.2, mat.clone());
-    arm.position.set(s*2.2,2.0,0); trackBody(arm); bossGroup.add(arm);
+    arm.position.set(s*2.2,2.0,0); trackBody(arm); addToBoss(arm);
   }
   const staffPole = box(0.2,5.0,0.2, gold.clone());
-  staffPole.position.set(3.5,3.5,0); accentParts.push(staffPole); bossGroup.add(staffPole);
+  staffPole.position.set(3.5,3.5,0); accentParts.push(staffPole); addToBoss(staffPole);
   const staffOrb = box(0.7,0.7,0.7, eyeM.clone());
   staffOrb.position.set(0,2.6,0); staffPole.add(staffOrb);
 
   for (const s of [-1,1]) {
     const leg = box(1.1,2.8,1.1, mat.clone());
-    leg.position.set(s*0.7,-1.4,0); trackBody(leg); bossGroup.add(leg);
+    leg.position.set(s*0.7,-1.4,0); trackBody(leg); addToBoss(leg);
   }
 }
 
@@ -399,21 +422,161 @@ function buildHpBar() {
   hpCtx = hpCanvas.getContext('2d');
   hpBarTexture = new THREE.CanvasTexture(hpCanvas);
   const hpMat = new THREE.MeshBasicMaterial({map:hpBarTexture,transparent:true,depthTest:false});
-  const hpMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.5,0.7), hpMat);
-  hpMesh.position.set(0,11.0,0);
+  hpMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.5,0.7), hpMat);
+  hpMesh.position.set(0, isCustomBoss ? 5.2 : 11.0, 0);
   hpMesh.onBeforeRender = function(r,s,cam){ this.quaternion.copy(cam.quaternion); };
   bossGroup.add(hpMesh);
   setBossHp(1,1);
 }
 
+// ─── 3D Model & 2.5D Asset Loader for Bosses ─────────────────────────────────
+function _loadGLTF(url) {
+  return new Promise((resolve) => {
+    try {
+      gltfLoader.load(
+        url,
+        (gltf) => {
+          console.log('[boss] Loaded GLTF model:', url);
+          resolve(gltf);
+        },
+        undefined,
+        () => resolve(null)
+      );
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+function _checkImageExists(el) {
+  return new Promise((resolve) => {
+    const exts = ['.png', '.jpg', '.jpeg', '.webp'];
+    let idx = 0;
+    const tryNext = () => {
+      if (idx >= exts.length) return resolve(null);
+      const url = `/assets/models/boss_${el}${exts[idx++]}`;
+      const img = new window.Image();
+      img.onload = () => resolve(url);
+      img.onerror = tryNext;
+      img.src = url;
+    };
+    tryNext();
+  });
+}
+
+async function _loadCustomBoss(el) {
+  if (!el || !bossGroup) return;
+
+  // 1. Attempt Native 3D GLB/GLTF Boss
+  let gltf = await _loadGLTF(`/assets/models/boss_${el}.glb`);
+  if (!gltf) gltf = await _loadGLTF(`/assets/models/boss_${el}.gltf`);
+
+  if (gltf && gltf.scene && bossGroup) {
+    if (proceduralRoot) proceduralRoot.visible = false;
+    isCustomBoss = true;
+    is2DBoss = false;
+
+    customBossRoot = new THREE.Group();
+    customBossRoot.name = 'CustomBossRoot';
+
+    customBossModel = gltf.scene.clone(true);
+    customBossMaterials = [];
+    customBossOrigColors = [];
+    customBossOrigEmissives = [];
+
+    customBossModel.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material) {
+          customBossMaterials.push(child.material);
+          if (child.material.color) customBossOrigColors.push(child.material.color.getHex());
+          if (child.material.emissive) customBossOrigEmissives.push(child.material.emissive.getHex());
+        }
+      }
+    });
+
+    // Scale appropriately (1.3x to 1.6x player size to look imposing, e.g. ~4.0 units height)
+    const bBox = new THREE.Box3().setFromObject(customBossModel);
+    const bSize = new THREE.Vector3();
+    bBox.getSize(bSize);
+    if (bSize.y > 0.01) {
+      const targetHeight = 4.0;
+      const scaleFactor = targetHeight / bSize.y;
+      customBossModel.scale.setScalar(scaleFactor);
+    }
+
+    // Center horizontally and align base at y = 0
+    const scaledBox = new THREE.Box3().setFromObject(customBossModel);
+    customBossModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
+    customBossModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
+    customBossModel.position.y = - scaledBox.min.y;
+
+    // Face the player on the left (-X):
+    customBossRoot.rotation.y = -Math.PI / 2;
+    customBossRoot.add(customBossModel);
+    bossGroup.add(customBossRoot);
+
+    if (hpMesh) hpMesh.position.set(0, 5.2, 0);
+    console.log(`[boss] Successfully mounted custom 3D model for Boss ${el}`);
+    return;
+  }
+
+  // 2. Attempt 2.5D Billboard Sprite Boss (boss_${el}.png, .jpg, .webp)
+  const imgUrl = await _checkImageExists(el);
+  if (imgUrl && bossGroup) {
+    if (proceduralRoot) proceduralRoot.visible = false;
+    isCustomBoss = true;
+    is2DBoss = true;
+
+    new THREE.TextureLoader().load(imgUrl, (tex) => {
+      if (!bossGroup) return;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const planeGeo = new THREE.PlaneGeometry(3.6, 4.8);
+      const planeMat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+      planeMesh.position.set(0, 2.4, 0);
+      planeMesh.rotation.y = -Math.PI / 6; // Angled toward player/camera
+      customBossRoot = new THREE.Group();
+      customBossRoot.add(planeMesh);
+      bossGroup.add(customBossRoot);
+      if (hpMesh) hpMesh.position.set(0, 5.2, 0);
+      console.log(`[boss] Successfully mounted 2.5D billboard sprite for Boss ${el}`);
+    });
+  }
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
-export function createBoss(scene, bossIndex=0) {
+export function createBoss(scene, bossIdentifier = 0) {
   if (bossGroup) removeBoss(scene);
   bossScene = scene;
-  currentBossData = BOSS_ROSTER[Math.min(bossIndex, BOSS_ROSTER.length-1)];
+
+  if (typeof bossIdentifier === 'string') {
+    currentBossData = BOSS_ROSTER.find(b => b.element === bossIdentifier) || BOSS_ROSTER[0];
+  } else if (typeof bossIdentifier === 'number') {
+    currentBossData = BOSS_ROSTER[Math.min(bossIdentifier, BOSS_ROSTER.length - 1)];
+  } else {
+    currentBossData = BOSS_ROSTER[0];
+  }
+
   bossGroup = new THREE.Group();
+  proceduralRoot = new THREE.Group();
+  proceduralRoot.name = 'ProceduralRoot';
+  proceduralRoot.rotation.y = Math.PI / 2; // Procedural boss front faces -X (toward player)
+  bossGroup.add(proceduralRoot);
+
   allBodyParts = []; originalColors = []; accentParts = [];
+  customBossMaterials = []; customBossOrigColors = []; customBossOrigEmissives = [];
+  customBossModel = null; customBossRoot = null;
+  isCustomBoss = false; is2DBoss = false; isDefeated = false;
   bossSkinPlane = null; idleTime = 0; anim.active = false;
+  bossGroup.scale.set(1, 1, 1);
+  bossGroup.visible = true;
 
   const el = currentBossData.element;
   if      (el==='thunder') buildThunderGolem(currentBossData);
@@ -432,10 +595,14 @@ export function createBoss(scene, bossIndex=0) {
 
   buildHpBar();
   bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
-  // Face LEFT toward the player (player is at x:-3, boss is at x:+3)
-  // rotation.y = Math.PI/2 means the character's +Z front faces -X (toward player)
-  bossGroup.rotation.y = Math.PI / 2;
+  bossGroup.rotation.y = 0;
   scene.add(bossGroup);
+
+  // Attempt to load Admin custom 3D model or 2.5D sprite for this element
+  if (el) {
+    _loadCustomBoss(el);
+  }
+
   return currentBossData;
 }
 
@@ -448,8 +615,8 @@ export function updateBoss(deltaTime) {
   if (!bossGroup) return;
   idleTime += deltaTime;
 
-  // Elemental idle: accent parts pulse with emissive
-  if (currentBossData.element && Math.floor(idleTime*10)%2===0) {
+  // Elemental idle: accent parts pulse with emissive (procedural)
+  if (!isCustomBoss && currentBossData.element && Math.floor(idleTime*10)%2===0) {
     const pulse = 0.5+0.5*Math.sin(idleTime*3.5);
     accentParts.forEach(p=>{ if(p.material?.emissive) p.material.emissive.setScalar(pulse*0.3); });
   }
@@ -461,8 +628,23 @@ export function updateBoss(deltaTime) {
     anim.t += deltaTime;
     const prog = Math.min(anim.t/anim.duration,1.0);
     if (anim.type==='hurt') {
-      posX = prog<0.4 ? BOSS_HOME.x+prog/0.4*2.5 : BOSS_HOME.x+(1-(prog-0.4)/0.6)*2.5;
-      if (prog>=1.0) { anim.active=false; restoreColors(); }
+      const flinch = Math.sin(prog * Math.PI * 4) * 0.08;
+      posX = prog<0.4 ? BOSS_HOME.x+prog/0.4*2.2 : BOSS_HOME.x+(1-(prog-0.4)/0.6)*2.2;
+      bossGroup.rotation.z = flinch;
+      if (prog>=1.0) {
+        anim.active = false;
+        bossGroup.rotation.z = 0;
+        restoreColors();
+      }
+    } else if (anim.type==='defeat') {
+      baseY = BOSS_HOME.y - prog * 2.5;
+      bossGroup.rotation.z = - prog * (Math.PI / 3);
+      const s = Math.max(0.01, 1 - prog * 0.6);
+      bossGroup.scale.set(s, s, s);
+      if (prog >= 1.0) {
+        anim.active = false;
+        bossGroup.visible = false;
+      }
     } else if (anim.type==='dodge') {
       if (prog<0.5) { baseY=BOSS_HOME.y+Math.sin(prog/0.5*Math.PI)*3.0; posX=BOSS_HOME.x+prog/0.5*3.0*anim.dodgeDir; }
       else { posX=BOSS_HOME.x+(1-(prog-0.5)/0.5)*3.0*anim.dodgeDir; }
@@ -472,18 +654,50 @@ export function updateBoss(deltaTime) {
   bossGroup.position.set(posX, baseY, BOSS_HOME.z);
 }
 
-function flashRed()     { allBodyParts.forEach(p=>{ if(p.material.color) p.material.color.setHex(0xFF2222); }); }
-function restoreColors(){ allBodyParts.forEach((p,i)=>{ if(p.material.color) p.material.color.setHex(originalColors[i]); }); }
+function flashRed() {
+  allBodyParts.forEach(p => { if (p.material?.color) p.material.color.setHex(0xFF2222); });
+}
+
+function restoreColors() {
+  if (isCustomBoss && customBossMaterials.length > 0) {
+    customBossMaterials.forEach((m, i) => {
+      if (m.emissive && customBossOrigEmissives[i] !== undefined) {
+        m.emissive.setHex(customBossOrigEmissives[i]);
+      } else if (m.color && customBossOrigColors[i] !== undefined) {
+        m.color.setHex(customBossOrigColors[i]);
+      }
+    });
+  } else {
+    allBodyParts.forEach((p, i) => {
+      if (p.material?.color) p.material.color.setHex(originalColors[i]);
+    });
+  }
+}
 
 export function playBossHurt() {
   if (!bossGroup) return;
-  flashRed();
-  anim.active=true; anim.type='hurt'; anim.t=0; anim.duration=0.5;
+  if (isCustomBoss && customBossMaterials.length > 0) {
+    customBossMaterials.forEach(m => {
+      if (m.emissive) {
+        m.emissive.setHex(0xff2222);
+      } else if (m.color) {
+        m.color.setHex(0xff2222);
+      }
+    });
+  } else {
+    flashRed();
+  }
+  anim.active = true;
+  anim.type = 'hurt';
+  anim.t = 0;
+  anim.duration = 0.5;
 }
+
 export function playBossDodge() {
   if (!bossGroup) return;
   anim.active=true; anim.type='dodge'; anim.t=0; anim.duration=0.6; anim.dodgeDir=1;
 }
+
 export function setBossHp(current, max) {
   if (!hpCtx||!hpBarTexture) return;
   const W=512, H=48;
@@ -500,13 +714,24 @@ export function setBossHp(current, max) {
   hpCtx.fillStyle='#fff'; hpCtx.font='bold 18px monospace';
   hpCtx.fillText(`${currentBossData?.name||'BOSS'}  ${current}/${max}`,8,H-9);
   hpBarTexture.needsUpdate=true;
+
+  if (current <= 0 && !isDefeated) {
+    isDefeated = true;
+    anim.active = true;
+    anim.type = 'defeat';
+    anim.t = 0;
+    anim.duration = 1.5;
+  }
 }
 
 export function removeBoss(scene) {
   if (bossGroup&&scene) scene.remove(bossGroup);
   if (elementalLightRef&&scene) scene.remove(elementalLightRef);
   bossGroup=null; bossScene=null; elementalLightRef=null;
+  proceduralRoot = null; customBossRoot = null; customBossModel = null;
+  hpMesh = null;
 }
+
 export function applyBossSkin(imageUrl) {
   if (!bossGroup) return;
   new THREE.TextureLoader().load(imageUrl,(tex)=>{

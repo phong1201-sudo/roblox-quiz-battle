@@ -49,3 +49,23 @@ export async function fetchArtList() {
   const res = await fetch('/api/admin/art/list');
   return res.json();
 }
+
+export async function uploadBossAsset(element, file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('element', element);
+
+  const res = await fetch('/api/admin/boss/upload', {
+    method: 'POST',
+    body: fd,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Tải mô hình Boss thất bại');
+  return data;
+}
+
+export async function fetchBossStatus() {
+  const res = await fetch('/api/admin/boss/status');
+  return res.json();
+}
+

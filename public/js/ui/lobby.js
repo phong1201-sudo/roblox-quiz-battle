@@ -1175,6 +1175,136 @@ function _buildAdminDashboard(container, gameState) {
 
   wrap.appendChild(charGrid);
 
+  // ── Quản Lý Mô Hình Boss (Trùm Cuối) ──────────────────────────────────
+  wrap.appendChild(mkHead('👾 Quản Lý Mô Hình Boss (Trùm Cuối)'));
+
+  const bossNote = document.createElement('div');
+  bossNote.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;line-height:1.6;padding:4px 0;';
+  bossNote.innerHTML = 'Tải mô hình 3D (<b>.glb / .gltf</b>) hoặc ảnh (<b>.png, .jpg</b>) cho từng Boss nguyên tố để thay thế khối hình mặc định. Khi có file, game sẽ tự động tải và hiển thị trong trận đấu.';
+  wrap.appendChild(bossNote);
+
+  const bossGrid = document.createElement('div');
+  bossGrid.style.cssText = 'display:grid;grid-template-columns:1fr;gap:12px;';
+
+  const BOSS_MANAGERS = [
+    { id: 'thunder', label: '⚡ Boss Sét (Thunder Boss)', color: '#00cfff', rgb: '0,207,255', target: 'boss_thunder.glb' },
+    { id: 'fire',    label: '🔥 Boss Lửa (Fire Boss)',    color: '#ff8c42', rgb: '255,140,66',  target: 'boss_fire.glb' },
+    { id: 'frost',   label: '❄️ Boss Băng (Frost Boss)',   color: '#88ddff', rgb: '136,221,255', target: 'boss_frost.glb' },
+  ];
+
+  const bossBadges = {};
+
+  const refreshBossStatus = () => {
+    fetch('/api/admin/boss/status').then(r => r.json()).then(status => {
+      for (const [el, s] of Object.entries(status)) {
+        const badge = bossBadges[el];
+        if (badge) {
+          if (s.exists) {
+            const typeLabel = s.type === '3d' ? `📦 3D (${s.ext})` : `🖼️ Ảnh 2.5D (${s.ext})`;
+            badge.textContent = `✓ Đã có file: ${typeLabel}`;
+            badge.style.color = '#06d6a0';
+            badge.style.borderColor = 'rgba(6,214,160,0.4)';
+          } else {
+            badge.textContent = 'Chưa có file';
+            badge.style.color = '#888';
+            badge.style.borderColor = 'rgba(255,255,255,0.1)';
+          }
+        }
+      }
+    }).catch(() => {});
+  };
+
+  refreshBossStatus();
+
+  BOSS_MANAGERS.forEach(b => {
+    const card = document.createElement('div');
+    card.style.cssText = `background:rgba(${b.rgb},0.06);border:1.5px solid rgba(${b.rgb},0.3);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;`;
+
+    // Header with status badge
+    const cardTitle = document.createElement('div');
+    cardTitle.style.cssText = `font-size:12px;font-weight:900;color:${b.color};font-family:'Be Vietnam Pro',sans-serif;display:flex;justify-content:space-between;align-items:center;`;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = b.label;
+
+    const badge = document.createElement('span');
+    badge.textContent = 'Đang kiểm tra...';
+    badge.style.cssText = 'font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);color:#888;font-weight:600;';
+    bossBadges[b.id] = badge;
+
+    cardTitle.appendChild(titleSpan);
+    cardTitle.appendChild(badge);
+    card.appendChild(cardTitle);
+
+    // Upload box
+    const uploadBox = document.createElement('div');
+    uploadBox.style.cssText = 'background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;';
+
+    const infoText = document.createElement('div');
+    infoText.style.cssText = 'font-size:10px;color:#aaa;font-family:"Be Vietnam Pro",sans-serif;';
+    infoText.textContent = `Upload file .glb/.gltf (hoặc .png/.jpg): lưu vào /assets/models/${b.target}`;
+    uploadBox.appendChild(infoText);
+
+    const inputRow = document.createElement('div');
+    inputRow.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.glb,.gltf,.png,.jpg,.jpeg,.webp';
+    fileInput.style.cssText = 'font-size:10px;color:#ddd;flex:1;min-width:180px;';
+
+    const upBtn = document.createElement('button');
+    upBtn.textContent = 'Tải Lên Cập Nhật';
+    upBtn.style.cssText = `font-size:10px;font-weight:700;padding:5px 12px;background:rgba(${b.rgb},0.2);color:${b.color};border:1.5px solid ${b.color};border-radius:6px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;`;
+
+    const statusEl = document.createElement('span');
+    statusEl.style.cssText = 'font-size:10px;font-family:"Be Vietnam Pro",sans-serif;';
+
+    upBtn.addEventListener('click', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        statusEl.textContent = 'Chưa chọn file!';
+        statusEl.style.color = '#ef233c';
+        return;
+      }
+      upBtn.disabled = true;
+      statusEl.textContent = 'Đang tải lên...';
+      statusEl.style.color = '#ffcc00';
+
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('element', b.id);
+
+      try {
+        const res = await fetch('/api/admin/boss/upload', {
+          method: 'POST',
+          body: fd,
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Upload thất bại');
+        statusEl.textContent = `✓ Đã cập nhật (${data.filename})!`;
+        statusEl.style.color = '#06d6a0';
+        _showToast(`Đã cập nhật mô hình cho ${b.label}`);
+        refreshBossStatus();
+      } catch (err) {
+        statusEl.textContent = '✗ ' + err.message;
+        statusEl.style.color = '#ef233c';
+      } finally {
+        upBtn.disabled = false;
+      }
+    });
+
+    inputRow.appendChild(fileInput);
+    inputRow.appendChild(upBtn);
+    uploadBox.appendChild(inputRow);
+    uploadBox.appendChild(statusEl);
+
+    card.appendChild(uploadBox);
+    bossGrid.appendChild(card);
+  });
+
+  wrap.appendChild(bossGrid);
+
   // ── Dev Quick Launch section ──────────────────────────────────────────────
   wrap.appendChild(mkHead('🧪 Dev Quick Launch'));
 

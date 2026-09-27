@@ -104,17 +104,14 @@ export function startGame(gameState) {
   }
 
   if (gameMode === 'pve') {
-    const bossIdx  = (gameState.bossIndex !== undefined) ? gameState.bossIndex : 0;
-    const bossData = Boss.createBoss(scene, bossIdx);
+    const bossTarget = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
+    const bossData = Boss.createBoss(scene, bossTarget);
     bossActive = true;
 
-    // Boss spawns at BOSS_HOME and faces LEFT (-X) toward player
-    // Boss.createBoss already calls rotation.y = Math.PI which means it faces -Z,
-    // so we override here: face -X = rotation.y = Math.PI/2
+    // Boss spawns at BOSS_HOME (boss.js handles facing angle for procedural and custom models)
     const bossObj = Boss.getBossObject?.();
     if (bossObj) {
       bossObj.position.copy(BOSS_HOME);
-      bossObj.rotation.y = Math.PI / 2;   // face left toward player
     }
 
     const bossInfoEl = document.getElementById('boss-info');
