@@ -82,6 +82,11 @@ let idleTime = 0;
 let currentBossData = BOSS_ROSTER[0];
 let bossSkinPlane = null;
 let elementalLightRef = null;
+let bossArmLeftPivot = null;
+let bossArmRightPivot = null;
+let bossHammer = null;
+let customBossBone = null;
+let defeatCompleteCallbacks = [];
 
 let anim = { active:false, type:null, t:0, duration:0, dodgeDir:1 };
 const BOSS_HOME = { x:3.0, y:0, z:0 };   // face-to-face with player at x:-3
@@ -258,15 +263,66 @@ function buildInfernoDemon(d) {
     core.position.set(0,0.35,0); pad.add(core); accentParts.push(core);
   }
 
-  // Arms with claw tips
-  for (const s of [-1,1]) {
-    const arm = box(1.1,3.2,1.1, body.clone());
-    arm.position.set(s*2.1,2.0,0); trackBody(arm); addToBoss(arm);
-    for (const c of [-1,1]) {
-      const claw = box(0.3,0.6,0.3, lava.clone());
-      claw.position.set(c*0.25,-1.8,0); arm.add(claw); accentParts.push(claw);
-    }
+  // Dynamic Shoulders & Arms with hammer kinematics
+  bossArmLeftPivot = new THREE.Group();
+  bossArmLeftPivot.name = 'BossArmLeftPivot';
+  bossArmLeftPivot.position.set(-2.15, 3.4, 0);
+
+  bossArmRightPivot = new THREE.Group();
+  bossArmRightPivot.name = 'BossArmRightPivot';
+  bossArmRightPivot.position.set(2.15, 3.4, 0);
+
+  addToBoss(bossArmLeftPivot);
+  addToBoss(bossArmRightPivot);
+
+  // Left arm
+  const armL = box(1.1, 3.2, 1.1, body.clone());
+  armL.position.set(0, -1.4, 0);
+  trackBody(armL);
+  bossArmLeftPivot.add(armL);
+  for (const c of [-1, 1]) {
+    const claw = box(0.3, 0.6, 0.3, lava.clone());
+    claw.position.set(c * 0.25, -1.8, 0); armL.add(claw); accentParts.push(claw);
   }
+
+  // Right arm holding Fire Warhammer
+  const armR = box(1.1, 3.2, 1.1, body.clone());
+  armR.position.set(0, -1.4, 0);
+  trackBody(armR);
+  bossArmRightPivot.add(armR);
+  for (const c of [-1, 1]) {
+    const claw = box(0.3, 0.6, 0.3, lava.clone());
+    claw.position.set(c * 0.25, -1.8, 0); armR.add(claw); accentParts.push(claw);
+  }
+
+  // 🔥 Build Fire Warhammer
+  bossHammer = new THREE.Group();
+  bossHammer.name = 'FireWarhammer';
+  const handle = box(0.24, 4.4, 0.24, dark.clone());
+  handle.position.set(0, 0, 0);
+  bossHammer.add(handle);
+
+  const hHead = box(1.6, 1.8, 1.6, magma.clone());
+  hHead.position.set(0, 1.8, 0);
+  bossHammer.add(hHead);
+  accentParts.push(hHead);
+
+  const coreBand = box(1.66, 0.8, 1.66, lava.clone());
+  coreBand.position.set(0, 1.8, 0);
+  bossHammer.add(coreBand);
+  accentParts.push(coreBand);
+
+  for (const s of [-1, 1]) {
+    const spk = box(0.4, 0.7, 0.4, eye.clone());
+    spk.position.set(s * 0.95, 1.8, 0);
+    spk.rotation.z = -s * Math.PI / 2;
+    bossHammer.add(spk);
+    accentParts.push(spk);
+  }
+
+  bossHammer.position.set(0, -1.4, 0.6);
+  bossHammer.rotation.x = -Math.PI / 4; // Menacing forward ready stance
+  bossArmRightPivot.add(bossHammer);
 
   // Legs
   for (const s of [-1,1]) {
@@ -350,14 +406,63 @@ function buildFrostTitan(d) {
     }
   }
 
-  // Arms — icy, thick
-  for (const s of [-1,1]) {
-    const arm = box(1.15,3.0,1.15, ice.clone());
-    arm.position.set(s*2.15,2.0,0); trackBody(arm); addToBoss(arm);
-    // Ice vein stripe
-    const av = box(1.2,0.07,1.2, vein.clone());
-    av.position.set(0,0,0); arm.add(av); accentParts.push(av);
+  // Dynamic Shoulders & Arms with hammer kinematics
+  bossArmLeftPivot = new THREE.Group();
+  bossArmLeftPivot.name = 'BossArmLeftPivot';
+  bossArmLeftPivot.position.set(-2.15, 3.4, 0);
+
+  bossArmRightPivot = new THREE.Group();
+  bossArmRightPivot.name = 'BossArmRightPivot';
+  bossArmRightPivot.position.set(2.15, 3.4, 0);
+
+  addToBoss(bossArmLeftPivot);
+  addToBoss(bossArmRightPivot);
+
+  // Left arm
+  const armL = box(1.15, 3.0, 1.15, ice.clone());
+  armL.position.set(0, -1.4, 0);
+  trackBody(armL);
+  bossArmLeftPivot.add(armL);
+  const avL = box(1.2, 0.07, 1.2, vein.clone());
+  avL.position.set(0, 0, 0); armL.add(avL); accentParts.push(avL);
+
+  // Right arm holding Glacial Frost Warhammer
+  const armR = box(1.15, 3.0, 1.15, ice.clone());
+  armR.position.set(0, -1.4, 0);
+  trackBody(armR);
+  bossArmRightPivot.add(armR);
+  const avR = box(1.2, 0.07, 1.2, vein.clone());
+  avR.position.set(0, 0, 0); armR.add(avR); accentParts.push(avR);
+
+  // ❄️ Build Glacial Frost Warhammer
+  bossHammer = new THREE.Group();
+  bossHammer.name = 'FrostWarhammer';
+  const fHandle = box(0.25, 4.4, 0.25, dark.clone());
+  fHandle.position.set(0, 0, 0);
+  bossHammer.add(fHandle);
+
+  const fHead = box(1.6, 2.0, 1.6, ice.clone());
+  fHead.position.set(0, 1.8, 0);
+  bossHammer.add(fHead);
+  trackBody(fHead);
+
+  const fCore = box(1.66, 0.9, 1.66, shard.clone());
+  fCore.position.set(0, 1.8, 0);
+  bossHammer.add(fCore);
+  accentParts.push(fCore);
+
+  for (let j = 0; j < 4; j++) {
+    const angle = (j / 4) * Math.PI * 2;
+    const spk = box(0.3, 0.8, 0.3, shard.clone());
+    spk.position.set(Math.cos(angle) * 0.95, 1.8, Math.sin(angle) * 0.95);
+    spk.rotation.z = Math.cos(angle) * 0.4;
+    bossHammer.add(spk);
+    accentParts.push(spk);
   }
+
+  bossHammer.position.set(0, -1.4, 0.6);
+  bossHammer.rotation.x = -Math.PI / 4; // Menacing forward ready stance
+  bossArmRightPivot.add(bossHammer);
 
   // Legs
   for (const s of [-1,1]) {
@@ -472,6 +577,7 @@ async function _loadCustomBoss(el) {
     customBossOrigColors = [];
     customBossOrigEmissives = [];
 
+    customBossBone = null;
     customBossModel.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
@@ -480,6 +586,14 @@ async function _loadCustomBoss(el) {
           customBossMaterials.push(child.material);
           if (child.material.color) customBossOrigColors.push(child.material.color.getHex());
           if (child.material.emissive) customBossOrigEmissives.push(child.material.emissive.getHex());
+        }
+      }
+      if (!customBossBone && (child.isBone || child.type === 'Bone')) {
+        const name = (child.name || '').toLowerCase();
+        if (name.includes('righthand') || name.includes('hand_r') || name.includes('rightarm') || name.includes('arm_r')) {
+          customBossBone = child;
+          customBossBone._baseRotX = child.rotation.x;
+          customBossBone._baseRotZ = child.rotation.z;
         }
       }
     });
@@ -621,14 +735,93 @@ export function updateBoss(deltaTime) {
         bossGroup.rotation.z = 0;
         restoreColors();
       }
-    } else if (anim.type==='defeat') {
-      baseY = BOSS_HOME.y - prog * 2.5;
-      bossGroup.rotation.z = - prog * (Math.PI / 3);
-      const s = Math.max(0.01, 1 - prog * 0.6);
-      bossGroup.scale.set(s, s, s);
+    } else if (anim.type === 'defeat') {
+      const el = anim.defeatElement || currentBossData?.element || 'thunder';
+
+      if (el === 'frost') {
+        // ❄️ Boss Băng (Shatter into Ice Shards):
+        // 1. Freezes solid and turns into bright white-cyan crystal (~200ms)
+        if (prog < 0.15) {
+          if (!anim.crystalized) {
+            anim.crystalized = true;
+            turnBossToCrystal();
+            try { Audio.playIceShatter?.(); } catch (e) {}
+            Effects.screenFlash('rgba(180,240,255,0.5)', 0.25);
+          }
+          posX = BOSS_HOME.x + (Math.random() - 0.5) * 0.05;
+        } else {
+          // 2. Hide original boss mesh instantly & spawn crystalline ice shard meshes scattering outward
+          if (!anim.shattered) {
+            anim.shattered = true;
+            bossGroup.visible = false;
+            Effects.spawnIceShardsExplosion(new THREE.Vector3(BOSS_HOME.x, 2.5, BOSS_HOME.z));
+          }
+        }
+      } else if (el === 'fire') {
+        // 🔥 Boss Lửa (Flame Engulf & Explosive Detonation):
+        // 1. Staggers in place + massive swirling fire tornado wraps around body (~600ms)
+        if (prog < 0.40) {
+          posX = BOSS_HOME.x + (Math.random() - 0.5) * 0.35;
+          bossGroup.position.z = BOSS_HOME.z + (Math.random() - 0.5) * 0.35;
+          bossGroup.rotation.z = Math.sin(prog * 40) * 0.14;
+          if (!anim.vortexFired) {
+            anim.vortexFired = true;
+            try { Audio.playFire?.(); } catch (e) {}
+            Effects.spawnFireVortexAroundBoss(new THREE.Vector3(BOSS_HOME.x, 2.5, BOSS_HOME.z));
+          }
+        } else {
+          // 2. Big flash of light + spherical explosion burst + boss scales down to 0
+          if (!anim.exploded) {
+            anim.exploded = true;
+            try { Audio.playExplosion?.(); } catch (e) {}
+            Effects.screenFlash('rgba(255,120,0,0.7)', 0.4);
+            Effects.triggerShake(0.55, 0.45);
+            Effects.spawnFireExplosionBurst(new THREE.Vector3(BOSS_HOME.x, 2.5, BOSS_HOME.z));
+          }
+          const s = Math.max(0, 1 - (prog - 0.40) / 0.25);
+          bossGroup.scale.set(s, s, s);
+          if (s <= 0.01) bossGroup.visible = false;
+        }
+      } else {
+        // ⚡ Boss Sét (Sky Lightning Strike, Charred & Burst):
+        // 1. Locks in place, trembling (~400ms)
+        if (prog < 0.28) {
+          posX = BOSS_HOME.x + (Math.random() - 0.5) * 0.16;
+          bossGroup.position.z = BOSS_HOME.z + (Math.random() - 0.5) * 0.16;
+          if (Math.random() < 0.35) {
+            Effects.triggerElectricSparks(new THREE.Vector3(BOSS_HOME.x, 3.2, 0));
+          }
+        } else {
+          // 2. Giant vertical thunderbolt strikes down + pitch black charred material
+          if (!anim.struck) {
+            anim.struck = true;
+            Effects.spawnSkyThunderbolt(new THREE.Vector3(BOSS_HOME.x, 3.5, BOSS_HOME.z));
+            Effects.screenFlash('rgba(255,255,255,0.92)', 0.35);
+            try { Audio.playHeavyThunder?.(); } catch (e) {}
+            Effects.triggerShake(0.65, 0.45);
+            turnBossCharred();
+            Effects.spawnCharredBurst(new THREE.Vector3(BOSS_HOME.x, 2.5, BOSS_HOME.z));
+          }
+          // 3. Charred remains crumble, sink down, dissolve into thin air
+          if (prog >= 0.42) {
+            baseY = BOSS_HOME.y - (prog - 0.42) * 2.8;
+            const s = Math.max(0, 1 - (prog - 0.42) / 0.58);
+            bossGroup.scale.set(s, s, s);
+            if (s <= 0.01) bossGroup.visible = false;
+          }
+        }
+      }
+
       if (prog >= 1.0) {
         anim.active = false;
         bossGroup.visible = false;
+        if (anim.onComplete) {
+          const cb = anim.onComplete;
+          anim.onComplete = null;
+          cb();
+        }
+        defeatCompleteCallbacks.forEach(cb => { try { cb(); } catch (e) {} });
+        defeatCompleteCallbacks = [];
       }
     } else if (anim.type==='dodge') {
       if (prog<0.5) { baseY=BOSS_HOME.y+Math.sin(prog/0.5*Math.PI)*3.0; posX=BOSS_HOME.x+prog/0.5*3.0*anim.dodgeDir; }
@@ -637,58 +830,77 @@ export function updateBoss(deltaTime) {
     } else if (anim.type==='attack') {
       const el = anim.attackElement || 'thunder';
       if (el === 'frost') {
-        // ❄️ Frost Boss: Leaps forward across arena and slams down towards player
-        if (prog < 0.25) {
-          // Windup: crouch back
-          const t = prog / 0.25;
-          posX = BOSS_HOME.x + 0.5 * t;
-          baseY = BOSS_HOME.y - 0.2 * t;
-          bossGroup.rotation.z = 0.12 * t;
-        } else if (prog < 0.55) {
-          // Leap across arena to x = -0.8
-          const t = (prog - 0.25) / 0.30;
-          posX = THREE.MathUtils.lerp(BOSS_HOME.x + 0.5, -0.8, t);
-          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 3.4;
-          bossGroup.rotation.z = -0.25 * Math.sin(t * Math.PI);
-        } else if (prog < 0.70) {
-          // Impact / slam pose on ground
+        // ❄️ Boss Băng (Leap & Overhead Smash):
+        // 1. Wind-up & Leap (~250ms / prog < 0.35): raises hammer backward and leaps into the air toward player
+        if (prog < 0.35) {
+          const t = prog / 0.35;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI / 4, -Math.PI * 0.9, t);
+          if (customBossBone && customBossBone._baseRotX !== undefined) {
+            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX, customBossBone._baseRotX - 1.8, t);
+          }
+          posX = THREE.MathUtils.lerp(BOSS_HOME.x, -0.8, t);
+          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 3.5;
+          bossGroup.rotation.z = -0.28 * Math.sin(t * Math.PI);
+        } else if (prog < 0.58) {
+          // 2. Smash (~150ms / prog 0.35 to 0.58): swings hammer downward in a heavy crushing arc aimed directly at player
+          const t = (prog - 0.35) / 0.23;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.9, Math.PI * 0.55, t);
+          if (customBossBone && customBossBone._baseRotX !== undefined) {
+            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX - 1.8, customBossBone._baseRotX + 1.2, t);
+          }
           posX = -0.8;
           baseY = BOSS_HOME.y;
           bossGroup.rotation.z = 0;
-          if (!anim.peakFired) {
+          if (!anim.peakFired && prog >= 0.50) {
             anim.peakFired = true;
             Effects.spawnBossFrostSlam(new THREE.Vector3(-0.8, 0.2, 0));
-            try { Audio.playSlash?.(); } catch (e) {}
+            Effects.triggerShake(0.42, 0.35);
+            try { (Audio.playIceShatter || Audio.playFrost)?.(); } catch (e) {}
             if (anim.onPeak) anim.onPeak();
           }
         } else {
-          // Leap back to BOSS_HOME
-          const t = (prog - 0.70) / 0.30;
+          // 3. Recover (~200ms / prog >= 0.58): leaps/slides back to original position
+          const t = (prog - 0.58) / 0.42;
           posX = THREE.MathUtils.lerp(-0.8, BOSS_HOME.x, t);
-          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 1.8;
+          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 1.5;
           bossGroup.rotation.z = 0.15 * Math.sin(t * Math.PI);
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(Math.PI * 0.55, -Math.PI / 4, t);
+          if (customBossBone && customBossBone._baseRotX !== undefined) {
+            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX + 1.2, customBossBone._baseRotX, t);
+          }
         }
         if (prog >= 1.0) {
           anim.active = false;
           bossGroup.rotation.z = 0;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = -Math.PI / 4;
           if (anim.onComplete) anim.onComplete();
         }
       } else if (el === 'fire') {
-        // 🔥 Fire Boss: Slams hammer hard into ground; wave of erupting fire geysers shoots across floor
-        if (prog < 0.30) {
-          // Windup raise hammer
-          const t = prog / 0.30;
+        // 🔥 Boss Lửa (Ground Slam Wave):
+        // 1. Wind-up (~150ms / prog < 0.25): raises both arms / hammer high above its head
+        if (prog < 0.25) {
+          const t = prog / 0.25;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI / 4, -Math.PI * 0.85, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(0, -Math.PI * 0.75, t);
+          if (customBossBone && customBossBone._baseRotX !== undefined) {
+            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX, customBossBone._baseRotX - 1.6, t);
+          }
           baseY = BOSS_HOME.y + 0.5 * t;
           bossGroup.rotation.z = -0.18 * t;
         } else if (prog < 0.45) {
-          // Slam down
-          const t = (prog - 0.30) / 0.15;
-          baseY = BOSS_HOME.y + 0.5 * (1 - t) - 0.2 * Math.sin(t * Math.PI);
-          bossGroup.rotation.z = 0.22 * t;
-          if (!anim.vfxFired && prog >= 0.36) {
+          // 2. Slam (~120ms / prog 0.25 to 0.45): violently slams hammer down onto arena floor
+          const t = (prog - 0.25) / 0.20;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.85, Math.PI * 0.48, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.75, Math.PI * 0.38, t);
+          if (customBossBone && customBossBone._baseRotX !== undefined) {
+            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX - 1.6, customBossBone._baseRotX + 1.2, t);
+          }
+          baseY = BOSS_HOME.y + 0.5 * (1 - t) - 0.25 * Math.sin(t * Math.PI);
+          bossGroup.rotation.z = THREE.MathUtils.lerp(-0.18, 0.28, t);
+          if (!anim.vfxFired && prog >= 0.38) {
             anim.vfxFired = true;
-            try { Audio.playFire?.(); } catch(e) {}
-            Effects.triggerShake(0.3, 0.3);
+            try { Audio.playFire?.(); } catch (e) {}
+            Effects.triggerShake(0.38, 0.32);
             Effects.spawnBossFireWave(new THREE.Vector3(BOSS_HOME.x, 0, 0), new THREE.Vector3(-2.8, 0, 0), () => {
               if (!anim.peakFired) {
                 anim.peakFired = true;
@@ -697,10 +909,15 @@ export function updateBoss(deltaTime) {
             });
           }
         } else {
-          // Recovery
+          // 3. Recover (~250ms / prog >= 0.45): returns smoothly to combat ready stance
           const t = (prog - 0.45) / 0.55;
           baseY = BOSS_HOME.y;
-          bossGroup.rotation.z = THREE.MathUtils.lerp(0.22, 0, t);
+          bossGroup.rotation.z = THREE.MathUtils.lerp(0.28, 0, t);
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(Math.PI * 0.48, -Math.PI / 4, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(Math.PI * 0.38, 0, t);
+          if (customBossBone && customBossBone._baseRotX !== undefined) {
+            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX + 1.2, customBossBone._baseRotX, t);
+          }
         }
         if (prog >= 0.70 && !anim.peakFired) {
           anim.peakFired = true;
@@ -709,6 +926,8 @@ export function updateBoss(deltaTime) {
         if (prog >= 1.0) {
           anim.active = false;
           bossGroup.rotation.z = 0;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = -Math.PI / 4;
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = 0;
           if (anim.onComplete) anim.onComplete();
         }
       } else {
@@ -778,6 +997,42 @@ function restoreColors() {
   }
 }
 
+function turnBossToCrystal() {
+  allBodyParts.forEach(p => {
+    if (p.material) {
+      if (p.material.color) p.material.color.setHex(0xd0f0ff);
+      if (p.material.emissive) p.material.emissive.setHex(0x00e5ff);
+      p.material.transparent = true;
+      p.material.opacity = 0.95;
+    }
+  });
+  if (customBossMaterials.length > 0) {
+    customBossMaterials.forEach(m => {
+      if (m.color) m.color.setHex(0xd0f0ff);
+      if (m.emissive) m.emissive.setHex(0x00e5ff);
+      m.transparent = true;
+      m.opacity = 0.95;
+    });
+  }
+}
+
+function turnBossCharred() {
+  allBodyParts.forEach(p => {
+    if (p.material) {
+      if (p.material.color) p.material.color.setHex(0x111111);
+      if (p.material.emissive) p.material.emissive.setHex(0x000000);
+      p.material.roughness = 1.0;
+    }
+  });
+  if (customBossMaterials.length > 0) {
+    customBossMaterials.forEach(m => {
+      if (m.color) m.color.setHex(0x111111);
+      if (m.emissive) m.emissive.setHex(0x000000);
+      m.roughness = 1.0;
+    });
+  }
+}
+
 export function playBossHurt() {
   if (!bossGroup) return;
   if (isCustomBoss && customBossMaterials.length > 0) {
@@ -813,7 +1068,7 @@ export function playBossAttack(element, onPeak, onComplete) {
   anim.type = 'attack';
   anim.attackElement = el;
   anim.t = 0;
-  anim.duration = (el === 'frost') ? 1.05 : (el === 'fire') ? 0.95 : 0.88;
+  anim.duration = (el === 'frost') ? 0.75 : (el === 'fire') ? 0.65 : 0.88;
   anim.onPeak = onPeak || null;
   anim.onComplete = onComplete || null;
   anim.peakFired = false;
@@ -822,15 +1077,41 @@ export function playBossAttack(element, onPeak, onComplete) {
 
 let currentHpPercent = 100;
 
-export function triggerBossDefeat() {
-  if (isDefeated) return;
+export function triggerBossDefeat(element, onComplete) {
+  if (isDefeated) {
+    if (onComplete) {
+      if (!anim.active || anim.type !== 'defeat') onComplete();
+      else defeatCompleteCallbacks.push(onComplete);
+    }
+    return;
+  }
   isDefeated = true;
+  const el = element || currentBossData?.element || 'thunder';
   anim.active = true;
   anim.type = 'defeat';
+  anim.defeatElement = el;
   anim.t = 0;
   anim.duration = 1.5;
+  anim.onComplete = onComplete || null;
+  anim.crystalized = false;
+  anim.shattered = false;
+  anim.vortexFired = false;
+  anim.exploded = false;
+  anim.struck = false;
 }
 export const onBossDefeat = triggerBossDefeat;
+
+export function onBossDefeatDone(cb) {
+  if (!isDefeated || !anim.active || anim.type !== 'defeat') {
+    if (cb) cb();
+  } else {
+    defeatCompleteCallbacks.push(cb);
+  }
+}
+
+export function isDefeatAnimating() {
+  return isDefeated && anim.active && anim.type === 'defeat';
+}
 
 export function setBossHpPercent(pct, isFinalQuestion = false) {
   // CRITICAL: Under NO circumstances should defeat animations trigger while currentQuestionIndex < N - 1.
@@ -841,7 +1122,7 @@ export function setBossHpPercent(pct, isFinalQuestion = false) {
   }
 
   if (isFinalQuestion && currentHpPercent <= 0 && !isDefeated) {
-    triggerBossDefeat();
+    triggerBossDefeat(currentBossData?.element);
   }
 }
 
@@ -860,8 +1141,15 @@ export function resetBossState() {
   anim.type = null;
   anim.t = 0;
   currentHpPercent = 100;
+  defeatCompleteCallbacks = [];
+  if (bossArmRightPivot) bossArmRightPivot.rotation.set(-Math.PI / 4, 0, 0);
+  if (bossArmLeftPivot) bossArmLeftPivot.rotation.set(0, 0, 0);
+  if (customBossBone && customBossBone._baseRotX !== undefined) {
+    customBossBone.rotation.x = customBossBone._baseRotX;
+  }
   if (bossGroup) {
     bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
+    bossGroup.rotation.set(0, 0, 0);
     bossGroup.scale.set(1, 1, 1);
     bossGroup.visible = true;
     if (customBossRoot) {
@@ -869,6 +1157,7 @@ export function resetBossState() {
       customBossRoot.rotation.set(0, -Math.PI / 2, 0);
     }
   }
+  restoreColors();
   setBossHpPercent(100, false);
 }
 
@@ -877,6 +1166,8 @@ export function removeBoss(scene) {
   if (elementalLightRef&&scene) scene.remove(elementalLightRef);
   bossGroup=null; bossScene=null; elementalLightRef=null;
   proceduralRoot = null; customBossRoot = null; customBossModel = null;
+  bossArmLeftPivot = null; bossArmRightPivot = null; bossHammer = null;
+  customBossBone = null; defeatCompleteCallbacks = [];
 }
 
 export function applyBossSkin(imageUrl) {

@@ -315,3 +315,61 @@ export function playVictory() {
   [523.25, 659.26, 783.99].forEach(f => _osc('sine', f, end, end + 0.8, 0.3, 0));
   _noise(end, 0.3, 0.1, 4000);
 }
+
+export function playIceShatter() {
+  const ctx = _getCtx(); if (!ctx || _muted) return;
+  const t = _now();
+  // Sharp crystalline crunch
+  _noise(t, 0.09, 0.45, 9000);
+  _noise(t + 0.04, 0.32, 0.35, 5000);
+  const freqs = [3600, 4400, 2800, 5200, 3900, 6400, 2300];
+  freqs.forEach((f, i) => {
+    _osc('sine', f, t + i * 0.025, t + i * 0.025 + 0.16, 0.22 - i * 0.02, 0);
+    _osc('triangle', f * 0.7, t + i * 0.025, t + i * 0.025 + 0.12, 0.12, 0);
+  });
+  _osc('sawtooth', 130, t, t + 0.22, 0.25, 0);
+}
+
+export function playExplosion() {
+  const ctx = _getCtx(); if (!ctx || _muted) return;
+  const t = _now();
+  // Deep sub boom
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(140, t);
+  osc.frequency.exponentialRampToValueAtTime(25, t + 0.65);
+  g.gain.setValueAtTime(0.75, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+  osc.connect(g); g.connect(_sfxGain);
+  osc.start(t); osc.stop(t + 0.67);
+
+  // Explosive blast noise body
+  _noise(t, 0.55, 0.65, 1200);
+  _noise(t + 0.08, 0.8, 0.4, 450);
+
+  // Crackling fiery debris
+  for (let i = 0; i < 5; i++) {
+    _noise(t + 0.15 + i * 0.08, 0.07, 0.22 - i * 0.03, 2400 - i * 200);
+  }
+}
+
+export function playHeavyThunder() {
+  const ctx = _getCtx(); if (!ctx || _muted) return;
+  const t = _now();
+  // Blinding lightning arc crack
+  _noise(t, 0.06, 0.75, 10000);
+  _osc('sawtooth', 880, t, t + 0.08, 0.45, 0);
+  _osc('sine', 1600, t, t + 0.05, 0.4, 0);
+
+  // Massive rolling bass thunderclap
+  _noise(t + 0.04, 1.2, 0.6, 350);
+  _osc('square', 55, t + 0.03, t + 0.7, 0.4, 0);
+  _osc('sine', 40, t + 0.05, t + 1.1, 0.5, 0);
+
+  // High sizzle tail
+  for (let i = 0; i < 5; i++) {
+    _noise(t + 0.2 + i * 0.12, 0.08, 0.18, 6000);
+  }
+}
+

@@ -195,16 +195,26 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gameState.difficulty  = data.difficulty;
         }
 
-        // Stop battle BGM and play Victory fanfare once — DO NOT auto-chain to lobby
-        try {
-            Audio.stopBGM();
-            if (data.verdict !== 'DEFEAT' || data.mode === 'pvp') {
-                Audio.playBGM('victory');
-            }
-        } catch(e) {}
+        const isVictory = (data.verdict !== 'DEFEAT' || data.mode === 'pvp');
+        const showVictoryScreen = () => {
+            // Stop battle BGM and play Victory fanfare once — DO NOT auto-chain to lobby
+            try {
+                Audio.stopBGM();
+                if (isVictory) {
+                    Audio.playBGM('victory');
+                }
+            } catch(e) {}
 
-        showScreen('results');
-        if (results.init) results.init(data, window.gameState);
+            showScreen('results');
+            if (results.init) results.init(data, window.gameState);
+        };
+
+        // Only display the Victory Modal (Play Again / Next Boss) AFTER the boss death animation has completed (~1.5s delay)
+        if (isVictory) {
+            setTimeout(showVictoryScreen, 1500);
+        } else {
+            showVictoryScreen();
+        }
     });
 
     on('player_moved', (data) => { if (scene.onPlayerMoved) scene.onPlayerMoved(data); });

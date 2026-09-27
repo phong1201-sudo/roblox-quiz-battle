@@ -209,12 +209,18 @@ export function executeCombatTurn(ev, onDone) {
     const pct = isFullSet ? halfwayPct : targetPct;
     Boss.setBossHpPercent(pct, isFinalQuestion && !isFullSet);
     if (hud.setBossVisualHpPercent) hud.setBossVisualHpPercent(pct);
+    if (isFinalQuestion && !isFullSet && targetPct <= 0) {
+      Boss.triggerBossDefeat(bossElement);
+    }
   };
 
   const applyHit2Damage = () => {
     Boss.playBossHurt();
     Boss.setBossHpPercent(targetPct, isFinalQuestion);
     if (hud.setBossVisualHpPercent) hud.setBossVisualHpPercent(targetPct);
+    if (isFinalQuestion && targetPct <= 0) {
+      Boss.triggerBossDefeat(bossElement);
+    }
   };
 
   const context = {

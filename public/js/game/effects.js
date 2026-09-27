@@ -54,7 +54,7 @@ export function triggerShake(magnitude, duration) {
 }
 
 // ── Screen flash overlay ──────────────────────────────────────────────────────
-function screenFlash(color, opacity) {
+export function screenFlash(color, opacity) {
   const f = document.createElement('div');
   f.style.cssText = `position:fixed;inset:0;background:${color};opacity:${opacity};pointer-events:none;z-index:9000;transition:opacity 0.35s`;
   document.body.appendChild(f);
@@ -477,6 +477,250 @@ export function spawnBossLightningBeam(startPos, targetPos, duration = 350, onIm
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 💀 3 UNIQUE ELEMENTAL BOSS DEATH VFX
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ❄️ FROST BOSS DEATH: 25-35 crystalline ice shard meshes scattering outward
+ * with high velocity, gravity, and tumbling rotation over 1.2s.
+ */
+export function spawnIceShardsExplosion(pos) {
+  if (!sceneRef) return;
+  const count = 32;
+  const cols = [0xa0e8ff, 0xd0f0ff, 0xffffff, 0x80d4ff];
+  for (let i = 0; i < count; i++) {
+    const size = 0.35 + Math.random() * 0.45;
+    const geo = new THREE.TetrahedronGeometry(size, 0);
+    const mat = new THREE.MeshLambertMaterial({
+      color: cols[i % cols.length],
+      emissive: 0x00e5ff,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.95,
+      roughness: 0.1,
+    });
+    const shard = new THREE.Mesh(geo, mat);
+    shard.position.set(
+      pos.x + (Math.random() - 0.5) * 1.5,
+      pos.y + (Math.random() - 0.5) * 2.5,
+      pos.z + (Math.random() - 0.5) * 1.5
+    );
+    sceneRef.add(shard);
+
+    const sp = 6 + Math.random() * 10;
+    const angle = Math.random() * Math.PI * 2;
+    particles.push({
+      mesh: shard,
+      velocity: new THREE.Vector3(
+        Math.cos(angle) * sp,
+        3 + Math.random() * 9,
+        Math.sin(angle) * sp
+      ),
+      rotVel: new THREE.Vector3(
+        (Math.random() - 0.5) * 16,
+        (Math.random() - 0.5) * 16,
+        (Math.random() - 0.5) * 16
+      ),
+      life: 1.2,
+      maxLife: 1.2,
+    });
+  }
+}
+
+/**
+ * 🔥 FIRE BOSS DEATH (Phase 1): Swirling tornado vortex of fire wrapping around Boss
+ */
+export function spawnFireVortexAroundBoss(centerPos) {
+  if (!sceneRef) return;
+  const cols = [0xff2200, 0xff6600, 0xffcc00];
+  for (let i = 0; i < 40; i++) {
+    const delay = i * 15;
+    setTimeout(() => {
+      if (!sceneRef) return;
+      const angle = Math.random() * Math.PI * 2;
+      const r = 1.4 + Math.random() * 1.2;
+      const geo = new THREE.BoxGeometry(0.35, 0.55, 0.35);
+      const mat = new THREE.MeshBasicMaterial({
+        color: cols[Math.floor(Math.random() * cols.length)],
+        transparent: true,
+        opacity: 0.95
+      });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(
+        centerPos.x + Math.cos(angle) * r,
+        centerPos.y - 1.5 + Math.random() * 1.0,
+        centerPos.z + Math.sin(angle) * r
+      );
+      sceneRef.add(m);
+
+      particles.push({
+        mesh: m,
+        velocity: new THREE.Vector3(
+          -Math.sin(angle) * 7,
+          6 + Math.random() * 5,
+          Math.cos(angle) * 7
+        ),
+        rotVel: new THREE.Vector3(5, 5, 0),
+        life: 0.6,
+        maxLife: 0.6
+      });
+    }, delay);
+  }
+}
+
+/**
+ * 🔥 FIRE BOSS DEATH (Phase 2): Big spherical explosion burst & expanding shockwave ring
+ */
+export function spawnFireExplosionBurst(centerPos) {
+  if (!sceneRef) return;
+  // Expanding shockwave ring
+  const ringGeo = new THREE.RingGeometry(0.5, 1.2, 32);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0xff6600,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.9
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(centerPos.x, 0.2, centerPos.z);
+  sceneRef.add(ring);
+  particles.push({
+    mesh: ring,
+    isRing: true,
+    life: 0.7,
+    maxLife: 0.7,
+  });
+
+  // Spherical explosion burst
+  const cols = [0xff1100, 0xff4400, 0xffaa00, 0xffffff, 0x333333];
+  for (let i = 0; i < 45; i++) {
+    const size = 0.3 + Math.random() * 0.4;
+    const geo = new THREE.BoxGeometry(size, size, size);
+    const mat = new THREE.MeshBasicMaterial({
+      color: cols[Math.floor(Math.random() * cols.length)],
+      transparent: true,
+      opacity: 0.95
+    });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.copy(centerPos);
+    sceneRef.add(m);
+
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.random() * Math.PI;
+    const sp = 7 + Math.random() * 11;
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(
+        Math.sin(phi) * Math.cos(theta) * sp,
+        Math.cos(phi) * sp * 0.8 + 2.0,
+        Math.sin(phi) * Math.sin(theta) * sp
+      ),
+      rotVel: new THREE.Vector3((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10),
+      life: 0.9,
+      maxLife: 0.9
+    });
+  }
+}
+
+/**
+ * ⚡ THUNDER BOSS DEATH (Phase 2): Gigantic vertical thunderbolt from sky
+ */
+export function spawnSkyThunderbolt(targetPos) {
+  if (!sceneRef) return;
+  const startPos = new THREE.Vector3(targetPos.x, 32, targetPos.z);
+  const segments = 16;
+  const pts = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const x = startPos.x + (targetPos.x - startPos.x) * t + (i > 0 && i < segments ? (Math.random() - 0.5) * 1.5 : 0);
+    const y = startPos.y + (targetPos.y - startPos.y) * t;
+    const z = startPos.z + (targetPos.z - startPos.z) * t + (i > 0 && i < segments ? (Math.random() - 0.5) * 1.5 : 0);
+    pts.push(x, y, z);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+  const mat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 4 });
+  const bolt = new THREE.Line(geo, mat);
+  sceneRef.add(bolt);
+
+  const pLight = new THREE.PointLight(0x00ffff, 4, 25);
+  pLight.position.set(targetPos.x, targetPos.y + 2, targetPos.z);
+  sceneRef.add(pLight);
+
+  setTimeout(() => {
+    if (sceneRef) {
+      sceneRef.remove(bolt);
+      sceneRef.remove(pLight);
+    }
+    geo.dispose();
+    mat.dispose();
+    pLight.dispose();
+  }, 250);
+}
+
+/**
+ * ⚡ THUNDER BOSS DEATH (Phase 3): Dark electric sparks and smoke bursting outward
+ */
+export function spawnCharredBurst(pos) {
+  if (!sceneRef) return;
+  const cols = [0x111111, 0x222222, 0x00ffff, 0xffff00, 0x333333];
+  for (let i = 0; i < 35; i++) {
+    const geo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+    const mat = new THREE.MeshBasicMaterial({
+      color: cols[Math.floor(Math.random() * cols.length)],
+      transparent: true,
+      opacity: 0.9
+    });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(
+      pos.x + (Math.random() - 0.5) * 1.5,
+      pos.y + (Math.random() - 0.5) * 2.0,
+      pos.z + (Math.random() - 0.5) * 1.5
+    );
+    sceneRef.add(m);
+
+    const angle = Math.random() * Math.PI * 2;
+    const sp = 4 + Math.random() * 8;
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(
+        Math.cos(angle) * sp,
+        2 + Math.random() * 6,
+        Math.sin(angle) * sp
+      ),
+      life: 0.8,
+      maxLife: 0.8
+    });
+  }
+}
+
+/**
+ * Crackling electric sparks around target
+ */
+export function triggerElectricSparks(pos) {
+  if (!sceneRef) return;
+  for (let i = 0; i < 8; i++) {
+    const spk = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.15, 0.15),
+      new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x00ffff : 0xffff00 })
+    );
+    spk.position.set(
+      pos.x + (Math.random() - 0.5) * 1.8,
+      pos.y + (Math.random() - 0.5) * 2.2,
+      pos.z + (Math.random() - 0.5) * 1.8
+    );
+    sceneRef.add(spk);
+    particles.push({
+      mesh: spk,
+      velocity: new THREE.Vector3((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3),
+      life: 0.25,
+      maxLife: 0.25
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Legacy
 // ─────────────────────────────────────────────────────────────────────────────
 export function punishWrong() {
@@ -499,6 +743,14 @@ export function update(deltaTime) {
       continue;
     }
     const frac = p.life / p.maxLife;
+
+    // Apply tumbling rotation if defined
+    if (p.rotVel) {
+      p.mesh.rotation.x += p.rotVel.x * deltaTime;
+      p.mesh.rotation.y += p.rotVel.y * deltaTime;
+      p.mesh.rotation.z += p.rotVel.z * deltaTime;
+    }
+
     if (p.isRing) {
       const t = 1-frac;
       const s = 1+t*3.5;
@@ -528,3 +780,4 @@ export function update(deltaTime) {
     }
   }
 }
+
