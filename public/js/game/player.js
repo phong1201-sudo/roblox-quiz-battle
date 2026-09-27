@@ -485,34 +485,61 @@ function _buildFireSprite() {
   // Remove old sprite if any
   if (_fireSprite) { playerGroup.remove(_fireSprite); _fireSprite = null; }
   _fireSpriteCtx = null;
-
-  const geo = new THREE.PlaneGeometry(3.2, 3.2);
   _fireSpriteTime = 0;
 
-  // ── Try the new element sprite pipeline first (white-removal + slicer) ───
-  if (!_elemSprites['fire']) {
-    _loadElementSprite('fire')
-      .then(({ weaponCanvas, bodyCanvas }) => {
-        _firebladePngLoaded = true;
-        _buildElementSpriteFromCanvases('fire', weaponCanvas, bodyCanvas);
-        console.log('[player] Fire element sprite loaded via canvas slicer');
-      })
-      .catch(() => {
-        // No image available — fall back to procedural canvas art
-        console.log('[player] No fire image — using procedural sprite');
-        _buildFireSpriteCanvas(geo);
-      });
-    return;   // async — nothing else to do synchronously
-  }
+  // ── Load admin-uploaded character image as BODY-ONLY billboard ───────────
+  // The 3D elemental sword is ALWAYS rendered by _buildSword() on rightShoulderPivot.
+  // This sprite is purely the character's body/avatar image, white-bg removed.
+  const paths = [
+    '/assets/characters/fire.png',
+    '/assets/characters/fire.jpg',
+    '/assets/characters/fireblade.png',           // legacy fireblade alias
+    '/assets/characters/fireblade(cho%20game)_0.jpg',
+  ];
 
-  // Already built — re-attach
-  const es = _elemSprites['fire'];
-  if (es?.loaded) {
-    if (es.bodyMesh)    playerGroup.add(es.bodyMesh);
-    if (es.weaponPivot) playerGroup.add(es.weaponPivot);
-  } else {
-    _buildFireSpriteCanvas(geo);
-  }
+  const geo = new THREE.PlaneGeometry(3.0, 3.0);
+  let tried = 0;
+
+  const tryLoad = () => {
+    if (tried >= paths.length) {
+      // No image — use procedural canvas art
+      _buildFireSpriteCanvas(geo);
+      return;
+    }
+    const src = paths[tried++];
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      // Draw image, remove white background, mount as billboard
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || img.width;
+      c.height = img.naturalHeight || img.height;
+      const cx = c.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      // White-bg removal
+      const id = cx.getImageData(0, 0, c.width, c.height);
+      const d  = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] > 220 && d[i+1] > 220 && d[i+2] > 220) d[i+3] = 0;
+      }
+      cx.putImageData(id, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, alphaTest: 0.05,
+        side: THREE.DoubleSide, depthWrite: false,
+      });
+      if (_fireSprite) playerGroup.remove(_fireSprite);
+      _fireSprite = new THREE.Mesh(geo, mat);
+      _fireSprite.position.set(0, 0.5, 0.35);
+      _fireSpriteCtx = null;   // image mode — no canvas redraw needed
+      playerGroup.add(_fireSprite);
+      console.log('[player] Fire body sprite loaded:', src);
+    };
+    img.onerror = tryLoad;
+    img.src = src;
+  };
+  tryLoad();
 }
 
 /** Procedural canvas fallback (used when no image is available) */
@@ -572,44 +599,106 @@ function _updateFireSprite(deltaTime, slashAng = 0) {
 // ─── Sword builder ────────────────────────────────────────────────────────────
 function _buildSword() {
   swordGroup = new THREE.Group();
-  // Hand position = 0.9 below shoulder pivot
   swordGroup.position.set(0, -0.9, 0.1);
-  // Slight forward angle in rest pose
   swordGroup.rotation.x = Math.PI / 6;
 
-  const wColor = getEquipColor('weapon');
-
   if (activeElement === 'thunder') {
-    // Lightning Katana
-    const blMat = new THREE.MeshLambertMaterial({ color:0xffee00, emissive:0x443300 });
-    const bl = new THREE.Mesh(new THREE.BoxGeometry(0.10,1.4,0.06), blMat);
-    bl.position.set(0,-0.7,0);
-    const gu = makeBox(0.52,0.10,0.10, 0x00ffff); gu.position.set(0,0,0);
-    const gr = makeBox(0.10,0.32,0.10, 0x003366); gr.position.set(0,0.18,0);
-    swordGroup.add(bl,gu,gr);
+    // ── Thunder Blade: jagged lightning katana ────────────────────────────
+    // Blade: bright electric yellow-cyan, high emissive
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: 0xeeffaa,
+      emissive: 0x00ffff,
+      emissiveIntensity: 2.5,
+      roughness: 0.1, metalness: 0.9,
+    });
+    // Main blade shaft
+    const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.35, 0.05), bladeMat);
+    shaft.position.set(0, -0.67, 0);
+    // Zigzag teeth: 3 small protrusions along the blade edge
+    const toothMat = new THREE.MeshStandardMaterial({ color:0xffff00, emissive:0x00ccff, emissiveIntensity:3.0, roughness:0.0, metalness:1.0 });
+    const teeth = [[-0.12,-0.3],[-0.12,-0.55],[-0.12,-0.80]].map(([dx,y]) => {
+      const t = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.11,0.05), toothMat);
+      t.position.set(dx, y, 0); return t;
+    });
+    // Guard: wide flat crosspiece in cyan
+    const guardMat = new THREE.MeshStandardMaterial({ color:0x00ffff, emissive:0x006666, emissiveIntensity:1.5, roughness:0.2, metalness:0.8 });
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.10, 0.10), guardMat);
+    guard.position.set(0, 0, 0);
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.09),
+      new THREE.MeshStandardMaterial({ color:0x003366, roughness:0.8, metalness:0.3 }));
+    grip.position.set(0, 0.20, 0);
+    // Store flickering blade ref for update loop
+    swordGroup._thunderBlade = [shaft, ...teeth];
+    swordGroup._thunderT = 0;
+    swordGroup.add(shaft, ...teeth, guard, grip);
+
   } else if (activeElement === 'fire') {
-    // Flame Sword
-    const b  = makeBox(0.14,1.3,0.09, 0xff3300); b.position.set(0,-0.65,0);
-    const gu = makeBox(0.50,0.12,0.12, 0xff6600); gu.position.set(0,0,0);
-    const gr = makeBox(0.12,0.32,0.12, 0x661100); gr.position.set(0,0.18,0);
-    swordGroup.add(b,gu,gr);
+    // ── Fire Blade: glowing magma sword ──────────────────────────────────
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: 0xff6600,
+      emissive: 0xff3300,
+      emissiveIntensity: 2.0,
+      roughness: 0.25, metalness: 0.7,
+    });
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.30, 0.08), bladeMat);
+    blade.position.set(0, -0.65, 0);
+    // Wider tip that tapers (simulate taper with a box scaled)
+    const tipMat = new THREE.MeshStandardMaterial({ color:0xff8800, emissive:0xffcc00, emissiveIntensity:3.0, roughness:0.1, metalness:0.8 });
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.30, 0.06), tipMat);
+    tip.position.set(0, -1.30, 0);
+    const guardMat = new THREE.MeshStandardMaterial({ color:0xff6600, emissive:0xff2200, emissiveIntensity:1.5, roughness:0.3, metalness:0.6 });
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.12, 0.12), guardMat);
+    guard.position.set(0, 0, 0);
+    const gripMat = new THREE.MeshStandardMaterial({ color:0x661100, roughness:0.9, metalness:0.2 });
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.34, 0.12), gripMat);
+    grip.position.set(0, 0.20, 0);
+    // Store for pulsing update
+    swordGroup._fireBlade = blade;
+    swordGroup._fireTip   = tip;
+    swordGroup.add(blade, tip, guard, grip);
+
   } else if (activeElement === 'frost') {
-    // Ice Spear
-    const b   = makeBox(0.10,1.45,0.10, 0x88ddff); b.position.set(0,-0.72,0);
-    const tip = makeBox(0.18,0.24,0.18, 0xffffff); tip.position.set(0,-1.44,0);
-    const gu  = makeBox(0.40,0.10,0.40, 0x4499cc); gu.position.set(0,0,0);
-    swordGroup.add(b,tip,gu);
+    // ── Frost Blade: crystalline ice spear ───────────────────────────────
+    const iceMat = new THREE.MeshStandardMaterial({
+      color: 0x88e5ff,
+      emissive: 0x0088cc,
+      emissiveIntensity: 1.2,
+      roughness: 0.05, metalness: 0.0,
+      transparent: true, opacity: 0.82,
+    });
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.10, 1.45, 0.10), iceMat);
+    blade.position.set(0, -0.72, 0);
+    // Crystal tip: sharper bright-white facets
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff, emissive: 0x88ccff, emissiveIntensity: 2.0,
+      roughness: 0.0, metalness: 0.0, transparent: true, opacity: 0.90,
+    });
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.18), crystalMat);
+    tip.position.set(0, -1.45, 0);
+    // Side crystal shards (decorative)
+    const shard1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.06), crystalMat);
+    shard1.position.set(0.09, -0.55, 0); shard1.rotation.z = 0.35;
+    const shard2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.06), crystalMat);
+    shard2.position.set(-0.09, -0.80, 0); shard2.rotation.z = -0.35;
+    const guardMat = new THREE.MeshStandardMaterial({ color:0x4499cc, emissive:0x002244, emissiveIntensity:0.8, roughness:0.3, metalness:0.5 });
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.10, 0.42), guardMat);
+    guard.position.set(0, 0, 0);
+    swordGroup._iceBlade = [blade, tip, shard1, shard2];
+    swordGroup.add(blade, tip, shard1, shard2, guard);
+
   } else {
-    // Wooden sword (default)
+    // ── Default: wooden training sword ───────────────────────────────────
+    const wColor = getEquipColor('weapon');
     const wM = new THREE.MeshLambertMaterial({ color: wColor });
-    const bl = new THREE.Mesh(new THREE.BoxGeometry(0.13,1.15,0.08), wM);
-    bl.position.set(0,-0.58,0);
-    const gu = makeBox(0.50,0.11,0.11, 0x555566); gu.position.set(0,0,0);
-    const gr = makeBox(0.11,0.36,0.11, 0x6b3320); gr.position.set(0,0.18,0);
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.16,0.06), wM);
-    tip.position.set(0,-1.15,0);
-    swordGroup.add(bl,gu,gr,tip);
+    const bl = new THREE.Mesh(new THREE.BoxGeometry(0.13, 1.15, 0.08), wM);
+    bl.position.set(0, -0.58, 0);
+    const gu = makeBox(0.50, 0.11, 0.11, 0x555566); gu.position.set(0, 0, 0);
+    const gr = makeBox(0.11, 0.36, 0.11, 0x6b3320); gr.position.set(0, 0.18, 0);
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.06), wM);
+    tip.position.set(0, -1.15, 0);
+    swordGroup.add(bl, gu, gr, tip);
   }
+
   rightShoulderPivot.add(swordGroup);
 }
 
@@ -676,18 +765,19 @@ export function playPunch()        { playAttack(null,null); }
 export function playAttack(onHitMoment, onDone) {
   // Safety: if scene not initialised, fire callbacks immediately so combatBusy never sticks
   if (!playerGroup) { if (onHitMoment) onHitMoment(); if (onDone) onDone(); return; }
-  const el  = activeElement || null;
-  const dur = el==='thunder'?1.1 : el==='frost'?1.05 : el==='fire'?1.0 : 0.9;
-  // Hard safety timeout: if animation never completes, release lock after (dur+1.5)s
+  // STRICT SINGLE SLASH — always use 'default' clean forward chop (0.9s).
+  // Elemental VFX is handled separately by scene.js after the hit moment.
+  // Never use the old jump-slam / slide-uppercut / flame-wave anim types.
+  const dur = 0.9;
   clearTimeout(window._combatSafetyTimer);
   window._combatSafetyTimer = setTimeout(() => {
     if (anim.active) {
-      console.warn('[player] Combat safety timeout fired — releasing combatBusy');
+      console.warn('[player] Combat safety timeout — releasing combatBusy');
       _resetAll(); anim.active = false;
       if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
     }
   }, (dur + 1.5) * 1000);
-  anim = { active:true, type:el||'default', t:0, duration:dur,
+  anim = { active:true, type:'default', t:0, duration: dur,
            onHit:onHitMoment||null, onDone:onDone||null,
            hitFired:false, _hitEmitted:false };
 }
@@ -763,12 +853,14 @@ export function updatePlayer(deltaTime, camera) {
     anim.t += deltaTime;
     const prog = Math.min(anim.t / anim.duration, 1.0);
 
+    // Always use default slash — elemental anim types are retired
     switch (anim.type) {
       case 'default': _animDefault(prog, deltaTime); break;
-      case 'thunder': _animThunder(prog, deltaTime); break;
-      case 'frost':   _animFrost(prog, deltaTime);   break;
-      case 'fire':    _animFire(prog, deltaTime);    break;
       case 'miss':    _animMiss(prog, deltaTime);    break;
+      // Legacy fallback — these should never trigger now
+      case 'thunder': _animDefault(prog, deltaTime); break;
+      case 'frost':   _animDefault(prog, deltaTime); break;
+      case 'fire':    _animDefault(prog, deltaTime); break;
     }
 
     if (prog >= 1.0) { _resetAll(); anim.active = false; if (anim.onDone) anim.onDone(); }
@@ -777,19 +869,42 @@ export function updatePlayer(deltaTime, camera) {
     // Idle bob
     playerGroup.position.x = HOME_X;
     playerGroup.position.y = HOME_Y + Math.sin(Date.now()*0.0018)*0.06;
-    playerGroup.rotation.y = FACE_Y;   // always face boss
-    // Gentle idle arm sway
+    playerGroup.rotation.y = FACE_Y;
     if (leftArm)            leftArm.rotation.x            =  Math.sin(Date.now()*0.0015)*0.06;
     if (rightShoulderPivot) rightShoulderPivot.rotation.x = -Math.sin(Date.now()*0.0015)*0.06;
   }
 
-  // Fire Set 2D sprite: update breathing / slash angle every frame
-  if (activeElement === 'fire' && _fireSprite) {
-    // Mirror the shoulder pivot rotation into the 2D sprite's slash angle
+  // ── Elemental sword glow pulse ─────────────────────────────────────────────
+  if (swordGroup) {
+    const now = Date.now();
+    if (activeElement === 'thunder' && swordGroup._thunderBlade) {
+      // Fast crackle flicker: rapid emissiveIntensity oscillation
+      const flicker = 2.0 + 1.5 * Math.abs(Math.sin(now * 0.018));
+      swordGroup._thunderBlade.forEach(m => {
+        if (m.material) m.material.emissiveIntensity = flicker;
+      });
+    } else if (activeElement === 'fire' && swordGroup._fireBlade) {
+      // Slow lava pulse
+      const pulse = 1.8 + 0.6 * Math.sin(now * 0.003);
+      if (swordGroup._fireBlade.material)  swordGroup._fireBlade.material.emissiveIntensity = pulse;
+      if (swordGroup._fireTip?.material)   swordGroup._fireTip.material.emissiveIntensity   = pulse + 1.0;
+    } else if (activeElement === 'frost' && swordGroup._iceBlade) {
+      // Gentle ice shimmer
+      const shimmer = 1.0 + 0.4 * Math.sin(now * 0.002);
+      swordGroup._iceBlade.forEach(m => {
+        if (m.material) m.material.emissiveIntensity = shimmer;
+      });
+    }
+  }
+
+  // Fire Set sprite update (element sprite system or procedural canvas)
+  if (activeElement === 'fire') {
     const shoulderRot = rightShoulderPivot ? rightShoulderPivot.rotation.x : 0;
-    // Map shoulder.x rotation to 2D canvas angle: pivot forward = negative = slash swing
-    const slashAng2D = shoulderRot * 0.65;
-    _updateFireSprite(deltaTime, slashAng2D);
+    const slashAng2D  = shoulderRot * 0.65;
+    if (_fireSprite) _updateFireSprite(deltaTime, slashAng2D);
+    // Also update element sprite system weapon pivot
+    const es = _elemSprites?.['fire'];
+    if (es?.loaded) _updateFireSprite(deltaTime, slashAng2D);
   }
 }
 
