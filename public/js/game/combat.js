@@ -5,7 +5,8 @@ import * as Effects from './effects.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
 
-export { playArmSwingSlash } from './player.js';
+export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, getPlayerArmPivot } from './player.js';
+export { playGuaranteedBossHammerSlam, getBossArmPivot } from './boss.js';
 
 const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
 
@@ -288,5 +289,5 @@ export function runDodge(ev, onDone) {
   executeCombatTurn(ev, onDone);
 }
 
-export { playSwordSlashAnimation, getWeaponHandNode } from './player.js';
+export { getWeaponHandNode } from './player.js';
 

@@ -55,6 +55,12 @@ let weaponModel = null;              // Root scene of loaded weapon GLB
 let weaponSocket = null;             // THREE.Group attached to character hand bone
 let handNode = null;                 // Left-hand bone or arm node
 
+// Universal Procedural Player Arm Pivot
+export let playerArmPivot = null;
+export function getPlayerArmPivot() {
+  return playerArmPivot || getWeaponHandNode();
+}
+
 // 2.5D Sprite Mesh state
 let is2DMode = false;
 let bodyMesh = null;                 // THREE.Mesh (PlaneGeometry 2.2 x 3.0)
@@ -413,8 +419,12 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
                await _loadGLTFModel(`/assets/models/default_weapon.gltf`);
   }
 
-  weaponSocket = new THREE.Group();
-  weaponSocket.name = 'WeaponSocket';
+  // Universal Procedural Arm Pivot Socketing
+  // DO NOT rely on finding pre-named bones (RightHand, Arm_R, etc.)
+  playerArmPivot = new THREE.Group();
+  playerArmPivot.name = 'PlayerArmPivot';
+  playerArmPivot.position.set(-0.65, 0.9, 0.1);
+  playerArmPivot.rotation.set(0, 0, 0);
 
   if (weapGltf && weapGltf.scene) {
     weaponModel = weapGltf.scene.clone(true);
@@ -425,41 +435,29 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
     // Scale weapon to match blocky character proportions
     weaponModel.scale.set(2.2, 2.2, 2.2);
 
-    // Normalize geometry offset inside weaponSocket so hilt/grip is at local (0, 0, 0)
+    // Normalize geometry offset inside weaponModel so hilt/grip is at local (0, 0, 0)
     const scaledBox = new THREE.Box3().setFromObject(weaponModel);
     weaponModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
     weaponModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
     weaponModel.position.y = - scaledBox.min.y;
-    weaponSocket.add(weaponModel);
+
+    // Orient sword blade pointing towards boss (+X direction):
+    weaponModel.rotation.set(0, Math.PI / 2, -Math.PI / 4);
+
+    playerArmPivot.add(weaponModel);
   } else {
-    // Fallback procedural blade attached to bone socket
+    // Fallback procedural blade
     const bladeColor = el === 'fire' ? 0xff4400 : el === 'frost' ? 0x88ddff : el === 'thunder' ? 0x00cfff : 0xddaa33;
     const blade = makeBox(0.2, 2.2, 0.12, bladeColor);
-    blade.position.set(0, 1.1, 0);
-    weaponSocket.add(blade);
+    blade.position.set(0, 0.8, 0);
+    blade.rotation.set(0, Math.PI / 2, -Math.PI / 4);
+    playerArmPivot.add(blade);
   }
 
-  // Socket to Opposite Hand Node (LeftHand / LeftArm):
-  // Look for opposite hand/arm bone:
-  handNode = characterModel.getObjectByName('LeftHand') ||
-             characterModel.getObjectByName('LeftArm') ||
-             characterModel.getObjectByName('Arm_L') ||
-             _findHandBone(characterModel, 'left');
-
-  if (handNode) {
-    handNode.add(weaponSocket);
-    weaponSocket.position.set(0, 0, 0); // Reset relative offset
-    weaponSocket.rotation.set(0, 0, Math.PI / 4); // Angle blade forward and upward in ready combat stance
-    console.log(`[player] 3D Weapon socketed to left hand bone: ${handNode.name}`);
-  } else {
-    // If NO hand bone exists (static single mesh):
-    // Attach weapon to characterRoot with manual opposite hand coordinates:
-    // Invert X coordinate so sword rests firmly in the other hand facing the arena/boss
-    characterRoot.add(weaponSocket);
-    weaponSocket.position.set(-0.7, 0.85, 0.2);
-    weaponSocket.rotation.set(0, 0, Math.PI / 6); // Blade tilted forward and upward ready for combat
-    console.log('[player] No hand bone found: attached weapon to opposite hand at (-0.7, 0.85, 0.2)');
-  }
+  // Attach playerArmPivot directly to playerGroup
+  playerGroup.add(playerArmPivot);
+  weaponSocket = playerArmPivot;
+  console.log('[player] Universal procedural playerArmPivot mounted at (-0.65, 0.9, 0.1), sword blade oriented toward boss (+X)');
 
   if (activeElement) _buildElementalAura(activeElement);
   console.log(`[player] 3D GLB model loaded & socketed for ${el}`);
@@ -483,7 +481,7 @@ export async function createPlayerMesh(element, equippedGear) {
   leftArm = null; rightShoulderPivot = null; swordGroup = null;
   leftLeg = rightLeg = null; leftShoe = rightShoe = null;
   elementalAura = null; elementalParticles = [];
-  bodyMesh = null; weaponMesh = null; weaponArmPivot = null;
+  bodyMesh = null; weaponMesh = null; weaponArmPivot = null; playerArmPivot = null;
   characterModel = null; characterRoot = null; weaponModel = null; weaponSocket = null; handNode = null;
   is3DModelMode = false;
   is2DMode = false;
@@ -520,6 +518,7 @@ export async function createPlayerMesh(element, equippedGear) {
       weaponArmPivot = new THREE.Group();
       weaponArmPivot.position.set(WEAPON_HAND_POS.x, WEAPON_HAND_POS.y, WEAPON_HAND_POS.z);
       weaponArmPivot.rotation.set(0, Math.PI / 6, WEAPON_READY_ROT_Z);
+      playerArmPivot = weaponArmPivot;
 
       if (wTex) {
         const wGeo = new THREE.PlaneGeometry(0.8, 2.2);
@@ -554,6 +553,7 @@ export async function createPlayerMesh(element, equippedGear) {
   is2DMode = false;
   playerGroup.rotation.y = FACE_Y;
   _build3DBoxCharacter();
+  playerArmPivot = leftShoulderPivot || rightShoulderPivot;
 }
 
 // Hot-reload listener for admin uploads
@@ -855,64 +855,58 @@ export function getWeaponHandNode() {
 }
 
 /**
- * Dedicated weapon/arm swing Tween (playArmSwingSlash):
- * - Phase 1 (Wind-up ~90ms): { x: -Math.PI / 4, z: Math.PI / 3 } (Quadratic.Out)
- * - Phase 2 (Slash ~120ms): { x: Math.PI / 3, z: -Math.PI / 2.5 } (Quadratic.In), triggers onHit()
- * - Phase 3 (Return stance ~100ms): { x: 0, z: -Math.PI / 6 }, triggers onFinish()
+ * Dedicated weapon/arm swing Tween (playGuaranteedPlayerSlash):
+ * - Phase 1 (Wind-up ~100ms): { z: Math.PI / 3, x: -Math.PI / 6 } (Quadratic.Out)
+ * - Phase 2 (Heavy forward slash ~120ms): { z: -Math.PI / 3, x: Math.PI / 4 } (Quadratic.In), triggers onHit()
+ * - Phase 3 (Return stance ~120ms): { z: 0, x: 0 }, triggers onComplete()
  */
-export function playArmSwingSlash(weaponPivot, onHit, onFinish) {
-  const pivot = weaponPivot || getWeaponHandNode();
+export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
+  let pivot = playerArmPivot || getWeaponHandNode();
+  let onHit = null;
+  let onComplete = null;
+
+  if (arg1 && (arg1.isObject3D || arg1.rotation)) {
+    pivot = arg1;
+    onHit = arg2;
+    onComplete = arg3;
+  } else {
+    onHit = arg1;
+    onComplete = arg2;
+  }
+
   if (!pivot) {
     if (onHit) onHit();
-    if (onFinish) onFinish();
+    if (onComplete) onComplete();
     return;
   }
 
-  // Phase 1 (Wind-up ~90ms): { x: -Math.PI / 4, z: Math.PI / 3 } (Quadratic.Out)
+  // Phase 1 (Wind-up ~100ms): { z: Math.PI / 3, x: -Math.PI / 6 } (Quadratic.Out)
   new TWEEN.Tween(pivot.rotation)
-    .to({ x: -Math.PI / 4, z: Math.PI / 3 }, 90)
+    .to({ z: Math.PI / 3, x: -Math.PI / 6 }, 100)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2 (Slash ~120ms): { x: Math.PI / 3, z: -Math.PI / 2.5 } (Quadratic.In), triggers onHit()
+      // Phase 2 (Heavy forward slash ~120ms): { z: -Math.PI / 3, x: Math.PI / 4 } (Quadratic.In), triggers onHit()
       new TWEEN.Tween(pivot.rotation)
-        .to({ x: Math.PI / 3, z: -Math.PI / 2.5 }, 120)
+        .to({ z: -Math.PI / 3, x: Math.PI / 4 }, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           if (onHit) onHit();
 
-          // Phase 3 (Return stance ~100ms): { x: 0, z: -Math.PI / 6 }, triggers onFinish()
+          // Phase 3 (Return stance ~120ms): { z: 0, x: 0 } (Quadratic.Out), triggers onComplete()
           new TWEEN.Tween(pivot.rotation)
-            .to({ x: 0, z: -Math.PI / 6 }, 100)
+            .to({ z: 0, x: 0 }, 120)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
-              if (onFinish) onFinish();
+              if (onComplete) onComplete();
             })
             .start();
         })
         .start();
     })
     .start();
-
-  if (weaponSocket && weaponSocket !== pivot) {
-    new TWEEN.Tween(weaponSocket.rotation)
-      .to({ x: -Math.PI / 4, z: Math.PI / 3 }, 90)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onComplete(() => {
-        new TWEEN.Tween(weaponSocket.rotation)
-          .to({ x: Math.PI / 3, z: -Math.PI / 2.5 }, 120)
-          .easing(TWEEN.Easing.Quadratic.In)
-          .onComplete(() => {
-            new TWEEN.Tween(weaponSocket.rotation)
-              .to({ x: 0, z: -Math.PI / 6 }, 100)
-              .easing(TWEEN.Easing.Quadratic.Out)
-              .start();
-          })
-          .start();
-      })
-      .start();
-  }
 }
-export const playSwordSlashAnimation = playArmSwingSlash;
+export const playArmSwingSlash = playGuaranteedPlayerSlash;
+export const playSwordSlashAnimation = playGuaranteedPlayerSlash;
 export function playDodge(onDone) {
   if (!playerGroup) { if (onDone) onDone(); return; }
   clearTimeout(window._combatSafetyTimer);
@@ -1102,9 +1096,8 @@ export function updatePlayer(deltaTime, camera) {
       playerGroup.position.x = HOME_X;
       playerGroup.position.y = HOME_Y + Math.sin(Date.now() * 0.002) * 0.04;
       playerGroup.rotation.y = 0;
-      if (weaponSocket) {
-        const baseRot = Math.PI / 4;
-        weaponSocket.rotation.z = baseRot + Math.sin(Date.now() * 0.002) * 0.03;
+      if (playerArmPivot && !anim.active) {
+        playerArmPivot.rotation.set(0, 0, Math.sin(Date.now() * 0.002) * 0.03);
       }
     } else if (is2DMode) {
       playerGroup.position.x = HOME_X;
@@ -1424,7 +1417,7 @@ function _resetAll() {
   if (is3DModelMode) {
     if (characterRoot) characterRoot.rotation.set(0, Math.PI / 2, 0);
     if (handNode && handNode._baseRotZ !== undefined) handNode.rotation.z = handNode._baseRotZ;
-    if (weaponSocket) weaponSocket.rotation.set(0, 0, Math.PI / 4);
+    if (playerArmPivot) playerArmPivot.rotation.set(0, 0, 0);
   } else if (is2DMode) {
     if (bodyMesh) {
       bodyMesh.position.set(0, 0, 0);

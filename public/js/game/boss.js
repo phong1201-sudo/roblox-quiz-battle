@@ -88,6 +88,89 @@ let bossHammer = null;
 let customBossBone = null;
 let defeatCompleteCallbacks = [];
 
+// Universal Procedural Boss Arm Pivot
+export let bossArmPivot = null;
+export function getBossArmPivot() {
+  return bossArmPivot || bossArmRightPivot || customBossBone;
+}
+
+// Internal Tween engine for bulletproof hammer slam kinematics
+const _bossActiveTweens = [];
+class MiniTween {
+  constructor(target) {
+    this.target = target;
+    this.toValues = {};
+    this.fromValues = {};
+    this.duration = 100;
+    this.onCompleteCb = null;
+    this.onUpdateCb = null;
+    this.startTime = null;
+    this._easing = null;
+  }
+  to(values, duration) {
+    this.toValues = values;
+    this.duration = duration || 100;
+    return this;
+  }
+  easing(fn) {
+    this._easing = fn;
+    return this;
+  }
+  onUpdate(cb) {
+    this.onUpdateCb = cb;
+    return this;
+  }
+  onComplete(cb) {
+    this.onCompleteCb = cb;
+    return this;
+  }
+  start() {
+    this.startTime = performance.now();
+    for (const k in this.toValues) {
+      if (this.target && this.target[k] !== undefined) {
+        this.fromValues[k] = this.target[k];
+      }
+    }
+    _bossActiveTweens.push(this);
+    return this;
+  }
+  update(now) {
+    const elapsed = now - this.startTime;
+    const t = Math.min(1, Math.max(0, elapsed / Math.max(1, this.duration)));
+    const ease = this._easing ? this._easing(t) : (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+    for (const k in this.toValues) {
+      if (this.target && this.fromValues[k] !== undefined) {
+        this.target[k] = this.fromValues[k] + (this.toValues[k] - this.fromValues[k]) * ease;
+      }
+    }
+    if (this.onUpdateCb) this.onUpdateCb(ease);
+    if (t >= 1) {
+      if (this.onCompleteCb) this.onCompleteCb();
+      return true;
+    }
+    return false;
+  }
+}
+
+const TWEEN = {
+  Tween: MiniTween,
+  Easing: {
+    Quadratic: {
+      In: (t) => t * t,
+      Out: (t) => t * (2 - t),
+      InOut: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+    }
+  },
+  update() {
+    const now = performance.now();
+    for (let i = _bossActiveTweens.length - 1; i >= 0; i--) {
+      if (_bossActiveTweens[i].update(now)) {
+        _bossActiveTweens.splice(i, 1);
+      }
+    }
+  }
+};
+
 let anim = { active:false, type:null, t:0, duration:0, dodgeDir:1 };
 const BOSS_HOME = { x:3.0, y:0, z:0 };   // face-to-face with player at x:-3
 
@@ -100,6 +183,127 @@ function trackBody(mesh) { allBodyParts.push(mesh); originalColors.push(mesh.mat
 function addToBoss(mesh) {
   if (proceduralRoot) proceduralRoot.add(mesh);
   else if (bossGroup) bossGroup.add(mesh);
+}
+
+// ─── Procedural Warhammer Builder & Arm Pivot Mounting ────────────────────────
+function _createBossHammerMesh(element) {
+  const hammer = new THREE.Group();
+  hammer.name = element === 'frost' ? 'FrostWarhammer' : 'FireWarhammer';
+
+  if (element === 'frost') {
+    const dark = makeMat(0x223344);
+    const ice = makeMat(0x4488aa, 0x000818);
+    const shard = makeMat(0xbbeeFF, 0x003366);
+    const fHandle = box(0.25, 4.4, 0.25, dark);
+    fHandle.position.set(0, 0, 0);
+    hammer.add(fHandle);
+
+    const fHead = box(1.6, 2.0, 1.6, ice);
+    fHead.position.set(0, 1.8, 0);
+    hammer.add(fHead);
+
+    const fCore = box(1.66, 0.9, 1.66, shard);
+    fCore.position.set(0, 1.8, 0);
+    hammer.add(fCore);
+
+    for (let j = 0; j < 4; j++) {
+      const angle = (j / 4) * Math.PI * 2;
+      const spk = box(0.3, 0.8, 0.3, shard);
+      spk.position.set(Math.cos(angle) * 0.95, 1.8, Math.sin(angle) * 0.95);
+      spk.rotation.z = Math.cos(angle) * 0.4;
+      hammer.add(spk);
+    }
+  } else {
+    // Fire warhammer
+    const dark = makeMat(0x1a0a00);
+    const magma = makeMat(0x2a0a00, 0x220500);
+    const lava = makeMat(0xff5500, 0x331000);
+    const eye = makeMat(0xffee00, 0x332200);
+
+    const handle = box(0.24, 4.4, 0.24, dark);
+    handle.position.set(0, 0, 0);
+    hammer.add(handle);
+
+    const hHead = box(1.6, 1.8, 1.6, magma);
+    hHead.position.set(0, 1.8, 0);
+    hammer.add(hHead);
+
+    const coreBand = box(1.66, 0.8, 1.66, lava);
+    coreBand.position.set(0, 1.8, 0);
+    hammer.add(coreBand);
+
+    for (const s of [-1, 1]) {
+      const spk = box(0.4, 0.7, 0.4, eye);
+      spk.position.set(s * 0.95, 1.8, 0);
+      spk.rotation.z = -s * Math.PI / 2;
+      hammer.add(spk);
+    }
+  }
+
+  hammer.rotation.z = Math.PI / 6;
+  return hammer;
+}
+
+function _setupBossArmPivot(element) {
+  if (bossArmPivot && bossArmPivot.parent) {
+    bossArmPivot.parent.remove(bossArmPivot);
+  }
+  bossArmPivot = null;
+
+  if (element !== 'fire' && element !== 'frost') return;
+  if (!bossGroup) return;
+
+  bossArmPivot = new THREE.Group();
+  bossArmPivot.name = 'BossArmPivot';
+  // Position at boss's arm/shoulder offset facing the arena/player (-X)
+  bossArmPivot.position.set(-1.8, 3.2, 0.4);
+  bossArmPivot.rotation.set(0, 0, 0);
+
+  const hammer = _createBossHammerMesh(element);
+  hammer.position.set(0, -1.2, 0.5);
+  bossArmPivot.add(hammer);
+  bossGroup.add(bossArmPivot);
+  console.log(`[boss] Universal procedural bossArmPivot mounted for ${element} boss at (-1.8, 3.2, 0.4)`);
+}
+
+/**
+ * Dedicated Boss Hammer Slam Tween (playGuaranteedBossHammerSlam):
+ * - Phase 1 (Raise hammer high overhead ~150ms): { z: -Math.PI / 2.5, x: -Math.PI / 4 } (Quadratic.Out)
+ * - Phase 2 (Smash down into floor ~130ms): { z: Math.PI / 3, x: Math.PI / 6 } (Quadratic.In), triggers onImpact()
+ * - Phase 3 (Reset stance ~150ms): { z: 0, x: 0 }, triggers onComplete()
+ */
+export function playGuaranteedBossHammerSlam(element, onImpact, onComplete) {
+  const pivot = bossArmPivot || getBossArmPivot();
+  if (!pivot) {
+    if (onImpact) onImpact();
+    if (onComplete) onComplete();
+    return;
+  }
+
+  // Phase 1 (Raise hammer high overhead ~150ms): { z: -Math.PI / 2.5, x: -Math.PI / 4 } (Quadratic.Out)
+  new TWEEN.Tween(pivot.rotation)
+    .to({ z: -Math.PI / 2.5, x: -Math.PI / 4 }, 150)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onComplete(() => {
+      // Phase 2 (Smash down into floor ~130ms): { z: Math.PI / 3, x: Math.PI / 6 } (Quadratic.In), triggers onImpact()
+      new TWEEN.Tween(pivot.rotation)
+        .to({ z: Math.PI / 3, x: Math.PI / 6 }, 130)
+        .easing(TWEEN.Easing.Quadratic.In)
+        .onComplete(() => {
+          if (onImpact) onImpact();
+
+          // Phase 3 (Reset stance ~150ms): { z: 0, x: 0 } (Quadratic.Out), triggers onComplete()
+          new TWEEN.Tween(pivot.rotation)
+            .to({ z: 0, x: 0 }, 150)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .onComplete(() => {
+              if (onComplete) onComplete();
+            })
+            .start();
+        })
+        .start();
+    })
+    .start();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -295,35 +499,6 @@ function buildInfernoDemon(d) {
     claw.position.set(c * 0.25, -1.8, 0); armR.add(claw); accentParts.push(claw);
   }
 
-  // 🔥 Build Fire Warhammer
-  bossHammer = new THREE.Group();
-  bossHammer.name = 'FireWarhammer';
-  const handle = box(0.24, 4.4, 0.24, dark.clone());
-  handle.position.set(0, 0, 0);
-  bossHammer.add(handle);
-
-  const hHead = box(1.6, 1.8, 1.6, magma.clone());
-  hHead.position.set(0, 1.8, 0);
-  bossHammer.add(hHead);
-  accentParts.push(hHead);
-
-  const coreBand = box(1.66, 0.8, 1.66, lava.clone());
-  coreBand.position.set(0, 1.8, 0);
-  bossHammer.add(coreBand);
-  accentParts.push(coreBand);
-
-  for (const s of [-1, 1]) {
-    const spk = box(0.4, 0.7, 0.4, eye.clone());
-    spk.position.set(s * 0.95, 1.8, 0);
-    spk.rotation.z = -s * Math.PI / 2;
-    bossHammer.add(spk);
-    accentParts.push(spk);
-  }
-
-  bossHammer.position.set(0, -1.4, 0.6);
-  bossHammer.rotation.x = -Math.PI / 4; // Menacing forward ready stance
-  bossArmRightPivot.add(bossHammer);
-
   // Legs
   for (const s of [-1,1]) {
     const leg = box(1.2,3.0,1.2, body.clone());
@@ -433,36 +608,6 @@ function buildFrostTitan(d) {
   bossArmRightPivot.add(armR);
   const avR = box(1.2, 0.07, 1.2, vein.clone());
   avR.position.set(0, 0, 0); armR.add(avR); accentParts.push(avR);
-
-  // ❄️ Build Glacial Frost Warhammer
-  bossHammer = new THREE.Group();
-  bossHammer.name = 'FrostWarhammer';
-  const fHandle = box(0.25, 4.4, 0.25, dark.clone());
-  fHandle.position.set(0, 0, 0);
-  bossHammer.add(fHandle);
-
-  const fHead = box(1.6, 2.0, 1.6, ice.clone());
-  fHead.position.set(0, 1.8, 0);
-  bossHammer.add(fHead);
-  trackBody(fHead);
-
-  const fCore = box(1.66, 0.9, 1.66, shard.clone());
-  fCore.position.set(0, 1.8, 0);
-  bossHammer.add(fCore);
-  accentParts.push(fCore);
-
-  for (let j = 0; j < 4; j++) {
-    const angle = (j / 4) * Math.PI * 2;
-    const spk = box(0.3, 0.8, 0.3, shard.clone());
-    spk.position.set(Math.cos(angle) * 0.95, 1.8, Math.sin(angle) * 0.95);
-    spk.rotation.z = Math.cos(angle) * 0.4;
-    bossHammer.add(spk);
-    accentParts.push(spk);
-  }
-
-  bossHammer.position.set(0, -1.4, 0.6);
-  bossHammer.rotation.x = -Math.PI / 4; // Menacing forward ready stance
-  bossArmRightPivot.add(bossHammer);
 
   // Legs
   for (const s of [-1,1]) {
@@ -619,6 +764,9 @@ async function _loadCustomBoss(el) {
     customBossRoot.add(customBossModel);
     bossGroup.add(customBossRoot);
 
+    // Mount universal procedural bossArmPivot for Fire/Frost hammer
+    _setupBossArmPivot(el);
+
     console.log(`[boss] Successfully mounted custom 3D model for Boss ${el}`);
     return;
   }
@@ -646,6 +794,7 @@ async function _loadCustomBoss(el) {
       customBossRoot = new THREE.Group();
       customBossRoot.add(planeMesh);
       bossGroup.add(customBossRoot);
+      _setupBossArmPivot(el);
       console.log(`[boss] Successfully mounted 2.5D billboard sprite for Boss ${el}`);
     });
   }
@@ -684,6 +833,9 @@ export function createBoss(scene, bossIdentifier = 0) {
   else if (el==='frost')   buildFrostTitan(currentBossData);
   else                     buildShadowKing(currentBossData);
 
+  // Mount universal procedural bossArmPivot for Fire and Frost bosses
+  _setupBossArmPivot(el);
+
   // Elemental ambient light on boss
   if (elementalLightRef) scene.remove(elementalLightRef);
   if (el) {
@@ -712,6 +864,7 @@ export function getBossElement() { return currentBossData?.element||null; }
 
 export function updateBoss(deltaTime) {
   if (!bossGroup) return;
+  TWEEN.update();
   idleTime += deltaTime;
 
   // Elemental idle: accent parts pulse with emissive (procedural)
@@ -1073,6 +1226,26 @@ export function playBossAttack(element, onPeak, onComplete) {
   anim.onComplete = onComplete || null;
   anim.peakFired = false;
   anim.vfxFired = false;
+
+  if (el === 'fire' || el === 'frost') {
+    playGuaranteedBossHammerSlam(el, () => {
+      if (!anim.peakFired) {
+        anim.peakFired = true;
+        if (el === 'fire') {
+          try { Audio.playFire?.(); } catch (e) {}
+          Effects.triggerShake(0.38, 0.32);
+          Effects.spawnBossFireWave(new THREE.Vector3(BOSS_HOME.x, 0, 0), new THREE.Vector3(-2.8, 0, 0), () => {
+            if (anim.onPeak) anim.onPeak();
+          });
+        } else {
+          Effects.spawnBossFrostSlam(new THREE.Vector3(-0.8, 0.2, 0));
+          Effects.triggerShake(0.42, 0.35);
+          try { (Audio.playIceShatter || Audio.playFrost)?.(); } catch (e) {}
+          if (anim.onPeak) anim.onPeak();
+        }
+      }
+    });
+  }
 }
 
 let currentHpPercent = 100;
@@ -1142,6 +1315,7 @@ export function resetBossState() {
   anim.t = 0;
   currentHpPercent = 100;
   defeatCompleteCallbacks = [];
+  if (bossArmPivot) bossArmPivot.rotation.set(0, 0, 0);
   if (bossArmRightPivot) bossArmRightPivot.rotation.set(-Math.PI / 4, 0, 0);
   if (bossArmLeftPivot) bossArmLeftPivot.rotation.set(0, 0, 0);
   if (customBossBone && customBossBone._baseRotX !== undefined) {
@@ -1166,6 +1340,7 @@ export function removeBoss(scene) {
   if (elementalLightRef&&scene) scene.remove(elementalLightRef);
   bossGroup=null; bossScene=null; elementalLightRef=null;
   proceduralRoot = null; customBossRoot = null; customBossModel = null;
+  bossArmPivot = null;
   bossArmLeftPivot = null; bossArmRightPivot = null; bossHammer = null;
   customBossBone = null; defeatCompleteCallbacks = [];
 }
