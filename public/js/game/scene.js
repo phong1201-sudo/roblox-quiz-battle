@@ -158,8 +158,14 @@ export function onQuestion(data) {
   // Flush any stale combat events from the previous question cycle
   pendingEvents.length = 0;
   combatBusy = false;
+  if (window.gameState) {
+    window.gameState.currentQuestionIndex = (data.index !== undefined ? data.index - 1 : 0);
+    window.gameState.totalQuestions = data.total || window.gameState.totalHp;
+  }
 }
-export function onAnswerResult(data) { if (hud.updateHpBars) hud.updateHpBars(data.hp, data.bossHp); }
+export function onAnswerResult(data) {
+  if (hud.updateHpBars && data.hp) hud.updateHpBars(data.hp, null);
+}
 export function onPlayerMoved(data) {}
 
 
@@ -185,10 +191,8 @@ function processNextEvent() {
 // HP UPDATE
 // ─────────────────────────────────────────────────────────────────────────────
 export function onHpUpdate({ hp, bossHp }) {
-  if (gameMode === 'pve' && bossActive) {
-    const max = window.gameState?.bossMaxHp || totalHp;
-    Boss.setBossHp(bossHp, max);
-    if (hud.updateHpBars) hud.updateHpBars(hp, bossHp);
+  if (hud.updateHpBars && hp) {
+    hud.updateHpBars(hp, null);
   }
 }
 

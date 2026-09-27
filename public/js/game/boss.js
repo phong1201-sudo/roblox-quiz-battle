@@ -76,10 +76,8 @@ let isDefeated = false;
 let customBossMaterials = [];
 let customBossOrigColors = [];
 let customBossOrigEmissives = [];
-let hpMesh = null;
 
 let allBodyParts = [], originalColors = [], accentParts = [];
-let hpCanvas, hpCtx, hpBarTexture;
 let idleTime = 0;
 let currentBossData = BOSS_ROSTER[0];
 let bossSkinPlane = null;
@@ -417,19 +415,7 @@ function buildShadowKing(d) {
   }
 }
 
-// ─── HP bar ───────────────────────────────────────────────────────────────────
-function buildHpBar() {
-  hpCanvas = document.createElement('canvas');
-  hpCanvas.width = 512; hpCanvas.height = 48;
-  hpCtx = hpCanvas.getContext('2d');
-  hpBarTexture = new THREE.CanvasTexture(hpCanvas);
-  const hpMat = new THREE.MeshBasicMaterial({map:hpBarTexture,transparent:true,depthTest:false});
-  hpMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.5,0.7), hpMat);
-  hpMesh.position.set(0, isCustomBoss ? 5.2 : 11.0, 0);
-  hpMesh.onBeforeRender = function(r,s,cam){ this.quaternion.copy(cam.quaternion); };
-  bossGroup.add(hpMesh);
-  setBossHp(1,1);
-}
+
 
 // ─── 3D Model & 2.5D Asset Loader for Bosses ─────────────────────────────────
 function _loadGLTF(url) {
@@ -519,7 +505,6 @@ async function _loadCustomBoss(el) {
     customBossRoot.add(customBossModel);
     bossGroup.add(customBossRoot);
 
-    if (hpMesh) hpMesh.position.set(0, 5.2, 0);
     console.log(`[boss] Successfully mounted custom 3D model for Boss ${el}`);
     return;
   }
@@ -547,7 +532,6 @@ async function _loadCustomBoss(el) {
       customBossRoot = new THREE.Group();
       customBossRoot.add(planeMesh);
       bossGroup.add(customBossRoot);
-      if (hpMesh) hpMesh.position.set(0, 5.2, 0);
       console.log(`[boss] Successfully mounted 2.5D billboard sprite for Boss ${el}`);
     });
   }
@@ -595,7 +579,6 @@ export function createBoss(scene, bossIdentifier = 0) {
     scene.add(elementalLightRef);
   }
 
-  buildHpBar();
   bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
   bossGroup.rotation.y = 0;
   scene.add(bossGroup);
@@ -839,44 +822,36 @@ export function playBossAttack(element, onPeak, onComplete) {
 
 let currentHpPercent = 100;
 
-export function setBossHpPercent(pct) {
-  currentHpPercent = Math.max(0, Math.min(100, pct));
-  if (!hpCtx || !hpBarTexture) return;
-  const W = 512, H = 48;
-  hpCtx.clearRect(0, 0, W, H);
-  hpCtx.fillStyle = '#111';
-  hpCtx.fillRect(0, 0, W, H);
+export function triggerBossDefeat() {
+  if (isDefeated) return;
+  isDefeated = true;
+  anim.active = true;
+  anim.type = 'defeat';
+  anim.t = 0;
+  anim.duration = 1.5;
+}
+export const onBossDefeat = triggerBossDefeat;
 
-  const ratio = currentHpPercent / 100;
-  const el = currentBossData?.element;
-  const fillColor = el === 'fire' ? (ratio > 0.5 ? '#ff6600' : ratio > 0.25 ? '#cc2200' : '#880000')
-                  : el === 'frost'? (ratio > 0.5 ? '#88ddff' : ratio > 0.25 ? '#4499cc' : '#224488')
-                  : el === 'thunder'? (ratio > 0.5 ? '#00ffcc' : ratio > 0.25 ? '#ffcc00' : '#ff4400')
-                  : (ratio > 0.6 ? '#06d6a0' : ratio > 0.3 ? '#ffbe0b' : '#ef233c');
-  hpCtx.fillStyle = fillColor;
-  hpCtx.fillRect(2, 2, (W - 4) * ratio, H - 4);
-  hpCtx.fillStyle = '#fff';
-  hpCtx.font = 'bold 20px monospace';
-  // Pure clean name, no percentages or numbers
-  hpCtx.fillText(`${currentBossData?.name || 'BOSS'}`, 12, H - 14);
-  hpBarTexture.needsUpdate = true;
+export function setBossHpPercent(pct, isFinalQuestion = false) {
+  // CRITICAL: Under NO circumstances should defeat animations trigger while currentQuestionIndex < N - 1.
+  if (!isFinalQuestion) {
+    currentHpPercent = Math.max(1, Math.min(100, pct));
+  } else {
+    currentHpPercent = Math.max(0, Math.min(100, pct));
+  }
 
-  if (currentHpPercent <= 0 && !isDefeated) {
-    isDefeated = true;
-    anim.active = true;
-    anim.type = 'defeat';
-    anim.t = 0;
-    anim.duration = 1.5;
+  if (isFinalQuestion && currentHpPercent <= 0 && !isDefeated) {
+    triggerBossDefeat();
   }
 }
 
-export function deductBossHpPercent(amount) {
-  setBossHpPercent(currentHpPercent - amount);
+export function deductBossHpPercent(amount, isFinalQuestion = false) {
+  setBossHpPercent(currentHpPercent - amount, isFinalQuestion);
 }
 
-export function setBossHp(current, max) {
+export function setBossHp(current, max, isFinalQuestion = false) {
   const pct = Math.max(0, Math.min(1, current / Math.max(1, max))) * 100;
-  setBossHpPercent(pct);
+  setBossHpPercent(pct, isFinalQuestion);
 }
 
 export function resetBossState() {
@@ -894,7 +869,7 @@ export function resetBossState() {
       customBossRoot.rotation.set(0, -Math.PI / 2, 0);
     }
   }
-  setBossHpPercent(100);
+  setBossHpPercent(100, false);
 }
 
 export function removeBoss(scene) {
@@ -902,7 +877,6 @@ export function removeBoss(scene) {
   if (elementalLightRef&&scene) scene.remove(elementalLightRef);
   bossGroup=null; bossScene=null; elementalLightRef=null;
   proceduralRoot = null; customBossRoot = null; customBossModel = null;
-  hpMesh = null;
 }
 
 export function applyBossSkin(imageUrl) {

@@ -638,11 +638,11 @@ const resolveQuestion = (code) => {
   // Mark any player who never answered as timed-out
   roomManager.finaliseAnswers(code);
 
-  const { correctAnswer, answerCounts, combatEvents, hp, bossHp } =
+  const { correctAnswer, answerCounts, combatEvents, hp, bossHp, questionIndex, totalQuestions } =
     roomManager.scoreQuestion(code);
 
   // ① Result + counts (existing flow)
-  io.to(code).emit('answer_result', { correctAnswer, answerCounts, hp, bossHp });
+  io.to(code).emit('answer_result', { correctAnswer, answerCounts, hp, bossHp, questionIndex, totalQuestions });
 
   // ② Combat animations
   if (combatEvents.length > 0) {
@@ -650,7 +650,7 @@ const resolveQuestion = (code) => {
   }
 
   // ③ HP snapshot
-  io.to(code).emit('hp_update', { hp, bossHp });
+  io.to(code).emit('hp_update', { hp, bossHp, questionIndex, totalQuestions });
 
   setTimeout(() => {
     const allDead = room.mode === 'pve' && Array.from(room.players.values()).every(p => (p.hp ?? 0) <= 0);

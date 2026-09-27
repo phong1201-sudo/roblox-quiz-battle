@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     on('game_started', () => {
         showScreen('game');
+        Audio.setInBattle(true);
         // Start elemental battle BGM — wait 200ms for game_mode_set to set bossElement
         setTimeout(() => {
             try {
@@ -174,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     on('game_over', (data) => {
+        Audio.setInBattle(false);
         // ── Server already handled loot persistence — just sync client state ──
         const user = Auth.getCurrentUser();
         const myGrant = data.lootGrants?.find(g => g.playerId === socket.id);
@@ -193,10 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gameState.difficulty  = data.difficulty;
         }
 
-        // Victory BGM — plays once, then lobby music returns after 8s
+        // Stop battle BGM and play Victory fanfare once — DO NOT auto-chain to lobby
         try {
-            Audio.playBGM('victory');
-            setTimeout(() => { try { Audio.playBGM('lobby'); } catch(e) {} }, 8000);
+            Audio.stopBGM();
+            if (data.verdict !== 'DEFEAT' || data.mode === 'pvp') {
+                Audio.playBGM('victory');
+            }
         } catch(e) {}
 
         showScreen('results');

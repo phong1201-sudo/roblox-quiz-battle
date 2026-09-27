@@ -239,7 +239,7 @@ export function showResult(data) {
     else btn.classList.add('dimmed');
   });
 
-  if (data.hp) updateHpBars(data.hp, data.bossHp);
+  if (data.hp) updateHpBars(data.hp, null);
 
   const isThunder = window.gameState?.thunderSet;
   const dmg       = window.gameState?.damagePerHit || 1;
@@ -258,9 +258,17 @@ export function showResult(data) {
     showCombatText('💥 MISS', '#ef233c');
   }
 
-  // Victory fanfare when boss is defeated
-  if (data.bossHp === 0) {
-    setTimeout(() => { try { Audio.playVictory(); } catch(e) {} }, 300);
+  // Victory fanfare ONLY when boss is defeated on final question
+  const isFinal = data.questionIndex !== undefined && data.totalQuestions !== undefined
+    ? (data.questionIndex >= data.totalQuestions - 1)
+    : false;
+  if (data.bossHp === 0 && isFinal) {
+    setTimeout(() => {
+      try {
+        Audio.stopBGM();
+        Audio.playVictory();
+      } catch (e) {}
+    }, 400);
   }
 
   // Handle milestone loot drops

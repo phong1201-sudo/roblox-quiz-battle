@@ -24,6 +24,15 @@ const BGM_VOLUME = 0.4;   // balanced so SFX cuts above it
 let _bgmAudio  = null;    // the ONE <audio> element — never duplicated
 let _bgmTrack  = null;    // key currently loaded/playing
 let _muted     = false;
+let _inBattle  = false;   // true during active match — prevents accidental lobby BGM switch
+
+export function setInBattle(inBattle) {
+  _inBattle = Boolean(inBattle);
+}
+
+export function isInBattle() {
+  return _inBattle;
+}
 
 function _ensureAudio() {
   if (_bgmAudio) return _bgmAudio;
@@ -43,6 +52,12 @@ function _ensureAudio() {
  * - Different track → pause, swap src, play.
  */
 export function playBGM(trackKey) {
+  // Guard: Battle BGM must loop continuously throughout the entire fight
+  if (_inBattle && trackKey === 'lobby') {
+    console.log('[audio] Blocked switching to lobby music while in battle.');
+    return;
+  }
+
   const src = BGM_TRACKS[trackKey];
   if (!src) {
     console.warn('[audio] Unknown BGM track key:', trackKey);
@@ -85,8 +100,10 @@ export function stopBGM() {
 }
 
 // ── Legacy aliases ────────────────────────────────────────────────────────────
-export function startBgm() { /* no-op — driven by playBGM() */ }
-export function stopBgm()  { stopBGM(); }
+export function startBgm()       { /* no-op — driven by playBGM() */ }
+export function stopBgm()        { stopBGM(); }
+export function playLobbyMusic() { playBGM('lobby'); }
+export function switchTrack(key) { playBGM(key); }
 
 // ── Pending track (deferred until user gesture) ───────────────────────────────
 let _pendingTrack = null;

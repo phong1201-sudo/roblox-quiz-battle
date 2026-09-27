@@ -30,11 +30,22 @@ export function executeCombatTurn(ev, onDone) {
   const playerElement = isElemental ? rawElement : null;
   const bossElement   = ev.element || Boss.getBossElement() || 'thunder';
 
-  // Percentage calculations based on total question count N (e.g. 5, 20, 30, 50)
-  const totalQ   = ev.totalQuestions || window.gameState?.totalHp || 20;
-  const pctTotal = 100 / Math.max(1, totalQ);
-  const pctHit1  = hasFullSet ? (pctTotal / 2) : pctTotal;
-  const pctHit2  = hasFullSet ? (pctTotal / 2) : 0;
+  // Total questions in the match (N)
+  const totalQ = ev.totalQuestions || window.gameState?.totalHp || 20;
+  const qIdx = (ev.questionIndex !== undefined)
+    ? ev.questionIndex
+    : (window.gameState?.currentQuestionIndex ?? 0);
+  const isFinalQuestion = (qIdx >= totalQ - 1);
+
+  // Exact boss health remaining (0 to N)
+  const bossHealthRemaining = (ev.currentBossHp !== undefined)
+    ? ev.currentBossHp
+    : Math.max(0, totalQ - (qIdx + 1));
+
+  // Boss HP visual width: strictly (bossHealthRemaining / N) * 100%
+  const targetPct = (bossHealthRemaining / totalQ) * 100;
+  // If full set (2 hits): Hit 1 lands halfway
+  const halfwayPct = ((bossHealthRemaining + 0.5) / totalQ) * 100;
 
   // CRITICAL: Floating text must strictly be '-1 HP' (or '⚡ -1 HP', '🔥 -1 HP', '❄️ -1 HP'), NOT percentage numbers!
   const hit1Label = isElemental
@@ -46,14 +57,15 @@ export function executeCombatTurn(ev, onDone) {
 
   const applyHit1Damage = () => {
     Boss.playBossHurt();
-    Boss.deductBossHpPercent(pctHit1);
-    if (hud.deductBossHpPercent) hud.deductBossHpPercent(pctHit1);
+    const pct = hasFullSet ? halfwayPct : targetPct;
+    Boss.setBossHpPercent(pct, isFinalQuestion && !hasFullSet);
+    if (hud.setBossVisualHpPercent) hud.setBossVisualHpPercent(pct);
   };
 
   const applyHit2Damage = () => {
     Boss.playBossHurt();
-    Boss.deductBossHpPercent(pctHit2);
-    if (hud.deductBossHpPercent) hud.deductBossHpPercent(pctHit2);
+    Boss.setBossHpPercent(targetPct, isFinalQuestion);
+    if (hud.setBossVisualHpPercent) hud.setBossVisualHpPercent(targetPct);
   };
 
   // STEP 1: Boss attacks FIRST!

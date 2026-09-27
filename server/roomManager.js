@@ -287,6 +287,7 @@ class RoomManager {
             hasFullSet,
             equippedSet: p.equippedSet || null,
             element: room.bossElement || null,
+            questionIndex: room.currentIndex,
             totalQuestions: room.totalHp,
             currentBossHp: room.bossHp,
             remainingPlayerHp: p.hp,
@@ -307,6 +308,7 @@ class RoomManager {
             hasFullSet,
             equippedSet: p.equippedSet || null,
             element: room.bossElement || null,
+            questionIndex: room.currentIndex,
             remainingPlayerHp: p.hp,
             totalQuestions: room.totalHp,
             currentBossHp: room.bossHp,
@@ -358,7 +360,16 @@ class RoomManager {
     for (const p of room.players.values()) hp[p.id] = p.hp;
 
     room.phase = 'REVIEW';
-    return { correctAnswer: correct, answerCounts, combatEvents, hp, bossHp: room.bossHp, milestones };
+    return {
+      correctAnswer: correct,
+      answerCounts,
+      combatEvents,
+      hp,
+      bossHp: room.bossHp,
+      questionIndex: room.currentIndex,
+      totalQuestions: room.totalHp,
+      milestones
+    };
   }
 
   nextQuestion(code) {

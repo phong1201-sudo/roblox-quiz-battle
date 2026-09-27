@@ -2,6 +2,7 @@ import { socket } from '../socket.js';
 import * as effects from '../game/effects.js';
 import * as hud from './hud.js';
 import * as scene from '../game/scene.js';
+import * as Audio from '../audio.js';
 
 export function resetGameMatch() {
     const modal = document.getElementById('reward-modal');
@@ -24,9 +25,16 @@ export function init(data, gameState) {
     if (data.verdict === 'PERFECT') {
         const modal = document.getElementById('reward-modal');
         if (modal) modal.style.display = 'flex';
-        document.getElementById('reward-modal-close')?.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
+        const closeBtn = document.getElementById('reward-modal-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+                try {
+                    Audio.stopBGM();
+                    Audio.playVictory();
+                } catch (e) {}
+            };
+        }
         // Extra confetti
         for (let i = 0; i < 5; i++) {
             setTimeout(() => effects.celebrateCorrect && effects.celebrateCorrect(), i * 300);
