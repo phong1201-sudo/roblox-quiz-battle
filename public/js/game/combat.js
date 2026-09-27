@@ -279,3 +279,6 @@ export function runAttack(ev, onDone) {
 export function runDodge(ev, onDone) {
   executeCombatTurn(ev, onDone);
 }
+
+export { playSwordSlashAnimation, getWeaponHandNode } from './player.js';
+
