@@ -297,8 +297,9 @@ const _modelCache = {
 function _findHandBone(root) {
   if (!root) return null;
   const candidateNames = [
-    'RightHand', 'Arm_R', 'Hand_R', 'rightHandBone', 'mixamorigRightHand', 'mixamorig:RightHand',
-    'hand.R', 'Right_Hand', 'hand_r', 'RightArm', 'mixamorigRightArm', 'Arm.R', 'Hand.R'
+    'RightHand', 'Hand_R', 'mixamorigRightHand', 'mixamorig:RightHand',
+    'hand.R', 'Right_Hand', 'hand_r', 'rightHandBone', 'RightHandAttachment',
+    'Hand.R', 'RightArm', 'Arm_R'
   ];
   for (const name of candidateNames) {
     const obj = root.getObjectByName(name);
@@ -309,7 +310,7 @@ function _findHandBone(root) {
     if (found) return;
     const n = (child.name || '').toLowerCase();
     if (n.includes('righthand') || n.includes('hand_r') || n.includes('hand.r') ||
-        (n.includes('arm') && (n.includes('_r') || n.includes('.r') || n.includes('right')))) {
+        (n.includes('hand') && (n.includes('right') || n.endsWith('_r') || n.endsWith('.r')))) {
       found = child;
     }
   });
@@ -384,26 +385,10 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
   characterModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
   characterModel.position.y = - scaledBox.min.y;
 
-  // Face towards Boss on the right (+X), angled 30° toward camera for optimal view
-  characterRoot.rotation.y = -Math.PI / 2 + Math.PI / 6;
+  // Face towards Boss on the right (+X)
+  characterRoot.rotation.y = Math.PI / 2;
   characterRoot.add(characterModel);
   playerGroup.add(characterRoot);
-
-  // Bone Socketing: Search for RightHand / Arm_R / rightHandBone
-  handNode = characterModel.getObjectByName('RightHand') ||
-             characterModel.getObjectByName('Arm_R') ||
-             characterModel.getObjectByName('rightHandBone') ||
-             _findHandBone(characterModel);
-
-  if (!handNode) {
-    console.log('[player] No hand bone found, creating right-side socket node');
-    handNode = new THREE.Group();
-    handNode.name = 'RightHandFallback';
-    handNode.position.set(0.6, 1.4, 0.2);
-    characterModel.add(handNode);
-  } else {
-    console.log('[player] Socketed weapon to bone:', handNode.name);
-  }
 
   // Load 3D Weapon Model (try element weapon, then default weapon)
   let weapGltf = await _loadGLTFModel(`/assets/models/${el}_weapon.glb`);
@@ -417,7 +402,6 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
 
   weaponSocket = new THREE.Group();
   weaponSocket.name = 'WeaponSocket';
-  weaponSocket.rotation.set(0, 0, WEAPON_READY_ROT_Z);
 
   if (weapGltf && weapGltf.scene) {
     weaponModel = weapGltf.scene.clone(true);
@@ -425,15 +409,28 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
       if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
     });
 
-    const wBox = new THREE.Box3().setFromObject(weaponModel);
-    const wSize = new THREE.Vector3();
-    wBox.getSize(wSize);
-    const maxDim = Math.max(wSize.x, wSize.y, wSize.z);
-    if (maxDim > 0.01 && (maxDim > 10 || maxDim < 0.2)) {
-      weaponModel.scale.setScalar(1.8 / maxDim);
+    // Compute the bounding box of weaponModel:
+    const box = new THREE.Box3().setFromObject(weaponModel);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    // Auto-scale weapon if it's too giant:
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 2.5) {
+      const scaleFactor = 1.8 / maxDim;
+      weaponModel.scale.setScalar(scaleFactor);
+    } else if (maxDim < 0.2 && maxDim > 0.01) {
+      const scaleFactor = 1.5 / maxDim;
+      weaponModel.scale.setScalar(scaleFactor);
+    }
+
+    // Normalize geometry offset inside weaponSocket so hilt/grip is at local (0, 0, 0)
+    const scaledBox = new THREE.Box3().setFromObject(weaponModel);
+    weaponModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
+    weaponModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
+    if (scaledBox.min.y > 0.1 || scaledBox.min.y < -0.3) {
+      weaponModel.position.y = - scaledBox.min.y;
     }
     weaponSocket.add(weaponModel);
-    console.log(`[player] 3D Weapon attached to hand bone: ${handNode.name}`);
   } else {
     // Fallback procedural blade attached to bone socket
     const bladeColor = el === 'fire' ? 0xff4400 : el === 'frost' ? 0x88ddff : el === 'thunder' ? 0x00cfff : 0xddaa33;
@@ -442,7 +439,29 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
     weaponSocket.add(blade);
   }
 
-  handNode.add(weaponSocket);
+  // Socket to Hand Node or Right-Side Offset:
+  // Look for a hand/arm bone:
+  handNode = characterModel.getObjectByName('RightHand') ||
+             characterModel.getObjectByName('RightArm') ||
+             characterModel.getObjectByName('Arm_R') ||
+             _findHandBone(characterModel);
+
+  if (handNode) {
+    handNode.add(weaponSocket);
+    weaponSocket.position.set(0, 0, 0); // Reset relative offset
+    weaponSocket.rotation.set(0, 0, -Math.PI / 4); // Angle blade forward
+    console.log(`[player] 3D Weapon socketed to hand bone: ${handNode.name}`);
+  } else {
+    // If NO hand bone exists (static single mesh):
+    // Attach weapon to playerGroup with manual hand coordinates:
+    // x: slightly to character's right side (+0.6 to +0.8)
+    // y: waist/chest height (+0.7 to +0.9)
+    // z: slightly forward (+0.2)
+    playerGroup.add(weaponSocket);
+    weaponSocket.position.set(0.7, 0.85, 0.2);
+    weaponSocket.rotation.set(0, 0, -Math.PI / 6); // Blade tilted forward ready to slash
+    console.log('[player] No hand bone found: attached weapon to playerGroup at (0.7, 0.85, 0.2)');
+  }
 
   if (activeElement) _buildElementalAura(activeElement);
   console.log(`[player] 3D GLB model loaded & socketed for ${el}`);
@@ -882,7 +901,8 @@ export function updatePlayer(deltaTime, camera) {
       playerGroup.position.y = HOME_Y + Math.sin(Date.now() * 0.002) * 0.04;
       playerGroup.rotation.y = 0;
       if (weaponSocket) {
-        weaponSocket.rotation.z = WEAPON_READY_ROT_Z + Math.sin(Date.now() * 0.002) * 0.03;
+        const baseRot = handNode ? -Math.PI / 4 : -Math.PI / 6;
+        weaponSocket.rotation.z = baseRot + Math.sin(Date.now() * 0.002) * 0.03;
       }
     } else if (is2DMode) {
       playerGroup.position.x = HOME_X;
@@ -1347,8 +1367,8 @@ function _resetAll() {
   playerGroup.rotation.set(0, (is3DModelMode || is2DMode) ? 0 : FACE_Y, 0);
   playerGroup.scale.set(1, 1, 1);
   if (is3DModelMode) {
-    if (characterRoot) characterRoot.rotation.set(0, -Math.PI / 2 + Math.PI / 6, 0);
-    if (weaponSocket) weaponSocket.rotation.set(0, 0, WEAPON_READY_ROT_Z);
+    if (characterRoot) characterRoot.rotation.set(0, Math.PI / 2, 0);
+    if (weaponSocket) weaponSocket.rotation.set(0, 0, handNode ? -Math.PI / 4 : -Math.PI / 6);
   } else if (is2DMode) {
     if (bodyMesh) {
       bodyMesh.position.set(0, 0, 0);
