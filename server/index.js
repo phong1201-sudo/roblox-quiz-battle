@@ -75,26 +75,12 @@ app.get('/api/admin/character/list', (req, res) => {
   res.json(result);
 });
 
-// ── Admin: dual art upload — body + weapon per element ────────────────────────
+// ── Admin: dual art upload — body + weapon per element (Persistent Overwrite) ─
 // POST /api/admin/art/upload  { element, type:'body'|'weapon', image }
-// Saves as public/assets/characters/{element}_{type}.png
-const artStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../public/assets/characters');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const element = (req.body?.element || req.query?.element || 'unknown').toLowerCase();
-    const type    = (req.body?.type    || req.query?.type    || 'body'   ).toLowerCase();
-    const safeEl  = ['thunder','fire','frost'].includes(element) ? element : 'unknown';
-    const safeTyp = ['body','weapon'].includes(type) ? type : 'body';
-    cb(null, `${safeEl}_${safeTyp}.png`);
-  },
-});
+// ALWAYS saves and overwrites directly to public/assets/characters/${element}_${type}.png
 const artUpload = multer({
-  storage: artStorage,
-  limits: { fileSize: 8 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only image files accepted'));
@@ -103,18 +89,40 @@ const artUpload = multer({
 
 app.post('/api/admin/art/upload', artUpload.single('image'), (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
-    const element = (req.body?.element || '').toLowerCase();
-    const type    = (req.body?.type    || '').toLowerCase();
-    if (!['thunder','fire','frost'].includes(element))
-      return res.status(400).json({ error: 'Invalid element' });
-    if (!['body','weapon'].includes(type))
-      return res.status(400).json({ error: 'Invalid type (must be body or weapon)' });
-    const url = `/assets/characters/${element}_${type}.png`;
-    res.json({ ok: true, url, element, type, filename: req.file.filename });
+    if (!req.file) return res.status(400).json({ success: false, error: 'No image uploaded' });
+    const element = (req.body?.element || req.query?.element || '').toLowerCase();
+    const type    = (req.body?.type    || req.query?.type    || '').toLowerCase();
+    if (!['thunder', 'fire', 'frost'].includes(element))
+      return res.status(400).json({ success: false, error: 'Invalid element' });
+    if (!['body', 'weapon'].includes(type))
+      return res.status(400).json({ success: false, error: 'Invalid type (must be body or weapon)' });
+
+    const dir = path.join(__dirname, '../public/assets/characters');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    // Always overwrite exact filename: ${element}_${type}.png
+    const targetPath = path.join(dir, `${element}_${type}.png`);
+    fs.writeFileSync(targetPath, req.file.buffer);
+
+    const url = `/assets/characters/${element}_${type}.png?t=${Date.now()}`;
+    console.log(`[art] Saved & overwritten: ${targetPath}`);
+    res.json({ success: true, url, element, type });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ success: false, error: e.message });
   }
+});
+
+// GET /api/admin/art/status: checks physical existence on disk
+app.get('/api/admin/art/status', (req, res) => {
+  const dir = path.join(__dirname, '../public/assets/characters');
+  const result = {};
+  for (const el of ['thunder', 'fire', 'frost']) {
+    result[el] = {
+      body:   fs.existsSync(path.join(dir, `${el}_body.png`)),
+      weapon: fs.existsSync(path.join(dir, `${el}_weapon.png`)),
+    };
+  }
+  res.json(result);
 });
 
 app.get('/api/admin/art/list', (req, res) => {
@@ -131,12 +139,14 @@ app.get('/api/admin/art/list', (req, res) => {
 
 
 // ── Ensure runtime directories exist (important for Render ephemeral FS) ─────
-const uploadDir   = path.join(__dirname, 'uploads');
-const skinsDir    = path.join(__dirname, '../public/skins');
-const questionsDir = path.join(__dirname, '../data/questions');
-[uploadDir, skinsDir, questionsDir].forEach(d => {
+const uploadDir     = path.join(__dirname, 'uploads');
+const skinsDir      = path.join(__dirname, '../public/skins');
+const questionsDir  = path.join(__dirname, '../data/questions');
+const charactersDir = path.join(__dirname, '../public/assets/characters');
+[uploadDir, skinsDir, questionsDir, charactersDir].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
+
 
 // Multer for .docx question files (temp dest, then deleted)
 const docxUpload = multer({ dest: uploadDir });
@@ -630,23 +640,38 @@ io.on('connection', (socket) => {
         room.questions = questionParser.getDemoQuestions();
       }
 
-      // ── Dev gear override: set player inventory for full-set / normal testing ─
-      if (testGear && element) {
+      // ── Dev gear override: specific element full-set or normal ────────────
+      if (testGear) {
+        let activeGear = null;
+        let isFull = false;
+
+        if (['thunder', 'fire', 'frost'].includes(testGear)) {
+          activeGear = testGear;
+          isFull = true;
+        } else if (testGear === 'full') {
+          activeGear = element || 'thunder';
+          isFull = true;
+        } else if (testGear === 'normal') {
+          activeGear = null;
+          isFull = false;
+        }
+
         for (const p of room.players.values()) {
-          if (testGear === 'full') {
-            // Force full set: weapon + outfit for the chosen element
-            if (!p.inventory) p.inventory = { thunder: [], fire: [], frost: [] };
-            p.inventory[element] = ['weapon', 'outfit'];
-            p.equippedSet = element;
-            console.log(`[testGear] Player ${p.name} forced full set for ${element}`);
-          } else if (testGear === 'normal') {
-            // Force incomplete: empty inventory
-            if (!p.inventory) p.inventory = { thunder: [], fire: [], frost: [] };
-            p.inventory[element] = [];
-            p.equippedSet = element;
-            console.log(`[testGear] Player ${p.name} forced normal gear for ${element}`);
+          if (!p.inventory) p.inventory = { thunder: [], fire: [], frost: [] };
+          if (isFull && activeGear) {
+            p.inventory[activeGear] = ['weapon', 'outfit'];
+            p.equippedSet = activeGear;
+            p.damagePerHit = 2;
+            console.log(`[testGear] Player ${p.name} equipped full ${activeGear} set (2-hit)`);
+          } else {
+            p.inventory = { thunder: [], fire: [], frost: [] };
+            p.equippedSet = null;
+            p.damagePerHit = 1;
+            console.log(`[testGear] Player ${p.name} equipped normal gear (1-hit)`);
           }
         }
+
+        room.devEquippedSet = activeGear;
       }
 
       // Initialise HP from question count
@@ -658,8 +683,9 @@ io.on('connection', (socket) => {
         totalHp: room.totalHp,
         bossIndex: room.bossIndex || 0,
         testGear: testGear || null,
-        equippedSet: (testGear && element) ? element : undefined,
+        equippedSet: testGear ? (room.devEquippedSet || null) : undefined,
       });
+
 
       const nextQ = roomManager.nextQuestion(code);
       if (nextQ) sendQuestion(code);

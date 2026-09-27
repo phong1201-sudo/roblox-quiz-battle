@@ -1126,13 +1126,15 @@ function _buildAdminDashboard(container, gameState) {
     { id:'hard',   label:'Khó (50)', color:'#ef233c' },
   ];
   const GEARS = [
-    { id:'normal', label:'🔘 Đồ thường (1 hit)' },
-    { id:'full',   label:'✨ Full bộ 2 món (Chém + Chiêu 2 hit)' },
+    { id:'normal',  label:'🔘 Đồ thường (Không hiệu ứng, 1 hit)', color:'#aaa', rgb:'170,170,170' },
+    { id:'thunder', label:'⚡ Full Set Lôi (Thunder 2 hit)',      color:'#00cfff', rgb:'0,207,255' },
+    { id:'fire',    label:'🔥 Full Set Hỏa (Fire 2 hit)',         color:'#ff8c42', rgb:'255,140,66' },
+    { id:'frost',   label:'❄️ Full Set Băng (Frost 2 hit)',       color:'#88ddff', rgb:'136,221,255' },
   ];
 
   let adminBoss     = 'thunder';
   let adminDiff     = 'easy';
-  let adminTestGear = 'full'; // Default to full so user can easily test the 2-hit!
+  let adminTestGear = 'thunder'; // Default to thunder full set
 
   const devRow1 = document.createElement('div');
   devRow1.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
@@ -1164,24 +1166,24 @@ function _buildAdminDashboard(container, gameState) {
   });
   wrap.appendChild(devRow2);
 
-  // Equipment toggle group
+  // Equipment toggle group: 4 granular options
   const devRow3 = document.createElement('div');
-  devRow3.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+  devRow3.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px;';
   GEARS.forEach((g) => {
     const btn = document.createElement('button');
     btn.textContent = g.label;
     const isSelected = g.id === adminTestGear;
-    btn.style.cssText = `flex:1;font-size:10px;padding:6px 10px;border:1.5px solid ${isSelected ? (g.id==='full'?'#ffd700':'#00b4d8') : '#555'};color:${isSelected ? (g.id==='full'?'#ffd700':'#fff') : '#888'};background:${isSelected ? (g.id==='full'?'rgba(255,215,0,0.18)':'rgba(0,180,216,0.18)') : 'transparent'};border-radius:5px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;font-weight:700;`;
+    btn.style.cssText = `font-size:9.5px;padding:6px 8px;border:1.5px solid ${isSelected ? g.color : '#444'};color:${isSelected ? g.color : '#888'};background:${isSelected ? `rgba(${g.rgb},0.2)` : 'transparent'};border-radius:5px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;font-weight:700;text-align:center;`;
     btn.onclick = () => {
       devRow3.querySelectorAll('button').forEach(x => {
         x.style.background = 'transparent';
-        x.style.borderColor = '#555';
+        x.style.borderColor = '#444';
         x.style.color = '#888';
       });
       adminTestGear = g.id;
-      btn.style.background = g.id === 'full' ? 'rgba(255,215,0,0.18)' : 'rgba(0,180,216,0.18)';
-      btn.style.borderColor = g.id === 'full' ? '#ffd700' : '#00b4d8';
-      btn.style.color = g.id === 'full' ? '#ffd700' : '#fff';
+      btn.style.background = `rgba(${g.rgb},0.2)`;
+      btn.style.borderColor = g.color;
+      btn.style.color = g.color;
     };
     devRow3.appendChild(btn);
   });
@@ -1216,7 +1218,8 @@ function _buildAdminDashboard(container, gameState) {
       difficulty: 'dev',
       testGear:   adminTestGear
     });
-    devStatus.textContent = `⚡ Dev launch: ${adminBoss} / 5 câu / ${adminTestGear === 'full' ? 'Full Set (2 hit)' : 'Đồ thường (1 hit)'}`;
+    const gearLabel = GEARS.find(g => g.id === adminTestGear)?.label || adminTestGear;
+    devStatus.textContent = `⚡ Dev launch: Boss ${adminBoss} / 5 câu / ${gearLabel}`;
     devStatus.style.color = '#ffcc00';
   };
 
@@ -1224,6 +1227,7 @@ function _buildAdminDashboard(container, gameState) {
   wrap.appendChild(devStatus);
 
   container.appendChild(wrap);
+
 
 }
 

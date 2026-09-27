@@ -33,6 +33,12 @@ let leftLeg, rightLeg;
 let leftShoe, rightShoe;
 let swordGroup = null;               // weapon, child of rightShoulderPivot
 
+// 2.5D Sprite Mesh state
+let is2DMode = false;
+let bodyMesh = null;                 // THREE.Mesh (PlaneGeometry 2.2 x 3.0)
+let weaponMesh = null;               // THREE.Mesh (PlaneGeometry 0.8 x 2.2)
+let weaponArmPivot = null;           // THREE.Group attached at (x: 0.8, y: 1.0)
+
 // Material refs for hurt recolor
 let hatMat, shirtMat, pantsMat;
 
@@ -83,11 +89,10 @@ export function createPlayer(color, avatarPreset, cutoutUrl) {
   if (playerGroup) return;
   playerGroup = new THREE.Group();
   playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  playerGroup.rotation.y = FACE_Y;   // ← face toward boss (+X)
-  _buildEquippedCharacter();
+  createPlayerMesh(activeElement, window.gameState?.equipment);
 }
 
-function _buildEquippedCharacter() {
+function _build3DBoxCharacter() {
   // Clear old children
   while (playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
   headMesh = hatMesh = torsoMesh = pantsMesh = null;
@@ -173,16 +178,11 @@ function _buildEquippedCharacter() {
   // ── Elemental aura ────────────────────────────────────────────────────────
   if (activeElement) _buildElementalAura(activeElement);
 
-  // Elemental art: attach custom 2D body billboard if available
-  _attachCharacterBodySprite();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ELEMENTAL 2D ART SYSTEM (BODY & WEAPON SPRITES)
+// 2.5D SPRITE CHARACTER BUILDER & ART SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
-let _characterBodyMesh = null;
-
-// Texture cache: { [element]: { body: THREE.CanvasTexture|null, weapon: THREE.CanvasTexture|null } }
 const _artCache = {
   thunder: { body: null, weapon: null },
   fire:    { body: null, weapon: null },
@@ -190,37 +190,39 @@ const _artCache = {
 };
 
 /**
- * Remove near-white background (#FFFFFF -> alpha transparent)
+ * Chroma-key: removes near-white backgrounds from images
  */
-function _removeWhiteBg(srcCanvas, threshold = 220) {
-  const out = document.createElement('canvas');
-  out.width  = srcCanvas.width;
-  out.height = srcCanvas.height;
-  const ctx   = out.getContext('2d');
-  ctx.drawImage(srcCanvas, 0, 0);
-  const id   = ctx.getImageData(0, 0, out.width, out.height);
-  const data = id.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i+1], b = data[i+2];
-    if (r > threshold && g > threshold && b > threshold) {
-      data[i+3] = 0;   // transparent
+function _cleanWhiteBackground(img) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width;
+  c.height = img.naturalHeight || img.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const imgData = ctx.getImageData(0, 0, c.width, c.height);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] > 220 && d[i + 1] > 220 && d[i + 2] > 220) {
+      d[i + 3] = 0; // Transparent
     }
   }
-  ctx.putImageData(id, 0, 0);
-  return out;
+  ctx.putImageData(imgData, 0, 0);
+  return c;
 }
 
 /**
- * Load body or weapon texture for an element with fallback paths
+ * Load body or weapon texture from /assets/characters/${element}_${type}.png
  */
 function _loadArtTexture(element, type) {
   return new Promise((resolve) => {
     if (!element || !['thunder', 'fire', 'frost'].includes(element)) return resolve(null);
     if (!['body', 'weapon'].includes(type)) return resolve(null);
 
-    const urls = [];
+    if (_artCache[element]?.[type]) return resolve(_artCache[element][type]);
+
+    const urls = [
+      `/assets/characters/${element}_${type}.png`,
+    ];
     if (type === 'body') {
-      urls.push(`/assets/characters/${element}_body.png`);
       urls.push(`/assets/characters/${element}.png`);
       urls.push(`/assets/characters/${element}.jpg`);
       if (element === 'fire') {
@@ -228,7 +230,6 @@ function _loadArtTexture(element, type) {
         urls.push('/assets/characters/fireblade(cho%20game)_0.jpg');
       }
     } else {
-      urls.push(`/assets/characters/${element}_weapon.png`);
       urls.push(`/assets/characters/${element}_weapon.jpg`);
     }
 
@@ -248,10 +249,10 @@ function _loadArtTexture(element, type) {
         tex.needsUpdate = true;
         if (!_artCache[element]) _artCache[element] = { body: null, weapon: null };
         _artCache[element][type] = tex;
-        console.log(`[player] Loaded custom ${type} art for ${element}`);
+        console.log(`[player] Loaded ${element}_${type} texture`);
         resolve(tex);
       } catch (err) {
-        console.warn(`[player] Error processing art for ${element} ${type}:`, err);
+        console.warn(`[player] Texture processing error for ${element}_${type}:`, err);
         tryNext();
       }
     };
@@ -260,70 +261,82 @@ function _loadArtTexture(element, type) {
   });
 }
 
-function _cleanWhiteBackground(img) {
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth || img.width;
-  c.height = img.naturalHeight || img.height;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  const imgData = ctx.getImageData(0, 0, c.width, c.height);
-  const d = imgData.data;
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i] > 220 && d[i + 1] > 220 && d[i + 2] > 220) {
-      d[i + 3] = 0;
+/**
+ * 2.5D Sprite Character Builder:
+ * Renders body and weapon as 2.5D sprite meshes when custom art is uploaded.
+ * Fallback to 3D voxel box model if textures fail to load.
+ */
+export async function createPlayerMesh(element, equippedGear) {
+  if (!playerGroup) return;
+  const targetEl = element || activeElement;
+
+  // Clear existing meshes
+  while (playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
+  headMesh = hatMesh = torsoMesh = pantsMesh = null;
+  leftArm = null; rightShoulderPivot = null; swordGroup = null;
+  leftLeg = rightLeg = null; leftShoe = rightShoe = null;
+  elementalAura = null; elementalParticles = [];
+  bodyMesh = null; weaponMesh = null; weaponArmPivot = null;
+
+  if (targetEl) {
+    const [bTex, wTex] = await Promise.all([
+      _loadArtTexture(targetEl, 'body'),
+      _loadArtTexture(targetEl, 'weapon'),
+    ]);
+
+    if (bTex) {
+      is2DMode = true;
+      playerGroup.rotation.y = 0; // Face camera in 2.5D mode
+      playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+
+      // Body Mesh: PlaneGeometry(2.2, 3.0) at ground level
+      const bGeo = new THREE.PlaneGeometry(2.2, 3.0);
+      const bMat = new THREE.MeshBasicMaterial({
+        map: bTex,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      bodyMesh = new THREE.Mesh(bGeo, bMat);
+      bodyMesh.position.set(0, 0, 0); // Ground level (HOME_Y = 1.5, half-height = 1.5)
+      playerGroup.add(bodyMesh);
+
+      // Weapon Arm Pivot attached to character's right side (x: 0.8, y: 1.0)
+      weaponArmPivot = new THREE.Group();
+      weaponArmPivot.position.set(0.8, 1.0, 0.05);
+
+      if (wTex) {
+        const wGeo = new THREE.PlaneGeometry(0.8, 2.2);
+        wGeo.translate(0, 1.1, 0); // Hilt/grip aligned with pivot point
+        const wMat = new THREE.MeshBasicMaterial({
+          map: wTex,
+          transparent: true,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+        weaponMesh = new THREE.Mesh(wGeo, wMat);
+        weaponArmPivot.add(weaponMesh);
+      } else {
+        const blade = makeBox(0.12, 1.6, 0.08, 0x00cfff);
+        blade.position.set(0, 0.8, 0);
+        weaponArmPivot.add(blade);
+      }
+
+      playerGroup.add(weaponArmPivot);
+
+      if (activeElement) _buildElementalAura(activeElement);
+      console.log(`[player] 2.5D sprite mesh constructed for ${targetEl}`);
+      return;
     }
   }
-  ctx.putImageData(imgData, 0, 0);
-  return c;
+
+  // Fallback: 3D Box Model
+  is2DMode = false;
+  playerGroup.rotation.y = FACE_Y;
+  _build3DBoxCharacter();
 }
 
-function _attachCharacterBodySprite() {
-  if (_characterBodyMesh && playerGroup) {
-    playerGroup.remove(_characterBodyMesh);
-    _characterBodyMesh = null;
-  }
-  if (!activeElement) {
-    _set3DModelVisible(true);
-    return;
-  }
-
-  const tex = _artCache[activeElement]?.body;
-  if (tex) {
-    const geo = new THREE.PlaneGeometry(3.0, 3.2);
-    const mat = new THREE.MeshBasicMaterial({
-      map: tex,
-      transparent: true,
-      alphaTest: 0.05,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    _characterBodyMesh = new THREE.Mesh(geo, mat);
-    _characterBodyMesh.position.set(0, 0.45, 0.2);
-    playerGroup.add(_characterBodyMesh);
-    _set3DModelVisible(false);
-  } else {
-    _set3DModelVisible(true);
-    _loadArtTexture(activeElement, 'body').then(loadedTex => {
-      if (loadedTex && activeElement && playerGroup) {
-        _attachCharacterBodySprite();
-      }
-    });
-  }
-}
-
-function _set3DModelVisible(vis) {
-  if (headMesh)  headMesh.visible  = vis;
-  if (torsoMesh) torsoMesh.visible = vis;
-  if (leftArm)   leftArm.visible   = vis;
-  if (leftLeg)   leftLeg.visible   = vis;
-  if (rightLeg)  rightLeg.visible  = vis;
-  if (rightShoulderPivot) {
-    const armBox = rightShoulderPivot.children.find(c => c !== swordGroup);
-    if (armBox) armBox.visible = vis;
-  }
-}
-
-// Listen for admin hot-reload events
+// Hot-reload listener for admin uploads
 if (typeof window !== 'undefined') {
   const onArtUpdated = (ev) => {
     const { element, type } = ev.detail || {};
@@ -332,14 +345,7 @@ if (typeof window !== 'undefined') {
       if (type) _artCache[element][type] = null;
       else _artCache[element] = { body: null, weapon: null };
     }
-    Promise.all([
-      _loadArtTexture(element, 'body'),
-      _loadArtTexture(element, 'weapon'),
-    ]).then(() => {
-      if (activeElement === element && playerGroup) {
-        _buildEquippedCharacter();
-      }
-    });
+    createPlayerMesh(activeElement, window.gameState?.equipment);
   };
   window.addEventListener('character-art-updated', onArtUpdated);
   window.addEventListener('character-image-updated', onArtUpdated);
@@ -350,6 +356,7 @@ if (typeof window !== 'undefined') {
     _loadArtTexture(el, 'weapon');
   });
 }
+
 
 
 
@@ -515,17 +522,7 @@ export function applyElementalSet(element) {
     window.gameState.thunderSet  = element === 'thunder';
     // damagePerHit determined server-side from inventory hasFullSet check
   }
-  if (element) {
-    Promise.all([
-      _loadArtTexture(element, 'body'),
-      _loadArtTexture(element, 'weapon'),
-    ]).then(() => {
-      if (activeElement === element && playerGroup) {
-        _buildEquippedCharacter();
-      }
-    });
-  }
-  if (playerGroup) _buildEquippedCharacter();
+  createPlayerMesh(element, window.gameState?.equipment);
 }
 export function applyThunderSet() { applyElementalSet('thunder'); }
 
@@ -580,20 +577,28 @@ export function playRushMiss(onDone) {
 
 export function playHurt() {
   if (!playerGroup) return;
-  [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
-    if (m?.material) m.material.color.setHex(0xFF3333);
-  });
+  if (is2DMode) {
+    if (bodyMesh?.material) bodyMesh.material.color.setHex(0xFF3333);
+  } else {
+    [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
+      if (m?.material) m.material.color.setHex(0xFF3333);
+    });
+  }
   let shakes = 0;
   const iv = setInterval(() => {
     if (playerGroup) playerGroup.position.x = HOME_X + (Math.random()-0.5)*0.4;
     if (++shakes >= 6) { clearInterval(iv); if (playerGroup) playerGroup.position.x = HOME_X; }
   }, 40);
   setTimeout(() => {
-    [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
-      if (m?.material) m.material.color.setHex(SKIN_TONE);
-    });
-    if (hatMat)   hatMat.color.setHex(getEquipColor('hat'));
-    if (shirtMat) shirtMat.color.setHex(getEquipColor('shirt'));
+    if (is2DMode) {
+      if (bodyMesh?.material) bodyMesh.material.color.setHex(0xFFFFFF);
+    } else {
+      [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
+        if (m?.material) m.material.color.setHex(SKIN_TONE);
+      });
+      if (hatMat)   hatMat.color.setHex(getEquipColor('hat'));
+      if (shirtMat) shirtMat.color.setHex(getEquipColor('shirt'));
+    }
   }, 300);
 }
 
@@ -648,12 +653,21 @@ export function updatePlayer(deltaTime, camera) {
     if (prog >= 1.0) { _resetAll(); anim.active = false; if (anim.onDone) anim.onDone(); }
 
   } else {
-    // Idle bob
-    playerGroup.position.x = HOME_X;
-    playerGroup.position.y = HOME_Y + Math.sin(Date.now()*0.0018)*0.06;
-    playerGroup.rotation.y = FACE_Y;
-    if (leftArm)            leftArm.rotation.x            =  Math.sin(Date.now()*0.0015)*0.06;
-    if (rightShoulderPivot) rightShoulderPivot.rotation.x = -Math.sin(Date.now()*0.0015)*0.06;
+    if (is2DMode) {
+      playerGroup.position.x = HOME_X;
+      playerGroup.position.y = HOME_Y;
+      playerGroup.rotation.y = 0;
+      const breath = Math.sin(Date.now() * 0.003) * 0.05;
+      if (bodyMesh) bodyMesh.position.y = breath;
+      if (weaponArmPivot) weaponArmPivot.position.y = 1.0 + breath;
+    } else {
+      // Idle bob
+      playerGroup.position.x = HOME_X;
+      playerGroup.position.y = HOME_Y + Math.sin(Date.now()*0.0018)*0.06;
+      playerGroup.rotation.y = FACE_Y;
+      if (leftArm)            leftArm.rotation.x            =  Math.sin(Date.now()*0.0015)*0.06;
+      if (rightShoulderPivot) rightShoulderPivot.rotation.x = -Math.sin(Date.now()*0.0015)*0.06;
+    }
   }
 
   // ── Elemental sword glow pulse ─────────────────────────────────────────────
@@ -678,11 +692,6 @@ export function updatePlayer(deltaTime, camera) {
       });
     }
   }
-
-  // Billboard custom character body plane to camera if present
-  if (_characterBodyMesh && _characterBodyMesh.parent) {
-    _characterBodyMesh.rotation.y = -playerGroup.rotation.y;
-  }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -692,6 +701,54 @@ export function updatePlayer(deltaTime, camera) {
 function _animDefault(prog, dt) {
   // Player advances along +X (already facing that direction)
   const ATTACK_X = HOME_X + (BOSS_X - HOME_X) * 0.80;
+
+  if (is2DMode) {
+    if (prog < 0.28) {
+      // Phase 1 — dash forward + hop + wind up arm back
+      const t = prog / 0.28;
+      playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
+      playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.4;
+      playerGroup.rotation.y = 0;
+      if (weaponArmPivot) {
+        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0, 0.35, t);
+      }
+    } else if (prog < 0.44) {
+      // Phase 2 — clean forward slice down to -80°
+      const t = (prog - 0.28) / 0.16;
+      playerGroup.position.x = ATTACK_X;
+      playerGroup.position.y = HOME_Y;
+      playerGroup.rotation.y = 0;
+      if (weaponArmPivot) {
+        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.35, -80 * Math.PI / 180, t);
+      }
+      if (prog >= 0.36 && !anim._hitEmitted) {
+        anim._hitEmitted = true;
+        if (anim.onHit) anim.onHit();
+      }
+      const b = 1 + Math.sin(t * Math.PI) * 0.10;
+      playerGroup.scale.set(b, 1 / b, 1);
+    } else if (prog < 0.56) {
+      // Phase 3 — hold / freeze at -80°
+      playerGroup.position.x = ATTACK_X;
+      playerGroup.position.y = HOME_Y;
+      playerGroup.rotation.y = 0;
+      playerGroup.scale.set(1, 1, 1);
+      if (weaponArmPivot) {
+        weaponArmPivot.rotation.z = -80 * Math.PI / 180;
+      }
+    } else {
+      // Phase 4 — hop back + return sword to 0
+      const t = (prog - 0.56) / 0.44;
+      playerGroup.position.x = THREE.MathUtils.lerp(ATTACK_X, HOME_X, t);
+      playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.6;
+      playerGroup.rotation.y = 0;
+      playerGroup.scale.set(1, 1, 1);
+      if (weaponArmPivot) {
+        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(-80 * Math.PI / 180, 0, t);
+      }
+    }
+    return;
+  }
 
   if (prog < 0.28) {
     // Phase 1 — dash forward + hop + wind up arm
@@ -929,6 +986,27 @@ function _spawnFlameWave() {
 // ═════════════════════════════════════════════════════════════════════════════
 function _animMiss(prog, dt) {
   const RUSH_X = HOME_X + (BOSS_X-HOME_X)*0.75;
+  if (is2DMode) {
+    if (prog < 0.40) {
+      const t = prog / 0.40;
+      playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, RUSH_X, t);
+      playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.4;
+      playerGroup.rotation.y = 0;
+      if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0, 0.35, t);
+    } else if (prog < 0.56) {
+      playerGroup.position.x = RUSH_X;
+      playerGroup.position.y = HOME_Y;
+      playerGroup.rotation.y = 0;
+      if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.35, -80 * Math.PI / 180, (prog - 0.40) / 0.16);
+    } else {
+      const t = (prog - 0.56) / 0.44;
+      playerGroup.position.x = THREE.MathUtils.lerp(RUSH_X, HOME_X, t);
+      playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.6;
+      playerGroup.rotation.y = 0;
+      if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(-80 * Math.PI / 180, 0, t);
+    }
+    return;
+  }
   if (prog < 0.40) {
     const t=prog/0.40;
     playerGroup.position.x = THREE.MathUtils.lerp(HOME_X,RUSH_X,t);
@@ -961,12 +1039,17 @@ function _runLimbs(dt, speed) {
 
 function _resetAll() {
   playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  playerGroup.rotation.set(0, FACE_Y, 0);
+  playerGroup.rotation.set(0, is2DMode ? 0 : FACE_Y, 0);
   playerGroup.scale.set(1,1,1);
-  if (leftLeg)            leftLeg.rotation.x            = 0;
-  if (rightLeg)           rightLeg.rotation.x           = 0;
-  if (leftArm)            leftArm.rotation.x            = 0;
-  if (rightShoulderPivot) { rightShoulderPivot.rotation.x = 0; rightShoulderPivot.rotation.z = 0; }
+  if (is2DMode) {
+    if (weaponArmPivot) weaponArmPivot.rotation.z = 0;
+    if (bodyMesh) bodyMesh.position.y = 0;
+  } else {
+    if (leftLeg)            leftLeg.rotation.x            = 0;
+    if (rightLeg)           rightLeg.rotation.x           = 0;
+    if (leftArm)            leftArm.rotation.x            = 0;
+    if (rightShoulderPivot) { rightShoulderPivot.rotation.x = 0; rightShoulderPivot.rotation.z = 0; }
+  }
   walkCycle = 0;
   // Clean up stray flame wave
   if (flameWave && flameWave.parent) { flameWave.parent.remove(flameWave); }
