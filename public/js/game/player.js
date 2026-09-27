@@ -61,6 +61,48 @@ export function getPlayerArmPivot() {
   return playerArmPivot || getWeaponHandNode();
 }
 
+// ── Visual Socket & Pivot Calibration Configuration ───────────────────────────
+const DEFAULT_PLAYER_SOCKETS = {
+  player: {
+    default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+    thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+    fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+    frost:   { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+  },
+  weapon: {
+    player_sword: { hiltX: 0.0, hiltY: -0.5, hiltZ: 0.0 },
+  }
+};
+
+let _socketsConfig = JSON.parse(JSON.stringify(DEFAULT_PLAYER_SOCKETS));
+
+export async function loadSocketsConfig() {
+  try {
+    const res = await fetch('/api/admin/sockets');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.sockets) {
+        _socketsConfig = data.sockets;
+      }
+    }
+  } catch (e) {
+    // fallback to defaults
+  }
+  return _socketsConfig;
+}
+
+if (typeof window !== 'undefined') {
+  loadSocketsConfig();
+  window.addEventListener('sockets-updated', (ev) => {
+    if (ev.detail) {
+      _socketsConfig = ev.detail;
+      if (playerGroup && activeElement !== undefined) {
+        createPlayerMesh(activeElement, window.gameState?.equipment);
+      }
+    }
+  });
+}
+
 // 2.5D Sprite Mesh state
 let is2DMode = false;
 let bodyMesh = null;                 // THREE.Mesh (PlaneGeometry 2.2 x 3.0)
@@ -419,12 +461,21 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
                await _loadGLTFModel(`/assets/models/default_weapon.gltf`);
   }
 
-  // Universal Procedural Arm Pivot Socketing
-  // DO NOT rely on finding pre-named bones (RightHand, Arm_R, etc.)
+  // Read socket configuration for player and weapon
+  const pCfg = _socketsConfig?.player?.[el] || _socketsConfig?.player?.default || { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 };
+  const wCfg = _socketsConfig?.weapon?.player_sword || { hiltX: 0.0, hiltY: -0.5, hiltZ: 0.0 };
+
+  // Universal Procedural Arm Pivot Socketing with Dynamic Calibration
   playerArmPivot = new THREE.Group();
   playerArmPivot.name = 'PlayerArmPivot';
-  playerArmPivot.position.set(-0.65, 0.9, 0.1);
+  const handPosX = -Math.abs(pCfg.handX ?? 0.65);
+  const handPosY = pCfg.handY ?? 0.85;
+  const handPosZ = pCfg.handZ ?? 0.1;
+  playerArmPivot.position.set(handPosX, handPosY, handPosZ);
   playerArmPivot.rotation.set(0, 0, 0);
+
+  const weaponAngleDeg = pCfg.weaponAngle !== undefined ? pCfg.weaponAngle : -45;
+  const weaponAngleRad = (weaponAngleDeg * Math.PI) / 180;
 
   if (weapGltf && weapGltf.scene) {
     weaponModel = weapGltf.scene.clone(true);
@@ -435,14 +486,18 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
     // Scale weapon to match blocky character proportions
     weaponModel.scale.set(2.2, 2.2, 2.2);
 
-    // Normalize geometry offset inside weaponModel so hilt/grip is at local (0, 0, 0)
+    // Normalize geometry offset inside weaponModel with calibrated hilt offset
     const scaledBox = new THREE.Box3().setFromObject(weaponModel);
-    weaponModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
-    weaponModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
-    weaponModel.position.y = - scaledBox.min.y;
+    const hiltX = wCfg.hiltX || 0;
+    const hiltY = wCfg.hiltY !== undefined ? wCfg.hiltY : -0.5;
+    const hiltZ = wCfg.hiltZ || 0;
 
-    // Orient sword blade pointing towards boss (+X direction):
-    weaponModel.rotation.set(0, Math.PI / 2, -Math.PI / 4);
+    weaponModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2 + hiltX;
+    weaponModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2 + hiltZ;
+    weaponModel.position.y = - scaledBox.min.y + hiltY;
+
+    // Orient sword blade pointing towards boss (+X direction) using calibrated angle:
+    weaponModel.rotation.set(0, Math.PI / 2, weaponAngleRad);
 
     playerArmPivot.add(weaponModel);
   } else {
@@ -450,14 +505,14 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
     const bladeColor = el === 'fire' ? 0xff4400 : el === 'frost' ? 0x88ddff : el === 'thunder' ? 0x00cfff : 0xddaa33;
     const blade = makeBox(0.2, 2.2, 0.12, bladeColor);
     blade.position.set(0, 0.8, 0);
-    blade.rotation.set(0, Math.PI / 2, -Math.PI / 4);
+    blade.rotation.set(0, Math.PI / 2, weaponAngleRad);
     playerArmPivot.add(blade);
   }
 
   // Attach playerArmPivot directly to playerGroup
   playerGroup.add(playerArmPivot);
   weaponSocket = playerArmPivot;
-  console.log('[player] Universal procedural playerArmPivot mounted at (-0.65, 0.9, 0.1), sword blade oriented toward boss (+X)');
+  console.log(`[player] Universal procedural playerArmPivot mounted at (${handPosX}, ${handPosY}, ${handPosZ}), sword blade oriented toward boss (+X) at ${weaponAngleDeg}°`);
 
   if (activeElement) _buildElementalAura(activeElement);
   console.log(`[player] 3D GLB model loaded & socketed for ${el}`);

@@ -306,6 +306,70 @@ app.get('/api/admin/art/list', (req, res) => {
   res.json(result);
 });
 
+// ── Admin: Visual Socket & Pivot Calibration System ────────────────────────
+const socketsFilePath = path.join(__dirname, '../data/sockets.json');
+
+const DEFAULT_SOCKETS = {
+  player: {
+    default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+    thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+    fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
+    frost:   { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 }
+  },
+  boss: {
+    thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
+    fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
+    frost:   { handX: -0.9, handY: 1.3, handZ: 0.1 }
+  },
+  weapon: {
+    player_sword: { hiltX: 0.0, hiltY: -0.5, hiltZ: 0.0 },
+    boss_hammer:  { hiltX: 0.0, hiltY: -0.6, hiltZ: 0.0 }
+  }
+};
+
+function readSocketsConfig() {
+  try {
+    if (!fs.existsSync(socketsFilePath)) {
+      const dataDir = path.dirname(socketsFilePath);
+      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      fs.writeFileSync(socketsFilePath, JSON.stringify(DEFAULT_SOCKETS, null, 2), 'utf8');
+      return DEFAULT_SOCKETS;
+    }
+    const raw = fs.readFileSync(socketsFilePath, 'utf8');
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('[sockets] Error reading sockets.json:', e);
+    return DEFAULT_SOCKETS;
+  }
+}
+
+app.get(['/api/admin/sockets', '/api/sockets'], (req, res) => {
+  const config = readSocketsConfig();
+  res.json({ success: true, sockets: config });
+});
+
+app.post('/api/admin/sockets', (req, res) => {
+  try {
+    const newConfig = req.body;
+    if (!newConfig || typeof newConfig !== 'object') {
+      return res.status(400).json({ success: false, error: 'Invalid sockets configuration' });
+    }
+    const current = readSocketsConfig();
+    const merged = {
+      player: { ...(current.player || {}), ...(newConfig.player || {}) },
+      boss:   { ...(current.boss || {}),   ...(newConfig.boss || {}) },
+      weapon: { ...(current.weapon || {}), ...(newConfig.weapon || {}) },
+    };
+    const dataDir = path.dirname(socketsFilePath);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(socketsFilePath, JSON.stringify(merged, null, 2), 'utf8');
+    console.log('[sockets] Successfully updated sockets.json');
+    res.json({ success: true, message: 'Cập nhật cấu hình khớp tay & chuôi vũ khí thành công', sockets: merged });
+  } catch (e) {
+    console.error('[sockets] Error writing sockets.json:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 // ── Ensure runtime directories exist (important for Render ephemeral FS) ─────
 const uploadDir     = path.join(__dirname, 'uploads');

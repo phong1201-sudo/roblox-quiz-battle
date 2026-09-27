@@ -1,5 +1,6 @@
 import { socket } from '../socket.js';
 import { showScreen } from '../main.js';
+import { initVisualSocketCalibrator } from '../admin.js';
 // THREE is available as a global from the CDN script tag
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1416,6 +1417,157 @@ function _buildAdminDashboard(container, gameState) {
   });
 
   wrap.appendChild(bossGrid);
+
+  // ── Sockets & Pivot Calibration Section ───────────────────────────────────
+  wrap.appendChild(mkHead('🎯 Cân Chỉnh Khớp Tay & Chuôi Vũ Khí (3D Socket Calibrator)'));
+
+  const socketCalibCard = document.createElement('div');
+  socketCalibCard.style.cssText = 'background:rgba(10,16,30,0.85);border:1.5px solid rgba(0,180,216,0.4);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;';
+
+  // Subheader & Target Selection Row
+  const calibHeaderRow = document.createElement('div');
+  calibHeaderRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;';
+
+  const selectTargetEl = document.createElement('select');
+  selectTargetEl.style.cssText = 'font-size:11px;font-family:"Be Vietnam Pro",sans-serif;font-weight:700;padding:6px 12px;border-radius:6px;background:#0d1527;color:#00cfff;border:1.5px solid #00cfff;cursor:pointer;outline:none;';
+  selectTargetEl.innerHTML = `
+    <optgroup label="Nhân vật (Player)">
+      <option value="player.default">👤 Nhân vật - Mặc định</option>
+      <option value="player.thunder">⚡ Nhân vật - Lôi Thần</option>
+      <option value="player.fire">🔥 Nhân vật - Hỏa Thần</option>
+      <option value="player.frost">❄️ Nhân vật - Băng Thần</option>
+    </optgroup>
+    <optgroup label="Trùm Cuối (Boss)">
+      <option value="boss.thunder">⚡ Boss - Sét (Thunder)</option>
+      <option value="boss.fire">🔥 Boss - Lửa (Fire)</option>
+      <option value="boss.frost">❄️ Boss - Băng (Frost)</option>
+    </optgroup>
+    <optgroup label="Vũ Khí (Weapon Hilts)">
+      <option value="weapon.player_sword">⚔️ Vũ Khí - Kiếm Nhân Vật</option>
+      <option value="weapon.boss_hammer">🔨 Vũ Khí - Búa Boss</option>
+    </optgroup>
+  `;
+
+  const calibBtnGroup = document.createElement('div');
+  calibBtnGroup.style.cssText = 'display:flex;gap:8px;align-items:center;';
+
+  const btnReset = document.createElement('button');
+  btnReset.textContent = '↺ Mặc Định';
+  btnReset.style.cssText = 'font-size:10px;font-weight:700;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.1);color:#aaa;border:1px solid #555;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;';
+
+  const btnSave = document.createElement('button');
+  btnSave.innerHTML = '💾 LƯU KHỚP';
+  btnSave.style.cssText = 'font-size:10px;font-weight:800;padding:6px 14px;border-radius:6px;background:linear-gradient(135deg,#06d6a0,#00b4d8);color:#000;border:none;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;box-shadow:0 0 10px rgba(6,214,160,0.4);';
+
+  const linkFullscreen = document.createElement('a');
+  linkFullscreen.href = '/admin.html';
+  linkFullscreen.target = '_blank';
+  linkFullscreen.textContent = '🔗 Toàn Màn Hình';
+  linkFullscreen.style.cssText = 'font-size:10px;color:#00cfff;text-decoration:none;padding:5px 8px;border:1px solid rgba(0,207,255,0.4);border-radius:6px;background:rgba(0,207,255,0.1);';
+
+  calibBtnGroup.appendChild(btnReset);
+  calibBtnGroup.appendChild(btnSave);
+  calibBtnGroup.appendChild(linkFullscreen);
+
+  calibHeaderRow.appendChild(selectTargetEl);
+  calibHeaderRow.appendChild(calibBtnGroup);
+  socketCalibCard.appendChild(calibHeaderRow);
+
+  // Status Toast
+  const statusToast = document.createElement('div');
+  statusToast.style.cssText = 'display:none;padding:6px 12px;border-radius:6px;font-size:11px;font-family:"Be Vietnam Pro",sans-serif;font-weight:600;background:rgba(6,214,160,0.15);border:1px solid #06d6a0;color:#06d6a0;';
+  socketCalibCard.appendChild(statusToast);
+
+  // Main interactive area: 3D Canvas + Sliders
+  const calibBody = document.createElement('div');
+  calibBody.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;align-items:start;';
+
+  // 3D Canvas Viewport
+  const containerEl = document.createElement('div');
+  containerEl.style.cssText = 'width:100%;height:320px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#070a13;position:relative;overflow:hidden;cursor:grab;';
+
+  const hintOverlay = document.createElement('div');
+  hintOverlay.style.cssText = 'position:absolute;bottom:6px;left:8px;font-size:9px;color:rgba(255,255,255,0.6);background:rgba(0,0,0,0.6);padding:3px 6px;border-radius:4px;pointer-events:none;z-index:2;';
+  hintOverlay.textContent = '🖱️ Click mô hình để gắn điểm khớp | Kéo chuột xoay 3D';
+  containerEl.appendChild(hintOverlay);
+  calibBody.appendChild(containerEl);
+
+  // Sliders panel
+  const slidersBox = document.createElement('div');
+  slidersBox.style.cssText = 'background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;';
+
+  function createSliderControl(labelText, min, max, step, defVal, unit = '') {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+
+    const labelRow = document.createElement('div');
+    labelRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#aaa;font-family:"Be Vietnam Pro",sans-serif;';
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = labelText;
+    const valSpan = document.createElement('span');
+    valSpan.textContent = `${defVal}${unit}`;
+    valSpan.style.color = '#00cfff';
+    valSpan.style.fontWeight = '700';
+    labelRow.appendChild(labelSpan);
+    labelRow.appendChild(valSpan);
+
+    const inputRow = document.createElement('div');
+    inputRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = String(min);
+    slider.max = String(max);
+    slider.step = String(step);
+    slider.value = String(defVal);
+    slider.style.cssText = 'flex:1;accent-color:#00cfff;cursor:pointer;';
+
+    const numInput = document.createElement('input');
+    numInput.type = 'number';
+    numInput.min = String(min);
+    numInput.max = String(max);
+    numInput.step = String(step);
+    numInput.value = String(defVal);
+    numInput.style.cssText = 'width:60px;padding:2px 4px;font-size:10px;background:#0d1527;border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:4px;text-align:center;font-family:"Be Vietnam Pro",sans-serif;';
+
+    inputRow.appendChild(slider);
+    inputRow.appendChild(numInput);
+    row.appendChild(labelRow);
+    row.appendChild(inputRow);
+
+    return { row, slider, numInput, valSpan };
+  }
+
+  const ctrlX = createSliderControl('Tọa độ X (Ngang / Trái - Phải):', -3, 3, 0.05, 0.65);
+  const ctrlY = createSliderControl('Tọa độ Y (Độ cao tay / chuôi):', -2, 5, 0.05, 0.85);
+  const ctrlZ = createSliderControl('Tọa độ Z (Trước - Sau):', -3, 3, 0.05, 0.1);
+  const ctrlAngle = createSliderControl('Góc Nghiêng Vũ Khí (Weapon Angle):', -180, 180, 5, -45, '°');
+
+  slidersBox.appendChild(ctrlX.row);
+  slidersBox.appendChild(ctrlY.row);
+  slidersBox.appendChild(ctrlZ.row);
+  slidersBox.appendChild(ctrlAngle.row);
+
+  calibBody.appendChild(slidersBox);
+  socketCalibCard.appendChild(calibBody);
+  wrap.appendChild(socketCalibCard);
+
+  // Initialize Three.js Calibrator inside Admin Dashboard
+  setTimeout(() => {
+    try {
+      initVisualSocketCalibrator({
+        containerEl,
+        selectTargetEl,
+        sliderX: ctrlX.slider, numX: ctrlX.numInput, valX: ctrlX.valSpan,
+        sliderY: ctrlY.slider, numY: ctrlY.numInput, valY: ctrlY.valSpan,
+        sliderZ: ctrlZ.slider, numZ: ctrlZ.numInput, valZ: ctrlZ.valSpan,
+        groupAngle: ctrlAngle.row, sliderAngle: ctrlAngle.slider, numAngle: ctrlAngle.numInput, valAngle: ctrlAngle.valSpan,
+        btnSave, btnReset, statusToast
+      });
+    } catch (e) {
+      console.warn('[admin] Failed to initialize embedded calibrator:', e);
+    }
+  }, 100);
 
   // ── Dev Quick Launch section ──────────────────────────────────────────────
   wrap.appendChild(mkHead('🧪 Dev Quick Launch'));

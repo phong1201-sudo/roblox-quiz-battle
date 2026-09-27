@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin 3D Visual Socket & Pivot Calibration | Quiz Battle 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=23.0">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    body {
+      background: #0b0f19;
+      color: #e2e8f0;
+      font-family: 'Be Vietnam Pro', sans-serif;
+      margin: 0;
+      padding: 20px;
+      overflow-y: auto;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid #00b4d8;
+      border-radius: 12px;
+      padding: 16px 24px;
+      box-shadow: 0 4px 20px rgba(0, 180, 216, 0.15);
+    }
+    .admin-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #00b4d8;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .back-btn {
+      text-decoration: none;
+      color: #ff6b35;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1.5px solid #ff6b35;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .back-btn:hover {
+      background: rgba(255, 107, 53, 0.15);
+      transform: translateY(-1px);
+    }
+    .calibration-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 16px;
+      min-height: 620px;
+    }
+    @media (max-width: 900px) {
+      .calibration-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .viewport-card {
+      background: #070a13;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+    }
+    .viewport-canvas-wrap {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      cursor: crosshair;
+    }
+    .viewport-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      pointer-events: none;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .controls-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .control-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+    .control-label span.val {
+      color: #00b4d8;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .select-model {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1.5px solid #00b4d8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: #00b4d8;
+      cursor: pointer;
+    }
+    .slider-row input[type="number"] {
+      width: 75px;
+      background: #1e293b;
+      color: #00b4d8;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 6px;
+      font-size: 12px;
+      font-family: monospace;
+      text-align: right;
+    }
+    .btn-save {
+      background: #06d6a0;
+      color: #052e16;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+    .btn-save:hover {
+      background: #05b586;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
+    }
+    .btn-reset {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-reset:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .status-toast {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    .status-toast.success {
+      background: rgba(6, 214, 160, 0.15);
+      border: 1px solid #06d6a0;
+      color: #06d6a0;
+      display: block;
+    }
+    .status-toast.error {
+      background: rgba(239, 35, 60, 0.15);
+      border: 1px solid #ef233c;
+      color: #ef233c;
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <header class="admin-header">
+      <div class="admin-title">
+        <span style="font-size:24px;">🎯</span>
+        <div>
+          <div>HỆ THỐNG CÂN CHỈNH KHỚP TAY &amp; CHUÔI VŨ KHÍ (3D SOCKET CALIBRATOR)</div>
+          <div style="font-size:11px; color:#64748b; font-weight:normal;">Trực quan hóa Grip Point &amp; Hilt Alignment cho Nhân Vật, Boss &amp; Vũ Khí</div>
+        </div>
+      </div>
+      <a href="/" class="back-btn">⬅️ Quay lại trò chơi</a>
+    </header>
+
+    <div class="calibration-layout">
+      <!-- 3D Interactive Viewport -->
+      <div class="viewport-card">
+        <div class="viewport-canvas-wrap" id="viewport-canvas-container"></div>
+        <div class="viewport-overlay">
+          <div>💡 <b>Chuột trái:</b> Xoay camera | <b>Cuộn chuột:</b> Thu phóng | <b>Chuột phải:</b> Di chuyển</div>
+          <div>📍 <b>Click vào mô hình:</b> Đặt trực tiếp điểm khớp (Anchor Marker)</div>
+        </div>
+      </div>
+
+      <!-- Controls & Adjustment Sliders -->
+      <div class="controls-card">
+        <div class="control-group">
+          <label class="control-label">Chọn Mô Hình Cần Cân Chỉnh:</label>
+          <select id="select-model-target" class="select-model">
+            <optgroup label="── 👤 Nhân Vật (Player) ──">
+              <option value="player.default" selected>Nhân vật Mặc Định (Player Default)</option>
+              <option value="player.thunder">Nhân vật Sét (Player Thunder)</option>
+              <option value="player.fire">Nhân vật Lửa (Player Fire)</option>
+              <option value="player.frost">Nhân vật Băng (Player Frost)</option>
+            </optgroup>
+            <optgroup label="── 👾 Trùm Cuối (Boss) ──">
+              <option value="boss.thunder">Boss Sét (Thunder Boss)</option>
+              <option value="boss.fire">Boss Lửa (Fire Boss)</option>
+              <option value="boss.frost">Boss Băng (Frost Boss)</option>
+            </optgroup>
+            <optgroup label="── ⚔️ Chuôi Vũ Khí (Weapon Hilt) ──">
+              <option value="weapon.player_sword">Kiếm Nhân Vật (Player Sword Hilt)</option>
+              <option value="weapon.boss_hammer">Búa / Trượng Boss (Boss Hammer Hilt)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:4px 0;"></div>
+
+        <!-- Slider X -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Tọa độ X (Trục ngang)</span>
+            <span class="val" id="val-x">0.65</span>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="slider-x" min="-3.0" max="3.0" step="0.01" value="0.65">
+            <input type="number" id="num-x" step="0.01" value="0.65">
+          </div>
+        </div>
+
+        <!-- Slider Y -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Tọa độ Y (Chiều cao)</span>
+            <span class="val" id="val-y">0.85</span>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="slider-y" min="-2.0" max="5.0" step="0.01" value="0.85">
+            <input type="number" id="num-y" step="0.01" value="0.85">
+          </div>
+        </div>
+
+        <!-- Slider Z -->
+        <div class="control-group">
+          <div class="control-label">
+            <span>Tọa độ Z (Độ sâu)</span>
+            <span class="val" id="val-z">0.10</span>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="slider-z" min="-3.0" max="3.0" step="0.01" value="0.10">
+            <input type="number" id="num-z" step="0.01" value="0.10">
+          </div>
+        </div>
+
+        <!-- Slider Angle -->
+        <div class="control-group" id="group-angle">
+          <div class="control-label">
+            <span>Góc quay (Rotation Angle - Độ)</span>
+            <span class="val" id="val-angle">-45°</span>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="slider-angle" min="-180" max="180" step="1" value="-45">
+            <input type="number" id="num-angle" step="1" value="-45">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="btn-reset-default" class="btn-reset" style="flex:1;">🔄 Đặt lại chuẩn</button>
+        </div>
+
+        <div id="status-toast" class="status-toast"></div>
+
+        <button id="btn-save-sockets" class="btn-save">
+          <span>💾</span> LƯU THIẾT LẬP KHỚP
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+  <script type="module">
+    import { initStandaloneCalibrator } from './js/admin.js';
+    window.addEventListener('DOMContentLoaded', () => {
+      initStandaloneCalibrator();
+    });
+  </script>
+</body>
+</html>

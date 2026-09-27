@@ -1,0 +1,17 @@
+{
+  "player": {
+    "default": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 },
+    "thunder": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 },
+    "fire": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 },
+    "frost": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 }
+  },
+  "boss": {
+    "thunder": { "handX": -0.8, "handY": 1.2, "handZ": 0.1 },
+    "fire": { "handX": -0.9, "handY": 1.3, "handZ": 0.1 },
+    "frost": { "handX": -0.9, "handY": 1.3, "handZ": 0.1 }
+  },
+  "weapon": {
+    "player_sword": { "hiltX": 0.0, "hiltY": -0.5, "hiltZ": 0.0 },
+    "boss_hammer": { "hiltX": 0.0, "hiltY": -0.6, "hiltZ": 0.0 }
+  }
+}

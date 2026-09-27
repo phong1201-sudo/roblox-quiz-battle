@@ -94,6 +94,48 @@ export function getBossArmPivot() {
   return bossArmPivot || bossArmRightPivot || customBossBone;
 }
 
+// ── Visual Socket & Pivot Calibration Configuration ───────────────────────────
+const DEFAULT_BOSS_SOCKETS = {
+  boss: {
+    thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
+    fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
+    frost:   { handX: -0.9, handY: 1.3, handZ: 0.1 }
+  },
+  weapon: {
+    boss_hammer: { hiltX: 0.0, hiltY: -0.6, hiltZ: 0.0 }
+  }
+};
+
+let _bossSocketsConfig = JSON.parse(JSON.stringify(DEFAULT_BOSS_SOCKETS));
+
+export async function loadBossSocketsConfig() {
+  try {
+    const res = await fetch('/api/admin/sockets');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.sockets) {
+        _bossSocketsConfig = data.sockets;
+      }
+    }
+  } catch (e) {
+    // fallback to defaults
+  }
+  return _bossSocketsConfig;
+}
+
+if (typeof window !== 'undefined') {
+  loadBossSocketsConfig();
+  window.addEventListener('sockets-updated', (ev) => {
+    if (ev.detail) {
+      _bossSocketsConfig = ev.detail;
+      const el = currentBossData?.element || 'fire';
+      if (bossGroup) {
+        _setupBossArmPivot(el);
+      }
+    }
+  });
+}
+
 // Internal Tween engine for bulletproof hammer slam kinematics
 const _bossActiveTweens = [];
 class MiniTween {
@@ -253,17 +295,36 @@ function _setupBossArmPivot(element) {
   if (element !== 'fire' && element !== 'frost') return;
   if (!bossGroup) return;
 
+  const bCfg = _bossSocketsConfig?.boss?.[element] || { handX: -0.9, handY: 1.3, handZ: 0.1 };
+  const wCfg = _bossSocketsConfig?.weapon?.boss_hammer || { hiltX: 0.0, hiltY: -0.6, hiltZ: 0.0 };
+
   bossArmPivot = new THREE.Group();
   bossArmPivot.name = 'BossArmPivot';
+
+  let posX = bCfg.handX ?? -0.9;
+  let posY = bCfg.handY ?? 1.3;
+  let posZ = bCfg.handZ ?? 0.1;
+
+  // If using procedural boss (height ~6.0 vs custom GLB 4.0), scale if in normalized 4.0 units
+  if (!isCustomBoss && posY < 2.0) {
+    posX = posX * 2.0;
+    posY = posY * 2.46;
+    posZ = posZ * 2.0;
+  }
+
   // Position at boss's arm/shoulder offset facing the arena/player (-X)
-  bossArmPivot.position.set(-1.8, 3.2, 0.4);
+  bossArmPivot.position.set(posX, posY, posZ);
   bossArmPivot.rotation.set(0, 0, 0);
 
   const hammer = _createBossHammerMesh(element);
-  hammer.position.set(0, -1.2, 0.5);
+  const hiltX = wCfg.hiltX || 0;
+  const hiltY = (wCfg.hiltY !== undefined ? wCfg.hiltY : -0.6) - 0.6;
+  const hiltZ = (wCfg.hiltZ || 0) + 0.5;
+  hammer.position.set(hiltX, hiltY, hiltZ);
+
   bossArmPivot.add(hammer);
   bossGroup.add(bossArmPivot);
-  console.log(`[boss] Universal procedural bossArmPivot mounted for ${element} boss at (-1.8, 3.2, 0.4)`);
+  console.log(`[boss] Universal procedural bossArmPivot mounted for ${element} boss at (${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
 }
 
 /**
