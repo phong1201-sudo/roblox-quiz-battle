@@ -20,7 +20,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 
 // ── Alias: serve kid drawing as a clean /assets/characters/fireblade.png URL ──
-// The actual file has spaces/parens in the name — this avoids encoding headaches
 app.get('/assets/characters/fireblade.png', (req, res) => {
   const src = path.join(__dirname, '../public/assets/characters/fireblade(cho game)_0.jpg');
   if (fs.existsSync(src)) {
@@ -29,6 +28,52 @@ app.get('/assets/characters/fireblade.png', (req, res) => {
   } else {
     res.status(404).end();
   }
+});
+
+// ── Admin: character image upload (thunder.png / fire.png / frost.png) ────────
+const charImgStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../public/assets/characters');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const element = (req.body?.element || req.query?.element || 'unknown').toLowerCase();
+    const ext     = /\.(png|jpg|jpeg|gif|webp)$/i.test(file.originalname) ? file.originalname.match(/\.[^.]+$/)[0] : '.png';
+    cb(null, `${element}${ext}`);
+  },
+});
+const charImgUpload = multer({
+  storage: charImgStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files accepted'));
+  },
+});
+
+app.post('/api/admin/character/upload', charImgUpload.single('image'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    const element = (req.body?.element || '').toLowerCase();
+    if (!['thunder', 'fire', 'frost'].includes(element))
+      return res.status(400).json({ error: 'Invalid element' });
+    const ext = path.extname(req.file.filename);
+    res.json({ ok: true, url: `/assets/characters/${element}${ext}`, element, filename: req.file.filename });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/character/list', (req, res) => {
+  const dir = path.join(__dirname, '../public/assets/characters');
+  const result = {};
+  for (const el of ['thunder', 'fire', 'frost']) {
+    // Search for element.png / element.jpg / element.jpeg
+    const found = ['.png', '.jpg', '.jpeg'].map(ext => path.join(dir, `${el}${ext}`)).find(f => fs.existsSync(f));
+    result[el] = found ? `/assets/characters/${path.basename(found)}` : null;
+  }
+  res.json(result);
 });
 
 
@@ -404,20 +449,20 @@ const resolveQuestion = (code) => {
         for (const p of room.players.values()) {
           if (!p.userId) continue;   // unauthenticated player — skip
 
-          // Determine which pieces to grant based on difficulty
+          // 2-piece system: weapon + outfit
+          // Easy (20/20):   grants weapon
+          // Medium (30/30): grants outfit (if already has outfit, grants weapon instead)
+          // Hard (50/50):   grants BOTH weapon + outfit (full set)
           let piecesToGrant;
           if (difficulty === 'easy') {
             piecesToGrant = ['weapon'];
           } else if (difficulty === 'medium') {
-            // Check if player already has the 4 defensive pieces
-            const result0 = db.unlockPiece(p.userId, elem, []);  // read-only probe
-            const owned   = result0.user?.inventory?.[elem] || [];
-            const defPieces = ['hat','shirt','pants','shoes'];
-            const hasAll4 = defPieces.every(pc => owned.includes(pc));
-            piecesToGrant = hasAll4 ? ['weapon'] : defPieces;
+            const existUser = db.getUser(p.userId);
+            const owned     = existUser?.inventory?.[elem] || [];
+            piecesToGrant   = owned.includes('outfit') ? ['weapon'] : ['outfit'];
           } else {
-            // hard
-            piecesToGrant = ['hat','shirt','pants','shoes','weapon'];
+            // hard or dev: full 2-piece set
+            piecesToGrant = ['weapon', 'outfit'];
           }
 
           const grant = db.unlockPiece(p.userId, elem, piecesToGrant);

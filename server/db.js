@@ -1,5 +1,5 @@
-// server/db.js — JSON flat-file user database
-// Adds: inventory (piece-by-piece set tracking), unlockPiece, hasFullSet
+// server/db.js - JSON flat-file user database
+// 2-piece inventory system: weapon (Vu khi) + outfit (Trang phuc)
 
 const path   = require('path');
 const fs     = require('fs');
@@ -26,10 +26,11 @@ function _hash(plain) {
   return crypto.createHash('sha256').update('qb3d::' + plain).digest('hex');
 }
 
-// ── All 5 pieces required for a full elemental set ────────────────────────────
-const FULL_SET_PIECES = ['hat', 'shirt', 'pants', 'shoes', 'weapon'];
+// 2-piece set: weapon (Vu khi) + outfit (Trang phuc)
+// Full Set = has BOTH pieces
+const FULL_SET_PIECES = ['weapon', 'outfit'];
 
-// ── Seed admin ────────────────────────────────────────────────────────────────
+// Seed admin
 (function seedAdmin() {
   const data = _load();
   const existing = Object.values(data.users).find(
@@ -43,42 +44,69 @@ const FULL_SET_PIECES = ['hat', 'shirt', 'pants', 'shoes', 'weapon'];
       role:         'admin',
       unlockedSets: ['thunder', 'fire', 'frost'],
       inventory:    {
-        thunder: [...FULL_SET_PIECES],
-        fire:    [...FULL_SET_PIECES],
-        frost:   [...FULL_SET_PIECES],
+        thunder: ['weapon', 'outfit'],
+        fire:    ['weapon', 'outfit'],
+        frost:   ['weapon', 'outfit'],
       },
       highestStage: 4,
     };
     if (data.nextId <= 1) data.nextId = 2;
     _save(data);
-    console.log('[db] Admin account "God Father" seeded.');
-  } else if (!existing.inventory) {
-    // Migrate old admin record
-    existing.inventory = {
-      thunder: [...FULL_SET_PIECES],
-      fire:    [...FULL_SET_PIECES],
-      frost:   [...FULL_SET_PIECES],
-    };
-    _save(data);
+    console.log('[db] Admin account "God Father" seeded (2-piece system).');
+  } else {
+    // Migrate existing admin to 2-piece system
+    let changed = false;
+    if (!existing.inventory) {
+      existing.inventory = {
+        thunder: ['weapon', 'outfit'],
+        fire:    ['weapon', 'outfit'],
+        frost:   ['weapon', 'outfit'],
+      };
+      changed = true;
+    } else {
+      const OLD_PIECES = ['hat', 'shirt', 'pants', 'shoes', 'weapon'];
+      for (const el of ['thunder', 'fire', 'frost']) {
+        if (!Array.isArray(existing.inventory[el])) {
+          existing.inventory[el] = ['weapon', 'outfit'];
+          changed = true;
+        } else {
+          // If has any old 5-piece items, migrate: having any old piece = has full 2-piece set
+          const hasOld = OLD_PIECES.some(p => existing.inventory[el].includes(p));
+          if (hasOld) {
+            existing.inventory[el] = ['weapon', 'outfit'];
+            changed = true;
+          }
+          // Ensure admin always has full set
+          if (!FULL_SET_PIECES.every(p => existing.inventory[el].includes(p))) {
+            existing.inventory[el] = ['weapon', 'outfit'];
+            changed = true;
+          }
+        }
+      }
+    }
+    if (changed) {
+      _save(data);
+      console.log('[db] Admin inventory migrated to 2-piece system.');
+    }
   }
 })();
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// Public API
 
 function register(username, password) {
   username = (username || '').trim();
   if (username.length < 2)
-    return { ok: false, error: 'Tên người dùng phải có ít nhất 2 ký tự.' };
+    return { ok: false, error: 'Ten nguoi dung phai co it nhat 2 ky tu.' };
   if ((password || '').length < 3)
-    return { ok: false, error: 'Mật khẩu phải có ít nhất 3 ký tự.' };
+    return { ok: false, error: 'Mat khau phai co it nhat 3 ky tu.' };
   if (username.toLowerCase() === 'god father')
-    return { ok: false, error: 'Tên này đã được sử dụng.' };
+    return { ok: false, error: 'Ten nay da duoc su dung.' };
 
   const data = _load();
   const taken = Object.values(data.users).some(
     u => u.username.toLowerCase() === username.toLowerCase()
   );
-  if (taken) return { ok: false, error: 'Tên người dùng đã tồn tại.' };
+  if (taken) return { ok: false, error: 'Ten nguoi dung da ton tai.' };
 
   const id   = data.nextId++;
   const user = {
@@ -101,20 +129,20 @@ function login(username, password) {
     u => u.username.toLowerCase() === username.toLowerCase()
   );
   if (!user)
-    return { ok: false, error: 'Tên người dùng không tồn tại.' };
+    return { ok: false, error: 'Ten nguoi dung khong ton tai.' };
   if (user.passwordHash !== _hash(password))
-    return { ok: false, error: 'Mật khẩu không đúng.' };
+    return { ok: false, error: 'Mat khau khong dung.' };
   return { ok: true, user: _public(user) };
 }
 
 /**
- * Unlock a piece (or multiple pieces) for a given element.
- * pieces: string | string[]  e.g. 'weapon' or ['hat','shirt','pants','shoes']
+ * Unlock a piece for a given element.
+ * pieces: string | string[]  - must be 'weapon' or 'outfit'
  * Returns { ok, user, newPieces, fullSetUnlocked }
  */
 function unlockPiece(userId, element, pieces) {
   const VALID_ELEMS  = ['thunder', 'fire', 'frost'];
-  const VALID_PIECES = FULL_SET_PIECES;
+  const VALID_PIECES = FULL_SET_PIECES;   // ['weapon', 'outfit']
   if (!VALID_ELEMS.includes(element))
     return { ok: false, error: 'Invalid element.' };
 
@@ -138,12 +166,11 @@ function unlockPiece(userId, element, pieces) {
     }
   }
 
-  // Check if full set is now complete
+  // Full set = has both weapon AND outfit
   const fullSetUnlocked = FULL_SET_PIECES.every(
     p => user.inventory[element].includes(p)
   );
 
-  // If full set: mark element as unlocked in unlockedSets
   if (fullSetUnlocked) {
     if (!Array.isArray(user.unlockedSets)) user.unlockedSets = [];
     if (!user.unlockedSets.includes(element)) {
@@ -155,7 +182,7 @@ function unlockPiece(userId, element, pieces) {
   return { ok: true, user: _public(user), newPieces, fullSetUnlocked };
 }
 
-/** Legacy: unlock full set at once (keeps backward compat with old flow) */
+/** Legacy: unlock full set at once */
 function unlockSet(userId, setId) {
   return unlockPiece(userId, setId, [...FULL_SET_PIECES]);
 }
@@ -170,7 +197,6 @@ function updateStage(userId, stage) {
   }
 }
 
-// ── Internal ──────────────────────────────────────────────────────────────────
 function _public(u) {
   return {
     id:           u.id,

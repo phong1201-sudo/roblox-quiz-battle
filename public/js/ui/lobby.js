@@ -976,6 +976,104 @@ function _buildAdminDashboard(container, gameState) {
   // Fetch counts on mount
   refreshAllCounts();
 
+  // ── Character Image Upload section ────────────────────────────────────────
+  wrap.appendChild(mkHead('🎨 Ảnh Nhân Vật (Character Art)'));
+
+  const charNote = document.createElement('div');
+  charNote.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;line-height:1.6;padding:4px 0;';
+  charNote.textContent = 'Tải ảnh nhân vật cho từng nguyên tố. Ảnh sẽ được cắt tự động: trái (35%) = kiếm, phải (65%) = người. Nền trắng sẽ bị xóa.';
+  wrap.appendChild(charNote);
+
+  const charGrid = document.createElement('div');
+  charGrid.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+  const CHAR_DEFS = [
+    { id:'thunder', label:'⚡ Nhân Vật Sét',  color:'#00cfff', rgb:'0,207,255' },
+    { id:'fire',    label:'🔥 Nhân Vật Lửa', color:'#ff8c42', rgb:'255,140,66' },
+    { id:'frost',   label:'❄️ Nhân Vật Băng', color:'#88ddff', rgb:'136,221,255' },
+  ];
+
+  // Load existing character images
+  const charPreviews = {};
+  fetch('/api/admin/character/list').then(r => r.json()).then(list => {
+    for (const [el, url] of Object.entries(list)) {
+      if (url && charPreviews[el]) {
+        charPreviews[el].src   = url + '?t=' + Date.now();
+        charPreviews[el].style.display = 'block';
+      }
+    }
+  }).catch(() => {});
+
+  CHAR_DEFS.forEach(c => {
+    const card = document.createElement('div');
+    card.style.cssText = `background:rgba(${c.rgb},0.06);border:1.5px solid rgba(${c.rgb},0.25);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;`;
+
+    // Label + preview row
+    const topRow = document.createElement('div');
+    topRow.style.cssText = 'display:flex;align-items:center;gap:10px;';
+
+    const lbl = document.createElement('span');
+    lbl.style.cssText = `font-size:12px;font-weight:800;color:${c.color};font-family:'Be Vietnam Pro',sans-serif;flex:1;`;
+    lbl.textContent = c.label;
+
+    // Thumbnail preview
+    const thumb = document.createElement('img');
+    thumb.style.cssText = 'width:56px;height:56px;object-fit:contain;border-radius:6px;border:1.5px solid rgba(255,255,255,0.15);background:#111;display:none;';
+    charPreviews[c.id] = thumb;
+
+    topRow.appendChild(lbl);
+    topRow.appendChild(thumb);
+    card.appendChild(topRow);
+
+    // File input
+    const fileInp = document.createElement('input');
+    fileInp.type = 'file';
+    fileInp.accept = 'image/*';
+    fileInp.style.cssText = 'font-size:10px;color:#ccc;font-family:"Be Vietnam Pro",sans-serif;width:100%;';
+    card.appendChild(fileInp);
+
+    // Upload button + status
+    const upRow = document.createElement('div');
+    upRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
+
+    const upBtn = document.createElement('button');
+    upBtn.style.cssText = `flex:1;padding:6px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,rgba(${c.rgb},0.5),rgba(${c.rgb},0.25));border:1.5px solid ${c.color};color:#fff;font-family:'Be Vietnam Pro',sans-serif;`;
+    upBtn.textContent = '🖼 Tải Lên Ảnh Nhân Vật';
+
+    const charStatus = document.createElement('span');
+    charStatus.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;';
+
+    upRow.appendChild(upBtn);
+    upRow.appendChild(charStatus);
+    card.appendChild(upRow);
+    charGrid.appendChild(card);
+
+    upBtn.addEventListener('click', async () => {
+      if (!fileInp.files[0]) { charStatus.textContent = '⚠ Chọn ảnh trước!'; charStatus.style.color = '#ffcc00'; return; }
+      charStatus.textContent = '⏳ Đang tải…'; charStatus.style.color = '#aaa';
+      upBtn.disabled = true;
+      const fd = new FormData();
+      fd.append('image', fileInp.files[0]);
+      fd.append('element', c.id);
+      try {
+        const r = await fetch('/api/admin/character/upload', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Upload failed');
+        charStatus.textContent = '✓ Đã lưu!'; charStatus.style.color = '#06d6a0';
+        thumb.src   = d.url + '?t=' + Date.now();
+        thumb.style.display = 'block';
+        // Notify game engine to reload character texture
+        window.dispatchEvent(new CustomEvent('character-image-updated', { detail: { element: c.id, url: d.url } }));
+        _showToast(`Ảnh nhân vật ${c.label} đã cập nhật thành công`);
+      } catch(e) {
+        charStatus.textContent = '✗ ' + e.message; charStatus.style.color = '#ef233c';
+      }
+      upBtn.disabled = false;
+    });
+  });
+
+  wrap.appendChild(charGrid);
+
   // ── Dev Quick Launch section ──────────────────────────────────────────────
   wrap.appendChild(mkHead('🧪 Dev Quick Launch'));
 
