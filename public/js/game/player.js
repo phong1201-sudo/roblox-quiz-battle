@@ -1,5 +1,12 @@
-// THREE is available as a global from the CDN script tag, GLTFLoader from three/addons
+// THREE is available as a global from the CDN script tag, GLTFLoader & DRACOLoader from three/addons
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
+export const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 if (typeof window !== 'undefined' && window.THREE && !window.THREE.GLTFLoader) {
   window.THREE.GLTFLoader = GLTFLoader;
@@ -312,8 +319,7 @@ function _findHandBone(root) {
 function _loadGLTFModel(url) {
   return new Promise((resolve) => {
     try {
-      const loader = new GLTFLoader();
-      loader.load(
+      gltfLoader.load(
         url,
         (gltf) => {
           console.log('[player] Successfully loaded 3D model:', url);
