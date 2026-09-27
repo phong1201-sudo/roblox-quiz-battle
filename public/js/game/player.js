@@ -312,42 +312,86 @@ function _drawFireSprite(breathY = 0, slashAng = 0) {
   }
 }
 
+// Track whether we've already tried to load the real image
+let _firebladePngTried  = false;
+let _firebladePngLoaded = false;   // true once texture is confirmed good
+
 function _buildFireSprite() {
   // Remove old sprite if any
   if (_fireSprite) { playerGroup.remove(_fireSprite); _fireSprite = null; }
 
+  const geo = new THREE.PlaneGeometry(3.2, 3.2);
+  _fireSpriteTime = 0;
+
+  // ── Try the real kid-drawing PNG first ──────────────────────────────────
+  if (!_firebladePngTried) {
+    _firebladePngTried = true;
+    new THREE.TextureLoader().load(
+      '/assets/characters/fireblade.png',
+      // onLoad — PNG found
+      (tex) => {
+        _firebladePngLoaded = true;
+        console.log('[player] Using fireblade.png for Fire Set sprite');
+        const mat = new THREE.MeshBasicMaterial({
+          map: tex, transparent: true, alphaTest: 0.05,
+          side: THREE.DoubleSide, depthWrite: false,
+        });
+        if (_fireSprite) playerGroup.remove(_fireSprite);
+        _fireSprite = new THREE.Mesh(geo.clone(), mat);
+        _fireSprite.position.set(0, 0.5, 0.35);
+        _fireSpriteCtx = null;   // no canvas needed with real PNG
+        playerGroup.add(_fireSprite);
+      },
+      undefined,
+      // onError — PNG missing, fall back to procedural canvas
+      () => {
+        console.log('[player] fireblade.png not found — using procedural sprite');
+        _buildFireSpriteCanvas(geo);
+      }
+    );
+    return;   // will be built async by one of the two callbacks above
+  }
+
+  // Already tried PNG — use whichever path won
+  if (_firebladePngLoaded && _fireSprite) {
+    playerGroup.add(_fireSprite);
+  } else {
+    _buildFireSpriteCanvas(geo);
+  }
+}
+
+/** Procedural canvas fallback (used when fireblade.png is absent) */
+function _buildFireSpriteCanvas(geo) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 256;
   _fireSpriteCtx = canvas.getContext('2d');
   _drawFireSprite();
 
-  const tex  = new THREE.CanvasTexture(canvas);
+  const tex = new THREE.CanvasTexture(canvas);
   tex.needsUpdate = true;
 
-  const mat  = new THREE.MeshBasicMaterial({
+  const mat = new THREE.MeshBasicMaterial({
     map: tex, transparent: true, alphaTest: 0.05,
     side: THREE.DoubleSide, depthWrite: false,
   });
-  const geo  = new THREE.PlaneGeometry(3.2, 3.2);
-  _fireSprite = new THREE.Mesh(geo, mat);
-  // Position sprite to roughly cover the 3D model
-  _fireSprite.position.set(0, 0.5, 0.35);  // slightly in front of 3D model
+  _fireSprite = new THREE.Mesh(geo || new THREE.PlaneGeometry(3.2, 3.2), mat);
+  _fireSprite.position.set(0, 0.5, 0.35);
   playerGroup.add(_fireSprite);
-  _fireSpriteTime = 0;
 }
 
 /** Called every frame from updatePlayer when Fire set is active */
 function _updateFireSprite(deltaTime, slashAng = 0) {
-  if (!_fireSprite || !_fireSpriteCtx) return;
+  if (!_fireSprite) return;
   _fireSpriteTime += deltaTime;
 
-  const breathY = Math.sin(_fireSpriteTime * 2.0) * 2.5;   // ±2.5px breathing
-  _drawFireSprite(breathY, slashAng);
+  // Canvas animation only when using procedural fallback (PNG has no canvas ctx)
+  if (_fireSpriteCtx) {
+    const breathY = Math.sin(_fireSpriteTime * 2.0) * 2.5;   // ±2.5px breathing
+    _drawFireSprite(breathY, slashAng);
+    _fireSprite.material.map.needsUpdate = true;
+  }
 
-  // Update the canvas texture
-  _fireSprite.material.map.needsUpdate = true;
-
-  // Billboard: always face camera
+  // Billboard: always face camera regardless of which texture is used
   if (_fireSprite.parent) {
     _fireSprite.rotation.y = -playerGroup.rotation.y;
   }

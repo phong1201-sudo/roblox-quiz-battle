@@ -991,3 +991,43 @@ button[disabled].locked-set {
 button[disabled] {
   cursor: not-allowed;
 }
+
+/* --- Top-right user bar: mute button + user badge ----------------------- */
+.top-user-bar {
+  position: fixed !important;
+  top: 8px !important;
+  right: 10px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  z-index: 99999 !important;
+  pointer-events: all !important;
+}
+
+#audio-toggle-btn {
+  position: static !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #fff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.2s !important;
+}
+
+#audio-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+#user-badge {
+  position: static !important;
+}

@@ -1,205 +1,162 @@
 /**
- * public/js/audio.js — BGM (static MP3 files) + SFX (Web Audio API)
+ * public/js/audio.js  — v2.1
  *
- * BGM: A single <Audio> instance plays the .mp3 files from public/Audio/Bgm/.
- *      Switching tracks fades out the old one before starting the new one.
- *      Volume is kept at 0.4 so SFX cuts clearly above it.
+ * BGM  : Single HTMLAudioElement plays static .mp3 files.
+ *        All paths lowercase — matches Linux (Render) filesystem exactly.
+ *        NO oscillator fallback. Missing file → console.error only.
  *
- * SFX: Procedural Web Audio API — zero external files, instant.
+ * SFX  : Web Audio API procedural sounds (sword slash, thunder, fire, frost).
+ *        SFX are silenced when the user mutes via the toggle button.
  */
 
-// ── BGM: static MP3 tracks ─────────────────────────────────────────────────
-// Paths match the exact on-disk casing committed to git (Linux-safe)
+// ── BGM track map (all lowercase — Linux-safe) ──────────────────────────────
 const BGM_TRACKS = {
-  lobby:   '/Audio/Bgm/Lobby.mp3',
-  thunder: '/Audio/Bgm/thunder.mp3',
-  fire:    '/Audio/Bgm/fire.mp3',
-  frost:   '/Audio/Bgm/frost.mp3',
-  victory: '/Audio/Bgm/victory.mp3',
+  lobby:   '/audio/bgm/lobby.mp3',
+  thunder: '/audio/bgm/thunder.mp3',
+  fire:    '/audio/bgm/fire.mp3',
+  frost:   '/audio/bgm/frost.mp3',
+  victory: '/audio/bgm/victory.mp3',
 };
 
-const BGM_VOLUME  = 0.4;
-const FADE_MS     = 350;   // crossfade duration in ms
+const BGM_VOLUME = 0.4;   // balanced so SFX cuts above it
 
-let _bgmAudio     = null;     // the ONE global Audio element for BGM
-let _bgmTrack     = null;     // key of currently-playing track
-let _bgmMuted     = false;
-let _fadeTimer    = null;
+// ── Single global Audio instance ─────────────────────────────────────────────
+let _bgmAudio  = null;    // the ONE <audio> element — never duplicated
+let _bgmTrack  = null;    // key currently loaded/playing
+let _muted     = false;
 
-/** Stop BGM with a quick fade-out. */
-export function stopBGM() {
-  if (!_bgmAudio) return;
-  _bgmTrack = null;
-  clearInterval(_fadeTimer);
-  const audio = _bgmAudio;
-  const step  = BGM_VOLUME / (FADE_MS / 30);
-  _fadeTimer = setInterval(() => {
-    if (audio.volume > step) {
-      audio.volume -= step;
-    } else {
-      audio.pause();
-      audio.volume = BGM_VOLUME;
-      clearInterval(_fadeTimer);
-    }
-  }, 30);
+function _ensureAudio() {
+  if (_bgmAudio) return _bgmAudio;
+  _bgmAudio = new window.Audio();
+  _bgmAudio.preload = 'auto';
+  _bgmAudio.addEventListener('error', (e) => {
+    const src = _bgmAudio.src || '(unknown)';
+    console.error(`[audio] BGM load error for "${src}":`, e.message || 'media error code ' + _bgmAudio.error?.code);
+    // NO oscillator fallback — just log the error
+  });
+  return _bgmAudio;
 }
 
-/** Play a BGM track, crossfading from the current one. */
+/**
+ * Play a BGM track.
+ * - Same track already playing → no-op.
+ * - Different track → pause, swap src, play.
+ */
 export function playBGM(trackKey) {
   const src = BGM_TRACKS[trackKey];
-  if (!src) return;
-
-  // Already playing this track — don't restart
-  if (_bgmTrack === trackKey && _bgmAudio && !_bgmAudio.paused) return;
-
-  // Create the element once
-  if (!_bgmAudio) {
-    _bgmAudio = new window.Audio();
-    _bgmAudio.addEventListener('ended', () => {
-      // Only re-loop non-victory tracks (belt-and-suspenders — loop attr handles it normally)
-      if (_bgmTrack && _bgmTrack !== 'victory') {
-        _bgmAudio.currentTime = 0;
-        _bgmAudio.play().catch(() => {});
-      }
-    });
+  if (!src) {
+    console.warn('[audio] Unknown BGM track key:', trackKey);
+    return;
   }
 
+  // Already playing this exact track → nothing to do
+  if (_bgmTrack === trackKey && _bgmAudio && !_bgmAudio.paused) return;
+
+  const audio   = _ensureAudio();
   const fullSrc = window.location.origin + src;
 
-  // Helper: actually start the new track
-  const _start = () => {
-    clearInterval(_fadeTimer);
-    _bgmTrack = trackKey;
-    if (_bgmAudio.src !== fullSrc) {
-      _bgmAudio.src = fullSrc;
-    }
-    _bgmAudio.loop   = (trackKey !== 'victory');
-    _bgmAudio.volume = _bgmMuted ? 0 : BGM_VOLUME;
-    _bgmAudio.currentTime = 0;
-    _bgmAudio.play().catch(e => {
-      // Browser blocked autoplay — queue for next interaction
-      console.log('[audio] BGM autoplay deferred:', e.message);
+  if (audio.src !== fullSrc) {
+    audio.pause();
+    audio.src          = src;           // relative path — browser resolves it
+    audio.currentTime  = 0;
+  }
+
+  audio.loop   = (trackKey !== 'victory');
+  audio.volume = _muted ? 0 : BGM_VOLUME;
+  _bgmTrack    = trackKey;
+
+  const promise = audio.play();
+  if (promise && typeof promise.catch === 'function') {
+    promise.catch(e => {
+      // Autoplay blocked by browser — queue for first user gesture
+      console.log('[audio] BGM autoplay deferred until user gesture:', e.message);
       _pendingTrack = trackKey;
     });
-  };
-
-  // If something is already playing, fade it out first
-  if (!_bgmAudio.paused && _bgmAudio.src && _bgmAudio.src !== fullSrc) {
-    clearInterval(_fadeTimer);
-    const audio = _bgmAudio;
-    const startVol = audio.volume;
-    const step = (startVol || BGM_VOLUME) / (FADE_MS / 30);
-    _fadeTimer = setInterval(() => {
-      if (audio.volume > step) {
-        audio.volume -= step;
-      } else {
-        audio.pause();
-        audio.volume = BGM_VOLUME;
-        clearInterval(_fadeTimer);
-        _start();
-      }
-    }, 30);
-  } else {
-    _start();
   }
 }
 
-// ── Legacy compat aliases ──────────────────────────────────────────────────
-export function startBgm() { /* no-op — BGM now driven by playBGM() */ }
+/** Stop BGM immediately. */
+export function stopBGM() {
+  if (_bgmAudio) {
+    _bgmAudio.pause();
+    _bgmAudio.currentTime = 0;
+  }
+  _bgmTrack = null;
+}
+
+// ── Legacy aliases ────────────────────────────────────────────────────────────
+export function startBgm() { /* no-op — driven by playBGM() */ }
 export function stopBgm()  { stopBGM(); }
 
-// Pending track for pre-interaction calls
+// ── Pending track (deferred until user gesture) ───────────────────────────────
 let _pendingTrack = null;
 
-// ── Mute / Unmute ──────────────────────────────────────────────────────────
+// ── Mute / unmute ─────────────────────────────────────────────────────────────
 export function setMuted(mute) {
-  _bgmMuted = mute;
+  _muted = mute;
   if (_bgmAudio) _bgmAudio.volume = mute ? 0 : BGM_VOLUME;
 }
 
-export function isMuted() { return _bgmMuted; }
+export function isMuted() { return _muted; }
 
 export function toggleMute() {
-  setMuted(!_bgmMuted);
-  // If unmuting and a track was pending, try to play it now
-  if (!_bgmMuted && _pendingTrack) {
-    const key = _pendingTrack;
+  setMuted(!_muted);
+  if (!_muted && _pendingTrack) {
+    // User interacted — now we can play
+    const key     = _pendingTrack;
     _pendingTrack = null;
-    _bgmTrack = null;   // force re-start
+    _bgmTrack     = null;   // force re-start
     playBGM(key);
   }
-  return _bgmMuted;
+  return _muted;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Audio Toggle Button
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// Audio Toggle Button  🔊 / 🔇
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export function mountAudioToggle() {
   if (document.getElementById('audio-toggle-btn')) return;
 
-  // Create the shared top-right bar (user badge will also append into this)
+  // Create (or reuse) the shared top-right bar
   let bar = document.querySelector('.top-user-bar');
   if (!bar) {
-    bar = document.createElement('div');
-    bar.className = 'top-user-bar';
-    bar.style.cssText = `
-      position: fixed;
-      top: 10px; right: 12px;
-      z-index: 9100;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    `;
+    bar            = document.createElement('div');
+    bar.className  = 'top-user-bar';
     document.body.appendChild(bar);
   }
 
-  const btn = document.createElement('button');
-  btn.id    = 'audio-toggle-btn';
-  btn.title = 'Bật/Tắt nhạc nền';
-  btn.textContent = '🔊';
-  btn.style.cssText = `
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    background: rgba(255,255,255,0.15);
-    border: 1.5px solid rgba(255,255,255,0.35);
-    font-size: 15px;
-    flex-shrink: 0;
-    line-height: 1;
-    padding: 0;
-    color: #fff;
-    transition: background 0.2s;
-  `;
+  const btn        = document.createElement('button');
+  btn.id           = 'audio-toggle-btn';
+  btn.title        = 'Bật/Tắt nhạc nền';
+  btn.textContent  = '🔊';
 
   btn.onclick = () => {
-    if (_pendingTrack && _bgmAudio?.paused) {
-      const key = _pendingTrack;
+    // First click also satisfies browser autoplay gesture requirement
+    if (_pendingTrack && (!_bgmAudio || _bgmAudio.paused)) {
+      const key     = _pendingTrack;
       _pendingTrack = null;
-      _bgmTrack = null;
+      _bgmTrack     = null;
       playBGM(key);
       return;
     }
-    const nowMuted = toggleMute();
-    btn.textContent = nowMuted ? '🔇' : '🔊';
-    btn.style.background = nowMuted
-      ? 'rgba(100,0,0,0.4)'
-      : 'rgba(255,255,255,0.15)';
+    const nowMuted   = toggleMute();
+    btn.textContent  = nowMuted ? '🔇' : '🔊';
   };
 
   bar.prepend(btn);
 }
 
-// ── Bootstrap on first interaction ─────────────────────────────────────────
+// ── Bootstrap BGM on first user gesture ──────────────────────────────────────
 let _bootstrapped = false;
 export function bootstrapOnInteraction() {
   if (_bootstrapped) return;
   _bootstrapped = true;
   const tryPlay = () => {
-    if (_pendingTrack && !_bgmMuted) {
-      const key = _pendingTrack;
+    if (_pendingTrack && !_muted) {
+      const key     = _pendingTrack;
       _pendingTrack = null;
-      _bgmTrack = null;
+      _bgmTrack     = null;
       playBGM(key);
     }
   };
@@ -208,13 +165,12 @@ export function bootstrapOnInteraction() {
   document.addEventListener('touchstart', tryPlay, { once: true, capture: true });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SFX — Web Audio API (unchanged, works perfectly)
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// SFX  — Web Audio API  (no oscillator BGM here — SFX only)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-let _ctx        = null;
-let _sfxGain    = null;
-let _sfxMuted   = false;   // follows _bgmMuted (shared mute toggle)
+let _ctx     = null;
+let _sfxGain = null;
 
 function _getCtx() {
   if (!_ctx) {
@@ -229,10 +185,10 @@ function _getCtx() {
   return _ctx;
 }
 
-function _now()  { const ctx = _getCtx(); return ctx ? ctx.currentTime : 0; }
+function _now() { const c = _getCtx(); return c ? c.currentTime : 0; }
 
 function _osc(type, freq, s, e, g0 = 0.35, g1 = 0) {
-  const ctx = _getCtx(); if (!ctx || _bgmMuted) return;
+  const ctx = _getCtx(); if (!ctx || _muted) return;
   const osc  = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type;
@@ -244,7 +200,7 @@ function _osc(type, freq, s, e, g0 = 0.35, g1 = 0) {
 }
 
 function _noise(s, dur, gainPeak = 0.3, filterHz = 2000) {
-  const ctx = _getCtx(); if (!ctx || _bgmMuted) return;
+  const ctx = _getCtx(); if (!ctx || _muted) return;
   const len  = Math.ceil(ctx.sampleRate * dur);
   const buf  = ctx.createBuffer(1, len, ctx.sampleRate);
   const data = buf.getChannelData(0);
@@ -278,7 +234,7 @@ export function playWrong() {
 }
 
 export function playSlash() {
-  const ctx = _getCtx(); if (!ctx || _bgmMuted) return;
+  const ctx = _getCtx(); if (!ctx || _muted) return;
   const t = _now();
   _noise(t, 0.18, 0.25, 4000);
   const osc = ctx.createOscillator();
@@ -303,7 +259,7 @@ export function playThunder() {
 }
 
 export function playFire() {
-  const ctx = _getCtx(); if (!ctx || _bgmMuted) return;
+  const ctx = _getCtx(); if (!ctx || _muted) return;
   const t = _now();
   _noise(t, 0.12, 0.55, 500);
   for (let i = 0; i < 4; i++) _noise(t + i * 0.06, 0.05, 0.2 - i * 0.03, 1200 + i * 400);
@@ -331,7 +287,7 @@ export function playFrost() {
 }
 
 export function playVictory() {
-  const t = _now();
+  const t     = _now();
   const notes = [261.63, 329.63, 392.0, 523.25, 659.26, 783.99, 1046.5];
   notes.forEach((freq, i) => {
     const s = t + i * 0.13;
