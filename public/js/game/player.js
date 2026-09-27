@@ -323,33 +323,45 @@ function _buildFireSprite() {
   const geo = new THREE.PlaneGeometry(3.2, 3.2);
   _fireSpriteTime = 0;
 
-  // ── Try the real kid-drawing PNG first ──────────────────────────────────
+  // ── Try the real kid-drawing image first ────────────────────────────────
+  // Try the discovered filename, then a generic alias
+  const FIREBLADE_PATHS = [
+    '/assets/characters/fireblade(cho%20game)_0.jpg',   // actual uploaded file
+    '/assets/characters/fireblade.png',                  // alias if renamed later
+  ];
+
   if (!_firebladePngTried) {
     _firebladePngTried = true;
-    new THREE.TextureLoader().load(
-      '/assets/characters/fireblade.png',
-      // onLoad — PNG found
-      (tex) => {
-        _firebladePngLoaded = true;
-        console.log('[player] Using fireblade.png for Fire Set sprite');
-        const mat = new THREE.MeshBasicMaterial({
-          map: tex, transparent: true, alphaTest: 0.05,
-          side: THREE.DoubleSide, depthWrite: false,
-        });
-        if (_fireSprite) playerGroup.remove(_fireSprite);
-        _fireSprite = new THREE.Mesh(geo.clone(), mat);
-        _fireSprite.position.set(0, 0.5, 0.35);
-        _fireSpriteCtx = null;   // no canvas needed with real PNG
-        playerGroup.add(_fireSprite);
-      },
-      undefined,
-      // onError — PNG missing, fall back to procedural canvas
-      () => {
-        console.log('[player] fireblade.png not found — using procedural sprite');
+    let tried = 0;
+    const tryNext = () => {
+      if (tried >= FIREBLADE_PATHS.length) {
+        console.log('[player] No fireblade image found — using procedural sprite');
         _buildFireSpriteCanvas(geo);
+        return;
       }
-    );
-    return;   // will be built async by one of the two callbacks above
+      const path = FIREBLADE_PATHS[tried++];
+      new THREE.TextureLoader().load(
+        path,
+        // onLoad — image found
+        (tex) => {
+          _firebladePngLoaded = true;
+          console.log('[player] Using fire character image:', path);
+          const mat = new THREE.MeshBasicMaterial({
+            map: tex, transparent: true, alphaTest: 0.05,
+            side: THREE.DoubleSide, depthWrite: false,
+          });
+          if (_fireSprite) playerGroup.remove(_fireSprite);
+          _fireSprite = new THREE.Mesh(geo.clone(), mat);
+          _fireSprite.position.set(0, 0.5, 0.35);
+          _fireSpriteCtx = null;   // no canvas needed with real image
+          playerGroup.add(_fireSprite);
+        },
+        undefined,
+        tryNext   // onError — try next path in list
+      );
+    };
+    tryNext();
+    return;   // built async
   }
 
   // Already tried PNG — use whichever path won
