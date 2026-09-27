@@ -17,24 +17,37 @@ function restoreQuizCard() {
   if (card) card.classList.remove('answered');
 }
 
+// ── Module-level answer lock: prevents double submission within one question cycle ──
+let _answerLock = false;
+
 export function init(gameState) {
   currentState = gameState;
   myAnswer = null;
+  _answerLock = false;
   restoreQuizCard();
 
   const buttons = ['A', 'B', 'C', 'D'];
   buttons.forEach(opt => {
     const btn = document.getElementById(`btn-answer-${opt.toLowerCase()}`);
     if (btn) {
+      // Use .onclick (direct assignment) — guarantees exactly ONE handler, never stacks
       btn.onclick = () => {
-        if (btn.disabled) return;
+        if (_answerLock || btn.disabled) return;   // guard: block any double-tap/race
+        _answerLock = true;
+
+        // Immediately freeze ALL buttons (pointer-events:none on entire container too)
+        ['a','b','c','d'].forEach(l => {
+          const b = document.getElementById(`btn-answer-${l}`);
+          if (b) { b.style.pointerEvents = 'none'; b.disabled = true; }
+        });
+        const container = document.getElementById('answer-btns') || document.getElementById('quiz-options');
+        if (container) container.style.pointerEvents = 'none';
+
         // Bootstrap BGM on first player interaction (browser autoplay policy)
-        Audio.bootstrapOnInteraction && Audio.startBgm && (() => {
-          try { Audio.startBgm(); } catch(e) {}
-        })();
+        try { if (typeof Audio !== 'undefined' && Audio.startBgm) Audio.startBgm(); } catch(e) {}
+
         myAnswer = opt;
         socket.emit('submit_answer', { code: currentState.code, answer: opt });
-        disableButtons();
         btn.classList.add('selected');
         collapseQuizCard();
       };
@@ -43,6 +56,7 @@ export function init(gameState) {
 
   initHpBars(gameState);
 }
+
 
 function initHpBars(gameState) {
   const hpLabelPlayer = document.getElementById('hp-label-player');
@@ -120,10 +134,13 @@ export function updateHpBars(hp, bossHp) {
 // ─────────────────────────────────────────────────────────────────────────────
 export function showQuestion(data) {
   try {
-    myAnswer = null;
+    myAnswer     = null;
+    _answerLock  = false;   // ← reset lock for new question
     restoreQuizCard();
 
     // ── Hard-reset all buttons: override any lingering disabled/opacity state ──
+    const container = document.getElementById('answer-btns') || document.getElementById('quiz-options');
+    if (container) container.style.pointerEvents = 'auto';
     ['a','b','c','d'].forEach(l => {
       const btn = document.getElementById(`btn-answer-${l}`);
       if (!btn) return;

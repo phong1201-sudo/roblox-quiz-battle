@@ -9,7 +9,14 @@ socket.on('connect_error', (error) => {
     console.error('Socket connection error:', error);
 });
 
-export const on = (event, cb) => socket.on(event, cb);
-export const emit = (event, data) => socket.emit(event, data);
-export const offAll = (event) => socket.off(event);
+// Track registered handlers per event so we can remove-before-add (prevent stacking)
+const _handlers = {};
+export function on(event, cb) {
+    // Remove any previous handler for this event to prevent listener accumulation
+    if (_handlers[event]) socket.off(event, _handlers[event]);
+    _handlers[event] = cb;
+    socket.on(event, cb);
+}
+export const emit   = (event, data) => socket.emit(event, data);
+export const offAll = (event)       => { socket.off(event); delete _handlers[event]; };
 export { socket };
