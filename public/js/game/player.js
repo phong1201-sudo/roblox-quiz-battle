@@ -764,8 +764,11 @@ export function playDodge(onDone) {
   window._combatSafetyTimer = setTimeout(() => {
     if (anim.active && anim.type === 'dodge') {
       console.warn('[player] Combat safety timeout — releasing dodge');
-      _resetAll(); anim.active = false;
-      if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
+      _resetAll();
+      const cb = anim.onDone;
+      anim.active = false;
+      anim.onDone = null;
+      if (cb) cb();
     }
   }, 1200);
 
@@ -794,8 +797,11 @@ export function playCombatAnimation(type = 'normal', { onHit, onDone } = {}) {
   window._combatSafetyTimer = setTimeout(() => {
     if (anim.active) {
       console.warn('[player] Combat safety timeout — releasing combatBusy');
-      _resetAll(); anim.active = false;
-      if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
+      _resetAll();
+      const cb = anim.onDone;
+      anim.active = false;
+      anim.onDone = null;
+      if (cb) cb();
     }
   }, (dur + 1.5) * 1000);
 
@@ -925,7 +931,13 @@ export function updatePlayer(deltaTime, camera) {
       default:        _animNormal(prog, deltaTime);  break;
     }
 
-    if (prog >= 1.0) { _resetAll(); anim.active = false; if (anim.onDone) anim.onDone(); }
+    if (prog >= 1.0) {
+      _resetAll();
+      const cb = anim.onDone;
+      anim.active = false;
+      anim.onDone = null;
+      if (cb) cb();
+    }
 
   } else {
     if (is3DModelMode) {
