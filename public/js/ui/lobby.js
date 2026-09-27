@@ -241,18 +241,6 @@ function buildElementalSetPicker(avatarSection) {
   btnRow.id = 'set-btn-row';
   btnRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;';
 
-  // ── "None / Default" — always available ─────────────────────────────────────
-  const noneBtn = document.createElement('button');
-  noneBtn.className = 'btn';
-  noneBtn.textContent = '🧍 Thường';
-  noneBtn.style.cssText = `font-size:10px;padding:4px 10px;border:2px solid #888;background:rgba(30,30,30,0.6);color:#ccc;font-family:"Be Vietnam Pro",sans-serif;cursor:pointer;`;
-  if (!window.gameState?.equippedSet) noneBtn.style.borderColor = '#fff';
-  noneBtn.onclick = () => {
-    if (window.gameState) { window.gameState.equippedSet = null; window.gameState.thunderSet = false; }
-    _highlightActiveSet(btnRow, null, noneBtn);
-  };
-  btnRow.appendChild(noneBtn);
-
   // ── All 3 elemental sets — lock state derived fresh each render ─────────────
   ALL_ELEMENTAL_SETS.forEach(s => {
     const isUnlocked = _isSetUnlocked(s.id);
@@ -279,12 +267,21 @@ function buildElementalSetPicker(avatarSection) {
       if (window.gameState?.equippedSet === s.id) btn.style.boxShadow = `0 0 12px ${s.color}`;
       btn.onclick = () => {
         if (window.gameState) {
-          window.gameState.equippedSet  = s.id;
-          window.gameState.thunderSet   = s.id === 'thunder';
-          window.gameState.damagePerHit = 2;
+          if (window.gameState.equippedSet === s.id) {
+            // Clicking already equipped set toggles off -> defaults to Admin's 3D default model
+            window.gameState.equippedSet  = null;
+            window.gameState.thunderSet   = false;
+            window.gameState.damagePerHit = 1;
+          } else {
+            window.gameState.equippedSet  = s.id;
+            window.gameState.thunderSet   = s.id === 'thunder';
+            window.gameState.damagePerHit = 2;
+          }
         }
-        _highlightActiveSet(btnRow, s.id, noneBtn);
-        btn.style.boxShadow = `0 0 12px ${s.color}`;
+        _highlightActiveSet(btnRow, window.gameState?.equippedSet);
+        if (window.gameState?.equippedSet === s.id) {
+          btn.style.boxShadow = `0 0 12px ${s.color}`;
+        }
       };
     } else {
       // ── LOCKED — multiple layers of enforcement ───────────────────────────
@@ -348,9 +345,11 @@ function buildElementalSetPicker(avatarSection) {
 }
 
 // Highlight selected set button, dim all others
-function _highlightActiveSet(btnRow, activeId, noneBtn) {
-  btnRow.querySelectorAll('button[data-set-id]').forEach(b => { b.style.boxShadow='none'; });
-  noneBtn.style.borderColor = activeId ? '#888' : '#fff';
+function _highlightActiveSet(btnRow, activeId) {
+  btnRow.querySelectorAll('button[data-set-id]').forEach(b => {
+    const isAct = b.getAttribute('data-set-id') === activeId;
+    b.style.boxShadow = isAct ? '0 0 14px currentColor' : 'none';
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -989,17 +988,20 @@ function _buildAdminDashboard(container, gameState) {
   charGrid.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
 
   const CHAR_DEFS = [
+    { id:'default', label:'🧍 Bộ Đồ Mặc Định (Thường)', color:'#ffffff', rgb:'200,200,200' },
     { id:'thunder', label:'⚡ Hệ Sét (Thunder)', color:'#00cfff', rgb:'0,207,255' },
     { id:'fire',    label:'🔥 Hệ Lửa (Fire)',    color:'#ff8c42', rgb:'255,140,66' },
     { id:'frost',   label:'❄️ Hệ Băng (Frost)',   color:'#88ddff', rgb:'136,221,255' },
   ];
 
   const artPreviews = {
+    default: { body: null, weapon: null },
     thunder: { body: null, weapon: null },
     fire:    { body: null, weapon: null },
     frost:   { body: null, weapon: null },
   };
   const modelBadges = {
+    default: { character: null, weapon: null },
     thunder: { character: null, weapon: null },
     fire:    { character: null, weapon: null },
     frost:   { character: null, weapon: null },
@@ -1049,9 +1051,20 @@ function _buildAdminDashboard(container, gameState) {
     card.appendChild(cardTitle);
 
     // Two upload rows: 1. Character/Body, 2. Weapon
+    const isDef = c.id === 'default';
     const TYPES = [
-      { type: 'body', modelType: 'character', name: '👤 Model Nhân Vật (3D .glb / Ảnh Thân)', btnText: 'Tải Nhân Vật' },
-      { type: 'weapon', modelType: 'weapon', name: '⚔️ Model Vũ Khí (3D .glb / Ảnh Kiếm)', btnText: 'Tải Vũ Khí' },
+      {
+        type: 'body',
+        modelType: 'character',
+        name: isDef ? '👤 Model Nhân Vật Mặc Định (default_character.glb)' : '👤 Model Nhân Vật (3D .glb / Ảnh Thân)',
+        btnText: isDef ? 'Tải NV Mặc Định' : 'Tải Nhân Vật'
+      },
+      {
+        type: 'weapon',
+        modelType: 'weapon',
+        name: isDef ? '⚔️ Model Vũ Khí Mặc Định (default_weapon.glb)' : '⚔️ Model Vũ Khí (3D .glb / Ảnh Kiếm)',
+        btnText: isDef ? 'Tải Kiếm Mặc Định' : 'Tải Vũ Khí'
+      },
     ];
 
     TYPES.forEach(t => {

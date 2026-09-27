@@ -281,6 +281,7 @@ function _loadArtTexture(element, type) {
 // 3D GLB/GLTF MODEL LOADER & BONE SOCKETING SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
 const _modelCache = {
+  default: { character: null, weapon: null },
   thunder: { character: null, weapon: null },
   fire:    { character: null, weapon: null },
   frost:   { character: null, weapon: null },
@@ -289,7 +290,7 @@ const _modelCache = {
 function _findHandBone(root) {
   if (!root) return null;
   const candidateNames = [
-    'RightHand', 'Arm_R', 'Hand_R', 'mixamorigRightHand', 'mixamorig:RightHand',
+    'RightHand', 'Arm_R', 'Hand_R', 'rightHandBone', 'mixamorigRightHand', 'mixamorig:RightHand',
     'hand.R', 'Right_Hand', 'hand_r', 'RightArm', 'mixamorigRightArm', 'Arm.R', 'Hand.R'
   ];
   for (const name of candidateNames) {
@@ -329,10 +330,125 @@ function _loadGLTFModel(url) {
 }
 
 /**
+ * Loads a 3D GLB Character and sockets its weapon into RightHand node
+ */
+async function _tryLoad3DCharacterAndWeapon(elementKey) {
+  const el = elementKey || 'default';
+
+  // Load Character model
+  let charGltf = await _loadGLTFModel(`/assets/models/${el}_character.glb`);
+  if (!charGltf) {
+    charGltf = await _loadGLTFModel(`/assets/models/${el}_character.gltf`);
+  }
+  if (!charGltf && el !== 'default') {
+    // If elemental 3D model not found, try fallback to default 3D model
+    charGltf = await _loadGLTFModel(`/assets/models/default_character.glb`) ||
+               await _loadGLTFModel(`/assets/models/default_character.gltf`);
+  }
+  if (!charGltf || !charGltf.scene) return false;
+
+  is3DModelMode = true;
+  playerGroup.rotation.set(0, 0, 0);
+  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+
+  characterRoot = new THREE.Group();
+  characterRoot.name = 'CharacterRoot';
+
+  characterModel = charGltf.scene.clone(true);
+  characterModel.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  // Normalize character model scale to ~2.8 units height
+  const bBox = new THREE.Box3().setFromObject(characterModel);
+  const bSize = new THREE.Vector3();
+  bBox.getSize(bSize);
+  if (bSize.y > 0.01) {
+    const targetHeight = 2.8;
+    const scaleFactor = targetHeight / bSize.y;
+    characterModel.scale.setScalar(scaleFactor);
+  }
+
+  // Center horizontally and align base/feet at y = 0
+  const scaledBox = new THREE.Box3().setFromObject(characterModel);
+  characterModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
+  characterModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
+  characterModel.position.y = - scaledBox.min.y;
+
+  // Face towards Boss on the right (+X), angled 30° toward camera for optimal view
+  characterRoot.rotation.y = -Math.PI / 2 + Math.PI / 6;
+  characterRoot.add(characterModel);
+  playerGroup.add(characterRoot);
+
+  // Bone Socketing: Search for RightHand / Arm_R / rightHandBone
+  handNode = characterModel.getObjectByName('RightHand') ||
+             characterModel.getObjectByName('Arm_R') ||
+             characterModel.getObjectByName('rightHandBone') ||
+             _findHandBone(characterModel);
+
+  if (!handNode) {
+    console.log('[player] No hand bone found, creating right-side socket node');
+    handNode = new THREE.Group();
+    handNode.name = 'RightHandFallback';
+    handNode.position.set(0.6, 1.4, 0.2);
+    characterModel.add(handNode);
+  } else {
+    console.log('[player] Socketed weapon to bone:', handNode.name);
+  }
+
+  // Load 3D Weapon Model (try element weapon, then default weapon)
+  let weapGltf = await _loadGLTFModel(`/assets/models/${el}_weapon.glb`);
+  if (!weapGltf) {
+    weapGltf = await _loadGLTFModel(`/assets/models/${el}_weapon.gltf`);
+  }
+  if (!weapGltf && el !== 'default') {
+    weapGltf = await _loadGLTFModel(`/assets/models/default_weapon.glb`) ||
+               await _loadGLTFModel(`/assets/models/default_weapon.gltf`);
+  }
+
+  weaponSocket = new THREE.Group();
+  weaponSocket.name = 'WeaponSocket';
+  weaponSocket.rotation.set(0, 0, WEAPON_READY_ROT_Z);
+
+  if (weapGltf && weapGltf.scene) {
+    weaponModel = weapGltf.scene.clone(true);
+    weaponModel.traverse((c) => {
+      if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+    });
+
+    const wBox = new THREE.Box3().setFromObject(weaponModel);
+    const wSize = new THREE.Vector3();
+    wBox.getSize(wSize);
+    const maxDim = Math.max(wSize.x, wSize.y, wSize.z);
+    if (maxDim > 0.01 && (maxDim > 10 || maxDim < 0.2)) {
+      weaponModel.scale.setScalar(1.8 / maxDim);
+    }
+    weaponSocket.add(weaponModel);
+    console.log(`[player] 3D Weapon attached to hand bone: ${handNode.name}`);
+  } else {
+    // Fallback procedural blade attached to bone socket
+    const bladeColor = el === 'fire' ? 0xff4400 : el === 'frost' ? 0x88ddff : el === 'thunder' ? 0x00cfff : 0xddaa33;
+    const blade = makeBox(0.12, 1.6, 0.08, bladeColor);
+    blade.position.set(0, 0.8, 0);
+    weaponSocket.add(blade);
+  }
+
+  handNode.add(weaponSocket);
+
+  if (activeElement) _buildElementalAura(activeElement);
+  console.log(`[player] 3D GLB model loaded & socketed for ${el}`);
+  return true;
+}
+
+/**
  * Main Player Mesh Constructor:
  * Priority 1: Native 3D GLTF/GLB models with Bone Socketing ([element]_character.glb & [element]_weapon.glb)
  * Priority 2: 2.5D Sprite Meshes from uploaded art ([element]_body.png & [element]_weapon.png)
- * Priority 3: Procedural 3D Voxel Box Model
+ * Priority 3: Admin Default 3D Model (default_character.glb & default_weapon.glb)
+ * Priority 4: Procedural 3D Voxel Box Model (fallback if default 3D model not uploaded yet)
  */
 export async function createPlayerMesh(element, equippedGear) {
   if (!playerGroup) return;
@@ -349,107 +465,13 @@ export async function createPlayerMesh(element, equippedGear) {
   is3DModelMode = false;
   is2DMode = false;
 
-  if (targetEl) {
-    // ── 1. NATIVE 3D GLB/GLTF MODEL PIPELINE ─────────────────────────────────
-    let charGltf = await _loadGLTFModel(`/assets/models/${targetEl}_character.glb`);
-    if (!charGltf) {
-      charGltf = await _loadGLTFModel(`/assets/models/${targetEl}_character.gltf`);
-    }
+  // Case A: Specific Elemental Set equipped ('thunder' | 'fire' | 'frost')
+  if (targetEl && targetEl !== 'default') {
+    // 1. Native 3D Elemental GLB Model
+    const loaded3D = await _tryLoad3DCharacterAndWeapon(targetEl);
+    if (loaded3D) return;
 
-    if (charGltf && charGltf.scene) {
-      is3DModelMode = true;
-      playerGroup.rotation.set(0, 0, 0);
-      playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-
-      characterRoot = new THREE.Group();
-      characterRoot.name = 'CharacterRoot';
-
-      // Clone scene to allow clean reload
-      characterModel = charGltf.scene.clone(true);
-      characterModel.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-
-      // Normalize character model scale to ~2.8 units height
-      const bBox = new THREE.Box3().setFromObject(characterModel);
-      const bSize = new THREE.Vector3();
-      bBox.getSize(bSize);
-      if (bSize.y > 0.01) {
-        const targetHeight = 2.8;
-        const scaleFactor = targetHeight / bSize.y;
-        characterModel.scale.setScalar(scaleFactor);
-      }
-
-      // Center horizontally and align base/feet at y = 0
-      const scaledBox = new THREE.Box3().setFromObject(characterModel);
-      characterModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
-      characterModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
-      characterModel.position.y = - scaledBox.min.y;
-
-      // Face towards Boss on the right (+X), angled 30° toward camera for optimal view
-      characterRoot.rotation.y = -Math.PI / 2 + Math.PI / 6;
-      characterRoot.add(characterModel);
-      playerGroup.add(characterRoot);
-
-      // Bone Socketing: Search for RightHand / Arm_R bone
-      handNode = characterModel.getObjectByName('RightHand') ||
-                 characterModel.getObjectByName('Arm_R') ||
-                 _findHandBone(characterModel);
-
-      if (!handNode) {
-        console.log('[player] No hand bone found, creating right-side socket node');
-        handNode = new THREE.Group();
-        handNode.name = 'RightHandFallback';
-        handNode.position.set(0.6, 1.4, 0.2);
-        characterModel.add(handNode);
-      } else {
-        console.log('[player] Socketed weapon to bone:', handNode.name);
-      }
-
-      // Load 3D Weapon Model
-      let weapGltf = await _loadGLTFModel(`/assets/models/${targetEl}_weapon.glb`);
-      if (!weapGltf) {
-        weapGltf = await _loadGLTFModel(`/assets/models/${targetEl}_weapon.gltf`);
-      }
-
-      weaponSocket = new THREE.Group();
-      weaponSocket.name = 'WeaponSocket';
-      weaponSocket.rotation.set(0, 0, WEAPON_READY_ROT_Z);
-
-      if (weapGltf && weapGltf.scene) {
-        weaponModel = weapGltf.scene.clone(true);
-        weaponModel.traverse((c) => {
-          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
-        });
-
-        // Normalize weapon size (approx 1.8 units length)
-        const wBox = new THREE.Box3().setFromObject(weaponModel);
-        const wSize = new THREE.Vector3();
-        wBox.getSize(wSize);
-        const maxDim = Math.max(wSize.x, wSize.y, wSize.z);
-        if (maxDim > 0.01 && (maxDim > 10 || maxDim < 0.2)) {
-          weaponModel.scale.setScalar(1.8 / maxDim);
-        }
-        weaponSocket.add(weaponModel);
-      } else {
-        // Fallback procedural elemental blade attached to bone socket
-        const bladeColor = targetEl === 'fire' ? 0xff4400 : targetEl === 'frost' ? 0x88ddff : 0x00cfff;
-        const blade = makeBox(0.12, 1.6, 0.08, bladeColor);
-        blade.position.set(0, 0.8, 0);
-        weaponSocket.add(blade);
-      }
-
-      handNode.add(weaponSocket);
-
-      if (activeElement) _buildElementalAura(activeElement);
-      console.log(`[player] Native 3D GLB character loaded and bone socketed for ${targetEl}`);
-      return;
-    }
-
-    // ── 2. 2.5D SPRITE MESH PIPELINE (if custom 2D art exists) ────────────────
+    // 2. 2.5D Sprite Mesh (if custom 2D art exists)
     const [bTex, wTex] = await Promise.all([
       _loadArtTexture(targetEl, 'body'),
       _loadArtTexture(targetEl, 'weapon'),
@@ -460,8 +482,6 @@ export async function createPlayerMesh(element, equippedGear) {
       playerGroup.rotation.y = 0; // Face camera in 2.5D mode
       playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
 
-      // Body Mesh: PlaneGeometry(2.2, 3.0) at ground level
-      // Rotate body billboard plane slightly angled towards the Boss (rotation.y = Math.PI / 6)
       const bGeo = new THREE.PlaneGeometry(2.2, 3.0);
       const bMat = new THREE.MeshBasicMaterial({
         map: bTex,
@@ -470,19 +490,17 @@ export async function createPlayerMesh(element, equippedGear) {
         depthWrite: false,
       });
       bodyMesh = new THREE.Mesh(bGeo, bMat);
-      bodyMesh.position.set(0, 0, 0); // Ground level (HOME_Y = 1.5, half-height = 1.5)
+      bodyMesh.position.set(0, 0, 0); // Ground level
       bodyMesh.rotation.y = Math.PI / 6; // Angled 30° toward the Boss on the right
       playerGroup.add(bodyMesh);
 
-      // Weapon Socket: Pivot anchor at character right hand position (x: 0.6, y: 0.9, z: 0.1)
       weaponArmPivot = new THREE.Group();
       weaponArmPivot.position.set(WEAPON_HAND_POS.x, WEAPON_HAND_POS.y, WEAPON_HAND_POS.z);
-      // Tilted ready in combat stance (blade pointing forward/upward)
       weaponArmPivot.rotation.set(0, Math.PI / 6, WEAPON_READY_ROT_Z);
 
       if (wTex) {
         const wGeo = new THREE.PlaneGeometry(0.8, 2.2);
-        wGeo.translate(0, 1.1, 0); // Hilt/grip aligned with pivot point
+        wGeo.translate(0, 1.1, 0);
         const wMat = new THREE.MeshBasicMaterial({
           map: wTex,
           transparent: true,
@@ -505,7 +523,11 @@ export async function createPlayerMesh(element, equippedGear) {
     }
   }
 
-  // ── 3. FALLBACK: 3D VOXEL BOX MODEL ────────────────────────────────────────
+  // Case B: No Elemental Set equipped (or 'default' active) -> Load Admin's Default 3D Model
+  const loadedDefault3D = await _tryLoad3DCharacterAndWeapon('default');
+  if (loadedDefault3D) return;
+
+  // 3. Fallback: Only render basic geometric boxes if default_character.glb has not been uploaded yet
   is2DMode = false;
   playerGroup.rotation.y = FACE_Y;
   _build3DBoxCharacter();

@@ -98,7 +98,7 @@ app.post('/api/admin/art/upload', artUpload.single('image'), (req, res) => {
     if (!file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const element = (req.body?.element || req.query?.element || '').toLowerCase();
     const rawType = (req.body?.type    || req.query?.type    || '').toLowerCase();
-    if (!['thunder', 'fire', 'frost'].includes(element))
+    if (!['thunder', 'fire', 'frost', 'default'].includes(element))
       return res.status(400).json({ success: false, error: 'Invalid element' });
     if (!['body', 'character', 'weapon'].includes(rawType))
       return res.status(400).json({ success: false, error: 'Invalid type (must be body, character, or weapon)' });
@@ -133,7 +133,7 @@ app.post('/api/admin/art/upload', artUpload.single('image'), (req, res) => {
 });
 
 // ── Admin: Dedicated 3D GLB/GLTF Model Upload ────────────────────────────────
-// POST /api/admin/model/upload { element, type:'character'|'weapon', model/file }
+// POST /api/admin/models/upload and /api/admin/model/upload { element, type:'character'|'weapon', model/file }
 const modelUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
@@ -145,7 +145,7 @@ const modelUpload = multer({
   },
 });
 
-app.post('/api/admin/model/upload', (req, res) => {
+const handleModelUpload = (req, res) => {
   modelUpload.any()(req, res, (err) => {
     if (err) return res.status(400).json({ success: false, error: err.message });
     try {
@@ -153,7 +153,7 @@ app.post('/api/admin/model/upload', (req, res) => {
       if (!file) return res.status(400).json({ success: false, error: 'Chưa chọn file mô hình 3D (.glb / .gltf)' });
       const element = (req.body?.element || req.query?.element || '').toLowerCase();
       let type      = (req.body?.type    || req.query?.type    || '').toLowerCase();
-      if (!['thunder', 'fire', 'frost'].includes(element))
+      if (!['thunder', 'fire', 'frost', 'default'].includes(element))
         return res.status(400).json({ success: false, error: 'Invalid element' });
       if (type === 'body') type = 'character';
       if (!['character', 'weapon'].includes(type))
@@ -174,35 +174,44 @@ app.post('/api/admin/model/upload', (req, res) => {
       res.status(500).json({ success: false, error: e.message });
     }
   });
-});
+};
 
-// GET /api/admin/model/status: checks 3D models on disk
-app.get('/api/admin/model/status', (req, res) => {
+app.post('/api/admin/model/upload', handleModelUpload);
+app.post('/api/admin/models/upload', handleModelUpload);
+
+// GET /api/admin/model/status & /api/admin/models/status: checks 3D models on disk
+const handleModelStatus = (req, res) => {
   const dir = path.join(__dirname, '../public/assets/models');
   const result = {};
-  for (const el of ['thunder', 'fire', 'frost']) {
+  for (const el of ['default', 'thunder', 'fire', 'frost']) {
     result[el] = {
       character: ['.glb', '.gltf'].some(ext => fs.existsSync(path.join(dir, `${el}_character${ext}`))),
       weapon:    ['.glb', '.gltf'].some(ext => fs.existsSync(path.join(dir, `${el}_weapon${ext}`))),
     };
   }
   res.json(result);
-});
+};
 
-// GET /api/admin/model/list: returns URLs for existing 3D models
-app.get('/api/admin/model/list', (req, res) => {
+app.get('/api/admin/model/status', handleModelStatus);
+app.get('/api/admin/models/status', handleModelStatus);
+
+// GET /api/admin/model/list & /api/admin/models/list: returns URLs for existing 3D models
+const handleModelList = (req, res) => {
   const dir = path.join(__dirname, '../public/assets/models');
   const result = {};
-  for (const el of ['thunder', 'fire', 'frost']) {
+  for (const el of ['default', 'thunder', 'fire', 'frost']) {
     const charExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(dir, `${el}_character${ext}`)));
     const weapExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(dir, `${el}_weapon${ext}`)));
     result[el] = {
       character: charExt ? `/assets/models/${el}_character${charExt}` : null,
-      weapon:    weapExt ? `/assets/models/${weapExt ? `${el}_weapon${weapExt}` : ''}` : null,
+      weapon:    weapExt ? `/assets/models/${el}_weapon${weapExt}` : null,
     };
   }
   res.json(result);
-});
+};
+
+app.get('/api/admin/model/list', handleModelList);
+app.get('/api/admin/models/list', handleModelList);
 
 // GET /api/admin/art/status: checks physical existence on disk
 app.get('/api/admin/art/status', (req, res) => {
