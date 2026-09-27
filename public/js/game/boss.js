@@ -698,30 +698,63 @@ export function playBossDodge() {
   anim.active=true; anim.type='dodge'; anim.t=0; anim.duration=0.6; anim.dodgeDir=1;
 }
 
-export function setBossHp(current, max) {
-  if (!hpCtx||!hpBarTexture) return;
-  const W=512, H=48;
-  hpCtx.clearRect(0,0,W,H);
-  hpCtx.fillStyle='#111'; hpCtx.fillRect(0,0,W,H);
-  const pct = Math.max(0,Math.min(1,current/Math.max(1,max)));
-  const el = currentBossData?.element;
-  const fillColor = el==='fire' ? (pct>0.5?'#ff6600':pct>0.25?'#cc2200':'#880000')
-                  : el==='frost'? (pct>0.5?'#88ddff':pct>0.25?'#4499cc':'#224488')
-                  : el==='thunder'? (pct>0.5?'#00ffcc':pct>0.25?'#ffcc00':'#ff4400')
-                  : (pct>0.6?'#06d6a0':pct>0.3?'#ffbe0b':'#ef233c');
-  hpCtx.fillStyle=fillColor;
-  hpCtx.fillRect(2,2,(W-4)*pct,H-4);
-  hpCtx.fillStyle='#fff'; hpCtx.font='bold 18px monospace';
-  hpCtx.fillText(`${currentBossData?.name||'BOSS'}  ${current}/${max}`,8,H-9);
-  hpBarTexture.needsUpdate=true;
+let currentHpPercent = 100;
 
-  if (current <= 0 && !isDefeated) {
+export function setBossHpPercent(pct) {
+  currentHpPercent = Math.max(0, Math.min(100, pct));
+  if (!hpCtx || !hpBarTexture) return;
+  const W = 512, H = 48;
+  hpCtx.clearRect(0, 0, W, H);
+  hpCtx.fillStyle = '#111';
+  hpCtx.fillRect(0, 0, W, H);
+
+  const ratio = currentHpPercent / 100;
+  const el = currentBossData?.element;
+  const fillColor = el === 'fire' ? (ratio > 0.5 ? '#ff6600' : ratio > 0.25 ? '#cc2200' : '#880000')
+                  : el === 'frost'? (ratio > 0.5 ? '#88ddff' : ratio > 0.25 ? '#4499cc' : '#224488')
+                  : el === 'thunder'? (ratio > 0.5 ? '#00ffcc' : ratio > 0.25 ? '#ffcc00' : '#ff4400')
+                  : (ratio > 0.6 ? '#06d6a0' : ratio > 0.3 ? '#ffbe0b' : '#ef233c');
+  hpCtx.fillStyle = fillColor;
+  hpCtx.fillRect(2, 2, (W - 4) * ratio, H - 4);
+  hpCtx.fillStyle = '#fff';
+  hpCtx.font = 'bold 18px monospace';
+  hpCtx.fillText(`${currentBossData?.name || 'BOSS'}  ${Math.round(currentHpPercent)}%`, 8, H - 9);
+  hpBarTexture.needsUpdate = true;
+
+  if (currentHpPercent <= 0 && !isDefeated) {
     isDefeated = true;
     anim.active = true;
     anim.type = 'defeat';
     anim.t = 0;
     anim.duration = 1.5;
   }
+}
+
+export function deductBossHpPercent(amount) {
+  setBossHpPercent(currentHpPercent - amount);
+}
+
+export function setBossHp(current, max) {
+  const pct = Math.max(0, Math.min(1, current / Math.max(1, max))) * 100;
+  setBossHpPercent(pct);
+}
+
+export function resetBossState() {
+  isDefeated = false;
+  anim.active = false;
+  anim.type = null;
+  anim.t = 0;
+  currentHpPercent = 100;
+  if (bossGroup) {
+    bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
+    bossGroup.scale.set(1, 1, 1);
+    bossGroup.visible = true;
+    if (customBossRoot) {
+      customBossRoot.position.set(0, 0, 0);
+      customBossRoot.rotation.set(0, -Math.PI / 2, 0);
+    }
+  }
+  setBossHpPercent(100);
 }
 
 export function removeBoss(scene) {

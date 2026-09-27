@@ -58,6 +58,8 @@ export function init(gameState) {
 }
 
 
+let visualBossHpPercent = 100;
+
 function initHpBars(gameState) {
   const hpLabelPlayer = document.getElementById('hp-label-player');
   const hpLabelEnemy  = document.getElementById('hp-label-enemy');
@@ -75,6 +77,7 @@ function initHpBars(gameState) {
     }
   }
 
+  visualBossHpPercent = 100;
   const hpFillPlayer = document.getElementById('hp-fill-player');
   const hpFillEnemy  = document.getElementById('hp-fill-enemy');
   if (hpFillPlayer) { hpFillPlayer.style.width = '100%'; hpFillPlayer.style.backgroundColor = '#06d6a0'; }
@@ -82,8 +85,26 @@ function initHpBars(gameState) {
 
   const hpValPlayer = document.getElementById('hp-val-player');
   const hpValEnemy  = document.getElementById('hp-val-enemy');
-  if (hpValPlayer) hpValPlayer.textContent = gameState.totalHp;
-  if (hpValEnemy)  hpValEnemy.textContent  = gameState.totalHp;
+  if (hpValPlayer) hpValPlayer.textContent = '100%';
+  if (hpValEnemy)  hpValEnemy.textContent  = '100%';
+}
+
+export function setBossVisualHpPercent(pct) {
+  visualBossHpPercent = Math.max(0, Math.min(100, pct));
+  const hpFillEnemy = document.getElementById('hp-fill-enemy');
+  const hpValEnemy  = document.getElementById('hp-val-enemy');
+  if (hpFillEnemy) {
+    hpFillEnemy.style.transition = 'width 0.4s ease';
+    hpFillEnemy.style.width = `${visualBossHpPercent}%`;
+    hpFillEnemy.style.backgroundColor = visualBossHpPercent > 60 ? '#06d6a0' : visualBossHpPercent > 30 ? '#ffbe0b' : '#ef233c';
+  }
+  if (hpValEnemy) {
+    hpValEnemy.textContent = `${Math.round(visualBossHpPercent)}%`;
+  }
+}
+
+export function deductBossHpPercent(amount) {
+  setBossVisualHpPercent(visualBossHpPercent - amount);
 }
 
 export function updateHpBars(hp, bossHp) {
@@ -99,34 +120,28 @@ export function updateHpBars(hp, bossHp) {
     hpFillPlayer.style.width = `${pct}%`;
     hpFillPlayer.style.backgroundColor = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
   }
-  if (hpValPlayer) hpValPlayer.textContent = myHp;
+  if (hpValPlayer) hpValPlayer.textContent = `${myHp}/${totalHp}`;
 
-  const hpFillEnemy = document.getElementById('hp-fill-enemy');
-  const hpValEnemy  = document.getElementById('hp-val-enemy');
-  let enemyHp = totalHp;
   if (gs?.mode === 'pve') {
-    enemyHp = (bossHp !== undefined && bossHp !== null) ? bossHp : totalHp;
-    // Boss HP bar max may be doubled — scale against bossMaxHp if available
-    const bossMax = gs.bossMaxHp || totalHp;
+    if (bossHp !== undefined && bossHp !== null) {
+      const pct = Math.max(0, Math.min(100, (bossHp / totalHp) * 100));
+      setBossVisualHpPercent(pct);
+    }
+  } else {
+    // PvP 1v1
+    const hpFillEnemy = document.getElementById('hp-fill-enemy');
+    const hpValEnemy  = document.getElementById('hp-val-enemy');
+    const opponent = gs?.players?.find(p => p.id !== gs.myId);
+    let enemyHp = totalHp;
+    if (opponent && hp && hp[opponent.id] !== undefined) enemyHp = hp[opponent.id];
     if (hpFillEnemy) {
-      const pct = Math.max(0, Math.min(100, (enemyHp / bossMax) * 100));
+      const pct = Math.max(0, Math.min(100, (enemyHp / totalHp) * 100));
       hpFillEnemy.style.transition = 'width 0.5s ease';
       hpFillEnemy.style.width = `${pct}%`;
       hpFillEnemy.style.backgroundColor = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
-      if (hpValEnemy) hpValEnemy.textContent = enemyHp;
-      return;
     }
-  } else {
-    const opponent = gs?.players?.find(p => p.id !== gs.myId);
-    if (opponent && hp && hp[opponent.id] !== undefined) enemyHp = hp[opponent.id];
+    if (hpValEnemy) hpValEnemy.textContent = `${enemyHp}/${totalHp}`;
   }
-  if (hpFillEnemy) {
-    const pct = Math.max(0, Math.min(100, (enemyHp / totalHp) * 100));
-    hpFillEnemy.style.transition = 'width 0.5s ease';
-    hpFillEnemy.style.width = `${pct}%`;
-    hpFillEnemy.style.backgroundColor = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
-  }
-  if (hpValEnemy) hpValEnemy.textContent = enemyHp;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -425,3 +440,27 @@ function showCombatText(text, color) {
   document.body.appendChild(pop);
   setTimeout(() => pop.remove(), 1400);
 }
+
+export function resetHudState() {
+  stopTimer();
+  clearFeedback();
+  enableButtons();
+  _answerLock = false;
+  ['a', 'b', 'c', 'd'].forEach(l => {
+    const btn = document.getElementById(`btn-answer-${l}`);
+    if (btn) {
+      btn.classList.remove('selected', 'correct', 'wrong', 'dim');
+    }
+  });
+  restoreQuizCard();
+  visualBossHpPercent = 100;
+  const hpFillPlayer = document.getElementById('hp-fill-player');
+  const hpFillEnemy  = document.getElementById('hp-fill-enemy');
+  if (hpFillPlayer) { hpFillPlayer.style.width = '100%'; hpFillPlayer.style.backgroundColor = '#06d6a0'; }
+  if (hpFillEnemy)  { hpFillEnemy.style.width  = '100%'; hpFillEnemy.style.backgroundColor  = '#ef233c'; }
+  const hpValPlayer = document.getElementById('hp-val-player');
+  const hpValEnemy  = document.getElementById('hp-val-enemy');
+  if (hpValPlayer) hpValPlayer.textContent = '100%';
+  if (hpValEnemy)  hpValEnemy.textContent  = '100%';
+}
+

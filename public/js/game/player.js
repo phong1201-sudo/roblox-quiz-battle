@@ -1389,3 +1389,13 @@ function _resetAll() {
   if (flameWave && flameWave.parent) { flameWave.parent.remove(flameWave); }
   flameWave = null; flameWaveActive = false; flameWaveDX = 0;
 }
+
+export function resetPlayerState() {
+  anim.active = false;
+  anim.type = null;
+  anim.t = 0;
+  anim.duration = 0;
+  anim._hitEmitted = false;
+  if (playerGroup) _resetAll();
+}
+

@@ -52,7 +52,13 @@ class RoomManager {
   joinRoom(code, socketId, playerName, color, userId, equippedSet, inventory) {
     const room = this.rooms.get(code);
     if (!room) throw new Error('Room not found');
-    if (room.phase !== 'LOBBY') throw new Error('Game already in progress');
+    if (room.phase !== 'LOBBY' && room.phase !== 'GAME_OVER' && !room.players.has(socketId)) {
+      throw new Error('Game already in progress');
+    }
+    if (room.phase === 'GAME_OVER') {
+      room.phase = 'LOBBY';
+      room.currentIndex = -1;
+    }
 
     room.players.set(socketId, {
       id: socketId, name: playerName, color,
@@ -153,21 +159,36 @@ class RoomManager {
   startGame(code, socketId) {
     const room = this.rooms.get(code);
     if (!room) throw new Error('Room not found');
-    if (room.hostId !== socketId) throw new Error('Only host can start the game');
+    if (room.hostId !== socketId) {
+      if (room.players.size === 1) {
+        room.hostId = socketId;
+      } else {
+        throw new Error('Only host can start the game');
+      }
+    }
+    if (room.timer) {
+      clearTimeout(room.timer);
+      room.timer = null;
+    }
+    room.currentIndex = -1;
     room.phase = 'QUESTION';
     return room;
   }
 
-  /** Initialise HP. Boss HP = total * bossHpMultiplier. Player HP = total. */
+  /** Initialise HP. Boss HP = total questions. Player HP = total questions. */
   initHp(code) {
     const room = this.rooms.get(code);
     if (!room) return;
     const total = Math.max(1, room.questions.length);
-    room.bossHpMultiplier = room.bossHpMultiplier || 1;
+    room.bossHpMultiplier = 1;
     room.totalHp = total;
-    room.bossHp  = total * room.bossHpMultiplier;
+    room.bossHp  = total;
     for (const p of room.players.values()) {
       p.hp = total;
+      p.correctAnswerCount = 0;
+      p.hasSubmitted = false;
+      p.answer = null;
+      p.answerTime = null;
     }
   }
 
@@ -246,10 +267,9 @@ class RoomManager {
       // ── PvE ───────────────────────────────────────────────────────────────
       for (const p of room.players.values()) {
         if (isCorrect(p.answer)) {
-          // Damage: 2 if player has ALL 5 pieces of their equipped elemental set, else 1
           const hasFullSet = checkHasFullSet(p);
-          const dmg = hasFullSet ? 2 : 1;
-          room.bossHp = Math.max(0, room.bossHp - dmg);
+          // Exactly 1 question step per correct answer, so boss reaches 0 HP precisely on the final question
+          room.bossHp = Math.max(0, room.bossHp - 1);
 
           p.correctAnswerCount = (p.correctAnswerCount || 0) + 1;
           const count = p.correctAnswerCount;
@@ -262,13 +282,20 @@ class RoomManager {
             type: 'attack',
             attackerId: p.id,
             victimId: 'boss',
-            damage: dmg,
+            damage: 1,
             hasFullSet,
             equippedSet: p.equippedSet || null,
             element: room.bossElement || null,
+            totalQuestions: room.totalHp,
+            currentBossHp: room.bossHp,
           });
         } else {
-          combatEvents.push({ type: 'dodge', targetId: 'boss' });
+          combatEvents.push({
+            type: 'dodge',
+            targetId: 'boss',
+            totalQuestions: room.totalHp,
+            currentBossHp: room.bossHp,
+          });
         }
       }
     } else {
@@ -334,9 +361,8 @@ class RoomManager {
   getPveVerdict(code) {
     const room = this.rooms.get(code);
     if (!room) return 'DEFEAT';
-    const bossHpPct = (room.bossHp / room.bossHp + room.totalHp) * 100;
-    if (room.bossHp === 0)  return 'PERFECT';
-    if (room.bossHp < room.totalHp * room.bossHpMultiplier * 0.5) return 'VICTORY';
+    if (room.bossHp === 0) return 'PERFECT';
+    if (room.bossHp <= Math.floor(room.totalHp * 0.5)) return 'VICTORY';
     return 'DEFEAT';
   }
 

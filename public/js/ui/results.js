@@ -1,5 +1,15 @@
 import { socket } from '../socket.js';
 import * as effects from '../game/effects.js';
+import * as hud from './hud.js';
+import * as scene from '../game/scene.js';
+
+export function resetGameMatch() {
+    const modal = document.getElementById('reward-modal');
+    if (modal) modal.style.display = 'none';
+
+    if (hud.resetHudState) hud.resetHudState();
+    if (scene.resetGameMatch) scene.resetGameMatch();
+}
 
 export function init(data, gameState) {
     const verdictBanner = document.getElementById('verdict-banner');
@@ -78,13 +88,44 @@ export function init(data, gameState) {
         document.getElementById('screen-results')?.prepend(winnerDiv);
     }
 
+    // ── 🔁 Play Again: Re-initialize match with current element and question set cleanly ──
     const btnPlayAgain = document.getElementById('btn-play-again');
     if (btnPlayAgain) {
         btnPlayAgain.onclick = () => {
-            socket.emit('join_room', {
-                code: gameState.code,
-                playerName: gameState.myName,
-                color: gameState.myColor
+            resetGameMatch();
+            const currentEl = window.gameState?.bossElement || 'thunder';
+            const diff      = window.gameState?.difficulty  || 'medium';
+            const testGear  = window.gameState?.testGear    || null;
+
+            socket.emit('start_game', {
+                code: window.gameState.code,
+                element: currentEl,
+                difficulty: diff,
+                testGear
+            });
+        };
+    }
+
+    // ── ➡️ Next Boss: Switch element in line (thunder -> fire -> frost -> thunder) ──
+    const btnNextBoss = document.getElementById('btn-next-boss');
+    if (btnNextBoss) {
+        btnNextBoss.onclick = () => {
+            resetGameMatch();
+            const BOSS_CYCLE = ['thunder', 'fire', 'frost'];
+            const currentEl  = window.gameState?.bossElement || 'thunder';
+            const curIdx     = BOSS_CYCLE.indexOf(currentEl);
+            const nextIdx    = (curIdx >= 0 ? curIdx + 1 : 0) % BOSS_CYCLE.length;
+            const nextEl     = BOSS_CYCLE[nextIdx];
+
+            window.gameState.bossElement = nextEl;
+            const diff     = window.gameState?.difficulty || 'medium';
+            const testGear = window.gameState?.testGear ? nextEl : null;
+
+            socket.emit('start_game', {
+                code: window.gameState.code,
+                element: nextEl,
+                difficulty: diff,
+                testGear
             });
         };
     }

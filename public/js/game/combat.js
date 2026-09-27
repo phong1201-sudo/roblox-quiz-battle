@@ -3,17 +3,18 @@ import * as Player  from './player.js';
 import * as Boss    from './boss.js';
 import * as Effects from './effects.js';
 import * as Audio   from '../audio.js';
+import * as hud     from '../ui/hud.js';
 
 const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
 
 /**
  * Executes one of the 4 distinct combat attack sequences:
- * A. Normal / Incomplete Set (1-hit basic slash)
- * B. Full Set Thunder (dive slash + sky lightning bolt strike, 2-hit)
- * C. Full Set Fire (stand-firm power swing + flame projectile + burning burst, 2-hit)
- * D. Full Set Frost (glide horizontal slash + full ice encasement & shatter, 2-hit)
+ * A. Normal / Incomplete Set (1-hit basic slash) -> Boss loses (100 / totalQuestions)%
+ * B. Full Set Thunder (dive slash + sky lightning bolt strike, 2-hit) -> 2x (50 / totalQuestions)%
+ * C. Full Set Fire (stand-firm power swing + flame projectile + burning burst, 2-hit) -> 2x (50 / totalQuestions)%
+ * D. Full Set Frost (glide horizontal slash + full ice encasement & shatter, 2-hit) -> 2x (50 / totalQuestions)%
  *
- * @param {Object} ev - Combat event payload { damage, hasFullSet, equippedSet, element }
+ * @param {Object} ev - Combat event payload { damage, hasFullSet, equippedSet, element, totalQuestions, currentBossHp }
  * @param {Function} onDone - Callback to release combat turn lock
  */
 export function runAttack(ev, onDone) {
@@ -22,20 +23,41 @@ export function runAttack(ev, onDone) {
   const isElemental = hasFullSet && ['thunder', 'fire', 'frost'].includes(rawElement);
   const element     = isElemental ? rawElement : null;
 
+  // Percentage calculations based on total question count (e.g. 20 -> 5%, 30 -> 3.3%, 50 -> 2%, 5 -> 20%)
+  const totalQ   = ev.totalQuestions || window.gameState?.totalHp || 20;
+  const pctTotal = 100 / Math.max(1, totalQ);
+  const pctHit1  = hasFullSet ? (pctTotal / 2) : pctTotal;
+  const pctHit2  = hasFullSet ? (pctTotal / 2) : 0;
+
+  const hit1Label = `-${Math.round(pctHit1 * 10) / 10}%`;
+  const hit2Label = `-${Math.round(pctHit2 * 10) / 10}%`;
+
+  const applyHit1Damage = () => {
+    Boss.playBossHurt();
+    Boss.deductBossHpPercent(pctHit1);
+    if (hud.deductBossHpPercent) hud.deductBossHpPercent(pctHit1);
+  };
+
+  const applyHit2Damage = () => {
+    Boss.playBossHurt();
+    Boss.deductBossHpPercent(pctHit2);
+    if (hud.deductBossHpPercent) hud.deductBossHpPercent(pctHit2);
+  };
+
   if (!isElemental) {
     // ═════════════════════════════════════════════════════════════════════════
-    // A. BỘ THƯỜNG / CHƯA ĐỦ BỘ (Normal / Incomplete Set)
+    // A. BỘ THƯỜNG / CHƯA ĐỦ BỘ (Normal / Incomplete Set: 1 hit)
     // 1. Lao vào: Character dashes straight up to Boss's front (250ms).
     // 2. Chém: Weapon pivot slashes down 75° into Boss's torso (150ms).
-    // 3. Sát thương: Boss takes -1 HP. Play basic slash sound.
+    // 3. Sát thương: Boss loses (100 / totalQuestions)% in 1 hit.
     // 4. Lùi về: Character dashes back to original position. Turn ends.
     // ═════════════════════════════════════════════════════════════════════════
     Player.playCombatAnimation('normal', {
       onHit: () => {
         try { Audio.playSlash(); } catch (e) {}
-        Boss.playBossHurt();
+        applyHit1Damage();
         Effects.spawnHitSpark(BOSS_VFX_POS);
-        Effects.spawnDamageNumber(BOSS_VFX_POS, '-1 HP', '#ffee44');
+        Effects.spawnDamageNumber(BOSS_VFX_POS, hit1Label, '#ffee44');
         Effects.triggerShake(0.18, 0.25);
       },
       onDone: () => {
@@ -45,26 +67,25 @@ export function runAttack(ev, onDone) {
 
   } else if (element === 'thunder') {
     // ═════════════════════════════════════════════════════════════════════════
-    // B. FULL SET SÉT (Thunder Set)
-    // 1. Bay lên cao: Leaps high into the air above Boss (y+3.5, bossX-0.5, 350ms).
-    // 2. Bổ xuống: Dives straight down, sword onto Boss's head (180ms) -> Boss -1 HP.
+    // B. FULL SET SÉT (Thunder Set: 2 hits, (50/N)% + (50/N)%)
+    // 1. Bay lên cao: Leaps high into the air above Boss (350ms).
+    // 2. Bổ xuống: Dives straight down onto Boss -> Hit 1: (50 / totalQuestions)%.
     // 3. Lùi về: Leaps backward to original spot.
-    // 4. Hiệu ứng Sét: Massive procedural lightning bolt strikes Boss -> Boss -1 HP (Total -2 HP).
+    // 4. Hiệu ứng Sét: Sky lightning bolt strikes Boss -> Hit 2: (50 / totalQuestions)%.
     // ═════════════════════════════════════════════════════════════════════════
     Player.playCombatAnimation('thunder', {
       onHit: () => {
         try { Audio.playSlash(); } catch (e) {}
-        Boss.playBossHurt();
+        applyHit1Damage();
         Effects.spawnHitSpark(BOSS_VFX_POS);
-        Effects.spawnDamageNumber(BOSS_VFX_POS, '-1 HP', '#00ffff');
+        Effects.spawnDamageNumber(BOSS_VFX_POS, hit1Label, '#00ffff');
         Effects.triggerShake(0.25, 0.25);
       },
       onDone: () => {
-        // Character has landed back at home position — now trigger sky lightning strike
         setTimeout(() => {
           try { Audio.playThunder(); } catch (e) {}
-          Effects.triggerLightningSlash(BOSS_VFX_POS, '⚡ -1 HP');
-          Boss.playBossHurt();
+          applyHit2Damage();
+          Effects.triggerLightningSlash(BOSS_VFX_POS, `⚡ ${hit2Label}`);
           setTimeout(() => {
             if (onDone) onDone();
           }, 550);
@@ -74,10 +95,10 @@ export function runAttack(ev, onDone) {
 
   } else if (element === 'fire') {
     // ═════════════════════════════════════════════════════════════════════════
-    // C. FULL SET LỬA (Fire Set)
-    // 1. Đứng tại chỗ: Stands firmly, powerful sword swing forward (250ms).
-    // 2. Hiệu ứng Lửa: Blazing flame projectile flies toward Boss. Fire burst surrounds Boss.
-    // 3. Sát thương: Boss takes -1 HP, then fire continues burning for -1 HP (Total -2 HP).
+    // C. FULL SET LỬA (Fire Set: 2 hits, (50/N)% + (50/N)%)
+    // 1. Đứng tại chỗ: Power sword swing forward (250ms).
+    // 2. Hiệu ứng Lửa: Blazing flame projectile flies toward Boss -> Hit 1: (50/N)%.
+    // 3. Sát thương tiếp diễn: Flame burst explodes for Hit 2: (50/N)%.
     // ═════════════════════════════════════════════════════════════════════════
     let combatFinished = false;
     const finishOnce = () => {
@@ -89,22 +110,20 @@ export function runAttack(ev, onDone) {
 
     Player.playCombatAnimation('fire', {
       onHit: () => {
-        // Swing moment: launch flame projectile from character to Boss
         try { Audio.playFire(); } catch (e) {}
+        applyHit1Damage();
         const playerPos = Player.getPosition();
         const startPos  = new THREE.Vector3(playerPos.x + 0.8, playerPos.y + 0.5, playerPos.z);
 
         Effects.spawnFlameProjectile(startPos, BOSS_VFX_POS, () => {
-          // Flame wave reaches Boss: Boss -1 HP
-          Boss.playBossHurt();
-          Effects.triggerFireBurst(BOSS_VFX_POS, '🔥 -1 HP');
+          Effects.triggerFireBurst(BOSS_VFX_POS, `🔥 ${hit1Label}`);
           Effects.triggerShake(0.35, 0.35);
 
-          // Fire continues burning: secondary explosion for second -1 HP
+          // Fire continues burning: secondary burst for second hit
           setTimeout(() => {
             try { Audio.playFire(); } catch (e) {}
-            Boss.playBossHurt();
-            Effects.spawnDamageNumber(BOSS_VFX_POS, '🔥 -1 HP', '#ff3300', 26);
+            applyHit2Damage();
+            Effects.spawnDamageNumber(BOSS_VFX_POS, `🔥 ${hit2Label}`, '#ff3300', 26);
             Effects.triggerShake(0.25, 0.3);
             setTimeout(() => {
               finishOnce();
@@ -112,35 +131,31 @@ export function runAttack(ev, onDone) {
           }, 400);
         });
       },
-      onDone: () => {
-        // Player returned to stance; flight & burn sequence will conclude via callbacks
-      },
+      onDone: () => {},
     });
 
   } else if (element === 'frost') {
     // ═════════════════════════════════════════════════════════════════════════
-    // D. FULL SET BĂNG (Frost Set)
-    // 1. Lướt chém: Glides forward right into Boss, horizontal slash (200ms) -> Boss -1 HP.
+    // D. FULL SET BĂNG (Frost Set: 2 hits, (50/N)% + (50/N)%)
+    // 1. Lướt chém: Glides forward right into Boss -> Hit 1: (50/N)%.
     // 2. Lùi lại: Slides backward to original stance.
-    // 3. Hiệu ứng Băng: Blue crystalline ice grows from feet up, encasing Boss (400ms).
-    // 4. Sát thương: Ice shatters -> Boss -1 HP (Total -2 HP). Play ice shatter SFX.
+    // 3. Hiệu ứng Băng: Encases Boss in ice (400ms).
+    // 4. Băng vỡ: Ice shatters -> Hit 2: (50/N)%.
     // ═════════════════════════════════════════════════════════════════════════
     Player.playCombatAnimation('frost', {
       onHit: () => {
         try { Audio.playSlash(); } catch (e) {}
-        Boss.playBossHurt();
+        applyHit1Damage();
         Effects.spawnHitSpark(BOSS_VFX_POS);
-        Effects.spawnDamageNumber(BOSS_VFX_POS, '-1 HP', '#88ddff');
+        Effects.spawnDamageNumber(BOSS_VFX_POS, hit1Label, '#88ddff');
         Effects.triggerShake(0.2, 0.2);
       },
       onDone: () => {
-        // Character slid back to original stance — encase Boss in ice
         setTimeout(() => {
           Effects.freezeBossInIce(BOSS_VFX_POS, 400, () => {
-            // Ice shatters!
             try { Audio.playFrost(); } catch (e) {}
-            Boss.playBossHurt();
-            Effects.triggerFrostShatter(BOSS_VFX_POS, '❄️ -1 HP');
+            applyHit2Damage();
+            Effects.triggerFrostShatter(BOSS_VFX_POS, `❄️ ${hit2Label}`);
             Effects.triggerShake(0.35, 0.4);
             setTimeout(() => {
               if (onDone) onDone();

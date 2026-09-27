@@ -1,5 +1,4 @@
-// THREE is available as a global from the CDN script tag
-import { initWorld }      from './world.js';
+import * as Arena         from './arena.js';
 import * as Player        from './player.js';
 import * as PlayerManager from './playerManager.js';
 import * as AnswerPads    from './answerPads.js';
@@ -76,7 +75,7 @@ export function initScene(canvas) {
   rimLight.position.set(0, 6, -8);
   scene.add(rimLight);
 
-  initWorld(scene);
+  Arena.initArena(scene);
   Effects.initEffects(scene, camera);
   window.addEventListener('resize', onWindowResize, false);
   animate();
@@ -89,6 +88,9 @@ export function startGame(gameState) {
   currentGameState = gameState;
   gameMode = gameState.mode || 'pve';
   totalHp  = gameState.totalHp || 10;
+
+  const activeElement = gameState.bossElement || gameState.element || 'thunder';
+  Arena.setArenaTheme(activeElement);
 
   // Apply player's equipped elemental set
   const equippedSet = gameState.equippedSet || null;
@@ -227,6 +229,19 @@ function animate() {
   const dt = Math.min(clock.getDelta(), 0.1);
   Player.updatePlayer(dt, camera);
   Effects.update(dt);
+  Arena.updateArena(dt);
   if (bossActive) Boss.updateBoss(dt);
   renderer.render(scene, camera);
 }
+
+export function resetGameMatch() {
+  pendingEvents = [];
+  combatBusy = false;
+  if (socketMoveInterval) {
+    clearInterval(socketMoveInterval);
+    socketMoveInterval = null;
+  }
+  Player.resetPlayerState?.();
+  Boss.resetBossState?.();
+}
+
