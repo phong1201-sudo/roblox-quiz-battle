@@ -5,6 +5,8 @@ import * as Effects from './effects.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
 
+export { playArmSwingSlash } from './player.js';
+
 const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
 
 /**

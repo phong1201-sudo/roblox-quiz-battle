@@ -12,7 +12,7 @@ class RoomManager {
     return code;
   }
 
-  createRoom(socketId, playerName, color, userId, equippedSet, inventory) {
+  createRoom(socketId, playerName, color, userId, equippedSet, inventory, equipped) {
     let code;
     do { code = this.generateCode(); } while (this.rooms.has(code));
 
@@ -42,6 +42,7 @@ class RoomManager {
       damagePerHit: 1,
       thunderSetUnlocked: false,
       equippedSet:  equippedSet  || null,
+      equipped:     equipped     || { outfit: 'default', weapon: 'default' },
       inventory:    inventory    || { thunder: [], fire: [], frost: [] },
     });
 
@@ -49,7 +50,7 @@ class RoomManager {
     return { code, players: Array.from(room.players.values()), hostId: socketId };
   }
 
-  joinRoom(code, socketId, playerName, color, userId, equippedSet, inventory) {
+  joinRoom(code, socketId, playerName, color, userId, equippedSet, inventory, equipped) {
     const room = this.rooms.get(code);
     if (!room) throw new Error('Room not found');
     if (room.phase !== 'LOBBY' && room.phase !== 'GAME_OVER' && !room.players.has(socketId)) {
@@ -70,6 +71,7 @@ class RoomManager {
       damagePerHit: 1,
       thunderSetUnlocked: false,
       equippedSet:  equippedSet  || null,
+      equipped:     equipped     || { outfit: 'default', weapon: 'default' },
       inventory:    inventory    || { thunder: [], fire: [], frost: [] },
     });
 

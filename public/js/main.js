@@ -27,12 +27,26 @@ function ensureSceneInit() {
 // ─── Build / merge gameState with current auth user ───────────────────────────
 function makeGameState(base) {
     const user = Auth.getCurrentUser();
+    let equipped = { outfit: 'default', weapon: 'default' };
+    try {
+        const saved = JSON.parse(localStorage.getItem('player_equipped'));
+        if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+    } catch(e) {}
+
+    const isFullSet = (equipped.outfit === equipped.weapon && equipped.outfit !== 'default');
+
     return {
         ...base,
         userId:       user?.id       || null,
         username:     user?.username || base.myName,
         role:         user?.role     || 'player',
         unlockedSets: user?.unlockedSets || [],
+        inventory:    user?.inventory || { thunder: [], fire: [], frost: [] },
+        equipped,
+        equipment:    { ...equipped },
+        equippedSet:  isFullSet ? equipped.outfit : (user?.equippedSet || null),
+        thunderSet:   isFullSet && equipped.outfit === 'thunder',
+        damagePerHit: isFullSet ? 2 : 1,
     };
 }
 
@@ -77,11 +91,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // God Father flag from server role — no localStorage
         window._godFather = (user.role === 'admin');
 
+        let equipped = { outfit: 'default', weapon: 'default' };
+        try {
+            const saved = JSON.parse(localStorage.getItem('player_equipped'));
+            if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+        } catch(e) {}
+        const isFullSet = (equipped.outfit === equipped.weapon && equipped.outfit !== 'default');
+        const equippedSet = isFullSet ? equipped.outfit : (user.equippedSet || null);
+
         emit('create_room', {
             playerName,
             color,
             userId:       user.id,
-            equippedSet:  user.equippedSet  || null,
+            equippedSet,
+            equipped,
             inventory:    user.inventory    || { thunder: [], fire: [], frost: [] },
         });
     });
@@ -99,12 +122,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const code = document.getElementById('room-code-input').value.trim().toUpperCase();
         if (code.length !== 4) { alert('Room code must be 4 characters'); return; }
         const color = document.getElementById('player-color').value;
+
+        let equipped = { outfit: 'default', weapon: 'default' };
+        try {
+            const saved = JSON.parse(localStorage.getItem('player_equipped'));
+            if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+        } catch(e) {}
+        const isFullSet = (equipped.outfit === equipped.weapon && equipped.outfit !== 'default');
+        const equippedSet = isFullSet ? equipped.outfit : (user.equippedSet || null);
+
         emit('join_room', {
             code,
             playerName:   user.username,
             color,
             userId:       user.id,
-            equippedSet:  user.equippedSet  || null,
+            equippedSet,
+            equipped,
             inventory:    user.inventory    || { thunder: [], fire: [], frost: [] },
         });
     });

@@ -730,7 +730,7 @@ const resolveQuestion = (code) => {
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
 
-  socket.on('create_room', ({ playerName, color, userId, equippedSet, inventory }) => {
+  socket.on('create_room', ({ playerName, color, userId, equippedSet, inventory, equipped }) => {
     try {
       // Server-side inventory lookup as source of truth (fallback to client-sent)
       let serverInventory = inventory || { thunder: [], fire: [], frost: [] };
@@ -741,14 +741,14 @@ io.on('connection', (socket) => {
         } catch(e) {}
       }
       const { code, players, hostId } = roomManager.createRoom(
-        socket.id, playerName, color, userId, equippedSet || null, serverInventory
+        socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null
       );
       socket.join(code);
       socket.emit('room_created', { code, players, hostId });
     } catch (e) { console.error('[create_room]', e.message); }
   });
 
-  socket.on('join_room', ({ code, playerName, color, userId, equippedSet, inventory }) => {
+  socket.on('join_room', ({ code, playerName, color, userId, equippedSet, inventory, equipped }) => {
     try {
       let serverInventory = inventory || { thunder: [], fire: [], frost: [] };
       if (userId) {
@@ -758,7 +758,7 @@ io.on('connection', (socket) => {
         } catch(e) {}
       }
       const { players, hostId } = roomManager.joinRoom(
-        code, socket.id, playerName, color, userId, equippedSet || null, serverInventory
+        code, socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null
       );
       socket.join(code);
       socket.to(code).emit('player_joined', { players });

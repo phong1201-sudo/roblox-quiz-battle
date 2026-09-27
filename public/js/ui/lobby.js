@@ -6,20 +6,68 @@ import { showScreen } from '../main.js';
 // Equipment catalogue
 // ─────────────────────────────────────────────────────────────────────────────
 const EQUIPMENT_SLOTS = {
-  hat:    { label: '🎩 Hat',    items: [{ id:'cap',    name:'Classic Cap',    color:'#cc2222' }, { id:'helm',  name:'Knight Helm',  color:'#888899' }] },
-  shirt:  { label: '👕 Shirt',  items: [{ id:'hoodie', name:'Blue Hoodie',    color:'#2255cc' }, { id:'vest',  name:'Leather Vest', color:'#8b5e3c' }] },
-  pants:  { label: '👖 Pants',  items: [{ id:'jeans',  name:'Black Jeans',   color:'#222233' }, { id:'cargo', name:'Mil. Cargo',   color:'#556b2f' }] },
-  shoes:  { label: '👟 Shoes',  items: [{ id:'sneak',  name:'Sneakers',      color:'#eeeeee' }, { id:'boots', name:'Combat Boots', color:'#3d2b1f' }] },
-  weapon: { label: '⚔️  Weapon', items: [{ id:'sword',  name:'Wood Sword',   color:'#8b6914' }, { id:'glove', name:'Boxing Glove', color:'#cc4400' }] },
+  outfit: {
+    label: '👕 Trang phục',
+    items: [
+      { id: 'default', name: 'Mặc định', color: '#888888', el: null },
+      { id: 'thunder', name: '⚡ Lôi Thần', color: '#00cfff', el: 'thunder' },
+      { id: 'fire',    name: '🔥 Hỏa Thần', color: '#ff6b00', el: 'fire' },
+      { id: 'frost',   name: '❄️ Băng Thần', color: '#88ddff', el: 'frost' },
+    ]
+  },
+  weapon: {
+    label: '⚔️ Vũ khí',
+    items: [
+      { id: 'default', name: 'Mặc định', color: '#8b6914', el: null },
+      { id: 'thunder', name: '⚡ Lôi Kiếm', color: '#00cfff', el: 'thunder' },
+      { id: 'fire',    name: '🔥 Hỏa Kiếm', color: '#ff6b00', el: 'fire' },
+      { id: 'frost',   name: '❄️ Băng Kiếm', color: '#88ddff', el: 'frost' },
+    ]
+  },
 };
 
-const DEFAULT_EQUIPMENT = { hat:'cap', shirt:'hoodie', pants:'jeans', shoes:'sneak', weapon:'sword' };
+const DEFAULT_EQUIPMENT = { outfit: 'default', weapon: 'default' };
+const LS_EQUIPPED_KEY = 'player_equipped';
 
-// Module-level equipment state (synced to window.gameState.equipment)
-let equipment = { ...DEFAULT_EQUIPMENT };
+function _loadEquipped() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_EQUIPPED_KEY));
+    if (saved && (saved.outfit || saved.weapon)) {
+      return {
+        outfit: saved.outfit || 'default',
+        weapon: saved.weapon || 'default',
+      };
+    }
+  } catch (e) {}
+  return { ...DEFAULT_EQUIPMENT };
+}
+
+// Module-level equipment state (synced to window.gameState.equipped)
+let equipment = _loadEquipped();
+
+function _syncEquippedState() {
+  if (!window.gameState) return;
+  window.gameState.equipped = { outfit: equipment.outfit, weapon: equipment.weapon };
+  window.gameState.equipment = { ...window.gameState.equipped };
+
+  const isFullSet = (equipment.outfit === equipment.weapon && equipment.outfit !== 'default');
+  window.gameState.equippedSet = isFullSet ? equipment.outfit : null;
+  window.gameState.thunderSet  = (isFullSet && equipment.outfit === 'thunder');
+  window.gameState.damagePerHit = isFullSet ? 2 : 1;
+}
+
+function _isItemUnlocked(slot, itemId) {
+  if (itemId === 'default') return true;
+  if (window._godFather === true) return true;
+  const user = window.gameState || {};
+  const inv = user.inventory || {};
+  const elInv = inv[itemId];
+  if (!Array.isArray(elInv)) return false;
+  return elInv.includes(slot);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Draw a small 80×80 character preview onto a canvas
+// Draw a small 80×96 character preview onto a canvas
 // ─────────────────────────────────────────────────────────────────────────────
 function drawWardrobePreview(canvas) {
   const ctx = canvas.getContext('2d');
@@ -29,10 +77,10 @@ function drawWardrobePreview(canvas) {
   ctx.fillStyle = '#0d0a1e';
   ctx.fillRect(0, 0, W, H);
 
-  const get = (slot) => {
-    const sel = equipment[slot] || DEFAULT_EQUIPMENT[slot];
-    return EQUIPMENT_SLOTS[slot].items.find(i => i.id === sel)?.color || '#888';
-  };
+  const outfitItem = EQUIPMENT_SLOTS.outfit.items.find(i => i.id === equipment.outfit) || EQUIPMENT_SLOTS.outfit.items[0];
+  const weaponItem = EQUIPMENT_SLOTS.weapon.items.find(i => i.id === equipment.weapon) || EQUIPMENT_SLOTS.weapon.items[0];
+  const outfitColor = outfitItem.color;
+  const weaponColor = weaponItem.color;
 
   const skin = '#f5c4a0';
 
@@ -40,21 +88,15 @@ function drawWardrobePreview(canvas) {
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.beginPath(); ctx.ellipse(W/2, H-4, 14, 4, 0, 0, Math.PI*2); ctx.fill();
 
-  // Shoes
-  ctx.fillStyle = get('shoes');
-  ctx.fillRect(W/2-14, H-16, 11, 8);
-  ctx.fillRect(W/2+3,  H-16, 11, 8);
+  // Boots/Legs (Outfit color darker)
+  ctx.fillStyle = outfitColor;
+  ctx.fillRect(W/2-11, H-28, 9, 22);
+  ctx.fillRect(W/2+2,  H-28, 9, 22);
 
-  // Pants
-  ctx.fillStyle = get('pants');
-  ctx.fillRect(W/2-11, H-28, 9, 14);
-  ctx.fillRect(W/2+2,  H-28, 9, 14);
-
-  // Shirt/torso
-  ctx.fillStyle = get('shirt');
+  // Torso / Outfit
   ctx.fillRect(W/2-13, H-48, 26, 21);
 
-  // Arms (skin)
+  // Arms (skin / sleeves)
   ctx.fillStyle = skin;
   ctx.fillRect(W/2-20, H-47, 8, 16);
   ctx.fillRect(W/2+12, H-47, 8, 16);
@@ -63,100 +105,116 @@ function drawWardrobePreview(canvas) {
   ctx.fillStyle = skin;
   ctx.fillRect(W/2-10, H-66, 20, 18);
 
-  // Hat
-  ctx.fillStyle = get('hat');
-  ctx.fillRect(W/2-11, H-70, 22, 8);
-  ctx.fillRect(W/2-9,  H-67, 18, 5);
+  // Outfit collar/cap
+  ctx.fillStyle = outfitColor;
+  ctx.fillRect(W/2-11, H-70, 22, 6);
 
   // Eyes
   ctx.fillStyle = '#222';
   ctx.fillRect(W/2-6, H-60, 3, 3);
   ctx.fillRect(W/2+3, H-60, 3, 3);
 
-  // Weapon (right side)
-  const wColor = get('weapon');
-  ctx.fillStyle = wColor;
-  if (equipment.weapon === 'glove') {
-    ctx.fillRect(W/2+18, H-50, 10, 10);
-  } else {
-    ctx.fillRect(W/2+19, H-58, 4, 22);
-    ctx.fillStyle = '#888';
-    ctx.fillRect(W/2+17, H-43, 8, 3);
-  }
+  // Weapon (held in hand)
+  ctx.fillStyle = weaponColor;
+  ctx.fillRect(W/2-22, H-62, 5, 26);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(W/2-24, H-46, 9, 3);
 
-  // Thunder glow outline if thunder set
-  if (window.gameState?.thunderSet) {
-    ctx.strokeStyle = 'rgba(0,255,255,0.8)';
+  // Full set glow outline if full set active
+  const isFullSet = (equipment.outfit === equipment.weapon && equipment.outfit !== 'default');
+  if (isFullSet || window.gameState?.thunderSet) {
+    ctx.strokeStyle = outfitColor;
     ctx.lineWidth = 2;
     ctx.shadowBlur = 8;
-    ctx.shadowColor = '#00ffff';
+    ctx.shadowColor = outfitColor;
     ctx.strokeRect(2, 2, W-4, H-4);
     ctx.shadowBlur = 0;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Build the wardrobe panel into a container element
+// Build the wardrobe panel into a container element (Outfit & Weapon only)
 // ─────────────────────────────────────────────────────────────────────────────
 function buildWardrobeUI(container, previewCanvas) {
   container.innerHTML = '';
+  _syncEquippedState();
 
   Object.entries(EQUIPMENT_SLOTS).forEach(([slot, def]) => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex; align-items:center; gap:6px; margin-bottom:5px;';
+    row.style.cssText = 'display:flex; flex-direction:column; gap:4px; margin-bottom:8px;';
 
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex; align-items:center; justify-content:space-between;';
     const label = document.createElement('span');
     label.textContent = def.label;
-    label.style.cssText = 'font-size:11px; color:#aaa; width:76px; flex-shrink:0; font-family:"Be Vietnam Pro",sans-serif;';
-    row.appendChild(label);
+    label.style.cssText = 'font-size:11px; font-weight:700; color:#ffcc00; font-family:"Be Vietnam Pro",sans-serif;';
+    header.appendChild(label);
+    row.appendChild(header);
+
+    const btnGrid = document.createElement('div');
+    btnGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:6px;';
 
     def.items.forEach(item => {
+      const isUnlocked = _isItemUnlocked(slot, item.id);
+      const isSelected = equipment[slot] === item.id;
+
       const btn = document.createElement('button');
-      btn.dataset.slot   = slot;
+      btn.dataset.slot = slot;
       btn.dataset.itemId = item.id;
       btn.style.cssText = `
-        flex:1; padding:4px 6px; font-size:10px; font-weight:700;
-        font-family:'Be Vietnam Pro',sans-serif; cursor:pointer;
-        border-radius:5px; border:2px solid transparent;
-        background:${item.color}22; color:#eee;
-        display:flex; align-items:center; gap:5px; transition:border-color 0.1s;
+        padding:6px 8px; font-size:10px; font-weight:700;
+        font-family:'Be Vietnam Pro',sans-serif; cursor:${isUnlocked ? 'pointer' : 'not-allowed'};
+        border-radius:6px; border:2px solid ${isSelected ? '#ffcc00' : 'rgba(255,255,255,0.1)'};
+        background:${isSelected ? item.color + '44' : (isUnlocked ? item.color + '1a' : 'rgba(30,30,40,0.6)')};
+        color:${isUnlocked ? '#eee' : '#666'};
+        display:flex; align-items:center; gap:6px; opacity:${isUnlocked ? '1' : '0.5'};
+        transition:all 0.15s;
       `;
 
-      // Color swatch
+      // Swatch
       const swatch = document.createElement('span');
-      swatch.style.cssText = `width:10px;height:10px;border-radius:2px;background:${item.color};flex-shrink:0;`;
+      swatch.style.cssText = `width:10px;height:10px;border-radius:2px;background:${item.color};flex-shrink:0;${isUnlocked ? '' : 'filter:grayscale(1);'}`;
       btn.appendChild(swatch);
-      btn.appendChild(document.createTextNode(item.name));
 
-      // Selected state
-      if (equipment[slot] === item.id) {
-        btn.style.borderColor = '#ffcc00';
-        btn.style.background  = item.color + '44';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = item.name + (isUnlocked ? '' : ' 🔒');
+      nameSpan.style.cssText = 'flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      btn.appendChild(nameSpan);
+
+      if (isSelected) {
+        btn.style.boxShadow = `0 0 8px ${item.color}88`;
       }
 
-      btn.addEventListener('click', () => {
-        // Deselect siblings
-        container.querySelectorAll(`[data-slot="${slot}"]`).forEach(b => {
-          const sibling = EQUIPMENT_SLOTS[slot].items.find(i => i.id === b.dataset.itemId);
-          b.style.borderColor = 'transparent';
-          b.style.background  = (sibling?.color || '#888') + '22';
-        });
-        // Select this
-        btn.style.borderColor = '#ffcc00';
-        btn.style.background  = item.color + '44';
-        // Update state
-        equipment[slot] = item.id;
-        if (window.gameState) {
-          window.gameState.equipment = { ...equipment };
-          window.gameState.avatarPreset = null;
-        }
-        // Redraw preview
-        if (previewCanvas) drawWardrobePreview(previewCanvas);
-      });
+      if (isUnlocked) {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll(`[data-slot="${slot}"]`).forEach(b => {
+            const sibItem = def.items.find(i => i.id === b.dataset.itemId);
+            b.style.borderColor = 'rgba(255,255,255,0.1)';
+            b.style.background = (sibItem?.color || '#888') + '1a';
+            b.style.boxShadow = 'none';
+          });
+          btn.style.borderColor = '#ffcc00';
+          btn.style.background = item.color + '44';
+          btn.style.boxShadow = `0 0 8px ${item.color}88`;
 
-      row.appendChild(btn);
+          equipment[slot] = item.id;
+          try {
+            localStorage.setItem(LS_EQUIPPED_KEY, JSON.stringify(equipment));
+          } catch(e) {}
+
+          _syncEquippedState();
+
+          if (previewCanvas) drawWardrobePreview(previewCanvas);
+
+          const sec = document.getElementById('wardrobe-slots')?.parentElement?.parentElement;
+          if (sec && window.__rebuildSetPicker) window.__rebuildSetPicker(sec);
+        });
+      }
+
+      btnGrid.appendChild(btn);
     });
 
+    row.appendChild(btnGrid);
     container.appendChild(row);
   });
 }
@@ -165,18 +223,13 @@ function buildWardrobeUI(container, previewCanvas) {
 // Thunder Set — called from hud.js milestone popup
 // ─────────────────────────────────────────────────────────────────────────────
 export function applyThunderSet() {
-  equipment = { hat:'helm', shirt:'vest', pants:'cargo', shoes:'boots', weapon:'sword' };
-  if (window.gameState) {
-    window.gameState.equipment    = { ...equipment };
-    window.gameState.thunderSet   = true;
-    window.gameState.damagePerHit = 2;
-  }
-  // Rebuild wardrobe UI to show Thunder colors
+  equipment = { outfit: 'thunder', weapon: 'thunder' };
+  try { localStorage.setItem(LS_EQUIPPED_KEY, JSON.stringify(equipment)); } catch(e) {}
+  _syncEquippedState();
   const container = document.getElementById('wardrobe-slots');
   const preview   = document.getElementById('wardrobe-preview');
   if (container) buildWardrobeUI(container, preview);
   if (preview)   drawWardrobePreview(preview);
-  // Flash the preview canvas gold
   if (preview) {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,255,255,0.18);pointer-events:none;z-index:9999;transition:opacity 0.8s';
@@ -450,9 +503,9 @@ let currentState;
 export function init(gameState) {
   currentState = gameState;
 
-  // Sync equipment to gameState
-  if (!window.gameState.equipment) window.gameState.equipment = { ...equipment };
-  else equipment = { ...window.gameState.equipment };
+  // Sync equipment and equipped state to gameState
+  equipment = _loadEquipped();
+  _syncEquippedState();
 
   // Room code display
   const roomCodeEl = document.getElementById('lobby-room-code');
@@ -503,7 +556,7 @@ function _buildStudentLobby(container, gameState) {
   const user = window.gameState || {};
   const inventory = user.inventory || { thunder: [], fire: [], frost: [] };
   const unlockedSets = user.unlockedSets || [];
-  const FULL_PIECES = ['hat','shirt','pants','shoes','weapon'];
+  const FULL_PIECES = ['weapon', 'outfit'];
 
   const BOSSES = [
     { id:'thunder', label:'⚡ Lôi Quái',    sub:'Sét thần',    color:'#00cfff', glow:'rgba(0,200,255,0.35)' },
@@ -548,7 +601,7 @@ function _buildStudentLobby(container, gameState) {
       <span style="font-size:18px;">${b.label.split(' ')[0]}</span>
       <span style="font-size:11px;font-weight:700;color:${b.color};">${b.label.slice(b.label.indexOf(' ')+1)}</span>
       <span style="font-size:9px;color:#888;">${b.sub}</span>
-      <span style="font-size:8px;color:${isFull ? b.color : '#555'};margin-top:2px;">${isFull ? '✦ Đầy bộ' : `${count}/5 mảnh`}</span>
+      <span style="font-size:8px;color:${isFull ? b.color : '#555'};margin-top:2px;">${isFull ? '✦ Đầy bộ' : `${count}/2 món`}</span>
     `;
     btn.addEventListener('click', () => {
       bossGrid.querySelectorAll('button').forEach(x => {
@@ -626,20 +679,79 @@ function _buildStudentLobby(container, gameState) {
   buildWardrobeUI(slotsWrap, previewCanvas);
   drawWardrobePreview(previewCanvas);
 
-  // Inventory pieces display
+  // Inventory cards display (2 cards per element: Trang Phục & Vũ Khí)
   const invEl = document.createElement('div');
-  invEl.style.cssText = 'margin-top:8px;display:flex;flex-direction:column;gap:4px;';
+  invEl.style.cssText = 'margin-top:10px; display:flex; flex-direction:column; gap:10px;';
+
+  const invTitle = document.createElement('div');
+  invTitle.textContent = '💎 Bộ Sưu Tập Trang Bị Nguyên Tố:';
+  invTitle.style.cssText = 'font-size:11px; font-weight:700; color:#ffcc00; font-family:"Be Vietnam Pro",sans-serif;';
+  invEl.appendChild(invTitle);
+
   BOSSES.forEach(b => {
-    const pieces  = inventory[b.id] || [];
-    const isFull  = FULL_PIECES.every(p => pieces.includes(p));
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    row.innerHTML = `
-      <span style="font-size:10px;width:90px;color:${b.color};font-weight:700;font-family:'Be Vietnam Pro',sans-serif;">${b.label}</span>
-      ${FULL_PIECES.map(p => `<span title="${p}" style="font-size:14px;opacity:${pieces.includes(p)?'1':'0.18'};">${{hat:'🎩',shirt:'👕',pants:'👖',shoes:'👟',weapon:'⚔️'}[p]}</span>`).join('')}
-      ${isFull ? `<span style="font-size:9px;color:${b.color};font-weight:700;margin-left:4px;">✦ KỸ NĂNG</span>` : ''}
+    const pieces = inventory[b.id] || [];
+    const hasOutfit = pieces.includes('outfit') || window._godFather;
+    const hasWeapon = pieces.includes('weapon') || window._godFather;
+    const isFull = hasOutfit && hasWeapon;
+
+    const elemGroup = document.createElement('div');
+    elemGroup.style.cssText = `
+      background:rgba(255,255,255,0.03); border:1.5px solid ${isFull ? b.color : 'rgba(255,255,255,0.08)'};
+      border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:8px;
+      ${isFull ? `box-shadow:0 0 12px ${b.glow};` : ''}
     `;
-    invEl.appendChild(row);
+
+    // Element header
+    const elemHeader = document.createElement('div');
+    elemHeader.style.cssText = 'display:flex; align-items:center; justify-content:space-between;';
+    elemHeader.innerHTML = `
+      <span style="font-size:12px; font-weight:800; color:${b.color}; font-family:'Be Vietnam Pro',sans-serif;">${b.label}</span>
+      <span style="font-size:10px; font-weight:700; color:${isFull ? b.color : '#888'}; font-family:'Be Vietnam Pro',sans-serif;">
+        ${isFull ? '✦ ĐỦ BỘ (Sát thương x2)' : `${(hasOutfit?1:0)+(hasWeapon?1:0)}/2 Món`}
+      </span>
+    `;
+    elemGroup.appendChild(elemHeader);
+
+    // 2 Cards container
+    const cardsRow = document.createElement('div');
+    cardsRow.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:8px;';
+
+    // Card 1: Trang Phục
+    const cardOutfit = document.createElement('div');
+    cardOutfit.style.cssText = `
+      background:${hasOutfit ? b.glow : 'rgba(0,0,0,0.3)'};
+      border:1.5px solid ${hasOutfit ? b.color : 'rgba(255,255,255,0.1)'};
+      border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:3px;
+    `;
+    cardOutfit.innerHTML = `
+      <div style="font-size:11px; font-weight:700; color:${hasOutfit ? '#fff' : '#aaa'}; font-family:'Be Vietnam Pro',sans-serif;">
+        👕 Trang Phục ${b.label.split(' ')[1] || ''}
+      </div>
+      <div style="font-size:9px; color:${hasOutfit ? '#06d6a0' : '#888'}; font-weight:600; font-family:'Be Vietnam Pro',sans-serif;">
+        ${hasOutfit ? '✓ Đã mở khóa' : '🔒 Đạt 30/30 hoặc 50/50'}
+      </div>
+    `;
+    cardsRow.appendChild(cardOutfit);
+
+    // Card 2: Vũ Khí
+    const cardWeapon = document.createElement('div');
+    cardWeapon.style.cssText = `
+      background:${hasWeapon ? b.glow : 'rgba(0,0,0,0.3)'};
+      border:1.5px solid ${hasWeapon ? b.color : 'rgba(255,255,255,0.1)'};
+      border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:3px;
+    `;
+    cardWeapon.innerHTML = `
+      <div style="font-size:11px; font-weight:700; color:${hasWeapon ? '#fff' : '#aaa'}; font-family:'Be Vietnam Pro',sans-serif;">
+        ⚔️ Vũ Khí ${b.label.split(' ')[1] || ''}
+      </div>
+      <div style="font-size:9px; color:${hasWeapon ? '#06d6a0' : '#888'}; font-weight:600; font-family:'Be Vietnam Pro',sans-serif;">
+        ${hasWeapon ? '✓ Đã mở khóa' : '🔒 Đạt 20/20 hoặc 50/50'}
+      </div>
+    `;
+    cardsRow.appendChild(cardWeapon);
+
+    elemGroup.appendChild(cardsRow);
+    invEl.appendChild(elemGroup);
   });
   wardSection.appendChild(invEl);
 
