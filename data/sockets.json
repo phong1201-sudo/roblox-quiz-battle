@@ -1,41 +1,123 @@
 {
   "player": {
+    "armMeshName": "Arm_L",
     "shoulderX": -0.65,
     "shoulderY": 1.2,
-    "shoulderZ": 0.0,
+    "shoulderZ": 0,
+    "shoulderPivot": {
+      "x": -0.65,
+      "y": 1.2,
+      "z": 0
+    },
     "weapon": {
-      "offsetX": 0.0,
+      "offsetX": 0,
       "offsetY": -0.4,
       "offsetZ": 0.1,
-      "rotX": 0.0,
-      "rotY": 1.5708,
-      "rotZ": -0.7854,
+      "rotX": 0,
+      "rotY": 1.5707963267948966,
+      "rotZ": -0.7853981633974483,
       "angle": -45
     },
-    "default": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 },
-    "thunder": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 },
-    "fire": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 },
-    "frost": { "handX": 0.65, "handY": 0.85, "handZ": 0.1, "weaponAngle": -45 }
+    "weaponOffset": {
+      "offsetX": 0,
+      "offsetY": -0.4,
+      "offsetZ": 0.1,
+      "rotX": 0,
+      "rotY": 1.5707963267948966,
+      "rotZ": -0.7853981633974483,
+      "angle": -45
+    },
+    "slashArc": {
+      "idleAngle": 0,
+      "windupAngle": 60,
+      "slashAngle": -75,
+      "arc": 135
+    },
+    "default": {
+      "handX": 0.65,
+      "handY": 1.2,
+      "handZ": 0,
+      "weaponAngle": -45
+    },
+    "thunder": {
+      "handX": 0.65,
+      "handY": 1.2,
+      "handZ": 0,
+      "weaponAngle": -45
+    },
+    "fire": {
+      "handX": 0.65,
+      "handY": 1.2,
+      "handZ": 0,
+      "weaponAngle": -45
+    },
+    "frost": {
+      "handX": 0.65,
+      "handY": 1.2,
+      "handZ": 0,
+      "weaponAngle": -45
+    }
   },
   "boss": {
+    "armMeshName": "Arm_R",
     "shoulderX": -1.8,
     "shoulderY": 2.2,
     "shoulderZ": 0.2,
+    "shoulderPivot": {
+      "x": -1.8,
+      "y": 2.2,
+      "z": 0.2
+    },
     "weapon": {
-      "offsetX": 0.0,
+      "offsetX": 0,
       "offsetY": -0.6,
       "offsetZ": 0.5,
-      "rotX": 0.0,
+      "rotX": 0,
       "rotY": -1.5708,
       "rotZ": 0.5236,
       "angle": 30
     },
-    "thunder": { "handX": -0.8, "handY": 1.2, "handZ": 0.1 },
-    "fire": { "handX": -0.9, "handY": 1.3, "handZ": 0.1 },
-    "frost": { "handX": -0.9, "handY": 1.3, "handZ": 0.1 }
+    "weaponOffset": {
+      "offsetX": 0,
+      "offsetY": -0.6,
+      "offsetZ": 0.5,
+      "rotX": 0,
+      "rotY": -1.5708,
+      "rotZ": 0.5236,
+      "angle": 30
+    },
+    "slashArc": {
+      "idleAngle": 0,
+      "windupAngle": 80,
+      "slashAngle": -80,
+      "arc": 160
+    },
+    "thunder": {
+      "handX": -0.8,
+      "handY": 1.2,
+      "handZ": 0.1
+    },
+    "fire": {
+      "handX": -0.9,
+      "handY": 1.3,
+      "handZ": 0.1
+    },
+    "frost": {
+      "handX": -0.9,
+      "handY": 1.3,
+      "handZ": 0.1
+    }
   },
   "weapon": {
-    "player_sword": { "hiltX": 0.0, "hiltY": -0.5, "hiltZ": 0.0 },
-    "boss_hammer": { "hiltX": 0.0, "hiltY": -0.6, "hiltZ": 0.0 }
+    "player_sword": {
+      "hiltX": 0,
+      "hiltY": -0.5,
+      "hiltZ": 0
+    },
+    "boss_hammer": {
+      "hiltX": 0,
+      "hiltY": -0.6,
+      "hiltZ": 0
+    }
   }
 }

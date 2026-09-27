@@ -313,9 +313,10 @@ function _setupBossArmPivot(element) {
   if (!bossGroup) return;
 
   const savedPivot = _bossSocketsConfig?.boss || {};
-  let shoulderX = savedPivot.shoulderX ?? -1.8;
-  let shoulderY = savedPivot.shoulderY ?? 2.2;
-  let shoulderZ = savedPivot.shoulderZ ?? 0.2;
+  const sPivot = savedPivot.shoulderPivot || {};
+  let shoulderX = sPivot.x ?? savedPivot.shoulderX ?? -1.8;
+  let shoulderY = sPivot.y ?? savedPivot.shoulderY ?? 2.2;
+  let shoulderZ = sPivot.z ?? savedPivot.shoulderZ ?? 0.2;
 
   // If using procedural boss (height ~6.0 vs custom GLB 4.0), scale if in normalized 4.0 units
   if (!isCustomBoss && shoulderY < 2.0) {
@@ -324,7 +325,7 @@ function _setupBossArmPivot(element) {
     shoulderZ = shoulderZ * 2.0;
   }
 
-  const savedWeapon = savedPivot.weapon || {};
+  const savedWeapon = savedPivot.weaponOffset || savedPivot.weapon || {};
   const wOffsetX = savedWeapon.offsetX ?? 0.0;
   const wOffsetY = savedWeapon.offsetY ?? -0.6;
   const wOffsetZ = savedWeapon.offsetZ ?? 0.5;
@@ -337,7 +338,8 @@ function _setupBossArmPivot(element) {
   bossCombatArmCompound = new THREE.Group();
   bossCombatArmCompound.name = 'BossCombatArmCompound';
   bossCombatArmCompound.position.set(shoulderX, shoulderY, shoulderZ);
-  bossCombatArmCompound.rotation.set(0, 0, 0);
+  const initialIdleAngle = ((savedPivot.slashArc?.idleAngle ?? 0) * Math.PI) / 180;
+  bossCombatArmCompound.rotation.set(0, 0, initialIdleAngle);
   bossArmPivot = bossCombatArmCompound;
 
   const hammer = _createBossHammerMesh(element);
@@ -351,9 +353,9 @@ function _setupBossArmPivot(element) {
 
 /**
  * Bulletproof Single-Rotation Boss Hammer Slam:
- * - Giơ búa: Rotate compound arm backward/overhead +80 deg trong 160ms (Quadratic.Out)
- * - Đập búa: Rotate compound arm đập mạnh xuống sàn -80 deg trong 130ms (Quadratic.In) -> Screen shake + lửa/băng phun trào
- * - Hồi thế: Reset về tư thế chờ trong 150ms (Quadratic.Out)
+ * - Giơ búa: Rotate compound arm backward/overhead theo windupAngle trong 160ms (Quadratic.Out)
+ * - Đập búa: Rotate compound arm đập mạnh xuống sàn theo slashAngle trong 130ms (Quadratic.In) -> Screen shake + lửa/băng phun trào
+ * - Hồi thế: Reset về idleAngle trong 150ms (Quadratic.Out)
  */
 export function playGuaranteedBossHammerSlam(element, onImpact, onComplete) {
   const pivot = bossCombatArmCompound || bossArmPivot || getBossArmPivot();
@@ -363,24 +365,30 @@ export function playGuaranteedBossHammerSlam(element, onImpact, onComplete) {
     return;
   }
 
-  const raiseAngle = (80 * Math.PI) / 180;  // +80 deg backward/overhead
-  const smashAngle = (-80 * Math.PI) / 180; // -80 deg slam into floor
+  const arcCfg = _bossSocketsConfig?.boss?.slashArc || {};
+  const idleDeg = arcCfg.idleAngle ?? 0;
+  const raiseDeg = arcCfg.windupAngle ?? (idleDeg + (arcCfg.arc ? arcCfg.arc * 0.5 : 80));
+  const smashDeg = arcCfg.slashAngle ?? (idleDeg - (arcCfg.arc ? arcCfg.arc * 0.5 : 80));
 
-  // Phase 1 (Giơ búa overhead +80 deg trong 160ms)
+  const idleAngle = (idleDeg * Math.PI) / 180;
+  const raiseAngle = (raiseDeg * Math.PI) / 180;  // backward/overhead
+  const smashAngle = (smashDeg * Math.PI) / 180; // slam into floor
+
+  // Phase 1 (Giơ búa overhead trong 160ms)
   new TWEEN.Tween(pivot.rotation)
     .to({ z: raiseAngle }, 160)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2 (Đập búa slam xuống sàn -80 deg trong 130ms) -> Screen shake + lửa/băng phun trào
+      // Phase 2 (Đập búa slam xuống sàn trong 130ms) -> Screen shake + lửa/băng phun trào
       new TWEEN.Tween(pivot.rotation)
         .to({ z: smashAngle }, 130)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           if (onImpact) onImpact();
 
-          // Phase 3 (Hồi thế về 0 deg trong 150ms)
+          // Phase 3 (Hồi thế về idleAngle trong 150ms)
           new TWEEN.Tween(pivot.rotation)
-            .to({ z: 0 }, 150)
+            .to({ z: idleAngle }, 150)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
               if (onComplete) onComplete();

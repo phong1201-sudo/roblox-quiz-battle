@@ -311,9 +311,11 @@ const socketsFilePath = path.join(__dirname, '../data/sockets.json');
 
 const DEFAULT_SOCKETS = {
   player: {
+    armMeshName: 'Arm_L',
     shoulderX: -0.65,
     shoulderY: 1.2,
     shoulderZ: 0.0,
+    shoulderPivot: { x: -0.65, y: 1.2, z: 0.0 },
     weapon: {
       offsetX: 0.0,
       offsetY: -0.4,
@@ -323,15 +325,32 @@ const DEFAULT_SOCKETS = {
       rotZ: -0.7854,
       angle: -45
     },
+    weaponOffset: {
+      offsetX: 0.0,
+      offsetY: -0.4,
+      offsetZ: 0.1,
+      rotX: 0.0,
+      rotY: 1.5708,
+      rotZ: -0.7854,
+      angle: -45
+    },
+    slashArc: {
+      idleAngle: 0,
+      windupAngle: 60,
+      slashAngle: -75,
+      arc: 135
+    },
     default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     frost:   { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 }
   },
   boss: {
+    armMeshName: 'Arm_R',
     shoulderX: -1.8,
     shoulderY: 2.2,
     shoulderZ: 0.2,
+    shoulderPivot: { x: -1.8, y: 2.2, z: 0.2 },
     weapon: {
       offsetX: 0.0,
       offsetY: -0.6,
@@ -340,6 +359,21 @@ const DEFAULT_SOCKETS = {
       rotY: -1.5708,
       rotZ: 0.5236,
       angle: 30
+    },
+    weaponOffset: {
+      offsetX: 0.0,
+      offsetY: -0.6,
+      offsetZ: 0.5,
+      rotX: 0.0,
+      rotY: -1.5708,
+      rotZ: 0.5236,
+      angle: 30
+    },
+    slashArc: {
+      idleAngle: 0,
+      windupAngle: 80,
+      slashAngle: -80,
+      arc: 160
     },
     thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
     fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
@@ -360,7 +394,12 @@ function readSocketsConfig() {
       return DEFAULT_SOCKETS;
     }
     const raw = fs.readFileSync(socketsFilePath, 'utf8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return {
+      player: { ...DEFAULT_SOCKETS.player, ...(parsed.player || {}) },
+      boss:   { ...DEFAULT_SOCKETS.boss,   ...(parsed.boss || {}) },
+      weapon: { ...DEFAULT_SOCKETS.weapon, ...(parsed.weapon || {}) }
+    };
   } catch (e) {
     console.error('[sockets] Error reading sockets.json:', e);
     return DEFAULT_SOCKETS;
@@ -393,6 +432,92 @@ app.post('/api/admin/sockets', (req, res) => {
     console.error('[sockets] Error writing sockets.json:', e);
     res.status(500).json({ success: false, error: e.message });
   }
+});
+
+// ── Admin: Dedicated 3-Viewport Compound Rigging Save & Get Endpoints ────────
+app.post('/api/admin/rigging/save', (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload || !payload.target) {
+      return res.status(400).json({ success: false, error: 'Target (player or boss) is required' });
+    }
+    const current = readSocketsConfig();
+    const target = payload.target === 'boss' ? 'boss' : 'player';
+    if (!current[target]) current[target] = {};
+
+    const armMeshName = payload.armMeshName || current[target].armMeshName || (target === 'player' ? 'Arm_L' : 'Arm_R');
+    const shoulderPivot = payload.shoulderPivot || {
+      x: current[target].shoulderX ?? (target === 'player' ? -0.65 : -1.8),
+      y: current[target].shoulderY ?? (target === 'player' ? 1.2 : 2.2),
+      z: current[target].shoulderZ ?? (target === 'player' ? 0.0 : 0.2),
+    };
+    const weaponOffset = payload.weaponOffset || current[target].weapon || {};
+    const slashArc = payload.slashArc || current[target].slashArc || {
+      idleAngle: 0,
+      windupAngle: target === 'player' ? 60 : 80,
+      slashAngle: target === 'player' ? -75 : -80,
+      arc: target === 'player' ? 135 : 160
+    };
+
+    current[target].armMeshName = armMeshName;
+    current[target].shoulderPivot = shoulderPivot;
+    current[target].shoulderX = shoulderPivot.x;
+    current[target].shoulderY = shoulderPivot.y;
+    current[target].shoulderZ = shoulderPivot.z;
+
+    const angle = weaponOffset.angle ?? (target === 'player' ? -45 : 30);
+    const rotX = weaponOffset.rotX ?? 0.0;
+    const rotY = weaponOffset.rotY ?? (target === 'player' ? Math.PI / 2 : -Math.PI / 2);
+    const rotZ = weaponOffset.rotZ ?? ((angle * Math.PI) / 180);
+
+    const mergedWeapon = {
+      ...(current[target].weapon || {}),
+      ...weaponOffset,
+      offsetX: weaponOffset.offsetX ?? 0.0,
+      offsetY: weaponOffset.offsetY ?? (target === 'player' ? -0.4 : -0.6),
+      offsetZ: weaponOffset.offsetZ ?? (target === 'player' ? 0.1 : 0.5),
+      angle,
+      rotX,
+      rotY,
+      rotZ
+    };
+
+    current[target].weapon = mergedWeapon;
+    current[target].weaponOffset = mergedWeapon;
+    current[target].slashArc = slashArc;
+
+    // Sync legacy keys
+    if (target === 'player') {
+      ['default', 'thunder', 'fire', 'frost'].forEach(k => {
+        if (!current.player[k]) current.player[k] = {};
+        current.player[k].handX = -shoulderPivot.x;
+        current.player[k].handY = shoulderPivot.y;
+        current.player[k].handZ = shoulderPivot.z;
+        current.player[k].weaponAngle = angle;
+      });
+    } else {
+      ['thunder', 'fire', 'frost'].forEach(k => {
+        if (!current.boss[k]) current.boss[k] = {};
+        current.boss[k].handX = shoulderPivot.x;
+        current.boss[k].handY = shoulderPivot.y;
+        current.boss[k].handZ = shoulderPivot.z;
+      });
+    }
+
+    const dataDir = path.dirname(socketsFilePath);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(socketsFilePath, JSON.stringify(current, null, 2), 'utf8');
+    console.log(`[rigging] Saved rigging configuration for ${target}:`, { armMeshName, shoulderPivot, weaponOffset: mergedWeapon, slashArc });
+    res.json({ success: true, message: `Lưu cấu hình khớp & đòn chém cho ${target === 'player' ? 'Nhân vật' : 'Boss'} thành công!`, sockets: current, config: current });
+  } catch (e) {
+    console.error('[rigging] Error saving rigging:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get(['/api/admin/rigging', '/api/rigging'], (req, res) => {
+  const config = readSocketsConfig();
+  res.json({ success: true, sockets: config, rigging: config });
 });
 
 // ── Ensure runtime directories exist (important for Render ephemeral FS) ─────

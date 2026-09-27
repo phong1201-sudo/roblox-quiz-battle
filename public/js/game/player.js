@@ -479,11 +479,12 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
 
   // Read compound limb and weapon transform configuration
   const savedPivot = _socketsConfig?.player || {};
-  const shoulderX = savedPivot.shoulderX ?? (savedPivot.default?.handX ? -Math.abs(savedPivot.default.handX) : -0.65);
-  const shoulderY = savedPivot.shoulderY ?? (savedPivot.default?.handY ?? 1.2);
-  const shoulderZ = savedPivot.shoulderZ ?? (savedPivot.default?.handZ ?? 0.0);
+  const sPivot = savedPivot.shoulderPivot || {};
+  const shoulderX = sPivot.x ?? savedPivot.shoulderX ?? (savedPivot.default?.handX ? -Math.abs(savedPivot.default.handX) : -0.65);
+  const shoulderY = sPivot.y ?? savedPivot.shoulderY ?? (savedPivot.default?.handY ?? 1.2);
+  const shoulderZ = sPivot.z ?? savedPivot.shoulderZ ?? (savedPivot.default?.handZ ?? 0.0);
 
-  const savedWeapon = savedPivot.weapon || {};
+  const savedWeapon = savedPivot.weaponOffset || savedPivot.weapon || {};
   const wOffsetX = savedWeapon.offsetX ?? 0.0;
   const wOffsetY = savedWeapon.offsetY ?? -0.4;
   const wOffsetZ = savedWeapon.offsetZ ?? 0.1;
@@ -492,11 +493,12 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
   const wRotY = savedWeapon.rotY ?? (Math.PI / 2);
   const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
 
-  // Compound arm container
+  // Compound arm container centered at calibrated shoulderPivot
   combatArmCompound = new THREE.Group();
   combatArmCompound.name = 'PlayerCombatArmCompound';
   combatArmCompound.position.set(shoulderX, shoulderY, shoulderZ);
-  combatArmCompound.rotation.set(0, 0, 0);
+  const initialIdleAngle = ((savedPivot.slashArc?.idleAngle ?? 0) * Math.PI) / 180;
+  combatArmCompound.rotation.set(0, 0, initialIdleAngle);
   playerArmPivot = combatArmCompound;
 
   if (weapGltf && weapGltf.scene) {
@@ -513,7 +515,7 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
     const localHiltY = - scaledBox.min.y;
     const localHiltZ = - (scaledBox.min.z + scaledBox.max.z) / 2;
 
-    // Mount weapon as locked child with saved local offset
+    // Mount weapon as locked child with saved local offset (blade tip points towards Boss +X)
     weaponModel.position.set(localHiltX + wOffsetX, localHiltY + wOffsetY, localHiltZ + wOffsetZ);
     weaponModel.rotation.set(wRotX, wRotY, wRotZ);
 
@@ -530,7 +532,7 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
   // Attach combatArmCompound directly to playerGroup
   playerGroup.add(combatArmCompound);
   weaponSocket = combatArmCompound;
-  console.log(`[player] Unified combatArmCompound mounted at (${shoulderX}, ${shoulderY}, ${shoulderZ}) with weapon offset (${wOffsetX}, ${wOffsetY}, ${wOffsetZ}) at ${wAngle}°`);
+  console.log(`[player] Unified combatArmCompound mounted at (${shoulderX.toFixed(2)}, ${shoulderY.toFixed(2)}, ${shoulderZ.toFixed(2)}) with weapon offset (${wOffsetX}, ${wOffsetY}, ${wOffsetZ}) at ${wAngle}°`);
 
   if (activeElement) _buildElementalAura(activeElement);
   console.log(`[player] 3D GLB model loaded & socketed for ${el}`);
@@ -953,24 +955,30 @@ export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
     return;
   }
 
-  const windupAngle = (60 * Math.PI) / 180;   // +60 deg
-  const strikeAngle = (-75 * Math.PI) / 180;  // -75 deg
+  const arcCfg = _socketsConfig?.player?.slashArc || {};
+  const idleDeg = arcCfg.idleAngle ?? 0;
+  const windupDeg = arcCfg.windupAngle ?? (idleDeg + (arcCfg.arc ? arcCfg.arc * 0.45 : 60));
+  const strikeDeg = arcCfg.slashAngle ?? (idleDeg - (arcCfg.arc ? arcCfg.arc * 0.55 : 75));
 
-  // Phase 1: Wind-up (Giương kiếm +60 deg trong 100ms)
+  const idleAngle = (idleDeg * Math.PI) / 180;
+  const windupAngle = (windupDeg * Math.PI) / 180;
+  const strikeAngle = (strikeDeg * Math.PI) / 180;
+
+  // Phase 1: Wind-up (Giương kiếm)
   new TWEEN.Tween(pivot.rotation)
     .to({ z: windupAngle }, 100)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2: Slash Strike (Chém bổ xuống -75 deg trong 120ms) -> Trigger hit damage
+      // Phase 2: Slash Strike (Chém bổ xuống theo slashArc) -> Trigger hit damage
       new TWEEN.Tween(pivot.rotation)
         .to({ z: strikeAngle }, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           if (onHit) onHit();
 
-          // Phase 3: Recover (Thu tay về 0 deg trong 100ms)
+          // Phase 3: Recover (Thu tay về góc idle)
           new TWEEN.Tween(pivot.rotation)
-            .to({ z: 0 }, 100)
+            .to({ z: idleAngle }, 100)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
               if (onComplete) onComplete();

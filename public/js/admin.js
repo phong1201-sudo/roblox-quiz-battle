@@ -1,10 +1,19 @@
-// Admin API client helper for 3D GLB/GLTF models, Character Art and 3D Compound Rigging
+// Admin API client helper for 3D GLB/GLTF models, Character Art and 3-Viewport Compound Rigging
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(draco);
 
 export async function upload3DModel(element, type, file) {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('element', element);
-  fd.append('type', type); // 'character' or 'weapon'
+  fd.append('type', type);
 
   const res = await fetch('/api/admin/model/upload', {
     method: 'POST',
@@ -86,24 +95,30 @@ export async function saveSockets(socketsConfig) {
   return data;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3D Visual Socket & Compound Rigging Calibrator Engine
-// ─────────────────────────────────────────────────────────────────────────────
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+export async function fetchRigging() {
+  const res = await fetch('/api/admin/rigging');
+  const data = await res.json();
+  return data.sockets || data.rigging || data;
+}
 
-const draco = new DRACOLoader();
-draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(draco);
+export async function saveRigging(payload) {
+  const res = await fetch('/api/admin/rigging/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || 'Lưu cấu hình rigging thất bại');
+  return data;
+}
 
 export const DEFAULT_SOCKETS_CONFIG = {
   player: {
+    armMeshName: 'Arm_L',
     shoulderX: -0.65,
     shoulderY: 1.2,
     shoulderZ: 0.0,
+    shoulderPivot: { x: -0.65, y: 1.2, z: 0.0 },
     weapon: {
       offsetX: 0.0,
       offsetY: -0.4,
@@ -113,15 +128,32 @@ export const DEFAULT_SOCKETS_CONFIG = {
       rotZ: -0.7854,
       angle: -45
     },
+    weaponOffset: {
+      offsetX: 0.0,
+      offsetY: -0.4,
+      offsetZ: 0.1,
+      rotX: 0.0,
+      rotY: 1.5708,
+      rotZ: -0.7854,
+      angle: -45
+    },
+    slashArc: {
+      idleAngle: 0,
+      windupAngle: 60,
+      slashAngle: -75,
+      arc: 135
+    },
     default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     frost:   { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 }
   },
   boss: {
+    armMeshName: 'Arm_R',
     shoulderX: -1.8,
     shoulderY: 2.2,
     shoulderZ: 0.2,
+    shoulderPivot: { x: -1.8, y: 2.2, z: 0.2 },
     weapon: {
       offsetX: 0.0,
       offsetY: -0.6,
@@ -130,6 +162,21 @@ export const DEFAULT_SOCKETS_CONFIG = {
       rotY: -1.5708,
       rotZ: 0.5236,
       angle: 30
+    },
+    weaponOffset: {
+      offsetX: 0.0,
+      offsetY: -0.6,
+      offsetZ: 0.5,
+      rotX: 0.0,
+      rotY: -1.5708,
+      rotZ: 0.5236,
+      angle: 30
+    },
+    slashArc: {
+      idleAngle: 0,
+      windupAngle: 80,
+      slashAngle: -80,
+      arc: 160
     },
     thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
     fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
@@ -141,650 +188,916 @@ export const DEFAULT_SOCKETS_CONFIG = {
   }
 };
 
-/**
- * Initializes the Visual Socket Calibrator on container elements
- */
-export function initVisualSocketCalibrator(opts = {}) {
-  const {
-    containerEl,
-    selectTargetEl,
-    btnTabStep1, btnTabStep2, paneStep1, paneStep2,
-    sliderShoulderX, numShoulderX, valShoulderX,
-    sliderShoulderY, numShoulderY, valShoulderY,
-    sliderShoulderZ, numShoulderZ, valShoulderZ,
-    btnGotoStep2, btnGotoStep1,
-    sliderOffsetX, numOffsetX, valOffsetX,
-    sliderOffsetY, numOffsetY, valOffsetY,
-    sliderOffsetZ, numOffsetZ, valOffsetZ,
-    sliderTiltAngle, numTiltAngle, valTiltAngle,
-    btnTestSwing,
-    // Legacy fallback bindings
-    sliderX, numX, valX,
-    sliderY, numY, valY,
-    sliderZ, numZ, valZ,
-    groupAngle, sliderAngle, numAngle, valAngle,
-    btnSave, btnReset, statusToast
-  } = opts;
+// ─────────────────────────────────────────────────────────────────────────────
+// 3-VIEWPORT MESH SEGMENTER & SHOULDER-LOCKED COMPOUND RIGGING CALIBRATOR
+// ─────────────────────────────────────────────────────────────────────────────
+export function init3ViewportCalibrator() {
+  const vpPlayerEl = document.getElementById('viewport-player');
+  const vpBossEl   = document.getElementById('viewport-boss');
+  const vpWeaponEl = document.getElementById('viewport-weapon');
 
-  if (!containerEl) return null;
+  if (!vpPlayerEl || !vpBossEl || !vpWeaponEl) {
+    console.warn('[calibrator] 3 viewports not found in DOM');
+    return null;
+  }
 
-  // Scene setup
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x070a13);
-
-  const width = containerEl.clientWidth || 600;
-  const height = containerEl.clientHeight || 480;
-
-  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-  camera.position.set(2.5, 2.5, 4.0);
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  containerEl.replaceChildren(renderer.domElement);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.target.set(0, 1.2, 0);
-
-  // Lighting
-  const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
-  scene.add(ambLight);
-
-  const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
-  dirLight.position.set(5, 10, 7);
-  scene.add(dirLight);
-
-  const backLight = new THREE.DirectionalLight(0x00b4d8, 1.0);
-  backLight.position.set(-5, 5, -5);
-  scene.add(backLight);
-
-  // Grid
-  const grid = new THREE.GridHelper(8, 16, 0x00b4d8, 0x1e293b);
-  grid.position.y = 0;
-  scene.add(grid);
-
-  // Compound Arm-Weapon Container (combatArmCompound)
-  const combatArmCompound = new THREE.Group();
-  combatArmCompound.name = 'AdminCombatArmCompound';
-  scene.add(combatArmCompound);
-
-  // Step 1: Shoulder Pivot Gizmo
-  const shoulderGizmo = new THREE.Group();
-  shoulderGizmo.name = 'ShoulderGizmo';
-  const sCore = new THREE.Mesh(
-    new THREE.SphereGeometry(0.10, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0x00ff88 })
-  );
-  const sRingX = new THREE.Mesh(
-    new THREE.RingGeometry(0.14, 0.18, 24),
-    new THREE.MeshBasicMaterial({ color: 0x00ff88, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
-  );
-  sRingX.rotation.x = Math.PI / 2;
-  const sRingY = new THREE.Mesh(
-    new THREE.RingGeometry(0.14, 0.18, 24),
-    new THREE.MeshBasicMaterial({ color: 0x00ff88, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
-  );
-  sRingY.rotation.y = Math.PI / 2;
-  shoulderGizmo.add(sCore, sRingX, sRingY);
-  combatArmCompound.add(shoulderGizmo);
-
-  // Step 2: Weapon Mounted Child Container
-  const weaponContainer = new THREE.Group();
-  weaponContainer.name = 'AdminWeaponContainer';
-  combatArmCompound.add(weaponContainer);
-
-  // Model Holder
-  const modelHolder = new THREE.Group();
-  modelHolder.name = 'ModelHolder';
-  scene.add(modelHolder);
-
-  let currentTargetKey = selectTargetEl ? selectTargetEl.value : 'player';
-  let activeStep = 1; // 1: Shoulder Pivot, 2: Weapon Attach & Offset
+  // Active state
   let socketsData = JSON.parse(JSON.stringify(DEFAULT_SOCKETS_CONFIG));
+  let currentBossElement = 'fire';
+  let activeWeaponTarget = 'player'; // 'player' | 'boss'
+  let isTestingSwing = false;
 
-  // Fetch persisted sockets from server
-  fetchSockets().then(cfg => {
-    if (cfg && typeof cfg === 'object') {
-      socketsData = {
-        player: { ...DEFAULT_SOCKETS_CONFIG.player, ...(cfg.player || {}) },
-        boss:   { ...DEFAULT_SOCKETS_CONFIG.boss,   ...(cfg.boss || {}) },
-        weapon: { ...DEFAULT_SOCKETS_CONFIG.weapon, ...(cfg.weapon || {}) },
-      };
-      updateControlsFromConfig();
-    }
-  }).catch(() => {});
+  // Selected Meshes
+  let selectedPlayerArmMesh = null;
+  let selectedBossArmMesh   = null;
 
-  function getActiveCategory() {
-    return currentTargetKey.startsWith('boss') ? 'boss' : 'player';
+  // Helper: Create a standard 3D viewport
+  function createViewport(container, camPos, lookAt) {
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x070a13);
+
+    const w = container.clientWidth || 400;
+    const h = container.clientHeight || 360;
+    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+    camera.position.copy(camPos);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(w, h);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.replaceChildren(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.copy(lookAt);
+
+    // Standard lighting
+    const amb = new THREE.AmbientLight(0xffffff, 1.2);
+    const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+    dir.position.set(5, 10, 7);
+    const back = new THREE.DirectionalLight(0x00b4d8, 0.8);
+    back.position.set(-5, 5, -5);
+    scene.add(amb, dir, back);
+
+    const grid = new THREE.GridHelper(8, 16, 0x00b4d8, 0x1e293b);
+    grid.position.y = 0;
+    scene.add(grid);
+
+    const resizeObs = new ResizeObserver(() => {
+      const rw = container.clientWidth || 400;
+      const rh = container.clientHeight || 360;
+      camera.aspect = rw / rh;
+      camera.updateProjectionMatrix();
+      renderer.setSize(rw, rh);
+    });
+    resizeObs.observe(container);
+
+    return { scene, camera, renderer, controls, resizeObs };
   }
 
-  function getCategoryConfig(cat) {
-    if (!socketsData[cat]) socketsData[cat] = {};
-    if (socketsData[cat].shoulderX === undefined) {
-      const def = DEFAULT_SOCKETS_CONFIG[cat] || {};
-      socketsData[cat].shoulderX = def.shoulderX ?? (cat === 'player' ? -0.65 : -1.8);
-      socketsData[cat].shoulderY = def.shoulderY ?? (cat === 'player' ? 1.2 : 2.2);
-      socketsData[cat].shoulderZ = def.shoulderZ ?? (cat === 'player' ? 0.0 : 0.2);
-    }
-    if (!socketsData[cat].weapon) {
-      socketsData[cat].weapon = {
-        offsetX: 0.0,
-        offsetY: cat === 'player' ? -0.4 : -0.6,
-        offsetZ: cat === 'player' ? 0.1 : 0.5,
-        rotX: 0.0,
-        rotY: cat === 'player' ? 1.5708 : -1.5708,
-        rotZ: cat === 'player' ? -0.7854 : 0.5236,
-        angle: cat === 'player' ? -45 : 30
-      };
-    }
-    return socketsData[cat];
+  // Create Shoulder Gizmo
+  function createShoulderGizmo(colorHex = 0x00ff88) {
+    const gizmo = new THREE.Group();
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 16, 16),
+      new THREE.MeshBasicMaterial({ color: colorHex })
+    );
+    const ringX = new THREE.Mesh(
+      new THREE.RingGeometry(0.16, 0.22, 24),
+      new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+    );
+    ringX.rotation.x = Math.PI / 2;
+    const ringY = new THREE.Mesh(
+      new THREE.RingGeometry(0.16, 0.22, 24),
+      new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+    );
+    ringY.rotation.y = Math.PI / 2;
+    gizmo.add(core, ringX, ringY);
+    return { gizmo, ringX, ringY };
   }
 
-  function updateControlsFromConfig() {
-    const cat = getActiveCategory();
-    const cfg = getCategoryConfig(cat);
-    const w = cfg.weapon || {};
+  // Helper: Find top-most vertex of a mesh in world coordinates
+  function computeTopVertexWorld(mesh) {
+    if (!mesh) return new THREE.Vector3(0, 0, 0);
+    mesh.updateMatrixWorld(true);
 
-    const sx = cfg.shoulderX ?? (cat === 'player' ? -0.65 : -1.8);
-    const sy = cfg.shoulderY ?? (cat === 'player' ? 1.2 : 2.2);
-    const sz = cfg.shoulderZ ?? (cat === 'player' ? 0.0 : 0.2);
+    const geom = mesh.geometry;
+    if (geom && geom.attributes && geom.attributes.position) {
+      const posAttr = geom.attributes.position;
+      const v = new THREE.Vector3();
+      let maxWorldY = -Infinity;
+      const topPt = new THREE.Vector3();
 
-    const ox = w.offsetX ?? 0.0;
-    const oy = w.offsetY ?? (cat === 'player' ? -0.4 : -0.6);
-    const oz = w.offsetZ ?? (cat === 'player' ? 0.1 : 0.5);
-    const angle = w.angle ?? (cat === 'player' ? -45 : 30);
+      for (let i = 0; i < posAttr.count; i++) {
+        v.fromBufferAttribute(posAttr, i);
+        v.applyMatrix4(mesh.matrixWorld);
+        if (v.y > maxWorldY) {
+          maxWorldY = v.y;
+          topPt.copy(v);
+        }
+      }
+      if (maxWorldY > -Infinity) return topPt;
+    }
 
-    // Step 1 controls
-    const sX = sliderShoulderX || sliderX;
-    const nX = numShoulderX || numX;
-    const vX = valShoulderX || valX;
-    if (sX) sX.value = sx;
-    if (nX) nX.value = Number(sx).toFixed(2);
-    if (vX) vX.textContent = Number(sx).toFixed(2);
-
-    const sY = sliderShoulderY || sliderY;
-    const nY = numShoulderY || numY;
-    const vY = valShoulderY || valY;
-    if (sY) sY.value = sy;
-    if (nY) nY.value = Number(sy).toFixed(2);
-    if (vY) vY.textContent = Number(sy).toFixed(2);
-
-    const sZ = sliderShoulderZ || sliderZ;
-    const nZ = numShoulderZ || numZ;
-    const vZ = valShoulderZ || valZ;
-    if (sZ) sZ.value = sz;
-    if (nZ) nZ.value = Number(sz).toFixed(2);
-    if (vZ) vZ.textContent = Number(sz).toFixed(2);
-
-    // Step 2 controls
-    if (sliderOffsetX) sliderOffsetX.value = ox;
-    if (numOffsetX) numOffsetX.value = Number(ox).toFixed(2);
-    if (valOffsetX) valOffsetX.textContent = Number(ox).toFixed(2);
-
-    if (sliderOffsetY) sliderOffsetY.value = oy;
-    if (numOffsetY) numOffsetY.value = Number(oy).toFixed(2);
-    if (valOffsetY) valOffsetY.textContent = Number(oy).toFixed(2);
-
-    if (sliderOffsetZ) sliderOffsetZ.value = oz;
-    if (numOffsetZ) numOffsetZ.value = Number(oz).toFixed(2);
-    if (valOffsetZ) valOffsetZ.textContent = Number(oz).toFixed(2);
-
-    const sA = sliderTiltAngle || sliderAngle;
-    const nA = numTiltAngle || numAngle;
-    const vA = valTiltAngle || valAngle;
-    if (sA) sA.value = angle;
-    if (nA) nA.value = Math.round(angle);
-    if (vA) vA.textContent = `${Math.round(angle)}°`;
-
-    updateCompoundTransforms();
+    const box = new THREE.Box3().setFromObject(mesh);
+    return new THREE.Vector3((box.min.x + box.max.x) / 2, box.max.y, (box.min.z + box.max.z) / 2);
   }
 
-  function updateCompoundTransforms() {
-    const cat = getActiveCategory();
-    const cfg = getCategoryConfig(cat);
-    const w = cfg.weapon || {};
+  // ─── 1. Viewport 1: Player Viewport ──────────────────────────────────────────
+  const vpPlayer = createViewport(vpPlayerEl, new THREE.Vector3(2.5, 2.2, 3.8), new THREE.Vector3(0, 1.2, 0));
+  const playerModelHolder = new THREE.Group();
+  playerModelHolder.name = 'PlayerModelHolder';
+  vpPlayer.scene.add(playerModelHolder);
 
-    const sx = cfg.shoulderX ?? (cat === 'player' ? -0.65 : -1.8);
-    const sy = cfg.shoulderY ?? (cat === 'player' ? 1.2 : 2.2);
-    const sz = cfg.shoulderZ ?? (cat === 'player' ? 0.0 : 0.2);
+  const playerGizmoObj = createShoulderGizmo(0x00ff88);
+  const playerGizmo = playerGizmoObj.gizmo;
+  vpPlayer.scene.add(playerGizmo);
 
-    combatArmCompound.position.set(sx, sy, sz);
+  // Player Compound Arm for Live Test Swing in Viewport 1
+  const playerCompoundArm = new THREE.Group();
+  playerCompoundArm.name = 'VP1_PlayerCompoundArm';
+  vpPlayer.scene.add(playerCompoundArm);
 
-    const ox = w.offsetX ?? 0.0;
-    const oy = w.offsetY ?? (cat === 'player' ? -0.4 : -0.6);
-    const oz = w.offsetZ ?? (cat === 'player' ? 0.1 : 0.5);
-    const angle = w.angle ?? (cat === 'player' ? -45 : 30);
+  // ─── 2. Viewport 2: Boss Viewport ────────────────────────────────────────────
+  const vpBoss = createViewport(vpBossEl, new THREE.Vector3(-3.5, 2.8, 5.0), new THREE.Vector3(0, 1.8, 0));
+  const bossModelHolder = new THREE.Group();
+  bossModelHolder.name = 'BossModelHolder';
+  vpBoss.scene.add(bossModelHolder);
 
-    weaponContainer.position.set(ox, oy, oz);
-    if (cat === 'player') {
-      weaponContainer.rotation.set(0, Math.PI / 2, (angle * Math.PI) / 180);
-    } else {
-      weaponContainer.rotation.set(0, -Math.PI / 2, (angle * Math.PI) / 180);
-    }
+  const bossGizmoObj = createShoulderGizmo(0xffaa00);
+  const bossGizmo = bossGizmoObj.gizmo;
+  vpBoss.scene.add(bossGizmo);
 
-    // Step visibility
-    if (activeStep === 1) {
-      shoulderGizmo.visible = true;
-      weaponContainer.visible = true;
-    } else {
-      shoulderGizmo.visible = false;
-      weaponContainer.visible = true;
-    }
-  }
+  // Boss Compound Arm for Live Test Swing in Viewport 2
+  const bossCompoundArm = new THREE.Group();
+  bossCompoundArm.name = 'VP2_BossCompoundArm';
+  vpBoss.scene.add(bossCompoundArm);
 
-  function loadPreviewWeapon(cat) {
-    while (weaponContainer.children.length) {
-      weaponContainer.remove(weaponContainer.children[0]);
-    }
-    if (cat === 'player') {
-      // Sleek Sword
-      const blade = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 1.8, 0.05),
-        new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x0066aa, transparent: true, opacity: 0.9 })
-      );
-      blade.position.set(0, 0.9, 0);
-      const guard = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.06, 0.08),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8 })
-      );
-      guard.position.set(0, 0, 0);
-      const grip = new THREE.Mesh(
-        new THREE.BoxGeometry(0.07, 0.35, 0.07),
-        new THREE.MeshStandardMaterial({ color: 0x333333 })
-      );
-      grip.position.set(0, -0.18, 0);
-      weaponContainer.add(blade, guard, grip);
-      weaponContainer.scale.set(1.4, 1.4, 1.4);
-    } else {
-      // Warhammer
-      const handle = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 3.2, 0.18),
-        new THREE.MeshStandardMaterial({ color: 0x222222 })
-      );
-      handle.position.set(0, 0, 0);
-      const hHead = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 1.4, 1.2),
-        new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0x882200, transparent: true, opacity: 0.9 })
-      );
-      hHead.position.set(0, 1.4, 0);
-      weaponContainer.add(handle, hHead);
-      weaponContainer.scale.set(0.9, 0.9, 0.9);
-    }
-  }
+  // ─── 3. Viewport 3: Weapon Alignment & Slash Tuning ──────────────────────────
+  const vpWeapon = createViewport(vpWeaponEl, new THREE.Vector3(0.0, 1.5, 3.8), new THREE.Vector3(0, 0.6, 0));
+  const weaponCompoundHolder = new THREE.Group();
+  weaponCompoundHolder.name = 'VP3_WeaponCompoundHolder';
+  vpWeapon.scene.add(weaponCompoundHolder);
 
-  function buildFallbackCharacter(cat) {
+  // Arm Mesh Child & Weapon Mesh Child in VP3
+  const vp3ArmHolder = new THREE.Group();
+  const vp3WeaponHolder = new THREE.Group();
+  weaponCompoundHolder.add(vp3ArmHolder, vp3WeaponHolder);
+
+  // DOM Elements
+  const elPlayerSegName = document.getElementById('player-segment-name');
+  const elPlayerReadout = document.getElementById('player-shoulder-readout');
+  const sliderPlayerSx  = document.getElementById('slider-player-sx');
+  const numPlayerSx     = document.getElementById('num-player-sx');
+  const valPlayerSx     = document.getElementById('val-player-sx');
+  const sliderPlayerSy  = document.getElementById('slider-player-sy');
+  const numPlayerSy     = document.getElementById('num-player-sy');
+  const valPlayerSy     = document.getElementById('val-player-sy');
+  const sliderPlayerSz  = document.getElementById('slider-player-sz');
+  const numPlayerSz     = document.getElementById('num-player-sz');
+  const valPlayerSz     = document.getElementById('val-player-sz');
+  const btnQuickPlayer  = document.getElementById('btn-quick-arm-player');
+
+  const elBossSegName = document.getElementById('boss-segment-name');
+  const elBossReadout = document.getElementById('boss-shoulder-readout');
+  const sliderBossSx  = document.getElementById('slider-boss-sx');
+  const numBossSx     = document.getElementById('num-boss-sx');
+  const valBossSx     = document.getElementById('val-boss-sx');
+  const sliderBossSy  = document.getElementById('slider-boss-sy');
+  const numBossSy     = document.getElementById('num-boss-sy');
+  const valBossSy     = document.getElementById('val-boss-sy');
+  const sliderBossSz  = document.getElementById('slider-boss-sz');
+  const numBossSz     = document.getElementById('num-boss-sz');
+  const valBossSz     = document.getElementById('val-boss-sz');
+  const btnQuickBoss  = document.getElementById('btn-quick-arm-boss');
+
+  const tabBossThunder = document.getElementById('tab-boss-thunder');
+  const tabBossFire    = document.getElementById('tab-boss-fire');
+  const tabBossFrost   = document.getElementById('tab-boss-frost');
+
+  const btnTargetPlayer = document.getElementById('btn-mode-target-player');
+  const btnTargetBoss   = document.getElementById('btn-mode-target-boss');
+
+  const sliderWeaponOx    = document.getElementById('slider-weapon-ox');
+  const numWeaponOx       = document.getElementById('num-weapon-ox');
+  const valWeaponOx       = document.getElementById('val-weapon-ox');
+  const sliderWeaponOy    = document.getElementById('slider-weapon-oy');
+  const numWeaponOy       = document.getElementById('num-weapon-oy');
+  const valWeaponOy       = document.getElementById('val-weapon-oy');
+  const sliderWeaponOz    = document.getElementById('slider-weapon-oz');
+  const numWeaponOz       = document.getElementById('num-weapon-oz');
+  const valWeaponOz       = document.getElementById('val-weapon-oz');
+  const sliderWeaponAngle = document.getElementById('slider-weapon-angle');
+  const numWeaponAngle    = document.getElementById('num-weapon-angle');
+  const valWeaponAngle    = document.getElementById('val-weapon-angle');
+
+  const btnLockWeapon     = document.getElementById('btn-lock-weapon');
+  const sliderIdleAngle   = document.getElementById('slider-idle-angle');
+  const numIdleAngle      = document.getElementById('num-idle-angle');
+  const valIdleAngle      = document.getElementById('val-idle-angle');
+  const sliderSlashArc    = document.getElementById('slider-slash-arc');
+  const numSlashArc       = document.getElementById('num-slash-arc');
+  const valSlashArc       = document.getElementById('val-slash-arc');
+
+  const btnTestSwing      = document.getElementById('btn-test-swing');
+  const btnSaveRigging    = document.getElementById('btn-save-rigging');
+  const statusToast       = document.getElementById('status-toast');
+
+  // Build Preview Weapons
+  function buildPreviewSword() {
     const grp = new THREE.Group();
-    if (cat === 'player') {
-      const mat = new THREE.MeshStandardMaterial({ color: 0x2255cc, roughness: 0.5 });
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5c4a0 });
-
-      // Torso
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.5), mat);
-      torso.position.y = 1.3;
-      grp.add(torso);
-
-      // Head
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), skinMat);
-      head.position.y = 2.3;
-      grp.add(head);
-
-      // Left Arm (Outer weapon arm)
-      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), skinMat);
-      armL.position.set(-0.65, 1.2, 0);
-      grp.add(armL);
-
-      // Right Arm
-      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), skinMat);
-      armR.position.set(0.65, 1.2, 0);
-      grp.add(armR);
-    } else {
-      // Boss
-      const mat = new THREE.MeshStandardMaterial({ color: 0x882200, roughness: 0.5 });
-      const accMat = new THREE.MeshStandardMaterial({ color: 0xff6600 });
-
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.4, 1.2), mat);
-      torso.position.y = 2.2;
-      grp.add(torso);
-
-      const head = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), mat);
-      head.position.y = 4.2;
-      grp.add(head);
-
-      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), mat);
-      armL.position.set(-1.8, 2.2, 0);
-      grp.add(armL);
-
-      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), mat);
-      armR.position.set(1.8, 2.2, 0);
-      grp.add(armR);
-    }
+    const blade = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 1.8, 0.05),
+      new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x0066aa, roughness: 0.3 })
+    );
+    blade.position.set(0, 0.9, 0);
+    const guard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4, 0.06, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.8, roughness: 0.2 })
+    );
+    guard.position.set(0, 0, 0);
+    const grip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.07, 0.35, 0.07),
+      new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 })
+    );
+    grip.position.set(0, -0.18, 0);
+    grp.add(blade, guard, grip);
+    grp.scale.set(1.4, 1.4, 1.4);
     return grp;
   }
 
-  async function loadTargetModel() {
-    while (modelHolder.children.length) {
-      modelHolder.remove(modelHolder.children[0]);
+  function buildPreviewHammer() {
+    const grp = new THREE.Group();
+    const handle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 3.0, 0.18),
+      new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 })
+    );
+    handle.position.set(0, 0, 0);
+    const head = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 1.3, 1.2),
+      new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0x882200, roughness: 0.4 })
+    );
+    head.position.set(0, 1.3, 0);
+    grp.add(handle, head);
+    grp.scale.set(0.9, 0.9, 0.9);
+    return grp;
+  }
+
+  function buildPreviewArm(target) {
+    const isPlayer = target === 'player';
+    const geo = isPlayer ? new THREE.BoxGeometry(0.35, 1.0, 0.35) : new THREE.BoxGeometry(0.9, 2.2, 0.9);
+    const mat = new THREE.MeshStandardMaterial({
+      color: isPlayer ? 0x2255cc : 0x882200,
+      roughness: 0.5
+    });
+    const arm = new THREE.Mesh(geo, mat);
+    // Center arm top at local origin (0, 0, 0)
+    arm.position.y = isPlayer ? -0.5 : -1.1;
+    return arm;
+  }
+
+  // Update VP3 compound arm representation
+  function refreshViewport3Compound() {
+    while (vp3ArmHolder.children.length) vp3ArmHolder.remove(vp3ArmHolder.children[0]);
+    while (vp3WeaponHolder.children.length) vp3WeaponHolder.remove(vp3WeaponHolder.children[0]);
+
+    const isPlayer = (activeWeaponTarget === 'player');
+    const armMesh = buildPreviewArm(activeWeaponTarget);
+    vp3ArmHolder.add(armMesh);
+
+    const weapon = isPlayer ? buildPreviewSword() : buildPreviewHammer();
+    vp3WeaponHolder.add(weapon);
+
+    updateVP3Transforms();
+  }
+
+  function updateVP3Transforms() {
+    const isPlayer = (activeWeaponTarget === 'player');
+    const targetKey = isPlayer ? 'player' : 'boss';
+    const cfg = socketsData[targetKey] || {};
+    const w = cfg.weapon || cfg.weaponOffset || {};
+
+    const ox = w.offsetX ?? 0.0;
+    const oy = w.offsetY ?? (isPlayer ? -0.4 : -0.6);
+    const oz = w.offsetZ ?? (isPlayer ? 0.1 : 0.5);
+    const angle = w.angle ?? (isPlayer ? -45 : 30);
+
+    vp3WeaponHolder.position.set(ox, oy, oz);
+    if (isPlayer) {
+      vp3WeaponHolder.rotation.set(0, Math.PI / 2, (angle * Math.PI) / 180);
+    } else {
+      vp3WeaponHolder.rotation.set(0, -Math.PI / 2, (angle * Math.PI) / 180);
     }
-    const cat = getActiveCategory();
-    loadPreviewWeapon(cat);
+  }
 
-    let modelUrl = (cat === 'player') ? '/assets/models/default_character.glb' : '/assets/models/boss_fire.glb';
+  // Fallback characters if GLB fails
+  function buildProceduralPlayer() {
+    const grp = new THREE.Group();
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.5), new THREE.MeshStandardMaterial({ color: 0x2255cc }));
+    torso.position.y = 1.3;
+    torso.name = 'Torso';
 
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
+    head.position.y = 2.3;
+    head.name = 'Head';
+
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
+    armL.position.set(-0.65, 1.2, 0);
+    armL.name = 'Arm_L';
+
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
+    armR.position.set(0.65, 1.2, 0);
+    armR.name = 'Arm_R';
+
+    grp.add(torso, head, armL, armR);
+    return grp;
+  }
+
+  function buildProceduralBoss(el) {
+    const grp = new THREE.Group();
+    const bodyCol = el === 'frost' ? 0x0088cc : el === 'thunder' ? 0x00aacc : 0x882200;
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.6, 1.2), new THREE.MeshStandardMaterial({ color: bodyCol }));
+    torso.position.y = 2.2;
+    torso.name = 'Boss_Torso';
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), new THREE.MeshStandardMaterial({ color: bodyCol }));
+    head.position.y = 4.2;
+    head.name = 'Boss_Head';
+
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), new THREE.MeshStandardMaterial({ color: bodyCol }));
+    armL.position.set(1.8, 2.2, 0);
+    armL.name = 'Boss_Arm_L';
+
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), new THREE.MeshStandardMaterial({ color: bodyCol }));
+    armR.position.set(-1.8, 2.2, 0);
+    armR.name = 'Boss_Arm_R';
+
+    grp.add(torso, head, armL, armR);
+    return grp;
+  }
+
+  // Load 3D Models
+  async function loadPlayerModel() {
+    while (playerModelHolder.children.length) playerModelHolder.remove(playerModelHolder.children[0]);
     let loaded = false;
     try {
-      const gltf = await new Promise(resolve => gltfLoader.load(modelUrl, resolve, undefined, () => resolve(null)));
+      const gltf = await new Promise(resolve => gltfLoader.load('/assets/models/default_character.glb', resolve, undefined, () => resolve(null)));
       if (gltf && gltf.scene) {
         const model = gltf.scene;
-        model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+        model.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.receiveShadow = true;
+            if (c.material) c.material = c.material.clone();
+          }
+        });
         const bBox = new THREE.Box3().setFromObject(model);
         const bSize = new THREE.Vector3();
         bBox.getSize(bSize);
         if (bSize.y > 0.01) {
-          const targetH = (cat === 'boss') ? 4.0 : 2.8;
-          model.scale.setScalar(targetH / bSize.y);
+          model.scale.setScalar(2.8 / bSize.y);
         }
         const sBox = new THREE.Box3().setFromObject(model);
         model.position.x = - (sBox.min.x + sBox.max.x) / 2;
         model.position.z = - (sBox.min.z + sBox.max.z) / 2;
         model.position.y = - sBox.min.y;
-        modelHolder.add(model);
+        playerModelHolder.add(model);
         loaded = true;
       }
     } catch (e) {}
 
     if (!loaded) {
-      modelHolder.add(buildFallbackCharacter(cat));
+      playerModelHolder.add(buildProceduralPlayer());
     }
 
-    updateControlsFromConfig();
+    // Auto locate saved arm or LeftArm
+    selectPlayerArmByName(socketsData.player?.armMeshName || 'Arm_L');
   }
 
-  // Switch between Step 1 and Step 2
-  function setStep(stepNum) {
-    activeStep = stepNum;
-    if (btnTabStep1) btnTabStep1.classList.toggle('active', stepNum === 1);
-    if (btnTabStep2) btnTabStep2.classList.toggle('active', stepNum === 2);
-    if (paneStep1) paneStep1.classList.toggle('hidden', stepNum !== 1);
-    if (paneStep2) paneStep2.classList.toggle('hidden', stepNum !== 2);
-    updateCompoundTransforms();
+  async function loadBossModel(element = 'fire') {
+    currentBossElement = element;
+    while (bossModelHolder.children.length) bossModelHolder.remove(bossModelHolder.children[0]);
+
+    let loaded = false;
+    try {
+      const gltf = await new Promise(resolve => gltfLoader.load(`/assets/models/boss_${element}.glb`, resolve, undefined, () => resolve(null)));
+      if (gltf && gltf.scene) {
+        const model = gltf.scene;
+        model.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.receiveShadow = true;
+            if (c.material) c.material = c.material.clone();
+          }
+        });
+        const bBox = new THREE.Box3().setFromObject(model);
+        const bSize = new THREE.Vector3();
+        bBox.getSize(bSize);
+        if (bSize.y > 0.01) {
+          model.scale.setScalar(4.0 / bSize.y);
+        }
+        const sBox = new THREE.Box3().setFromObject(model);
+        model.position.x = - (sBox.min.x + sBox.max.x) / 2;
+        model.position.z = - (sBox.min.z + sBox.max.z) / 2;
+        model.position.y = - sBox.min.y;
+        bossModelHolder.add(model);
+        loaded = true;
+      }
+    } catch (e) {}
+
+    if (!loaded) {
+      bossModelHolder.add(buildProceduralBoss(element));
+    }
+
+    selectBossArmByName(socketsData.boss?.armMeshName || 'Arm_R');
   }
 
-  btnTabStep1?.addEventListener('click', () => setStep(1));
-  btnTabStep2?.addEventListener('click', () => setStep(2));
-  btnGotoStep2?.addEventListener('click', () => setStep(2));
-  btnGotoStep1?.addEventListener('click', () => setStep(1));
+  // ─── Raycasting & Mesh Segment Highlighting ──────────────────────────────────
+  function setupRaycasting(viewport, modelHolder, onMeshSelected) {
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let hoveredMesh = null;
+    let prevEmissive = 0x000000;
+    let pDownTime = 0;
+    let pDownPos = { x: 0, y: 0 };
 
-  // Raycaster to pick Shoulder Anchor on click (Step 1)
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-  let pointerDownTime = 0;
-  let pointerDownPos = { x: 0, y: 0 };
-
-  renderer.domElement.addEventListener('pointerdown', (e) => {
-    pointerDownTime = performance.now();
-    pointerDownPos = { x: e.clientX, y: e.clientY };
-  });
-
-  renderer.domElement.addEventListener('pointerup', (e) => {
-    const elapsed = performance.now() - pointerDownTime;
-    const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
-
-    if (elapsed < 300 && dist < 5) {
-      const rect = renderer.domElement.getBoundingClientRect();
+    viewport.renderer.domElement.addEventListener('pointermove', (e) => {
+      const rect = viewport.renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-      raycaster.setFromCamera(mouse, camera);
+      raycaster.setFromCamera(mouse, viewport.camera);
       const hits = raycaster.intersectObjects(modelHolder.children, true);
 
       if (hits.length > 0) {
-        const pt = hits[0].point;
-        const cat = getActiveCategory();
-        const cfg = getCategoryConfig(cat);
-
-        cfg.shoulderX = Math.round(pt.x * 100) / 100;
-        cfg.shoulderY = Math.round(pt.y * 100) / 100;
-        cfg.shoulderZ = Math.round(pt.z * 100) / 100;
-
-        // Legacy compatibility
-        cfg.handX = -cfg.shoulderX;
-        cfg.handY = cfg.shoulderY;
-        cfg.handZ = cfg.shoulderZ;
-
-        updateControlsFromConfig();
+        const hit = hits.find(h => h.object.isMesh);
+        if (hit && hit.object !== hoveredMesh) {
+          // Restore previous
+          if (hoveredMesh && hoveredMesh.material && hoveredMesh.material.emissive) {
+            hoveredMesh.material.emissive.setHex(prevEmissive);
+          }
+          hoveredMesh = hit.object;
+          if (hoveredMesh.material && hoveredMesh.material.emissive) {
+            prevEmissive = hoveredMesh.material.emissive.getHex();
+            hoveredMesh.material.emissive.setHex(0x00d4ff);
+          }
+        }
+      } else {
+        if (hoveredMesh && hoveredMesh.material && hoveredMesh.material.emissive) {
+          hoveredMesh.material.emissive.setHex(prevEmissive);
+          hoveredMesh = null;
+        }
       }
+    });
+
+    viewport.renderer.domElement.addEventListener('pointerdown', (e) => {
+      pDownTime = performance.now();
+      pDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    viewport.renderer.domElement.addEventListener('pointerup', (e) => {
+      const elapsed = performance.now() - pDownTime;
+      const dist = Math.hypot(e.clientX - pDownPos.x, e.clientY - pDownPos.y);
+
+      if (elapsed < 320 && dist < 6) {
+        const rect = viewport.renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, viewport.camera);
+        const hits = raycaster.intersectObjects(modelHolder.children, true);
+        const hit = hits.find(h => h.object.isMesh);
+        if (hit) {
+          onMeshSelected(hit.object);
+        }
+      }
+    });
+  }
+
+  // Player Mesh Selection Handler
+  function selectPlayerArm(mesh) {
+    if (!mesh) return;
+    if (selectedPlayerArmMesh && selectedPlayerArmMesh.material?.emissive) {
+      selectedPlayerArmMesh.material.emissive.setHex(0x000000);
+    }
+    selectedPlayerArmMesh = mesh;
+    if (mesh.material && mesh.material.emissive) {
+      mesh.material.emissive.setHex(0x00ff88);
+    }
+
+    const topWorldPt = computeTopVertexWorld(mesh);
+    const name = mesh.name || 'Arm_L';
+
+    socketsData.player.armMeshName = name;
+    socketsData.player.shoulderPivot = {
+      x: Math.round(topWorldPt.x * 100) / 100,
+      y: Math.round(topWorldPt.y * 100) / 100,
+      z: Math.round(topWorldPt.z * 100) / 100
+    };
+    socketsData.player.shoulderX = socketsData.player.shoulderPivot.x;
+    socketsData.player.shoulderY = socketsData.player.shoulderPivot.y;
+    socketsData.player.shoulderZ = socketsData.player.shoulderPivot.z;
+
+    updatePlayerControlsUI();
+    updatePlayerGizmo();
+  }
+
+  function selectPlayerArmByName(name) {
+    let match = null;
+    playerModelHolder.traverse(c => {
+      if (!match && c.isMesh) {
+        const n = (c.name || '').toLowerCase();
+        if (n.includes('arm_l') || n.includes('leftarm') || n.includes('hand_l') || n === name.toLowerCase()) {
+          match = c;
+        }
+      }
+    });
+    if (match) selectPlayerArm(match);
+    else updatePlayerGizmo();
+  }
+
+  // Boss Mesh Selection Handler
+  function selectBossArm(mesh) {
+    if (!mesh) return;
+    if (selectedBossArmMesh && selectedBossArmMesh.material?.emissive) {
+      selectedBossArmMesh.material.emissive.setHex(0x000000);
+    }
+    selectedBossArmMesh = mesh;
+    if (mesh.material && mesh.material.emissive) {
+      mesh.material.emissive.setHex(0xffaa00);
+    }
+
+    const topWorldPt = computeTopVertexWorld(mesh);
+    const name = mesh.name || 'Arm_R';
+
+    socketsData.boss.armMeshName = name;
+    socketsData.boss.shoulderPivot = {
+      x: Math.round(topWorldPt.x * 100) / 100,
+      y: Math.round(topWorldPt.y * 100) / 100,
+      z: Math.round(topWorldPt.z * 100) / 100
+    };
+    socketsData.boss.shoulderX = socketsData.boss.shoulderPivot.x;
+    socketsData.boss.shoulderY = socketsData.boss.shoulderPivot.y;
+    socketsData.boss.shoulderZ = socketsData.boss.shoulderPivot.z;
+
+    updateBossControlsUI();
+    updateBossGizmo();
+  }
+
+  function selectBossArmByName(name) {
+    let match = null;
+    bossModelHolder.traverse(c => {
+      if (!match && c.isMesh) {
+        const n = (c.name || '').toLowerCase();
+        if (n.includes('arm_r') || n.includes('rightarm') || n.includes('hand_r') || n === name.toLowerCase()) {
+          match = c;
+        }
+      }
+    });
+    if (match) selectBossArm(match);
+    else updateBossGizmo();
+  }
+
+  // Gizmo & Transforms
+  function updatePlayerGizmo() {
+    const p = socketsData.player.shoulderPivot || { x: -0.65, y: 1.2, z: 0.0 };
+    playerGizmo.position.set(p.x, p.y, p.z);
+    playerCompoundArm.position.set(p.x, p.y, p.z);
+  }
+
+  function updateBossGizmo() {
+    const p = socketsData.boss.shoulderPivot || { x: -1.8, y: 2.2, z: 0.2 };
+    bossGizmo.position.set(p.x, p.y, p.z);
+    bossCompoundArm.position.set(p.x, p.y, p.z);
+  }
+
+  // Update Controls UI from State
+  function updatePlayerControlsUI() {
+    const p = socketsData.player.shoulderPivot || { x: -0.65, y: 1.2, z: 0.0 };
+    const name = socketsData.player.armMeshName || 'Arm_L';
+
+    if (elPlayerSegName) elPlayerSegName.textContent = name;
+    if (elPlayerReadout) elPlayerReadout.textContent = `(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`;
+
+    if (sliderPlayerSx) sliderPlayerSx.value = p.x;
+    if (numPlayerSx)    numPlayerSx.value = p.x.toFixed(2);
+    if (valPlayerSx)    valPlayerSx.textContent = p.x.toFixed(2);
+
+    if (sliderPlayerSy) sliderPlayerSy.value = p.y;
+    if (numPlayerSy)    numPlayerSy.value = p.y.toFixed(2);
+    if (valPlayerSy)    valPlayerSy.textContent = p.y.toFixed(2);
+
+    if (sliderPlayerSz) sliderPlayerSz.value = p.z;
+    if (numPlayerSz)    numPlayerSz.value = p.z.toFixed(2);
+    if (valPlayerSz)    valPlayerSz.textContent = p.z.toFixed(2);
+  }
+
+  function updateBossControlsUI() {
+    const p = socketsData.boss.shoulderPivot || { x: -1.8, y: 2.2, z: 0.2 };
+    const name = socketsData.boss.armMeshName || 'Arm_R';
+
+    if (elBossSegName) elBossSegName.textContent = name;
+    if (elBossReadout) elBossReadout.textContent = `(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`;
+
+    if (sliderBossSx) sliderBossSx.value = p.x;
+    if (numBossSx)    numBossSx.value = p.x.toFixed(2);
+    if (valBossSx)    valBossSx.textContent = p.x.toFixed(2);
+
+    if (sliderBossSy) sliderBossSy.value = p.y;
+    if (numBossSy)    numBossSy.value = p.y.toFixed(2);
+    if (valBossSy)    valBossSy.textContent = p.y.toFixed(2);
+
+    if (sliderBossSz) sliderBossSz.value = p.z;
+    if (numBossSz)    numBossSz.value = p.z.toFixed(2);
+    if (valBossSz)    valBossSz.textContent = p.z.toFixed(2);
+  }
+
+  function updateWeaponControlsUI() {
+    const targetKey = activeWeaponTarget;
+    const cfg = socketsData[targetKey] || {};
+    const w = cfg.weapon || cfg.weaponOffset || {};
+    const s = cfg.slashArc || {};
+
+    const ox = w.offsetX ?? 0.0;
+    const oy = w.offsetY ?? (targetKey === 'player' ? -0.4 : -0.6);
+    const oz = w.offsetZ ?? (targetKey === 'player' ? 0.1 : 0.5);
+    const angle = w.angle ?? (targetKey === 'player' ? -45 : 30);
+
+    const idle = s.idleAngle ?? 0;
+    const arc  = s.arc ?? (targetKey === 'player' ? 135 : 160);
+
+    if (sliderWeaponOx) sliderWeaponOx.value = ox;
+    if (numWeaponOx)    numWeaponOx.value = ox.toFixed(2);
+    if (valWeaponOx)    valWeaponOx.textContent = ox.toFixed(2);
+
+    if (sliderWeaponOy) sliderWeaponOy.value = oy;
+    if (numWeaponOy)    numWeaponOy.value = oy.toFixed(2);
+    if (valWeaponOy)    valWeaponOy.textContent = oy.toFixed(2);
+
+    if (sliderWeaponOz) sliderWeaponOz.value = oz;
+    if (numWeaponOz)    numWeaponOz.value = oz.toFixed(2);
+    if (valWeaponOz)    valWeaponOz.textContent = oz.toFixed(2);
+
+    if (sliderWeaponAngle) sliderWeaponAngle.value = angle;
+    if (numWeaponAngle)    numWeaponAngle.value = Math.round(angle);
+    if (valWeaponAngle)    valWeaponAngle.textContent = `${Math.round(angle)}°`;
+
+    if (sliderIdleAngle) sliderIdleAngle.value = idle;
+    if (numIdleAngle)    numIdleAngle.value = Math.round(idle);
+    if (valIdleAngle)    valIdleAngle.textContent = `${Math.round(idle)}°`;
+
+    if (sliderSlashArc) sliderSlashArc.value = arc;
+    if (numSlashArc)    numSlashArc.value = Math.round(arc);
+    if (valSlashArc)    valSlashArc.textContent = `${Math.round(arc)}°`;
+
+    refreshViewport3Compound();
+  }
+
+  // Setup raycasters
+  setupRaycasting(vpPlayer, playerModelHolder, selectPlayerArm);
+  setupRaycasting(vpBoss, bossModelHolder, selectBossArm);
+
+  // Manual Player Shoulder Sliders
+  function onPlayerSliderChanged() {
+    const x = parseFloat(sliderPlayerSx.value || 0);
+    const y = parseFloat(sliderPlayerSy.value || 0);
+    const z = parseFloat(sliderPlayerSz.value || 0);
+
+    socketsData.player.shoulderPivot = { x, y, z };
+    socketsData.player.shoulderX = x;
+    socketsData.player.shoulderY = y;
+    socketsData.player.shoulderZ = z;
+
+    updatePlayerControlsUI();
+    updatePlayerGizmo();
+  }
+
+  sliderPlayerSx?.addEventListener('input', onPlayerSliderChanged);
+  sliderPlayerSy?.addEventListener('input', onPlayerSliderChanged);
+  sliderPlayerSz?.addEventListener('input', onPlayerSliderChanged);
+  numPlayerSx?.addEventListener('change', () => { sliderPlayerSx.value = numPlayerSx.value; onPlayerSliderChanged(); });
+  numPlayerSy?.addEventListener('change', () => { sliderPlayerSy.value = numPlayerSy.value; onPlayerSliderChanged(); });
+  numPlayerSz?.addEventListener('change', () => { sliderPlayerSz.value = numPlayerSz.value; onPlayerSliderChanged(); });
+
+  btnQuickPlayer?.addEventListener('click', () => selectPlayerArmByName('Arm_L'));
+
+  // Manual Boss Shoulder Sliders
+  function onBossSliderChanged() {
+    const x = parseFloat(sliderBossSx.value || 0);
+    const y = parseFloat(sliderBossSy.value || 0);
+    const z = parseFloat(sliderBossSz.value || 0);
+
+    socketsData.boss.shoulderPivot = { x, y, z };
+    socketsData.boss.shoulderX = x;
+    socketsData.boss.shoulderY = y;
+    socketsData.boss.shoulderZ = z;
+
+    updateBossControlsUI();
+    updateBossGizmo();
+  }
+
+  sliderBossSx?.addEventListener('input', onBossSliderChanged);
+  sliderBossSy?.addEventListener('input', onBossSliderChanged);
+  sliderBossSz?.addEventListener('input', onBossSliderChanged);
+  numBossSx?.addEventListener('change', () => { sliderBossSx.value = numBossSx.value; onBossSliderChanged(); });
+  numBossSy?.addEventListener('change', () => { sliderBossSy.value = numBossSy.value; onBossSliderChanged(); });
+  numBossSz?.addEventListener('change', () => { sliderBossSz.value = numBossSz.value; onBossSliderChanged(); });
+
+  btnQuickBoss?.addEventListener('click', () => selectBossArmByName('Arm_R'));
+
+  // Boss element switcher tabs
+  function setBossTab(el) {
+    [tabBossThunder, tabBossFire, tabBossFrost].forEach(btn => {
+      btn?.classList.toggle('active', btn?.dataset.boss === el);
+    });
+    loadBossModel(el);
+  }
+  tabBossThunder?.addEventListener('click', () => setBossTab('thunder'));
+  tabBossFire?.addEventListener('click', () => setBossTab('fire'));
+  tabBossFrost?.addEventListener('click', () => setBossTab('frost'));
+
+  // Weapon Target Switcher
+  function setWeaponTarget(target) {
+    activeWeaponTarget = target;
+    btnTargetPlayer?.classList.toggle('active', target === 'player');
+    btnTargetBoss?.classList.toggle('active', target === 'boss');
+    updateWeaponControlsUI();
+  }
+  btnTargetPlayer?.addEventListener('click', () => setWeaponTarget('player'));
+  btnTargetBoss?.addEventListener('click', () => setWeaponTarget('boss'));
+
+  // Weapon Offset & Slash Arc Sliders
+  function onWeaponSliderChanged() {
+    const targetKey = activeWeaponTarget;
+    if (!socketsData[targetKey]) socketsData[targetKey] = {};
+    if (!socketsData[targetKey].weapon) socketsData[targetKey].weapon = {};
+
+    const ox = parseFloat(sliderWeaponOx.value || 0);
+    const oy = parseFloat(sliderWeaponOy.value || 0);
+    const oz = parseFloat(sliderWeaponOz.value || 0);
+    const angle = parseFloat(sliderWeaponAngle.value || 0);
+
+    socketsData[targetKey].weapon.offsetX = ox;
+    socketsData[targetKey].weapon.offsetY = oy;
+    socketsData[targetKey].weapon.offsetZ = oz;
+    socketsData[targetKey].weapon.angle = angle;
+    socketsData[targetKey].weapon.rotX = 0;
+    socketsData[targetKey].weapon.rotY = targetKey === 'player' ? Math.PI / 2 : -Math.PI / 2;
+    socketsData[targetKey].weapon.rotZ = (angle * Math.PI) / 180;
+    socketsData[targetKey].weaponOffset = { ...socketsData[targetKey].weapon };
+
+    if (valWeaponOx) valWeaponOx.textContent = ox.toFixed(2);
+    if (numWeaponOx) numWeaponOx.value = ox.toFixed(2);
+    if (valWeaponOy) valWeaponOy.textContent = oy.toFixed(2);
+    if (numWeaponOy) numWeaponOy.value = oy.toFixed(2);
+    if (valWeaponOz) valWeaponOz.textContent = oz.toFixed(2);
+    if (numWeaponOz) numWeaponOz.value = oz.toFixed(2);
+    if (valWeaponAngle) valWeaponAngle.textContent = `${Math.round(angle)}°`;
+    if (numWeaponAngle) numWeaponAngle.value = Math.round(angle);
+
+    updateVP3Transforms();
+  }
+
+  sliderWeaponOx?.addEventListener('input', onWeaponSliderChanged);
+  sliderWeaponOy?.addEventListener('input', onWeaponSliderChanged);
+  sliderWeaponOz?.addEventListener('input', onWeaponSliderChanged);
+  sliderWeaponAngle?.addEventListener('input', onWeaponSliderChanged);
+
+  numWeaponOx?.addEventListener('change', () => { sliderWeaponOx.value = numWeaponOx.value; onWeaponSliderChanged(); });
+  numWeaponOy?.addEventListener('change', () => { sliderWeaponOy.value = numWeaponOy.value; onWeaponSliderChanged(); });
+  numWeaponOz?.addEventListener('change', () => { sliderWeaponOz.value = numWeaponOz.value; onWeaponSliderChanged(); });
+  numWeaponAngle?.addEventListener('change', () => { sliderWeaponAngle.value = numWeaponAngle.value; onWeaponSliderChanged(); });
+
+  function onSlashTuningChanged() {
+    const targetKey = activeWeaponTarget;
+    if (!socketsData[targetKey]) socketsData[targetKey] = {};
+    if (!socketsData[targetKey].slashArc) socketsData[targetKey].slashArc = {};
+
+    const idle = parseFloat(sliderIdleAngle.value || 0);
+    const arc  = parseFloat(sliderSlashArc.value || 135);
+
+    const windup = idle + (targetKey === 'player' ? arc * 0.45 : arc * 0.5);
+    const slash  = idle - (targetKey === 'player' ? arc * 0.55 : arc * 0.5);
+
+    socketsData[targetKey].slashArc = {
+      idleAngle: idle,
+      windupAngle: windup,
+      slashAngle: slash,
+      arc: arc
+    };
+
+    if (valIdleAngle) valIdleAngle.textContent = `${Math.round(idle)}°`;
+    if (numIdleAngle) numIdleAngle.value = Math.round(idle);
+    if (valSlashArc) valSlashArc.textContent = `${Math.round(arc)}°`;
+    if (numSlashArc) numSlashArc.value = Math.round(arc);
+  }
+
+  sliderIdleAngle?.addEventListener('input', onSlashTuningChanged);
+  sliderSlashArc?.addEventListener('input', onSlashTuningChanged);
+  numIdleAngle?.addEventListener('change', () => { sliderIdleAngle.value = numIdleAngle.value; onSlashTuningChanged(); });
+  numSlashArc?.addEventListener('change', () => { sliderSlashArc.value = numSlashArc.value; onSlashTuningChanged(); });
+
+  // Button: [🔒 Khóa Cứng Vũ Khí Vào Tay]
+  btnLockWeapon?.addEventListener('click', () => {
+    onWeaponSliderChanged();
+    onSlashTuningChanged();
+
+    // Visual feedback
+    if (statusToast) {
+      statusToast.className = 'status-toast success';
+      statusToast.innerHTML = `🔒 <b>Đã khóa cứng vũ khí vào cánh tay</b> (${activeWeaponTarget === 'player' ? 'Nhân vật' : 'Boss'})!`;
+      statusToast.style.display = 'block';
+      setTimeout(() => { statusToast.style.display = 'none'; }, 3000);
     }
   });
 
-  // Slider change listeners
-  function onStep1SliderChange() {
-    const cat = getActiveCategory();
-    const cfg = getCategoryConfig(cat);
-
-    const sX = sliderShoulderX || sliderX;
-    const sY = sliderShoulderY || sliderY;
-    const sZ = sliderShoulderZ || sliderZ;
-
-    const x = parseFloat(sX?.value || 0);
-    const y = parseFloat(sY?.value || 0);
-    const z = parseFloat(sZ?.value || 0);
-
-    cfg.shoulderX = x;
-    cfg.shoulderY = y;
-    cfg.shoulderZ = z;
-
-    // Legacy sync
-    cfg.handX = -x;
-    cfg.handY = y;
-    cfg.handZ = z;
-
-    const nX = numShoulderX || numX;
-    const vX = valShoulderX || valX;
-    if (nX) nX.value = x.toFixed(2);
-    if (vX) vX.textContent = x.toFixed(2);
-
-    const nY = numShoulderY || numY;
-    const vY = valShoulderY || valY;
-    if (nY) nY.value = y.toFixed(2);
-    if (vY) vY.textContent = y.toFixed(2);
-
-    const nZ = numShoulderZ || numZ;
-    const vZ = valShoulderZ || valZ;
-    if (nZ) nZ.value = z.toFixed(2);
-    if (vZ) vZ.textContent = z.toFixed(2);
-
-    updateCompoundTransforms();
-  }
-
-  function onStep2SliderChange() {
-    const cat = getActiveCategory();
-    const cfg = getCategoryConfig(cat);
-    const w = cfg.weapon || {};
-
-    const ox = parseFloat(sliderOffsetX?.value || 0);
-    const oy = parseFloat(sliderOffsetY?.value || 0);
-    const oz = parseFloat(sliderOffsetZ?.value || 0);
-    const angle = parseFloat((sliderTiltAngle || sliderAngle)?.value || (cat === 'player' ? -45 : 30));
-
-    w.offsetX = ox;
-    w.offsetY = oy;
-    w.offsetZ = oz;
-    w.angle = angle;
-    w.rotZ = (angle * Math.PI) / 180;
-    cfg.weaponAngle = angle;
-
-    if (numOffsetX) numOffsetX.value = ox.toFixed(2);
-    if (valOffsetX) valOffsetX.textContent = ox.toFixed(2);
-    if (numOffsetY) numOffsetY.value = oy.toFixed(2);
-    if (valOffsetY) valOffsetY.textContent = oy.toFixed(2);
-    if (numOffsetZ) numOffsetZ.value = oz.toFixed(2);
-    if (valOffsetZ) valOffsetZ.textContent = oz.toFixed(2);
-
-    const nA = numTiltAngle || numAngle;
-    const vA = valTiltAngle || valAngle;
-    if (nA) nA.value = Math.round(angle);
-    if (vA) vA.textContent = `${Math.round(angle)}°`;
-
-    updateCompoundTransforms();
-  }
-
-  (sliderShoulderX || sliderX)?.addEventListener('input', onStep1SliderChange);
-  (sliderShoulderY || sliderY)?.addEventListener('input', onStep1SliderChange);
-  (sliderShoulderZ || sliderZ)?.addEventListener('input', onStep1SliderChange);
-
-  (numShoulderX || numX)?.addEventListener('change', () => {
-    if (sliderShoulderX || sliderX) (sliderShoulderX || sliderX).value = (numShoulderX || numX).value;
-    onStep1SliderChange();
-  });
-  (numShoulderY || numY)?.addEventListener('change', () => {
-    if (sliderShoulderY || sliderY) (sliderShoulderY || sliderY).value = (numShoulderY || numY).value;
-    onStep1SliderChange();
-  });
-  (numShoulderZ || numZ)?.addEventListener('change', () => {
-    if (sliderShoulderZ || sliderZ) (sliderShoulderZ || sliderZ).value = (numShoulderZ || numZ).value;
-    onStep1SliderChange();
-  });
-
-  sliderOffsetX?.addEventListener('input', onStep2SliderChange);
-  sliderOffsetY?.addEventListener('input', onStep2SliderChange);
-  sliderOffsetZ?.addEventListener('input', onStep2SliderChange);
-  (sliderTiltAngle || sliderAngle)?.addEventListener('input', onStep2SliderChange);
-
-  numOffsetX?.addEventListener('change', () => { if (sliderOffsetX) sliderOffsetX.value = numOffsetX.value; onStep2SliderChange(); });
-  numOffsetY?.addEventListener('change', () => { if (sliderOffsetY) sliderOffsetY.value = numOffsetY.value; onStep2SliderChange(); });
-  numOffsetZ?.addEventListener('change', () => { if (sliderOffsetZ) sliderOffsetZ.value = numOffsetZ.value; onStep2SliderChange(); });
-  (numTiltAngle || numAngle)?.addEventListener('change', () => {
-    if (sliderTiltAngle || sliderAngle) (sliderTiltAngle || sliderAngle).value = (numTiltAngle || numAngle).value;
-    onStep2SliderChange();
-  });
-
-  selectTargetEl?.addEventListener('change', () => {
-    currentTargetKey = selectTargetEl.value;
-    loadTargetModel();
-  });
-
-  // Test single-rotation slash / slam motion
-  let isTestingSwing = false;
+  // Button: [⚔️ Vung Thử (Test Swing)]
   function playTestSwing() {
     if (isTestingSwing) return;
     isTestingSwing = true;
-    const cat = getActiveCategory();
 
-    if (cat === 'player') {
-      const startRotZ = 0;
-      const windupRotZ = (60 * Math.PI) / 180;
-      const strikeRotZ = (-75 * Math.PI) / 180;
-      const startTime = performance.now();
+    const isPlayer = (activeWeaponTarget === 'player');
+    const targetKey = isPlayer ? 'player' : 'boss';
+    const s = socketsData[targetKey]?.slashArc || {};
+    const idleAngleRad = ((s.idleAngle ?? 0) * Math.PI) / 180;
+    const windupAngleRad = ((s.windupAngle ?? (isPlayer ? 60 : 80)) * Math.PI) / 180;
+    const strikeAngleRad = ((s.slashAngle ?? (isPlayer ? -75 : -80)) * Math.PI) / 180;
 
-      function stepSwing(now) {
-        const elapsed = now - startTime;
-        if (elapsed < 100) {
-          const t = elapsed / 100;
-          combatArmCompound.rotation.z = THREE.MathUtils.lerp(startRotZ, windupRotZ, t * t);
-          requestAnimationFrame(stepSwing);
-        } else if (elapsed < 220) {
-          const t = (elapsed - 100) / 120;
-          combatArmCompound.rotation.z = THREE.MathUtils.lerp(windupRotZ, strikeRotZ, t * t);
-          requestAnimationFrame(stepSwing);
-        } else if (elapsed < 320) {
-          const t = (elapsed - 220) / 100;
-          combatArmCompound.rotation.z = THREE.MathUtils.lerp(strikeRotZ, startRotZ, 1 - (1 - t) * (1 - t));
-          requestAnimationFrame(stepSwing);
-        } else {
-          combatArmCompound.rotation.z = startRotZ;
-          isTestingSwing = false;
-        }
+    const startTime = performance.now();
+    const dur1 = isPlayer ? 100 : 160;
+    const dur2 = isPlayer ? 120 : 130;
+    const dur3 = isPlayer ? 100 : 150;
+
+    function step(now) {
+      const elapsed = now - startTime;
+      let curAngle = idleAngleRad;
+
+      if (elapsed < dur1) {
+        const t = elapsed / dur1;
+        curAngle = THREE.MathUtils.lerp(idleAngleRad, windupAngleRad, t * t);
+        requestAnimationFrame(step);
+      } else if (elapsed < dur1 + dur2) {
+        const t = (elapsed - dur1) / dur2;
+        curAngle = THREE.MathUtils.lerp(windupAngleRad, strikeAngleRad, t * t);
+        requestAnimationFrame(step);
+      } else if (elapsed < dur1 + dur2 + dur3) {
+        const t = (elapsed - (dur1 + dur2)) / dur3;
+        curAngle = THREE.MathUtils.lerp(strikeAngleRad, idleAngleRad, 1 - (1 - t) * (1 - t));
+        requestAnimationFrame(step);
+      } else {
+        curAngle = idleAngleRad;
+        isTestingSwing = false;
       }
-      requestAnimationFrame(stepSwing);
-    } else {
-      const startRotZ = 0;
-      const raiseRotZ = (80 * Math.PI) / 180;
-      const slamRotZ = (-80 * Math.PI) / 180;
-      const startTime = performance.now();
 
-      function stepSlam(now) {
-        const elapsed = now - startTime;
-        if (elapsed < 160) {
-          const t = elapsed / 160;
-          combatArmCompound.rotation.z = THREE.MathUtils.lerp(startRotZ, raiseRotZ, t * t);
-          requestAnimationFrame(stepSlam);
-        } else if (elapsed < 290) {
-          const t = (elapsed - 160) / 130;
-          combatArmCompound.rotation.z = THREE.MathUtils.lerp(raiseRotZ, slamRotZ, t * t);
-          requestAnimationFrame(stepSlam);
-        } else if (elapsed < 440) {
-          const t = (elapsed - 290) / 150;
-          combatArmCompound.rotation.z = THREE.MathUtils.lerp(slamRotZ, startRotZ, 1 - (1 - t) * (1 - t));
-          requestAnimationFrame(stepSlam);
-        } else {
-          combatArmCompound.rotation.z = startRotZ;
-          isTestingSwing = false;
-        }
+      // Rotate in Viewport 3
+      weaponCompoundHolder.rotation.z = curAngle;
+
+      // Rotate in Viewport 1 or 2
+      if (isPlayer) {
+        playerCompoundArm.rotation.z = curAngle;
+      } else {
+        bossCompoundArm.rotation.z = curAngle;
       }
-      requestAnimationFrame(stepSlam);
     }
+    requestAnimationFrame(step);
   }
 
   btnTestSwing?.addEventListener('click', playTestSwing);
 
-  // Reset to default
-  btnReset?.addEventListener('click', () => {
-    const cat = getActiveCategory();
-    if (DEFAULT_SOCKETS_CONFIG[cat]) {
-      socketsData[cat] = JSON.parse(JSON.stringify(DEFAULT_SOCKETS_CONFIG[cat]));
-      updateControlsFromConfig();
-      if (statusToast) {
-        statusToast.className = 'status-toast success';
-        statusToast.textContent = `✓ Đã hoàn tác về giá trị chuẩn của ${cat === 'player' ? 'Nhân vật' : 'Boss'}`;
-        statusToast.style.display = 'block';
-        setTimeout(() => { statusToast.style.display = 'none'; }, 3000);
-      }
-    }
-  });
-
-  // Save compound transform offsets to server
-  btnSave?.addEventListener('click', async () => {
+  // Button: [💾 Lưu Cấu Hình Khớp & Đòn Chém]
+  btnSaveRigging?.addEventListener('click', async () => {
     try {
-      btnSave.disabled = true;
-      btnSave.textContent = '⏳ Đang lưu...';
+      btnSaveRigging.disabled = true;
+      btnSaveRigging.innerHTML = '<span>⏳</span> Đang lưu...';
 
-      // Ensure full sync across sets
-      const pCfg = getCategoryConfig('player');
-      const bCfg = getCategoryConfig('boss');
+      // Save active target rigging
+      const targetKey = activeWeaponTarget;
+      const targetConfig = socketsData[targetKey];
 
-      ['default', 'thunder', 'fire', 'frost'].forEach(k => {
-        if (!socketsData.player[k]) socketsData.player[k] = {};
-        socketsData.player[k].handX = -pCfg.shoulderX;
-        socketsData.player[k].handY = pCfg.shoulderY;
-        socketsData.player[k].handZ = pCfg.shoulderZ;
-        socketsData.player[k].weaponAngle = pCfg.weapon?.angle ?? -45;
-      });
+      const payload = {
+        target: targetKey,
+        armMeshName: targetConfig.armMeshName,
+        shoulderPivot: targetConfig.shoulderPivot,
+        weaponOffset: targetConfig.weapon,
+        slashArc: targetConfig.slashArc
+      };
 
-      ['thunder', 'fire', 'frost'].forEach(k => {
-        if (!socketsData.boss[k]) socketsData.boss[k] = {};
-        socketsData.boss[k].handX = bCfg.shoulderX;
-        socketsData.boss[k].handY = bCfg.shoulderY;
-        socketsData.boss[k].handZ = bCfg.shoulderZ;
-      });
-
-      const res = await saveSockets(socketsData);
-      btnSave.disabled = false;
-      btnSave.innerHTML = '<span>💾</span> KHÓA VŨ KHÍ VÀO TAY &amp; LƯU LẠI';
+      const res = await saveRigging(payload);
+      btnSaveRigging.disabled = false;
+      btnSaveRigging.innerHTML = '<span>💾</span> LƯU CẤU HÌNH KHỚP &amp; ĐÒN CHÉM';
 
       if (statusToast) {
         statusToast.className = 'status-toast success';
-        statusToast.textContent = '✓ Đã khóa vũ khí vào tay và lưu cấu hình thành công!';
+        statusToast.innerHTML = `✓ ${res.message || 'Đã lưu cấu hình khớp & đòn chém thành công!'}`;
         statusToast.style.display = 'block';
         setTimeout(() => { statusToast.style.display = 'none'; }, 4000);
       }
 
-      window.dispatchEvent(new CustomEvent('sockets-updated', { detail: socketsData }));
+      window.dispatchEvent(new CustomEvent('sockets-updated', { detail: res.sockets || res.config }));
     } catch (err) {
-      btnSave.disabled = false;
-      btnSave.innerHTML = '<span>💾</span> KHÓA VŨ KHÍ VÀO TAY &amp; LƯU LẠI';
+      btnSaveRigging.disabled = false;
+      btnSaveRigging.innerHTML = '<span>💾</span> LƯU CẤU HÌNH KHỚP &amp; ĐÒN CHÉM';
       if (statusToast) {
         statusToast.className = 'status-toast error';
         statusToast.textContent = 'Lỗi khi lưu: ' + err.message;
@@ -793,105 +1106,71 @@ export function initVisualSocketCalibrator(opts = {}) {
     }
   });
 
-  // Animation Loop
-  let reqId = null;
+  // Animation Loop across all 3 viewports
+  let animId = null;
   function animate() {
-    reqId = requestAnimationFrame(animate);
-    controls.update();
+    animId = requestAnimationFrame(animate);
 
-    if (activeStep === 1) {
-      const t = Date.now() * 0.003;
-      sRingX.scale.setScalar(1 + Math.sin(t) * 0.15);
-      sRingY.scale.setScalar(1 + Math.cos(t) * 0.15);
-    }
+    vpPlayer.controls.update();
+    vpBoss.controls.update();
+    vpWeapon.controls.update();
 
-    renderer.render(scene, camera);
+    // Pulse gizmos subtly
+    const t = Date.now() * 0.003;
+    playerGizmoObj.ringX.scale.setScalar(1 + Math.sin(t) * 0.12);
+    playerGizmoObj.ringY.scale.setScalar(1 + Math.cos(t) * 0.12);
+    bossGizmoObj.ringX.scale.setScalar(1 + Math.sin(t) * 0.12);
+    bossGizmoObj.ringY.scale.setScalar(1 + Math.cos(t) * 0.12);
+
+    vpPlayer.renderer.render(vpPlayer.scene, vpPlayer.camera);
+    vpBoss.renderer.render(vpBoss.scene, vpBoss.camera);
+    vpWeapon.renderer.render(vpWeapon.scene, vpWeapon.camera);
   }
   animate();
 
-  const resizeObs = new ResizeObserver(() => {
-    const w = containerEl.clientWidth || 600;
-    const h = containerEl.clientHeight || 480;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-  });
-  resizeObs.observe(containerEl);
+  // Load configuration from backend
+  fetchRigging().then(cfg => {
+    if (cfg && typeof cfg === 'object') {
+      socketsData = {
+        player: { ...DEFAULT_SOCKETS_CONFIG.player, ...(cfg.player || {}) },
+        boss:   { ...DEFAULT_SOCKETS_CONFIG.boss,   ...(cfg.boss || {}) },
+        weapon: { ...DEFAULT_SOCKETS_CONFIG.weapon, ...(cfg.weapon || {}) },
+      };
+      updatePlayerControlsUI();
+      updateBossControlsUI();
+      updateWeaponControlsUI();
+      updatePlayerGizmo();
+      updateBossGizmo();
+    }
+  }).catch(() => {});
 
-  loadTargetModel();
+  loadPlayerModel();
+  loadBossModel('fire');
+  updateWeaponControlsUI();
 
   return {
     destroy: () => {
-      cancelAnimationFrame(reqId);
-      resizeObs.disconnect();
-      renderer.dispose();
+      cancelAnimationFrame(animId);
+      vpPlayer.resizeObs.disconnect();
+      vpBoss.resizeObs.disconnect();
+      vpWeapon.resizeObs.disconnect();
+      vpPlayer.renderer.dispose();
+      vpBoss.renderer.dispose();
+      vpWeapon.renderer.dispose();
     },
-    reload: loadTargetModel,
     playTestSwing
   };
 }
 
-/**
- * Initializes the standalone calibrator on public/admin.html
- */
+// Backwards-compatible init functions
+export function initVisualSocketCalibrator(opts = {}) {
+  // If called without specific container or for standalone 3-viewport mode
+  if (document.getElementById('viewport-player') && document.getElementById('viewport-boss')) {
+    return init3ViewportCalibrator();
+  }
+  return null;
+}
+
 export function initStandaloneCalibrator() {
-  const containerEl = document.getElementById('viewport-canvas-container');
-  const selectTargetEl = document.getElementById('select-model-target');
-
-  const btnTabStep1 = document.getElementById('btn-tab-step1');
-  const btnTabStep2 = document.getElementById('btn-tab-step2');
-  const paneStep1 = document.getElementById('pane-step1');
-  const paneStep2 = document.getElementById('pane-step2');
-
-  const sliderShoulderX = document.getElementById('slider-shoulder-x');
-  const numShoulderX = document.getElementById('num-shoulder-x');
-  const valShoulderX = document.getElementById('val-shoulder-x');
-
-  const sliderShoulderY = document.getElementById('slider-shoulder-y');
-  const numShoulderY = document.getElementById('num-shoulder-y');
-  const valShoulderY = document.getElementById('val-shoulder-y');
-
-  const sliderShoulderZ = document.getElementById('slider-shoulder-z');
-  const numShoulderZ = document.getElementById('num-shoulder-z');
-  const valShoulderZ = document.getElementById('val-shoulder-z');
-
-  const btnGotoStep2 = document.getElementById('btn-goto-step2');
-  const btnGotoStep1 = document.getElementById('btn-goto-step1');
-
-  const sliderOffsetX = document.getElementById('slider-offset-x');
-  const numOffsetX = document.getElementById('num-offset-x');
-  const valOffsetX = document.getElementById('val-offset-x');
-
-  const sliderOffsetY = document.getElementById('slider-offset-y');
-  const numOffsetY = document.getElementById('num-offset-y');
-  const valOffsetY = document.getElementById('val-offset-y');
-
-  const sliderOffsetZ = document.getElementById('slider-offset-z');
-  const numOffsetZ = document.getElementById('num-offset-z');
-  const valOffsetZ = document.getElementById('val-offset-z');
-
-  const sliderTiltAngle = document.getElementById('slider-tilt-angle');
-  const numTiltAngle = document.getElementById('num-tilt-angle');
-  const valTiltAngle = document.getElementById('val-tilt-angle');
-
-  const btnTestSwing = document.getElementById('btn-test-swing');
-  const btnSave = document.getElementById('btn-save-sockets');
-  const btnReset = document.getElementById('btn-reset-default');
-  const statusToast = document.getElementById('status-toast');
-
-  return initVisualSocketCalibrator({
-    containerEl,
-    selectTargetEl,
-    btnTabStep1, btnTabStep2, paneStep1, paneStep2,
-    sliderShoulderX, numShoulderX, valShoulderX,
-    sliderShoulderY, numShoulderY, valShoulderY,
-    sliderShoulderZ, numShoulderZ, valShoulderZ,
-    btnGotoStep2, btnGotoStep1,
-    sliderOffsetX, numOffsetX, valOffsetX,
-    sliderOffsetY, numOffsetY, valOffsetY,
-    sliderOffsetZ, numOffsetZ, valOffsetZ,
-    sliderTiltAngle, numTiltAngle, valTiltAngle,
-    btnTestSwing,
-    btnSave, btnReset, statusToast
-  });
+  return init3ViewportCalibrator();
 }
