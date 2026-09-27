@@ -211,6 +211,156 @@ export function triggerFrostShatter(bossPosition, damageText) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 🔥 FLAME PROJECTILE / WAVE
+// ─────────────────────────────────────────────────────────────────────────────
+export function spawnFlameProjectile(startPos, targetPos, onImpact) {
+  if (!sceneRef) { if (onImpact) onImpact(); return; }
+  const group = new THREE.Group();
+  group.position.copy(startPos);
+
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 8), coreMat);
+  group.add(core);
+
+  const waveMat = new THREE.MeshBasicMaterial({
+    color: 0xff4400,
+    transparent: true,
+    opacity: 0.9,
+    side: THREE.DoubleSide,
+  });
+  const waveGeo = new THREE.TorusGeometry(0.7, 0.18, 6, 16, Math.PI);
+  const wave = new THREE.Mesh(waveGeo, waveMat);
+  wave.rotation.y = Math.PI / 2;
+  wave.rotation.z = -Math.PI / 2;
+  group.add(wave);
+
+  sceneRef.add(group);
+
+  const startTime = performance.now();
+  const duration = 250;
+  const sx = startPos.x, sy = startPos.y, sz = startPos.z;
+  const tx = targetPos.x, ty = targetPos.y, tz = targetPos.z;
+
+  const animInterval = setInterval(() => {
+    const elapsed = performance.now() - startTime;
+    const t = Math.min(1.0, elapsed / duration);
+    group.position.x = sx + (tx - sx) * t;
+    group.position.y = sy + (ty - sy) * t + Math.sin(t * Math.PI) * 0.4;
+    group.position.z = sz + (tz - sz) * t;
+    group.rotation.x += 0.2;
+    group.rotation.z += 0.3;
+
+    if (sceneRef && Math.random() < 0.6) {
+      const ember = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.12, 0.12),
+        new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0xffcc00 })
+      );
+      ember.position.copy(group.position);
+      sceneRef.add(ember);
+      particles.push({
+        mesh: ember,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.2) * 2, (Math.random() - 0.5) * 2),
+        life: 0.3,
+        maxLife: 0.3,
+      });
+    }
+
+    if (t >= 1.0) {
+      clearInterval(animInterval);
+      if (sceneRef) sceneRef.remove(group);
+      group.traverse(c => {
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      });
+      if (onImpact) onImpact();
+    }
+  }, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ❄️ ICE ENCASEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+export function freezeBossInIce(bossPosition, duration = 400, onShatter) {
+  if (!sceneRef) { if (onShatter) onShatter(); return; }
+
+  const iceGroup = new THREE.Group();
+  iceGroup.position.copy(bossPosition);
+
+  const iceMat = new THREE.MeshBasicMaterial({
+    color: 0x88ddff,
+    transparent: true,
+    opacity: 0.72,
+    depthWrite: false,
+  });
+  const blockGeo = new THREE.BoxGeometry(3.6, 5.4, 3.6);
+  const block = new THREE.Mesh(blockGeo, iceMat);
+  block.position.set(0, 0.2, 0);
+  block.scale.set(0.2, 0.05, 0.2);
+  iceGroup.add(block);
+
+  const spikes = [];
+  const spikeMat = new THREE.MeshBasicMaterial({ color: 0xcceeFF, transparent: true, opacity: 0.85 });
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.2, 4), spikeMat);
+    spike.position.set(Math.cos(angle) * 1.5, -2.0, Math.sin(angle) * 1.2);
+    spike.rotation.z = Math.cos(angle) * 0.2;
+    spike.scale.set(0.1, 0.1, 0.1);
+    iceGroup.add(spike);
+    spikes.push(spike);
+  }
+
+  sceneRef.add(iceGroup);
+
+  const growStart = performance.now();
+  const growDur = 120;
+  const growInterval = setInterval(() => {
+    const elapsed = performance.now() - growStart;
+    const t = Math.min(1.0, elapsed / growDur);
+    block.scale.set(0.2 + 0.8 * t, 0.05 + 0.95 * t, 0.2 + 0.8 * t);
+    spikes.forEach(sp => sp.scale.set(t, t, t));
+    if (t >= 1.0) clearInterval(growInterval);
+  }, 16);
+
+  setTimeout(() => {
+    clearInterval(growInterval);
+    if (sceneRef) sceneRef.remove(iceGroup);
+    iceGroup.traverse(c => {
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+    });
+
+    if (sceneRef) {
+      for (let i = 0; i < 40; i++) {
+        const shard = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18 + Math.random() * 0.15, 0.18 + Math.random() * 0.15, 0.18),
+          new THREE.MeshBasicMaterial({
+            color: Math.random() > 0.4 ? 0x88ddff : 0xffffff,
+            transparent: true,
+            opacity: 0.9,
+          })
+        );
+        shard.position.copy(bossPosition);
+        shard.position.x += (Math.random() - 0.5) * 2.5;
+        shard.position.y += (Math.random() - 0.5) * 3.5;
+        shard.position.z += (Math.random() - 0.5) * 2.0;
+        sceneRef.add(shard);
+        const a = Math.random() * Math.PI * 2;
+        const sp = 5 + Math.random() * 12;
+        particles.push({
+          mesh: shard,
+          velocity: new THREE.Vector3(Math.cos(a) * sp, (Math.random() - 0.2) * sp + 3, Math.sin(a) * sp * 0.5),
+          life: 0.65,
+          maxLife: 0.65,
+        });
+      }
+    }
+
+    if (onShatter) onShatter();
+  }, duration);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Legacy
 // ─────────────────────────────────────────────────────────────────────────────
 export function punishWrong() {

@@ -224,12 +224,14 @@ class RoomManager {
 
     const FULL_SET_PIECES = ['hat', 'shirt', 'pants', 'shoes', 'weapon'];
 
-    /** Returns true if player has all 5 pieces of their equipped element */
+    /** Returns true if player has full set of their equipped element */
     const checkHasFullSet = (p) => {
+      if (p.damagePerHit === 2) return true;
       const el = p.equippedSet || null;
       if (!el) return false;
       const inv = p.inventory?.[el];
       if (!Array.isArray(inv)) return false;
+      if (inv.includes('weapon') && inv.includes('outfit')) return true;
       return FULL_SET_PIECES.every(piece => inv.includes(piece));
     };
 

@@ -8,6 +8,7 @@ import * as Boss          from './boss.js';
 import { socket }         from '../socket.js';
 import * as hud           from '../ui/hud.js';
 import * as Audio         from '../audio.js';
+import * as Combat        from './combat.js';
 
 let scene, camera, renderer;
 let clock    = new THREE.Clock();
@@ -181,69 +182,17 @@ function processNextEvent() {
 }
 
 function runAttackSequence(ev) {
-  const dmg        = ev.damage || 1;
-  const hasFullSet = ev.hasFullSet || false;
-  const element    = ev.equippedSet || Player.getActiveElement() || null;
-
-  // ─── Phase 1: Single clean forward slash ───────────────────────────────────
-  // onHitMoment: fires at midpoint of swing (36% of 0.9s ≈ 324ms into animation)
-  // onDone: fires when character has stepped BACK to home position (end of 0.9s anim)
-  Player.playAttack(
-    () => {
-      // Hit moment — basic slash lands
-      try { Audio.playSlash(); } catch(e) {}
-      Effects.spawnHitSpark(BOSS_VFX_POS);
-      Boss.playBossHurt();
-      Effects.spawnDamageNumber(BOSS_VFX_POS, '-1 HP', '#ffee44');
-      Effects.triggerShake(0.18, 0.25);
-    },
-    () => {
-      // ─── Phase 2: AFTER character steps back — elemental spell (full set only)
-      if (hasFullSet && element) {
-        // Brief pause before spell so it's visually distinct from the slash
-        setTimeout(() => {
-          try {
-            if      (element === 'thunder') Audio.playThunder();
-            else if (element === 'fire')    Audio.playFire();
-            else if (element === 'frost')   Audio.playFrost();
-          } catch(e) {}
-
-          if (element === 'thunder') {
-            // Lightning bolt from sky onto Boss
-            Effects.triggerLightningSlash(BOSS_VFX_POS, `⚡ -1 HP`);
-          } else if (element === 'fire') {
-            // Pillar of fire erupts around Boss
-            Effects.triggerFireBurst(BOSS_VFX_POS, `🔥 -1 HP`);
-            Effects.triggerShake(0.4, 0.4);
-          } else if (element === 'frost') {
-            // Ice spikes erupt from beneath Boss
-            Effects.triggerFrostShatter(BOSS_VFX_POS, `❄️ -1 HP`);
-            Effects.triggerShake(0.35, 0.4);
-          }
-
-          Boss.playBossHurt();   // second recoil for spell impact
-
-          // Unlock queue AFTER spell VFX fires (short window for VFX to play)
-          setTimeout(() => {
-            combatBusy = false;
-            processNextEvent();
-          }, 600);
-        }, 120);   // 120ms post-return before spell lands
-
-      } else {
-        // Normal gear — unlock immediately after slash completes
-        combatBusy = false;
-        processNextEvent();
-      }
-    }
-  );
+  Combat.runAttack(ev, () => {
+    combatBusy = false;
+    processNextEvent();
+  });
 }
 
-
 function runDodgeSequence(ev) {
-  Boss.playBossDodge();
-  Effects.spawnDamageNumber(new THREE.Vector3(3, 6, 0), 'DODGE!', '#ffbe0b');
-  Player.playRushMiss(() => { combatBusy = false; processNextEvent(); });
+  Combat.runDodge(ev, () => {
+    combatBusy = false;
+    processNextEvent();
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
