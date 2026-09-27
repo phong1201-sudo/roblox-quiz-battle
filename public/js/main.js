@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window._godFather = (user.role === 'admin');
         // CRITICAL: make sure menu screen is active after auth modal closes
         showScreen('menu');
+        // Start lobby music now that we have a user interaction (login click)
+        try { Audio.playBGM('lobby'); } catch(e) {}
     });
 
     // ── Menu buttons ──────────────────────────────────────────────────────────
@@ -111,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (lobby.init) lobby.init(window.gameState);
         showScreen('lobby');
+        try { Audio.playBGM('lobby'); } catch(e) {}
     });
 
     on('room_joined', (data) => {
@@ -124,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (lobby.init) lobby.init(window.gameState);
         showScreen('lobby');
+        try { Audio.playBGM('lobby'); } catch(e) {}
     });
 
     on('player_joined', (data) => { if (lobby.updatePlayers) lobby.updatePlayers(data.players); });
@@ -131,6 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     on('game_started', () => {
         showScreen('game');
+        // Start elemental battle BGM — wait 200ms for game_mode_set to set bossElement
+        setTimeout(() => {
+            try {
+                const el = window.gameState?.bossElement || window.gameState?.selectedBoss;
+                const track = (el === 'thunder' || el === 'fire' || el === 'frost') ? el : 'thunder';
+                Audio.playBGM(track);
+            } catch(e) {}
+        }, 200);
         requestAnimationFrame(() => {
             ensureSceneInit();
             if (hud.init)        hud.init(window.gameState);
@@ -168,6 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gameState.difficulty  = data.difficulty;
         }
 
+        // Victory BGM — plays once, then lobby music returns after 8s
+        try {
+            Audio.playBGM('victory');
+            setTimeout(() => { try { Audio.playBGM('lobby'); } catch(e) {} }, 8000);
+        } catch(e) {}
+
         showScreen('results');
         if (results.init) results.init(data, window.gameState);
     });
@@ -180,6 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gameState.mode      = data.mode;
             window.gameState.totalHp   = data.totalHp;
             window.gameState.bossIndex = data.bossIndex ?? 0;
+            // Derive bossElement from bossIndex so BGM can pick the right track
+            const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
+            window.gameState.bossElement = BOSS_ELEMENTS[data.bossIndex] || 'thunder';
         }
     });
 
