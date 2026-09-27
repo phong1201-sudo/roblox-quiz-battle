@@ -1,4 +1,9 @@
-// THREE is available as a global from the CDN script tag
+// THREE is available as a global from the CDN script tag, GLTFLoader from three/addons
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+if (typeof window !== 'undefined' && window.THREE && !window.THREE.GLTFLoader) {
+  window.THREE.GLTFLoader = GLTFLoader;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Colour maps
@@ -32,6 +37,14 @@ let rightShoulderPivot = null;       // shoulder joint Group (rArmPivot)
 let leftLeg, rightLeg;
 let leftShoe, rightShoe;
 let swordGroup = null;               // weapon, child of rightShoulderPivot
+
+// Native 3D GLB Model state
+let is3DModelMode = false;
+let characterModel = null;           // Root scene of loaded character GLB
+let characterRoot = null;            // THREE.Group containing characterModel
+let weaponModel = null;              // Root scene of loaded weapon GLB
+let weaponSocket = null;             // THREE.Group attached to character hand bone
+let handNode = null;                 // Right-hand bone or arm node
 
 // 2.5D Sprite Mesh state
 let is2DMode = false;
@@ -264,24 +277,179 @@ function _loadArtTexture(element, type) {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 3D GLB/GLTF MODEL LOADER & BONE SOCKETING SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+const _modelCache = {
+  thunder: { character: null, weapon: null },
+  fire:    { character: null, weapon: null },
+  frost:   { character: null, weapon: null },
+};
+
+function _findHandBone(root) {
+  if (!root) return null;
+  const candidateNames = [
+    'RightHand', 'Arm_R', 'Hand_R', 'mixamorigRightHand', 'mixamorig:RightHand',
+    'hand.R', 'Right_Hand', 'hand_r', 'RightArm', 'mixamorigRightArm', 'Arm.R', 'Hand.R'
+  ];
+  for (const name of candidateNames) {
+    const obj = root.getObjectByName(name);
+    if (obj) return obj;
+  }
+  let found = null;
+  root.traverse((child) => {
+    if (found) return;
+    const n = (child.name || '').toLowerCase();
+    if (n.includes('righthand') || n.includes('hand_r') || n.includes('hand.r') ||
+        (n.includes('arm') && (n.includes('_r') || n.includes('.r') || n.includes('right')))) {
+      found = child;
+    }
+  });
+  return found;
+}
+
+function _loadGLTFModel(url) {
+  return new Promise((resolve) => {
+    try {
+      const loader = new GLTFLoader();
+      loader.load(
+        url,
+        (gltf) => {
+          console.log('[player] Successfully loaded 3D model:', url);
+          resolve(gltf);
+        },
+        undefined,
+        () => resolve(null) // Return null on 404/failure without error
+      );
+    } catch (e) {
+      console.warn('[player] GLTFLoader error for', url, e);
+      resolve(null);
+    }
+  });
+}
+
 /**
- * 2.5D Sprite Character Builder:
- * Renders body and weapon as 2.5D sprite meshes when custom art is uploaded.
- * Fallback to 3D voxel box model if textures fail to load.
+ * Main Player Mesh Constructor:
+ * Priority 1: Native 3D GLTF/GLB models with Bone Socketing ([element]_character.glb & [element]_weapon.glb)
+ * Priority 2: 2.5D Sprite Meshes from uploaded art ([element]_body.png & [element]_weapon.png)
+ * Priority 3: Procedural 3D Voxel Box Model
  */
 export async function createPlayerMesh(element, equippedGear) {
   if (!playerGroup) return;
   const targetEl = element || activeElement;
 
-  // Clear existing meshes
+  // Clear existing meshes & state
   while (playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
   headMesh = hatMesh = torsoMesh = pantsMesh = null;
   leftArm = null; rightShoulderPivot = null; swordGroup = null;
   leftLeg = rightLeg = null; leftShoe = rightShoe = null;
   elementalAura = null; elementalParticles = [];
   bodyMesh = null; weaponMesh = null; weaponArmPivot = null;
+  characterModel = null; characterRoot = null; weaponModel = null; weaponSocket = null; handNode = null;
+  is3DModelMode = false;
+  is2DMode = false;
 
   if (targetEl) {
+    // ── 1. NATIVE 3D GLB/GLTF MODEL PIPELINE ─────────────────────────────────
+    let charGltf = await _loadGLTFModel(`/assets/models/${targetEl}_character.glb`);
+    if (!charGltf) {
+      charGltf = await _loadGLTFModel(`/assets/models/${targetEl}_character.gltf`);
+    }
+
+    if (charGltf && charGltf.scene) {
+      is3DModelMode = true;
+      playerGroup.rotation.set(0, 0, 0);
+      playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+
+      characterRoot = new THREE.Group();
+      characterRoot.name = 'CharacterRoot';
+
+      // Clone scene to allow clean reload
+      characterModel = charGltf.scene.clone(true);
+      characterModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      // Normalize character model scale to ~2.8 units height
+      const bBox = new THREE.Box3().setFromObject(characterModel);
+      const bSize = new THREE.Vector3();
+      bBox.getSize(bSize);
+      if (bSize.y > 0.01) {
+        const targetHeight = 2.8;
+        const scaleFactor = targetHeight / bSize.y;
+        characterModel.scale.setScalar(scaleFactor);
+      }
+
+      // Center horizontally and align base/feet at y = 0
+      const scaledBox = new THREE.Box3().setFromObject(characterModel);
+      characterModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
+      characterModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
+      characterModel.position.y = - scaledBox.min.y;
+
+      // Face towards Boss on the right (+X), angled 30° toward camera for optimal view
+      characterRoot.rotation.y = -Math.PI / 2 + Math.PI / 6;
+      characterRoot.add(characterModel);
+      playerGroup.add(characterRoot);
+
+      // Bone Socketing: Search for RightHand / Arm_R bone
+      handNode = characterModel.getObjectByName('RightHand') ||
+                 characterModel.getObjectByName('Arm_R') ||
+                 _findHandBone(characterModel);
+
+      if (!handNode) {
+        console.log('[player] No hand bone found, creating right-side socket node');
+        handNode = new THREE.Group();
+        handNode.name = 'RightHandFallback';
+        handNode.position.set(0.6, 1.4, 0.2);
+        characterModel.add(handNode);
+      } else {
+        console.log('[player] Socketed weapon to bone:', handNode.name);
+      }
+
+      // Load 3D Weapon Model
+      let weapGltf = await _loadGLTFModel(`/assets/models/${targetEl}_weapon.glb`);
+      if (!weapGltf) {
+        weapGltf = await _loadGLTFModel(`/assets/models/${targetEl}_weapon.gltf`);
+      }
+
+      weaponSocket = new THREE.Group();
+      weaponSocket.name = 'WeaponSocket';
+      weaponSocket.rotation.set(0, 0, WEAPON_READY_ROT_Z);
+
+      if (weapGltf && weapGltf.scene) {
+        weaponModel = weapGltf.scene.clone(true);
+        weaponModel.traverse((c) => {
+          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+        });
+
+        // Normalize weapon size (approx 1.8 units length)
+        const wBox = new THREE.Box3().setFromObject(weaponModel);
+        const wSize = new THREE.Vector3();
+        wBox.getSize(wSize);
+        const maxDim = Math.max(wSize.x, wSize.y, wSize.z);
+        if (maxDim > 0.01 && (maxDim > 10 || maxDim < 0.2)) {
+          weaponModel.scale.setScalar(1.8 / maxDim);
+        }
+        weaponSocket.add(weaponModel);
+      } else {
+        // Fallback procedural elemental blade attached to bone socket
+        const bladeColor = targetEl === 'fire' ? 0xff4400 : targetEl === 'frost' ? 0x88ddff : 0x00cfff;
+        const blade = makeBox(0.12, 1.6, 0.08, bladeColor);
+        blade.position.set(0, 0.8, 0);
+        weaponSocket.add(blade);
+      }
+
+      handNode.add(weaponSocket);
+
+      if (activeElement) _buildElementalAura(activeElement);
+      console.log(`[player] Native 3D GLB character loaded and bone socketed for ${targetEl}`);
+      return;
+    }
+
+    // ── 2. 2.5D SPRITE MESH PIPELINE (if custom 2D art exists) ────────────────
     const [bTex, wTex] = await Promise.all([
       _loadArtTexture(targetEl, 'body'),
       _loadArtTexture(targetEl, 'weapon'),
@@ -337,7 +505,7 @@ export async function createPlayerMesh(element, equippedGear) {
     }
   }
 
-  // Fallback: 3D Box Model
+  // ── 3. FALLBACK: 3D VOXEL BOX MODEL ────────────────────────────────────────
   is2DMode = false;
   playerGroup.rotation.y = FACE_Y;
   _build3DBoxCharacter();
@@ -356,6 +524,7 @@ if (typeof window !== 'undefined') {
   };
   window.addEventListener('character-art-updated', onArtUpdated);
   window.addEventListener('character-image-updated', onArtUpdated);
+  window.addEventListener('character-model-updated', onArtUpdated);
 
   // Pre-load existing textures on startup
   ['thunder', 'fire', 'frost'].forEach(el => {
@@ -587,7 +756,16 @@ export function playRushMiss(onDone) {
 
 export function playHurt() {
   if (!playerGroup) return;
-  if (is2DMode) {
+  if (is3DModelMode) {
+    if (characterModel) {
+      characterModel.traverse((c) => {
+        if (c.isMesh && c.material) {
+          if (c._origColor === undefined && c.material.color) c._origColor = c.material.color.getHex();
+          if (c.material.color) c.material.color.setHex(0xFF3333);
+        }
+      });
+    }
+  } else if (is2DMode) {
     if (bodyMesh?.material) bodyMesh.material.color.setHex(0xFF3333);
   } else {
     [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
@@ -600,7 +778,15 @@ export function playHurt() {
     if (++shakes >= 6) { clearInterval(iv); if (playerGroup) playerGroup.position.x = HOME_X; }
   }, 40);
   setTimeout(() => {
-    if (is2DMode) {
+    if (is3DModelMode) {
+      if (characterModel) {
+        characterModel.traverse((c) => {
+          if (c.isMesh && c.material && c._origColor !== undefined) {
+            c.material.color.setHex(c._origColor);
+          }
+        });
+      }
+    } else if (is2DMode) {
       if (bodyMesh?.material) bodyMesh.material.color.setHex(0xFFFFFF);
     } else {
       [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
@@ -663,7 +849,14 @@ export function updatePlayer(deltaTime, camera) {
     if (prog >= 1.0) { _resetAll(); anim.active = false; if (anim.onDone) anim.onDone(); }
 
   } else {
-    if (is2DMode) {
+    if (is3DModelMode) {
+      playerGroup.position.x = HOME_X;
+      playerGroup.position.y = HOME_Y + Math.sin(Date.now() * 0.002) * 0.04;
+      playerGroup.rotation.y = 0;
+      if (weaponSocket) {
+        weaponSocket.rotation.z = WEAPON_READY_ROT_Z + Math.sin(Date.now() * 0.002) * 0.03;
+      }
+    } else if (is2DMode) {
       playerGroup.position.x = HOME_X;
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
@@ -719,15 +912,16 @@ export function updatePlayer(deltaTime, camera) {
 function _animNormal(prog, dt) {
   const ATTACK_X = BOSS_X - 1.2;
 
-  if (is2DMode) {
+  if (is3DModelMode || is2DMode) {
+    const pivot = is3DModelMode ? weaponSocket : weaponArmPivot;
     if (prog < 0.34) {
       // 1. Lao vào (250ms)
       const t = prog / 0.34;
       playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
       playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.25;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.25, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.25, t);
       }
     } else if (prog < 0.55) {
       // 2. Chém (150ms): weapon pivot slashes down 75° into Boss's torso
@@ -735,8 +929,8 @@ function _animNormal(prog, dt) {
       playerGroup.position.x = ATTACK_X;
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.25, 0.25 - 75 * Math.PI / 180, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(0.25, 0.25 - 75 * Math.PI / 180, t);
       }
       if (prog >= 0.45 && !anim._hitEmitted) {
         anim._hitEmitted = true;
@@ -750,8 +944,8 @@ function _animNormal(prog, dt) {
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
       playerGroup.scale.set(1, 1, 1);
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = 0.25 - 75 * Math.PI / 180;
+      if (pivot) {
+        pivot.rotation.z = 0.25 - 75 * Math.PI / 180;
       }
     } else {
       // 4. Lùi về (250ms): dash back to original position
@@ -760,8 +954,8 @@ function _animNormal(prog, dt) {
       playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.3;
       playerGroup.rotation.y = 0;
       playerGroup.scale.set(1, 1, 1);
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.25 - 75 * Math.PI / 180, WEAPON_READY_ROT_Z, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(0.25 - 75 * Math.PI / 180, WEAPON_READY_ROT_Z, t);
       }
     }
     return;
@@ -824,15 +1018,16 @@ function _animThunder(prog, dt) {
   const APEX_X = BOSS_X - 0.5;
   const APEX_Y = HOME_Y + 3.5;
 
-  if (is2DMode) {
+  if (is3DModelMode || is2DMode) {
+    const pivot = is3DModelMode ? weaponSocket : weaponArmPivot;
     if (prog < 0.43) {
       // 1. Bay lên cao (350ms): leap high above Boss
       const t = prog / 0.43;
       playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, APEX_X, t);
       playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI * 0.5) * 3.5;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.65, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.65, t);
       }
     } else if (prog < 0.65) {
       // 2. Bổ xuống (180ms): dive straight down onto Boss head
@@ -840,8 +1035,8 @@ function _animThunder(prog, dt) {
       playerGroup.position.x = APEX_X;
       playerGroup.position.y = APEX_Y - t * 3.5;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.65, -1.35, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(0.65, -1.35, t);
       }
       if (prog >= 0.58 && !anim._hitEmitted) {
         anim._hitEmitted = true;
@@ -856,8 +1051,8 @@ function _animThunder(prog, dt) {
       playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 1.5;
       playerGroup.rotation.y = 0;
       playerGroup.scale.set(1, 1, 1);
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(-1.35, WEAPON_READY_ROT_Z, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(-1.35, WEAPON_READY_ROT_Z, t);
       }
     }
     return;
@@ -908,15 +1103,16 @@ function _animThunder(prog, dt) {
 function _animFrost(prog, dt) {
   const ATTACK_X = BOSS_X - 0.8;
 
-  if (is2DMode) {
+  if (is3DModelMode || is2DMode) {
+    const pivot = is3DModelMode ? weaponSocket : weaponArmPivot;
     if (prog < 0.36) {
       // 1. Lướt chém (200ms)
       const t = prog / 0.36;
       playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, -1.57, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, -1.57, t);
       }
       if (prog >= 0.28 && !anim._hitEmitted) {
         anim._hitEmitted = true;
@@ -930,8 +1126,8 @@ function _animFrost(prog, dt) {
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
       playerGroup.scale.set(1, 1, 1);
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = -1.57;
+      if (pivot) {
+        pivot.rotation.z = -1.57;
       }
     } else {
       // 3. Lùi lại (250ms)
@@ -940,8 +1136,8 @@ function _animFrost(prog, dt) {
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
       playerGroup.scale.set(1, 1, 1);
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(-1.57, WEAPON_READY_ROT_Z, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(-1.57, WEAPON_READY_ROT_Z, t);
       }
     }
     return;
@@ -985,7 +1181,8 @@ function _animFrost(prog, dt) {
 //   3. Hồi phục về thế thủ (300ms)
 // ═════════════════════════════════════════════════════════════════════════════
 function _animFire(prog, dt) {
-  if (is2DMode) {
+  if (is3DModelMode || is2DMode) {
+    const pivot = is3DModelMode ? weaponSocket : weaponArmPivot;
     if (prog < 0.45) {
       // 1. Đứng tại chỗ (250ms): power swing forward
       playerGroup.position.x = HOME_X + Math.sin(prog / 0.45 * Math.PI) * 0.3;
@@ -993,10 +1190,10 @@ function _animFire(prog, dt) {
       playerGroup.rotation.y = 0;
       if (prog < 0.16) {
         const t = prog / 0.16;
-        if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.4, t);
+        if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.4, t);
       } else {
         const t = (prog - 0.16) / 0.29;
-        if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.4, -1.4, t);
+        if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(0.4, -1.4, t);
       }
       if (prog >= 0.38 && !anim._hitEmitted) {
         anim._hitEmitted = true;
@@ -1009,10 +1206,9 @@ function _animFire(prog, dt) {
       const t = (prog - 0.45) / 0.55;
       playerGroup.position.x = THREE.MathUtils.lerp(HOME_X + 0.3, HOME_X, t);
       playerGroup.position.y = HOME_Y;
-      playerGroup.rotation.y = 0;
       playerGroup.scale.set(1, 1, 1);
-      if (weaponArmPivot) {
-        weaponArmPivot.rotation.z = THREE.MathUtils.lerp(-1.4, WEAPON_READY_ROT_Z, t);
+      if (pivot) {
+        pivot.rotation.z = THREE.MathUtils.lerp(-1.4, WEAPON_READY_ROT_Z, t);
       }
     }
     return;
@@ -1066,24 +1262,25 @@ function _spawnFlameWave() {
 // ═════════════════════════════════════════════════════════════════════════════
 function _animMiss(prog, dt) {
   const RUSH_X = HOME_X + (BOSS_X-HOME_X)*0.75;
-  if (is2DMode) {
+  if (is3DModelMode || is2DMode) {
+    const pivot = is3DModelMode ? weaponSocket : weaponArmPivot;
     if (prog < 0.40) {
       const t = prog / 0.40;
       playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, RUSH_X, t);
       playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.4;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.35, t);
+      if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.35, t);
     } else if (prog < 0.56) {
       playerGroup.position.x = RUSH_X;
       playerGroup.position.y = HOME_Y;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(0.35, -80 * Math.PI / 180, (prog - 0.40) / 0.16);
+      if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(0.35, -80 * Math.PI / 180, (prog - 0.40) / 0.16);
     } else {
       const t = (prog - 0.56) / 0.44;
       playerGroup.position.x = THREE.MathUtils.lerp(RUSH_X, HOME_X, t);
       playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.6;
       playerGroup.rotation.y = 0;
-      if (weaponArmPivot) weaponArmPivot.rotation.z = THREE.MathUtils.lerp(-80 * Math.PI / 180, WEAPON_READY_ROT_Z, t);
+      if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(-80 * Math.PI / 180, WEAPON_READY_ROT_Z, t);
     }
     return;
   }
@@ -1119,9 +1316,12 @@ function _runLimbs(dt, speed) {
 
 function _resetAll() {
   playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  playerGroup.rotation.set(0, is2DMode ? 0 : FACE_Y, 0);
+  playerGroup.rotation.set(0, (is3DModelMode || is2DMode) ? 0 : FACE_Y, 0);
   playerGroup.scale.set(1, 1, 1);
-  if (is2DMode) {
+  if (is3DModelMode) {
+    if (characterRoot) characterRoot.rotation.set(0, -Math.PI / 2 + Math.PI / 6, 0);
+    if (weaponSocket) weaponSocket.rotation.set(0, 0, WEAPON_READY_ROT_Z);
+  } else if (is2DMode) {
     if (bodyMesh) {
       bodyMesh.position.set(0, 0, 0);
       bodyMesh.rotation.set(0, Math.PI / 6, 0);

@@ -977,11 +977,12 @@ function _buildAdminDashboard(container, gameState) {
   refreshAllCounts();
 
   // ── Character & Weapon Art Upload section ─────────────────────────────────
-  wrap.appendChild(mkHead('🎨 Ảnh Nhân Vật & Vũ Khí (Art Upload)'));
+  // ── Character & Weapon Art & 3D Models Upload section ──────────────────────
+  wrap.appendChild(mkHead('📦 Mô Hình 3D & Ảnh Nhân Vật (3D GLB & Art Upload)'));
 
   const charNote = document.createElement('div');
   charNote.style.cssText = 'font-size:10px;color:#888;font-family:"Be Vietnam Pro",sans-serif;line-height:1.6;padding:4px 0;';
-  charNote.textContent = 'Tải ảnh Thân Nhân Vật và Vũ Khí cho từng hệ nguyên tố. Nền trắng sẽ tự động được lọc trong suốt. Nếu chưa tải ảnh, game sẽ dùng mô hình 3D mặc định.';
+  charNote.innerHTML = 'Tải file mô hình 3D (<b>.glb / .gltf</b>) hoặc ảnh (<b>.png, .jpg</b>) cho Nhân Vật và Vũ Khí từng hệ. Khi có file 3D, game sẽ tự động gán vũ khí vào xương tay phải (Right Hand Socketing).';
   wrap.appendChild(charNote);
 
   const charGrid = document.createElement('div');
@@ -998,20 +999,44 @@ function _buildAdminDashboard(container, gameState) {
     fire:    { body: null, weapon: null },
     frost:   { body: null, weapon: null },
   };
+  const modelBadges = {
+    thunder: { character: null, weapon: null },
+    fire:    { character: null, weapon: null },
+    frost:   { character: null, weapon: null },
+  };
 
-  // Fetch current art list on mount
-  fetch('/api/admin/art/list').then(r => r.json()).then(list => {
-    for (const [el, data] of Object.entries(list)) {
-      if (data?.body && artPreviews[el]?.body) {
-        artPreviews[el].body.src = data.body + '?t=' + Date.now();
-        artPreviews[el].body.style.display = 'block';
+  // Fetch current art & 3D model list on mount
+  const refreshArtAndModels = () => {
+    fetch('/api/admin/art/list').then(r => r.json()).then(list => {
+      for (const [el, data] of Object.entries(list)) {
+        if (data?.body && artPreviews[el]?.body) {
+          artPreviews[el].body.src = data.body + '?t=' + Date.now();
+          artPreviews[el].body.style.display = 'block';
+        }
+        if (data?.weapon && artPreviews[el]?.weapon) {
+          artPreviews[el].weapon.src = data.weapon + '?t=' + Date.now();
+          artPreviews[el].weapon.style.display = 'block';
+        }
       }
-      if (data?.weapon && artPreviews[el]?.weapon) {
-        artPreviews[el].weapon.src = data.weapon + '?t=' + Date.now();
-        artPreviews[el].weapon.style.display = 'block';
+    }).catch(() => {});
+
+    fetch('/api/admin/model/status').then(r => r.json()).then(status => {
+      for (const [el, s] of Object.entries(status)) {
+        if (modelBadges[el]?.character) {
+          modelBadges[el].character.textContent = s.character ? '📦 3D Model: Sẵn sàng' : '📦 3D: Chưa có';
+          modelBadges[el].character.style.color = s.character ? '#06d6a0' : '#888';
+          modelBadges[el].character.style.borderColor = s.character ? 'rgba(6,214,160,0.4)' : 'rgba(255,255,255,0.1)';
+        }
+        if (modelBadges[el]?.weapon) {
+          modelBadges[el].weapon.textContent = s.weapon ? '⚔️ 3D Kiếm: Sẵn sàng' : '⚔️ 3D: Chưa có';
+          modelBadges[el].weapon.style.color = s.weapon ? '#06d6a0' : '#888';
+          modelBadges[el].weapon.style.borderColor = s.weapon ? 'rgba(6,214,160,0.4)' : 'rgba(255,255,255,0.1)';
+        }
       }
-    }
-  }).catch(() => {});
+    }).catch(() => {});
+  };
+
+  refreshArtAndModels();
 
   CHAR_DEFS.forEach(c => {
     const card = document.createElement('div');
@@ -1023,10 +1048,10 @@ function _buildAdminDashboard(container, gameState) {
     cardTitle.textContent = c.label;
     card.appendChild(cardTitle);
 
-    // Two upload rows: 1. Body, 2. Weapon
+    // Two upload rows: 1. Character/Body, 2. Weapon
     const TYPES = [
-      { type: 'body',   name: '👤 Ảnh Thân (Body Sprite)',   btnText: 'Tải Lên Thân' },
-      { type: 'weapon', name: '⚔️ Ảnh Vũ Khí (Weapon Sprite)', btnText: 'Tải Lên Kiếm' },
+      { type: 'body', modelType: 'character', name: '👤 Model Nhân Vật (3D .glb / Ảnh Thân)', btnText: 'Tải Nhân Vật' },
+      { type: 'weapon', modelType: 'weapon', name: '⚔️ Model Vũ Khí (3D .glb / Ảnh Kiếm)', btnText: 'Tải Vũ Khí' },
     ];
 
     TYPES.forEach(t => {
@@ -1040,17 +1065,23 @@ function _buildAdminDashboard(container, gameState) {
       typeLabel.style.cssText = 'font-size:11px;font-weight:700;color:#ddd;font-family:"Be Vietnam Pro",sans-serif;flex:1;';
       typeLabel.textContent = t.name;
 
+      const badge3D = document.createElement('span');
+      badge3D.style.cssText = 'font-size:9px;font-weight:700;color:#888;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);font-family:"Be Vietnam Pro",sans-serif;white-space:nowrap;';
+      badge3D.textContent = '📦 3D: Đang tải…';
+      modelBadges[c.id][t.modelType] = badge3D;
+
       const thumb = document.createElement('img');
-      thumb.style.cssText = 'width:48px;height:48px;object-fit:contain;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#050510;display:none;';
+      thumb.style.cssText = 'width:36px;height:36px;object-fit:contain;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#050510;display:none;';
       artPreviews[c.id][t.type] = thumb;
 
       rowTop.appendChild(typeLabel);
+      rowTop.appendChild(badge3D);
       rowTop.appendChild(thumb);
       rowBox.appendChild(rowTop);
 
       const fileInp = document.createElement('input');
       fileInp.type = 'file';
-      fileInp.accept = 'image/*';
+      fileInp.accept = '.glb,.gltf,image/*';
       fileInp.style.cssText = 'font-size:10px;color:#aaa;font-family:"Be Vietnam Pro",sans-serif;width:100%;';
       rowBox.appendChild(fileInp);
 
@@ -1069,34 +1100,53 @@ function _buildAdminDashboard(container, gameState) {
       rowBox.appendChild(actionRow);
 
       upBtn.addEventListener('click', async () => {
-        if (!fileInp.files[0]) {
-          statusEl.textContent = '⚠ Chọn ảnh!';
+        const file = fileInp.files[0];
+        if (!file) {
+          statusEl.textContent = '⚠ Chọn file .glb hoặc ảnh!';
           statusEl.style.color = '#ffcc00';
           return;
         }
-        statusEl.textContent = '⏳ Đang tải…';
+        const is3D = /\.(glb|gltf)$/i.test(file.name);
+        statusEl.textContent = is3D ? '⏳ Đang tải mô hình 3D…' : '⏳ Đang tải ảnh…';
         statusEl.style.color = '#aaa';
         upBtn.disabled = true;
 
-        const fd = new FormData();
-        fd.append('image', fileInp.files[0]);
-        fd.append('element', c.id);
-        fd.append('type', t.type);
-
         try {
-          const r = await fetch('/api/admin/art/upload', { method: 'POST', body: fd });
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error || 'Upload failed');
-          statusEl.textContent = '✓ Đã lưu!';
-          statusEl.style.color = '#06d6a0';
-          thumb.src = d.url + '?t=' + Date.now();
-          thumb.style.display = 'block';
+          let d;
+          if (is3D) {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('element', c.id);
+            fd.append('type', t.modelType);
+            const r = await fetch('/api/admin/model/upload', { method: 'POST', body: fd });
+            d = await r.json();
+            if (!r.ok) throw new Error(d.error || 'Upload model failed');
+            statusEl.textContent = '✓ Đã lưu 3D (.glb)!';
+            statusEl.style.color = '#06d6a0';
 
-          // Notify game engine
-          window.dispatchEvent(new CustomEvent('character-art-updated', {
-            detail: { element: c.id, type: t.type, url: d.url }
-          }));
-          _showToast(`Đã cập nhật ${t.name} cho ${c.label}`);
+            window.dispatchEvent(new CustomEvent('character-model-updated', {
+              detail: { element: c.id, type: t.modelType, url: d.url }
+            }));
+            _showToast(`Đã lưu mô hình 3D ${t.name} cho ${c.label}`);
+          } else {
+            const fd = new FormData();
+            fd.append('image', file);
+            fd.append('element', c.id);
+            fd.append('type', t.type);
+            const r = await fetch('/api/admin/art/upload', { method: 'POST', body: fd });
+            d = await r.json();
+            if (!r.ok) throw new Error(d.error || 'Upload art failed');
+            statusEl.textContent = '✓ Đã lưu ảnh!';
+            statusEl.style.color = '#06d6a0';
+            thumb.src = d.url + '?t=' + Date.now();
+            thumb.style.display = 'block';
+
+            window.dispatchEvent(new CustomEvent('character-art-updated', {
+              detail: { element: c.id, type: t.type, url: d.url }
+            }));
+            _showToast(`Đã cập nhật ảnh ${t.name} cho ${c.label}`);
+          }
+          refreshArtAndModels();
         } catch (e) {
           statusEl.textContent = '✗ ' + e.message;
           statusEl.style.color = '#ef233c';

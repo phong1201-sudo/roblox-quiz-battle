@@ -78,38 +78,130 @@ app.get('/api/admin/character/list', (req, res) => {
 // ── Admin: dual art upload — body + weapon per element (Persistent Overwrite) ─
 // POST /api/admin/art/upload  { element, type:'body'|'weapon', image }
 // ALWAYS saves and overwrites directly to public/assets/characters/${element}_${type}.png
+// Also accepts .glb / .gltf files and routes them to public/assets/models/
 const artUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Only image files accepted'));
+    const isModelExt = /\.(glb|gltf)$/i.test(file.originalname);
+    if (file.mimetype.startsWith('image/') || isModelExt || ['model/gltf-binary', 'model/gltf+json', 'application/octet-stream'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file ảnh hoặc mô hình 3D (.glb, .gltf)'));
+    }
   },
 });
 
 app.post('/api/admin/art/upload', artUpload.single('image'), (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ success: false, error: 'No image uploaded' });
+    const file = req.file;
+    if (!file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const element = (req.body?.element || req.query?.element || '').toLowerCase();
-    const type    = (req.body?.type    || req.query?.type    || '').toLowerCase();
+    const rawType = (req.body?.type    || req.query?.type    || '').toLowerCase();
     if (!['thunder', 'fire', 'frost'].includes(element))
       return res.status(400).json({ success: false, error: 'Invalid element' });
-    if (!['body', 'weapon'].includes(type))
-      return res.status(400).json({ success: false, error: 'Invalid type (must be body or weapon)' });
+    if (!['body', 'character', 'weapon'].includes(rawType))
+      return res.status(400).json({ success: false, error: 'Invalid type (must be body, character, or weapon)' });
 
+    const isModel = /\.(glb|gltf)$/i.test(file.originalname) || ['model/gltf-binary', 'model/gltf+json'].includes(file.mimetype);
+    if (isModel) {
+      const ext = path.extname(file.originalname).toLowerCase() || '.glb';
+      const modelType = (rawType === 'weapon') ? 'weapon' : 'character';
+      const modelsDir = path.join(__dirname, '../public/assets/models');
+      if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
+      const targetPath = path.join(modelsDir, `${element}_${modelType}${ext}`);
+      fs.writeFileSync(targetPath, file.buffer);
+      const url = `/assets/models/${element}_${modelType}${ext}?t=${Date.now()}`;
+      console.log(`[model] Saved 3D model: ${targetPath}`);
+      return res.json({ success: true, url, element, type: modelType, is3DModel: true });
+    }
+
+    const type = rawType === 'character' ? 'body' : rawType;
     const dir = path.join(__dirname, '../public/assets/characters');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     // Always overwrite exact filename: ${element}_${type}.png
     const targetPath = path.join(dir, `${element}_${type}.png`);
-    fs.writeFileSync(targetPath, req.file.buffer);
+    fs.writeFileSync(targetPath, file.buffer);
 
     const url = `/assets/characters/${element}_${type}.png?t=${Date.now()}`;
     console.log(`[art] Saved & overwritten: ${targetPath}`);
-    res.json({ success: true, url, element, type });
+    res.json({ success: true, url, element, type, is3DModel: false });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
+});
+
+// ── Admin: Dedicated 3D GLB/GLTF Model Upload ────────────────────────────────
+// POST /api/admin/model/upload { element, type:'character'|'weapon', model/file }
+const modelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    const isModel = /\.(glb|gltf)$/i.test(file.originalname) ||
+      ['model/gltf-binary', 'model/gltf+json', 'application/octet-stream', 'application/json'].includes(file.mimetype);
+    if (isModel) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận file định dạng .glb hoặc .gltf'));
+  },
+});
+
+app.post('/api/admin/model/upload', (req, res) => {
+  modelUpload.any()(req, res, (err) => {
+    if (err) return res.status(400).json({ success: false, error: err.message });
+    try {
+      const file = req.files?.[0];
+      if (!file) return res.status(400).json({ success: false, error: 'Chưa chọn file mô hình 3D (.glb / .gltf)' });
+      const element = (req.body?.element || req.query?.element || '').toLowerCase();
+      let type      = (req.body?.type    || req.query?.type    || '').toLowerCase();
+      if (!['thunder', 'fire', 'frost'].includes(element))
+        return res.status(400).json({ success: false, error: 'Invalid element' });
+      if (type === 'body') type = 'character';
+      if (!['character', 'weapon'].includes(type))
+        return res.status(400).json({ success: false, error: 'Type phải là character hoặc weapon' });
+
+      const modelsDir = path.join(__dirname, '../public/assets/models');
+      if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
+
+      const ext = path.extname(file.originalname).toLowerCase() || '.glb';
+      const targetFilename = `${element}_${type}${ext}`;
+      const targetPath = path.join(modelsDir, targetFilename);
+      fs.writeFileSync(targetPath, file.buffer);
+
+      const url = `/assets/models/${targetFilename}?t=${Date.now()}`;
+      console.log(`[model] Saved 3D model: ${targetPath}`);
+      res.json({ success: true, url, element, type, filename: targetFilename });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+});
+
+// GET /api/admin/model/status: checks 3D models on disk
+app.get('/api/admin/model/status', (req, res) => {
+  const dir = path.join(__dirname, '../public/assets/models');
+  const result = {};
+  for (const el of ['thunder', 'fire', 'frost']) {
+    result[el] = {
+      character: ['.glb', '.gltf'].some(ext => fs.existsSync(path.join(dir, `${el}_character${ext}`))),
+      weapon:    ['.glb', '.gltf'].some(ext => fs.existsSync(path.join(dir, `${el}_weapon${ext}`))),
+    };
+  }
+  res.json(result);
+});
+
+// GET /api/admin/model/list: returns URLs for existing 3D models
+app.get('/api/admin/model/list', (req, res) => {
+  const dir = path.join(__dirname, '../public/assets/models');
+  const result = {};
+  for (const el of ['thunder', 'fire', 'frost']) {
+    const charExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(dir, `${el}_character${ext}`)));
+    const weapExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(dir, `${el}_weapon${ext}`)));
+    result[el] = {
+      character: charExt ? `/assets/models/${el}_character${charExt}` : null,
+      weapon:    weapExt ? `/assets/models/${weapExt ? `${el}_weapon${weapExt}` : ''}` : null,
+    };
+  }
+  res.json(result);
 });
 
 // GET /api/admin/art/status: checks physical existence on disk
@@ -143,7 +235,8 @@ const uploadDir     = path.join(__dirname, 'uploads');
 const skinsDir      = path.join(__dirname, '../public/skins');
 const questionsDir  = path.join(__dirname, '../data/questions');
 const charactersDir = path.join(__dirname, '../public/assets/characters');
-[uploadDir, skinsDir, questionsDir, charactersDir].forEach(d => {
+const modelsDir     = path.join(__dirname, '../public/assets/models');
+[uploadDir, skinsDir, questionsDir, charactersDir, modelsDir].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
 
