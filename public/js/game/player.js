@@ -4,7 +4,7 @@ const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : n
 
 // Module state
 let playerGroup = null;
-let activeElement = null; // 'thunder' | 'fire' | 'frost' | 'default'
+let activeElement = 'default'; // 'thunder' | 'fire' | 'frost' | 'default'
 
 let characterRoot = null;
 let currentCharacterMesh = null;
@@ -50,7 +50,7 @@ let isHurt = false;
  * @param {string} outfitElement 
  * @param {Function} [onLoaded] 
  */
-export function loadPlayerModel(targetScene, outfitElement = 'fire', onLoaded) {
+export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded) {
   const scene = targetScene || playerGroup;
   const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
     ? THREE.GLTFLoader
@@ -298,13 +298,13 @@ function buildArmAndWeapon(element) {
 // PUBLIC API: CREATE & MANAGE PLAYER
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function createPlayer(color = '#ff6b35', element = 'fire', equippedGear = null) {
+export function createPlayer(color = '#ff6b35', element = 'default', equippedGear = null) {
   if (!THREE) {
     console.error('[player] THREE is not loaded in window!');
     return null;
   }
 
-  activeElement = element || 'fire';
+  activeElement = element || 'default';
 
   if (!playerGroup) {
     playerGroup = new THREE.Group();
@@ -333,7 +333,7 @@ export function createPlayer(color = '#ff6b35', element = 'fire', equippedGear =
 }
 
 export function createPlayerMesh(element, equippedGear) {
-  activeElement = element || 'fire';
+  activeElement = element || 'default';
   if (playerGroup) {
     loadPlayerModel(characterRoot, activeElement);
     buildArmAndWeapon(activeElement);
@@ -362,7 +362,7 @@ export function getRotation() {
 }
 
 export function getActiveElement() {
-  return activeElement || 'fire';
+  return activeElement || 'default';
 }
 
 export function resetPlayerState() {

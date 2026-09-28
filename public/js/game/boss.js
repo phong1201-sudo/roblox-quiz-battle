@@ -76,7 +76,6 @@ let bossSkinPlane = null;
 let elementalLightRef = null;
 let bossArmLeftPivot = null;
 let bossArmRightPivot = null;
-let bossHammer = null;
 let customBossBone = null;
 let defeatCompleteCallbacks = [];
 
@@ -88,60 +87,6 @@ export function getBossCombatArmCompound() {
 }
 export function getBossArmPivot() {
   return bossCombatArmCompound || bossArmPivot || bossArmRightPivot || customBossBone;
-}
-
-// ── Visual Socket & Pivot Calibration Configuration ───────────────────────────
-const DEFAULT_BOSS_SOCKETS = {
-  boss: {
-    shoulderX: -1.8,
-    shoulderY: 2.2,
-    shoulderZ: 0.2,
-    weapon: {
-      offsetX: 0.0,
-      offsetY: -0.6,
-      offsetZ: 0.5,
-      rotX: 0.0,
-      rotY: -1.5708,
-      rotZ: 0.5236,
-      angle: 30
-    },
-    thunder: { handX: -0.8, handY: 1.2, handZ: 0.1 },
-    fire:    { handX: -0.9, handY: 1.3, handZ: 0.1 },
-    frost:   { handX: -0.9, handY: 1.3, handZ: 0.1 }
-  },
-  weapon: {
-    boss_hammer: { hiltX: 0.0, hiltY: -0.6, hiltZ: 0.0 }
-  }
-};
-
-let _bossSocketsConfig = JSON.parse(JSON.stringify(DEFAULT_BOSS_SOCKETS));
-
-export async function loadBossSocketsConfig() {
-  try {
-    const res = await fetch('/api/admin/sockets');
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.sockets) {
-        _bossSocketsConfig = data.sockets;
-      }
-    }
-  } catch (e) {
-    // fallback to defaults
-  }
-  return _bossSocketsConfig;
-}
-
-if (typeof window !== 'undefined') {
-  loadBossSocketsConfig();
-  window.addEventListener('sockets-updated', (ev) => {
-    if (ev.detail) {
-      _bossSocketsConfig = ev.detail;
-      const el = currentBossData?.element || 'fire';
-      if (bossGroup) {
-        _setupBossArmPivot(el);
-      }
-    }
-  });
 }
 
 // Internal Tween engine for bulletproof hammer slam kinematics
@@ -630,11 +575,18 @@ function _loadGLTF(url) {
 
 function _checkImageExists(el) {
   return new Promise((resolve) => {
-    const exts = ['.png', '.jpg', '.jpeg', '.webp'];
+    const urls = [
+      `/assets/character/boss_${el}.png`,
+      `/assets/character/boss_${el}.jpg`,
+      `/assets/character/boss_${el}.webp`,
+      `/assets/models/boss_${el}.png`,
+      `/assets/models/boss_${el}.jpg`,
+      `/assets/character/${el === 'fire' ? 'Fire' : el === 'frost' ? 'Ice' : 'Lightning'}%20boss.png`
+    ];
     let idx = 0;
     const tryNext = () => {
-      if (idx >= exts.length) return resolve(null);
-      const url = `/assets/models/boss_${el}${exts[idx++]}`;
+      if (idx >= urls.length) return resolve(null);
+      const url = urls[idx++];
       const img = new window.Image();
       img.onload = () => resolve(url);
       img.onerror = tryNext;
@@ -1333,7 +1285,7 @@ export function removeBoss(scene) {
   bossGroup=null; bossScene=null; elementalLightRef=null;
   proceduralRoot = null; customBossRoot = null; customBossModel = null;
   bossArmPivot = null;
-  bossArmLeftPivot = null; bossArmRightPivot = null; bossHammer = null;
+  bossArmLeftPivot = null; bossArmRightPivot = null;
   customBossBone = null; defeatCompleteCallbacks = [];
 }
 

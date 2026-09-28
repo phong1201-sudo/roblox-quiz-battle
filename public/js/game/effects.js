@@ -237,7 +237,7 @@ export function spawnFlameProjectile(startPos, targetPos, onImpact) {
   sceneRef.add(group);
 
   const startTime = performance.now();
-  const duration = 250;
+  const duration = 1800; // ~1.8s flight duration for cinematic clarity
   const sx = startPos.x, sy = startPos.y, sz = startPos.z;
   const tx = targetPos.x, ty = targetPos.y, tz = targetPos.z;
 
@@ -245,23 +245,23 @@ export function spawnFlameProjectile(startPos, targetPos, onImpact) {
     const elapsed = performance.now() - startTime;
     const t = Math.min(1.0, elapsed / duration);
     group.position.x = sx + (tx - sx) * t;
-    group.position.y = sy + (ty - sy) * t + Math.sin(t * Math.PI) * 0.4;
+    group.position.y = sy + (ty - sy) * t + Math.sin(t * Math.PI) * 0.8;
     group.position.z = sz + (tz - sz) * t;
-    group.rotation.x += 0.2;
-    group.rotation.z += 0.3;
+    group.rotation.x += 0.08;
+    group.rotation.z += 0.12;
 
     if (sceneRef && Math.random() < 0.6) {
       const ember = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 0.12, 0.12),
+        new THREE.BoxGeometry(0.14, 0.14, 0.14),
         new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff4400 : 0xffcc00 })
       );
       ember.position.copy(group.position);
       sceneRef.add(ember);
       particles.push({
         mesh: ember,
-        velocity: new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.2) * 2, (Math.random() - 0.5) * 2),
-        life: 0.3,
-        maxLife: 0.3,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 1.5, (Math.random() - 0.2) * 1.5, (Math.random() - 0.5) * 1.5),
+        life: 0.6,
+        maxLife: 0.6,
       });
     }
 
@@ -388,10 +388,10 @@ export function spawnBossFrostSlam(slamPos) {
 
 export function spawnBossFireWave(startPos, targetPos, onImpact) {
   if (!sceneRef) { if (onImpact) onImpact(); return; }
-  const steps = 7;
+  const steps = 16;
   const dx = (targetPos.x - startPos.x) / steps;
   for (let i = 0; i <= steps; i++) {
-    const delay = i * 60;
+    const delay = i * 110; // ~1.8s total wave travel
     setTimeout(() => {
       if (!sceneRef) return;
       const x = startPos.x + dx * i;
@@ -406,8 +406,8 @@ export function spawnBossFireWave(startPos, targetPos, onImpact) {
         sceneRef.add(m);
         particles.push({
           mesh: m,
-          life: 0.38,
-          maxLife: 0.38,
+          life: 0.6,
+          maxLife: 0.6,
           velocity: new THREE.Vector3((Math.random() - 0.5) * 1.5, 3 + Math.random() * 4, (Math.random() - 0.5) * 1.5),
         });
       }
@@ -418,7 +418,7 @@ export function spawnBossFireWave(startPos, targetPos, onImpact) {
   }
 }
 
-export function spawnBossLightningBeam(startPos, targetPos, duration = 350, onImpact) {
+export function spawnBossLightningBeam(startPos, targetPos, duration = 1600, onImpact) {
   if (!sceneRef) { if (onImpact) onImpact(); return; }
   const steps = 12;
 

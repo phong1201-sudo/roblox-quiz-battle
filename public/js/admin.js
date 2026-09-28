@@ -347,29 +347,48 @@ function setupQuestionManager() {
 // 4. QUICK LAUNCH & DEV TEST
 // ─────────────────────────────────────────────────────────────────────────────
 function setupDevLaunch() {
+  const getSelectedOutfit = () => {
+    const el = document.getElementById('dev-player-outfit');
+    return el ? el.value : 'default';
+  };
+
+  const applyOutfitToStorage = (outfit) => {
+    try {
+      localStorage.setItem('player_equipped', JSON.stringify({ outfit, weapon: outfit }));
+    } catch (e) {}
+  };
+
   document.getElementById('btn-dev-test-match')?.addEventListener('click', async () => {
+    const outfit = getSelectedOutfit();
+    applyOutfitToStorage(outfit);
     try {
       const res = await fetch('/api/dev-questions?code=DEV99', { method: 'POST' });
       if (res.ok) {
-        window.location.href = '/?dev=1&element=fire';
+        window.location.href = `/?dev=1&element=fire&outfit=${outfit}`;
       } else {
-        window.location.href = '/';
+        window.location.href = `/?outfit=${outfit}`;
       }
     } catch (e) {
-      window.location.href = '/';
+      window.location.href = `/?outfit=${outfit}`;
     }
   });
 
   document.getElementById('btn-launch-thunder')?.addEventListener('click', () => {
-    window.location.href = '/?element=thunder';
+    const outfit = getSelectedOutfit();
+    applyOutfitToStorage(outfit);
+    window.location.href = `/?element=thunder&outfit=${outfit}`;
   });
 
   document.getElementById('btn-launch-fire')?.addEventListener('click', () => {
-    window.location.href = '/?element=fire';
+    const outfit = getSelectedOutfit();
+    applyOutfitToStorage(outfit);
+    window.location.href = `/?element=fire&outfit=${outfit}`;
   });
 
   document.getElementById('btn-launch-frost')?.addEventListener('click', () => {
-    window.location.href = '/?element=frost';
+    const outfit = getSelectedOutfit();
+    applyOutfitToStorage(outfit);
+    window.location.href = `/?element=frost&outfit=${outfit}`;
   });
 
   document.getElementById('btn-launch-lobby')?.addEventListener('click', () => {

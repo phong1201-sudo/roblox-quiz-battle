@@ -107,11 +107,13 @@ export function startGame(gameState) {
   Arena.setArenaTheme(activeElement);
 
   // Apply player's equipped elemental set
-  const equippedSet = gameState.equippedSet || null;
-  if (equippedSet) Player.applyElementalSet(equippedSet);
+  const playerOutfit = gameState.equipped?.outfit || gameState.equippedSet || 'default';
+  if (playerOutfit && playerOutfit !== 'default') {
+    Player.applyElementalSet(playerOutfit);
+  }
 
-  // Create & place player — player.js sets rotation.y = -PI/2 (faces +X = toward boss)
-  Player.createPlayer(gameState.myColor || '#f59e42', null, null);
+  // Create & place player — faces +X toward boss
+  Player.createPlayer(gameState.myColor || '#f59e42', playerOutfit, gameState.equipped);
   const playerObj = Player.getPlayerObject();
   if (playerObj) {
     // Ensure position matches our layout constants
@@ -315,7 +317,7 @@ let shotCycleIndex = 0;
  * @param {number} [duration=2400] - Duration in ms (2.2s - 2.5s)
  * @param {boolean} [isPlayerAttack=true] - Direction flag for tracking shots
  */
-export function triggerCinematicShot(shotNum = null, duration = 2400, isPlayerAttack = true) {
+export function triggerCinematicShot(shotNum = null, duration = 3000, isPlayerAttack = true) {
   if (!camera || typeof TWEEN === 'undefined') return;
 
   if (activeCamTween) { activeCamTween.stop(); activeCamTween = null; }
@@ -324,7 +326,7 @@ export function triggerCinematicShot(shotNum = null, duration = 2400, isPlayerAt
   const shot = shotNum || ((shotCycleIndex % 5) + 1);
   shotCycleIndex = (shotCycleIndex % 5) + 1;
 
-  const easeFunc = (TWEEN.Easing?.Sinusoidal?.InOut) || (TWEEN.Easing?.Quadratic?.InOut);
+  const easeFunc = (TWEEN.Easing?.Cubic?.InOut) || (TWEEN.Easing?.Sinusoidal?.InOut) || (TWEEN.Easing?.Quadratic?.InOut);
 
   // Keep target grounded at arena center
   currentCamTarget.copy(GROUNDED_CENTER);
@@ -350,14 +352,15 @@ export function triggerCinematicShot(shotNum = null, duration = 2400, isPlayerAt
       .start();
 
   } else if (shot === 2) {
-    // Shot 2: Hero Low-Angle locked near floor behind player looking toward arena center
+    // Shot 2: Hero Low-Angle locked near floor behind player looking toward arena center (smooth 3s dolly)
     const startPos = camera.position.clone();
     const targetPos = new THREE.Vector3(-5.5, 1.6, 2.2);
+    const endPos = new THREE.Vector3(-5.0, 1.8, 2.0);
 
     const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
 
     activeCamTween = new TWEEN.Tween(posObj)
-      .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, Math.min(duration, 700))
+      .to({ x: endPos.x, y: endPos.y, z: endPos.z }, duration)
       .easing(easeFunc)
       .onUpdate(() => {
         camera.position.set(posObj.x, posObj.y, posObj.z);
@@ -366,14 +369,14 @@ export function triggerCinematicShot(shotNum = null, duration = 2400, isPlayerAt
       .start();
 
   } else if (shot === 3) {
-    // Shot 3: Over-the-Shoulder Boss View peering toward arena center
+    // Shot 3: Over-the-Shoulder Boss View peering toward arena center (smooth 3s dolly)
     const startPos = camera.position.clone();
-    const targetPos = new THREE.Vector3(4.2, 3.2, 2.2);
+    const endPos = new THREE.Vector3(3.8, 3.4, 2.0);
 
     const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
 
     activeCamTween = new TWEEN.Tween(posObj)
-      .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, Math.min(duration, 700))
+      .to({ x: endPos.x, y: endPos.y, z: endPos.z }, duration)
       .easing(easeFunc)
       .onUpdate(() => {
         camera.position.set(posObj.x, posObj.y, posObj.z);
@@ -382,14 +385,14 @@ export function triggerCinematicShot(shotNum = null, duration = 2400, isPlayerAt
       .start();
 
   } else if (shot === 4) {
-    // Shot 4: High Aerial Dolly looking gently down at arena center
+    // Shot 4: High Aerial Dolly looking gently down at arena center (smooth 3s crane)
     const startPos = camera.position.clone();
-    const targetPos = new THREE.Vector3(0.0, 7.5, 8.5);
+    const endPos = new THREE.Vector3(0.0, 7.8, 8.0);
 
     const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
 
     activeCamTween = new TWEEN.Tween(posObj)
-      .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, Math.min(duration, 800))
+      .to({ x: endPos.x, y: endPos.y, z: endPos.z }, duration)
       .easing(easeFunc)
       .onUpdate(() => {
         camera.position.set(posObj.x, posObj.y, posObj.z);

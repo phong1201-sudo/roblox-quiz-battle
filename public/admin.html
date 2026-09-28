@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=43.0">
+  <link rel="stylesheet" href="css/style.css?v=44.0">
   <!-- Core Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- GLTF Loader for r128 -->
@@ -455,6 +455,15 @@
           <div class="section-title" style="color:#f59e0b;">
             <span>🚀</span> 4. Quick Launch &amp; Dev Test
           </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label">Trang Phục Nhân Vật (Player Outfit):</label>
+            <select id="dev-player-outfit" class="form-select">
+              <option value="default">👤 Mặc Định (1 Normal Hit, player_default.glb)</option>
+              <option value="thunder">⚡ Set Lôi (Thunder 2-hit)</option>
+              <option value="fire">🔥 Set Hỏa (Fire 2-hit)</option>
+              <option value="frost">❄️ Set Băng (Frost 2-hit)</option>
+            </select>
+          </div>
 
           <div class="dev-grid">
             <button id="btn-dev-test-match" class="btn-dev btn-dev-primary">
@@ -479,6 +488,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=43.0"></script>
+  <script type="module" src="js/admin.js?v=44.0"></script>
 </body>
 </html>

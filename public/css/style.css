@@ -1100,23 +1100,48 @@ button[disabled] {
   100% { transform: translateX(32px); }
 }
 
-.cutin-eye-wrapper {
+.cutin-hidden {
+  display: none !important;
+}
+
+.cutin-track {
   position: relative;
-  width: 45%;
+  width: 55%;
   height: 100%;
   overflow: hidden;
   transform: skewX(10deg);
-  margin-left: 10vw;
+  margin-left: 6vw;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cutin-portrait {
+#cutin-eyes-svg {
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center 25%;
-  background-repeat: no-repeat;
-  filter: contrast(1.2) saturate(1.2);
+  display: block;
+}
+
+@keyframes cutin-glide {
+  0% {
+    transform: translateX(-15%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(15%);
+    opacity: 0;
+  }
+}
+
+.cutin-overlay.active #cutin-eyes-svg {
+  animation: cutin-glide 3.0s cubic-bezier(0.16, 0.8, 0.25, 1) forwards;
 }
 
 .cutin-eye-glare {

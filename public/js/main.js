@@ -29,8 +29,15 @@ function makeGameState(base) {
     const user = Auth.getCurrentUser();
     let equipped = { outfit: 'default', weapon: 'default' };
     try {
-        const saved = JSON.parse(localStorage.getItem('player_equipped'));
-        if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlOutfit = urlParams.get('outfit');
+        if (urlOutfit) {
+            equipped = { outfit: urlOutfit, weapon: urlOutfit };
+            try { localStorage.setItem('player_equipped', JSON.stringify(equipped)); } catch (e) {}
+        } else {
+            const saved = JSON.parse(localStorage.getItem('player_equipped'));
+            if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+        }
     } catch(e) {}
 
     const isFullSet = (equipped.outfit === equipped.weapon && equipped.outfit !== 'default');
