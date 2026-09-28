@@ -32,7 +32,7 @@ const FACE_ROT_Y = Math.PI / 2; // Face towards Boss (+X)
 
 // Default shoulder and weapon offsets
 let shoulderPivotPos = { x: 0.65, y: 1.10, z: 0.0 };
-let weaponOffsetPos  = { offsetX: 0.0, offsetY: -0.4, offsetZ: 0.1, angle: -45 };
+let weaponOffsetPos  = { offsetX: 0.0, offsetY: -0.4, offsetZ: 0.1, angle: -64 };
 
 // Active Animation Flags
 let isDashing = false;
@@ -132,8 +132,10 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
           if (!handAnchor) {
             handAnchor = new THREE.Group();
             handAnchor.name = 'RightHandAnchor';
-            handAnchor.position.set(0.55, 1.05, 0.15); // Coordinates previously validated
+            handAnchor.position.set(0.6, 0.75, 0.2); // Lowered Y from 1.05 to ~0.75
             model.add(handAnchor);
+          } else {
+            handAnchor.position.set(0.6, 0.75, 0.2);
           }
 
           // Attach the sword mesh as a child of this hand anchor
@@ -141,8 +143,8 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
             currentWeaponMesh.parent.remove(currentWeaponMesh);
           }
           currentWeaponMesh = createProceduralSword(outfitElement);
-          // Orient blade forward pointing at Boss (+X axis)
-          currentWeaponMesh.rotation.set(0, 0, -Math.PI / 4);
+          // Rotate sword mesh so blade aims diagonally forward toward Boss (+X axis) tilted ~60° forward-downward
+          currentWeaponMesh.rotation.set(0, 0, -Math.PI / 2.8);
           handAnchor.add(currentWeaponMesh);
 
           combatArmCompound = handAnchor;
@@ -181,14 +183,14 @@ function createEmergencyPlaceholder(scene, onLoaded) {
 
   const handAnchor = new THREE.Group();
   handAnchor.name = 'RightHandAnchor';
-  handAnchor.position.set(0.55, 1.05, 0.15);
+  handAnchor.position.set(0.6, 0.75, 0.2);
   placeholder.add(handAnchor);
 
   if (currentWeaponMesh && currentWeaponMesh.parent) {
     currentWeaponMesh.parent.remove(currentWeaponMesh);
   }
   currentWeaponMesh = createProceduralSword(activeElement);
-  currentWeaponMesh.rotation.set(0, 0, -Math.PI / 4);
+  currentWeaponMesh.rotation.set(0, 0, -Math.PI / 2.8);
   handAnchor.add(currentWeaponMesh);
 
   combatArmCompound = handAnchor;

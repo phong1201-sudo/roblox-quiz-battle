@@ -1104,44 +1104,39 @@ button[disabled] {
   display: none !important;
 }
 
-.cutin-track {
-  position: relative;
-  width: 55%;
-  height: 100%;
-  overflow: hidden;
-  transform: skewX(10deg);
-  margin-left: 6vw;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.cutin-eye-art {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -8vw;
+  right: -8vw;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform;
 }
 
-#cutin-eyes-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-@keyframes cutin-glide {
+@keyframes cutin-pan {
   0% {
-    transform: translateX(-15%);
+    transform: translateX(-5%) scale(1.04);
     opacity: 0;
   }
-  8% {
+  6% {
     opacity: 1;
   }
-  85% {
+  88% {
     opacity: 1;
   }
   100% {
-    transform: translateX(15%);
+    transform: translateX(5%) scale(1.04);
     opacity: 0;
   }
 }
 
-.cutin-overlay.active #cutin-eyes-svg {
-  animation: cutin-glide 3.0s cubic-bezier(0.16, 0.8, 0.25, 1) forwards;
+.cutin-overlay.active .cutin-eye-art {
+  animation: cutin-pan 2.8s cubic-bezier(0.16, 0.8, 0.25, 1) forwards;
 }
 
 .cutin-eye-glare {
@@ -1201,39 +1196,54 @@ button[disabled] {
   transition: opacity 0.08s ease-out;
 }
 
-/* Elemental Cut-in Themes */
-.cutin-theme-fire .cutin-slash-bar {
-  border-color: #ff4500;
-  box-shadow: 0 0 35px rgba(255, 69, 0, 0.7), inset 0 0 30px rgba(255, 69, 0, 0.4);
+/* Player Milestone: Cyan / Gold Elemental Glow Border */
+.cutin-player-milestone .cutin-slash-bar {
+  border-top: 4px solid #00e5ff;
+  border-bottom: 4px solid #ffd700;
+  box-shadow: 0 0 40px rgba(0, 229, 255, 0.85), 0 0 60px rgba(255, 215, 0, 0.5), inset 0 0 35px rgba(0, 229, 255, 0.4);
 }
-.cutin-theme-fire .cutin-faction { color: #ff9100; text-shadow: 0 0 10px #ff4500; }
-.cutin-theme-fire .cutin-title { text-shadow: 2px 2px 0 #000, 0 0 16px #ff4500; }
+.cutin-player-milestone .cutin-glow-top {
+  background: #00e5ff;
+  box-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff;
+}
+.cutin-player-milestone .cutin-glow-bottom {
+  background: #ffd700;
+  box-shadow: 0 0 15px #ffd700, 0 0 30px #ffd700;
+}
+.cutin-player-milestone .cutin-faction {
+  color: #00e5ff;
+  text-shadow: 0 0 12px #00e5ff, 0 0 20px #ffd700;
+}
+.cutin-player-milestone .cutin-title {
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000, 0 0 18px #00e5ff;
+}
 
-.cutin-theme-ice .cutin-slash-bar {
-  border-color: #00e5ff;
-  box-shadow: 0 0 35px rgba(0, 229, 255, 0.7), inset 0 0 30px rgba(0, 229, 255, 0.4);
+/* Boss Menace Milestone: Glowing Crimson / Purple Ominous Aura */
+.cutin-boss-milestone .cutin-vignette {
+  background: radial-gradient(circle at center, rgba(40, 0, 25, 0.65) 0%, rgba(15, 0, 10, 0.96) 100%);
 }
-.cutin-theme-ice .cutin-faction { color: #80d8ff; text-shadow: 0 0 10px #00e5ff; }
-.cutin-theme-ice .cutin-title { text-shadow: 2px 2px 0 #000, 0 0 16px #00e5ff; }
-
-.cutin-theme-lightning .cutin-slash-bar {
-  border-color: #ffd700;
-  box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), inset 0 0 30px rgba(168, 85, 247, 0.4);
+.cutin-boss-milestone .cutin-slash-bar {
+  border-top: 4px solid #ef233c;
+  border-bottom: 4px solid #a855f7;
+  box-shadow: 0 0 50px rgba(239, 35, 60, 0.95), 0 0 70px rgba(168, 85, 247, 0.7), inset 0 0 45px rgba(168, 85, 247, 0.5);
 }
-.cutin-theme-lightning .cutin-faction { color: #ffd700; text-shadow: 0 0 10px #eab308; }
-.cutin-theme-lightning .cutin-title { text-shadow: 2px 2px 0 #000, 0 0 16px #a855f7; }
-
-/* Menacing Boss Cut-in Theme */
-.cutin-theme-boss .cutin-vignette {
-  background: radial-gradient(circle at center, rgba(30,0,10,0.6) 0%, rgba(10,0,5,0.95) 100%);
+.cutin-boss-milestone .cutin-glow-top {
+  background: #ef233c;
+  box-shadow: 0 0 20px #ef233c, 0 0 40px #ef233c;
 }
-.cutin-theme-boss .cutin-slash-bar {
-  background: rgba(20, 5, 10, 0.96);
-  border-color: #ef233c;
-  box-shadow: 0 0 40px rgba(239, 35, 60, 0.8), inset 0 0 35px rgba(147, 51, 234, 0.5);
+.cutin-boss-milestone .cutin-glow-bottom {
+  background: #a855f7;
+  box-shadow: 0 0 20px #a855f7, 0 0 40px #a855f7;
 }
-.cutin-theme-boss .cutin-faction { color: #ef233c; text-shadow: 0 0 12px #ef233c; }
-.cutin-theme-boss .cutin-title { color: #fca5a5; text-shadow: 2px 2px 0 #000, 0 0 20px #ef233c; }
+.cutin-boss-milestone .cutin-faction {
+  color: #ef233c;
+  text-shadow: 0 0 14px #ef233c, 0 0 24px #a855f7;
+}
+.cutin-boss-milestone .cutin-title {
+  color: #fecdd3;
+  text-shadow: 2px 2px 0 #000, 0 0 22px #ef233c;
+}
 
 /* Active States */
 .cutin-overlay.active .cutin-vignette {

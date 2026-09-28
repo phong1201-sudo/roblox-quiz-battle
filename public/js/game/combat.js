@@ -201,58 +201,65 @@ export function playCutInBanner({ type = 'player', element = 'fire', onDone }) {
     finishOnce();
   }, 3500);
 
-  const cleanup = () => {
-    clearTimeout(bannerTimeout);
-    banner.classList.remove('active', 'flash-active', 'cutin-theme-fire', 'cutin-theme-ice', 'cutin-theme-lightning', 'cutin-theme-boss');
-    banner.classList.add('cutin-hidden');
-  };
-
-  const eyesSvg = document.getElementById('cutin-eyes-svg');
+  const slashBar = document.getElementById('cutin-slash-bar');
+  const eyeArt = document.getElementById('cutin-eye-art');
   const faction = document.getElementById('cutin-faction');
   const title = document.getElementById('cutin-title');
 
-  banner.classList.remove('active', 'flash-active', 'cutin-theme-fire', 'cutin-theme-ice', 'cutin-theme-lightning', 'cutin-theme-boss');
+  const cleanup = () => {
+    clearTimeout(bannerTimeout);
+    banner.classList.remove('active', 'flash-active', 'cutin-player-milestone', 'cutin-boss-milestone', 'cutin-theme-fire', 'cutin-theme-ice', 'cutin-theme-lightning', 'cutin-theme-boss');
+    banner.classList.add('cutin-hidden');
+    banner.style.backgroundImage = '';
+    if (slashBar) slashBar.style.backgroundImage = '';
+    if (eyeArt) eyeArt.style.backgroundImage = '';
+  };
+
+  banner.classList.remove('active', 'flash-active', 'cutin-player-milestone', 'cutin-boss-milestone', 'cutin-theme-fire', 'cutin-theme-ice', 'cutin-theme-lightning', 'cutin-theme-boss');
 
   const normElem = (element || 'fire').toLowerCase();
 
   if (type === 'player') {
+    // Sharp metallic slice sound effect
     try { Audio.playMetallicSlice?.(); } catch (e) {}
 
-    let themeClass = 'cutin-theme-lightning';
-    let titleText = 'DECISIVE HERO STRIKE';
+    const playerAsset = '/assets/ui/cutin_player.png';
+    banner.style.backgroundImage = `url('${playerAsset}')`;
+    if (slashBar) slashBar.style.backgroundImage = `url('${playerAsset}')`;
+    if (eyeArt) eyeArt.style.backgroundImage = `url('${playerAsset}')`;
 
+    let titleText = 'DECISIVE HERO STRIKE';
     if (normElem === 'fire') {
-      themeClass = 'cutin-theme-fire';
       titleText = 'PURGATORY FIRE BLADE';
     } else if (normElem === 'frost' || normElem === 'ice') {
-      themeClass = 'cutin-theme-ice';
       titleText = 'GLACIAL ZERO SLASH';
     } else if (normElem === 'thunder' || normElem === 'lightning') {
-      themeClass = 'cutin-theme-lightning';
       titleText = "THUNDER GOD'S JUDGMENT";
     }
 
-    if (eyesSvg) {
-      eyesSvg.innerHTML = generatePlayerAnimeEyeSVG(normElem);
-    }
     if (faction) faction.textContent = 'PLAYER AWAKENING';
     if (title) title.textContent = titleText;
-    banner.classList.add(themeClass);
+    // Apply cyan/gold elemental glow border
+    banner.classList.add('cutin-player-milestone');
 
   } else {
-    // Boss menace
+    // Boss menace milestone
+    try { Audio.playMetallicSlice?.(); } catch (e) {}
     try { Audio.playBassDropRoar?.(); } catch (e) {}
 
-    if (eyesSvg) {
-      eyesSvg.innerHTML = generateBossAnimeEyeSVG(normElem);
-    }
+    const bossAsset = '/assets/ui/cutin_boss.png';
+    banner.style.backgroundImage = `url('${bossAsset}')`;
+    if (slashBar) slashBar.style.backgroundImage = `url('${bossAsset}')`;
+    if (eyeArt) eyeArt.style.backgroundImage = `url('${bossAsset}')`;
+
     if (faction) faction.textContent = 'BOSS MENACE';
     if (title) title.textContent = 'WRATH OF THE TITAN';
-    banner.classList.add('cutin-theme-boss');
+    // Apply glowing crimson/purple ominous aura
+    banner.classList.add('cutin-boss-milestone');
   }
 
-  // Trigger 3.0s slow-motion / screen freeze during cut-in
-  triggerCombatSlowMo(0.1, 3000);
+  // Trigger slow-motion freeze during cut-in for 2.8s
+  triggerCombatSlowMo(0.1, 2800);
 
   banner.classList.remove('cutin-hidden');
   banner.classList.add('cutin-overlay');
@@ -261,14 +268,14 @@ export function playCutInBanner({ type = 'player', element = 'fire', onDone }) {
   void banner.offsetWidth;
   banner.classList.add('active');
 
-  // Smooth hold for 2.7s, then flash and conclude at 3.0s
+  // Hold steadily across screen with subtle slow pan for 2.5s, then quick fade/slash out right at 2.8s
   setTimeout(() => {
     banner.classList.add('flash-active');
     setTimeout(() => {
       cleanup();
       finishOnce();
-    }, 300);
-  }, 2700);
+    }, 280);
+  }, 2500);
 }
 
 
