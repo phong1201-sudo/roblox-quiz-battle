@@ -37,10 +37,15 @@ const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT SCENE
 // ─────────────────────────────────────────────────────────────────────────────
-export function initScene(canvas) {
+function getViewportDimensions() {
   const vp = document.getElementById('arena-viewport') || document.body;
-  const W  = vp.clientWidth  || window.innerWidth;
-  const H  = vp.clientHeight || window.innerHeight * 0.75;
+  const W  = Math.max(320, vp.clientWidth  || window.innerWidth  || 800);
+  const H  = Math.max(240, vp.clientHeight || Math.floor((window.innerHeight || 600) * 0.75));
+  return { W, H };
+}
+
+export function initScene(canvas) {
+  const { W, H } = getViewportDimensions();
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -161,6 +166,8 @@ export function startGame(gameState) {
     const pos = Player.getPosition();
     socket.emit('player_move', { code: gameState.code, position:{x:pos.x,y:pos.y,z:pos.z}, rotation:{y:0} });
   }, 200);
+
+  setTimeout(() => onWindowResize(), 60);
 }
 
 export function onQuestion(data) {
@@ -212,10 +219,9 @@ export function onSkinUploaded({ playerId, skinUrl, target }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // RESIZE
 // ─────────────────────────────────────────────────────────────────────────────
-function onWindowResize() {
-  const vp = document.getElementById('arena-viewport') || document.body;
-  const W = vp.clientWidth  || window.innerWidth;
-  const H = vp.clientHeight || window.innerHeight * 0.75;
+export function onWindowResize() {
+  if (!camera || !renderer) return;
+  const { W, H } = getViewportDimensions();
   camera.aspect = W / H;
   camera.updateProjectionMatrix();
   renderer.setSize(W, H);

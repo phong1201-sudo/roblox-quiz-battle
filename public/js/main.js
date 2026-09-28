@@ -59,6 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Always activate menu screen first — auth modal overlays it ───────────
     showScreen('menu');
 
+    // ── Dismiss initial app loading screen smoothly ───────────────────────────
+    const loadingScreen = document.getElementById('app-loading-screen');
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            try { loadingScreen.remove(); } catch(e) {}
+        }, 350);
+    }
+
     // ── Auth gate — show login modal unless session is restored ───────────────
     const alreadyLoggedIn = Auth.init();
     if (!alreadyLoggedIn) {

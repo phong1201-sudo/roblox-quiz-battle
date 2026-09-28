@@ -3,11 +3,17 @@
 // Connects to window.location.origin
 // Exports { socket, on, emit, offAll }
 
-const socket = io(window.location.origin);
+const socket = (typeof io !== 'undefined') ? io(window.location.origin) : {
+    on: () => {},
+    off: () => {},
+    emit: () => {},
+};
 
-socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error);
-});
+if (socket.on) {
+    socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+    });
+}
 
 // Track registered handlers per event so we can remove-before-add (prevent stacking)
 const _handlers = {};
