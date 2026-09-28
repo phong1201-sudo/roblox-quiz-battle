@@ -340,6 +340,11 @@ const DEFAULT_SOCKETS = {
       slashAngle: -75,
       arc: 135
     },
+    slashPoses: {
+      pose1: { degX: 0, degY: 0, degZ: 60, rotX: 0, rotY: 0, rotZ: 1.0472 },
+      pose2: { degX: 0, degY: 0, degZ: -75, rotX: 0, rotY: 0, rotZ: -1.309 },
+      pose3: { degX: 0, degY: 0, degZ: 0, rotX: 0, rotY: 0, rotZ: 0 }
+    },
     default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     fire:    { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
@@ -485,6 +490,8 @@ app.post('/api/admin/rigging/save', (req, res) => {
     current[target].weapon = mergedWeapon;
     current[target].weaponOffset = mergedWeapon;
     current[target].slashArc = slashArc;
+    if (payload.slashPoses) current[target].slashPoses = payload.slashPoses;
+    if (payload.slashKeyframes) current[target].slashKeyframes = payload.slashKeyframes;
 
     // Sync legacy keys
     if (target === 'player') {
@@ -570,6 +577,8 @@ app.post('/api/admin/rigging/brush-save', (req, res) => {
     if (payload.armMeshName) current[target].armMeshName = payload.armMeshName;
     if (payload.handSocket) current[target].handSocket = payload.handSocket;
     if (payload.normalizedPose) current[target].normalizedPose = payload.normalizedPose;
+    if (payload.slashPoses) current[target].slashPoses = payload.slashPoses;
+    if (payload.slashKeyframes) current[target].slashKeyframes = payload.slashKeyframes;
 
     // Sync legacy keys for backward compatibility
     if (target === 'player') {

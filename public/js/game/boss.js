@@ -1076,125 +1076,29 @@ export function updateBoss(deltaTime) {
       if (prog>=1.0) anim.active=false;
     } else if (anim.type==='attack') {
       const el = anim.attackElement || 'thunder';
+      // ALL BOSSES REMAIN STATIONARY AT BOSS_HOME (NO PHYSICAL RUSH / LEAP SLAM)
+      posX = BOSS_HOME.x;
+      posZ = BOSS_HOME.z;
+
       if (el === 'frost') {
-        // ❄️ Boss Băng (Leap & Overhead Smash):
-        // 1. Wind-up & Leap (~250ms / prog < 0.35): raises hammer backward and leaps into the air toward player
+        // ❄️ Boss Băng (Crawling Frost Trail & Ice Spikes)
+        // 1. Windup & Channel on ground (prog < 0.35): channels frost energy at ground level
         if (prog < 0.35) {
           const t = prog / 0.35;
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI / 4, -Math.PI * 0.9, t);
-          if (customBossBone && customBossBone._baseRotX !== undefined) {
-            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX, customBossBone._baseRotX - 1.8, t);
-          }
-          posX = THREE.MathUtils.lerp(BOSS_HOME.x, -0.8, t);
-          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 3.5;
-          bossGroup.rotation.z = -0.28 * Math.sin(t * Math.PI);
-        } else if (prog < 0.58) {
-          // 2. Smash (~150ms / prog 0.35 to 0.58): swings hammer downward in a heavy crushing arc aimed directly at player
-          const t = (prog - 0.35) / 0.23;
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.9, Math.PI * 0.55, t);
-          if (customBossBone && customBossBone._baseRotX !== undefined) {
-            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX - 1.8, customBossBone._baseRotX + 1.2, t);
-          }
-          posX = -0.8;
-          baseY = BOSS_HOME.y;
-          bossGroup.rotation.z = 0;
-          if (!anim.peakFired && prog >= 0.50) {
-            anim.peakFired = true;
-            Effects.spawnBossFrostSlam(new THREE.Vector3(-0.8, 0.2, 0));
-            Effects.triggerShake(0.42, 0.35);
-            try { (Audio.playIceShatter || Audio.playFrost)?.(); } catch (e) {}
-            if (anim.onPeak) anim.onPeak();
-          }
-        } else {
-          // 3. Recover (~200ms / prog >= 0.58): leaps/slides back to original position
-          const t = (prog - 0.58) / 0.42;
-          posX = THREE.MathUtils.lerp(-0.8, BOSS_HOME.x, t);
-          baseY = BOSS_HOME.y + Math.sin(t * Math.PI) * 1.5;
-          bossGroup.rotation.z = 0.15 * Math.sin(t * Math.PI);
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(Math.PI * 0.55, -Math.PI / 4, t);
-          if (customBossBone && customBossBone._baseRotX !== undefined) {
-            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX + 1.2, customBossBone._baseRotX, t);
-          }
-        }
-        if (prog >= 1.0) {
-          anim.active = false;
-          bossGroup.rotation.z = 0;
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = -Math.PI / 4;
-          if (anim.onComplete) anim.onComplete();
-        }
-      } else if (el === 'fire') {
-        // 🔥 Boss Lửa (Ground Slam Wave):
-        // 1. Wind-up (~150ms / prog < 0.25): raises both arms / hammer high above its head
-        if (prog < 0.25) {
-          const t = prog / 0.25;
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI / 4, -Math.PI * 0.85, t);
-          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(0, -Math.PI * 0.75, t);
-          if (customBossBone && customBossBone._baseRotX !== undefined) {
-            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX, customBossBone._baseRotX - 1.6, t);
-          }
-          baseY = BOSS_HOME.y + 0.5 * t;
-          bossGroup.rotation.z = -0.18 * t;
-        } else if (prog < 0.45) {
-          // 2. Slam (~120ms / prog 0.25 to 0.45): violently slams hammer down onto arena floor
-          const t = (prog - 0.25) / 0.20;
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.85, Math.PI * 0.48, t);
-          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.75, Math.PI * 0.38, t);
-          if (customBossBone && customBossBone._baseRotX !== undefined) {
-            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX - 1.6, customBossBone._baseRotX + 1.2, t);
-          }
-          baseY = BOSS_HOME.y + 0.5 * (1 - t) - 0.25 * Math.sin(t * Math.PI);
-          bossGroup.rotation.z = THREE.MathUtils.lerp(-0.18, 0.28, t);
-          if (!anim.vfxFired && prog >= 0.38) {
-            anim.vfxFired = true;
-            try { Audio.playFire?.(); } catch (e) {}
-            Effects.triggerShake(0.38, 0.32);
-            Effects.spawnBossFireWave(new THREE.Vector3(BOSS_HOME.x, 0, 0), new THREE.Vector3(-2.8, 0, 0), () => {
-              if (!anim.peakFired) {
-                anim.peakFired = true;
-                if (anim.onPeak) anim.onPeak();
-              }
-            });
-          }
-        } else {
-          // 3. Recover (~250ms / prog >= 0.45): returns smoothly to combat ready stance
-          const t = (prog - 0.45) / 0.55;
-          baseY = BOSS_HOME.y;
-          bossGroup.rotation.z = THREE.MathUtils.lerp(0.28, 0, t);
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(Math.PI * 0.48, -Math.PI / 4, t);
-          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(Math.PI * 0.38, 0, t);
-          if (customBossBone && customBossBone._baseRotX !== undefined) {
-            customBossBone.rotation.x = THREE.MathUtils.lerp(customBossBone._baseRotX + 1.2, customBossBone._baseRotX, t);
-          }
-        }
-        if (prog >= 0.70 && !anim.peakFired) {
-          anim.peakFired = true;
-          if (anim.onPeak) anim.onPeak();
-        }
-        if (prog >= 1.0) {
-          anim.active = false;
-          bossGroup.rotation.z = 0;
-          if (bossArmRightPivot) bossArmRightPivot.rotation.x = -Math.PI / 4;
-          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = 0;
-          if (anim.onComplete) anim.onComplete();
-        }
-      } else {
-        // ⚡ Thunder Boss: Raises staff and shoots directed beam/stream of crackling lightning
-        if (prog < 0.30) {
-          // Windup raise staff
-          const t = prog / 0.30;
-          baseY = BOSS_HOME.y + 0.4 * t;
-          bossGroup.rotation.z = -0.12 * t;
-        } else if (prog < 0.65) {
-          // Firing beam
-          baseY = BOSS_HOME.y + 0.4;
-          bossGroup.rotation.z = -0.12;
+          baseY = BOSS_HOME.y - 0.25 * t; // subtle ground channel crouch
+          bossGroup.rotation.z = -0.15 * t;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI / 4, 0.35, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(0, 0.35, t);
+        } else if (prog < 0.70) {
+          // 2. Frost trail rapidly crawls along floor to player's feet & erupts ice spikes
+          baseY = BOSS_HOME.y - 0.25;
+          bossGroup.rotation.z = -0.15;
           if (!anim.vfxFired) {
             anim.vfxFired = true;
-            try { Audio.playThunder?.(); } catch(e) {}
-            Effects.spawnBossLightningBeam(
-              new THREE.Vector3(BOSS_HOME.x - 0.5, 4.0, 0),
-              new THREE.Vector3(-3.0, 1.5, 0),
-              350,
+            try { Audio.playFrost?.(); } catch(e) {}
+            Effects.spawnBossFrostTrailAndSpikes(
+              new THREE.Vector3(BOSS_HOME.x - 0.5, 0.05, 0),
+              new THREE.Vector3(-3.0, 0, 0),
               () => {
                 if (!anim.peakFired) {
                   anim.peakFired = true;
@@ -1204,17 +1108,118 @@ export function updateBoss(deltaTime) {
             );
           }
         } else {
-          // Lower staff
-          const t = (prog - 0.65) / 0.35;
-          baseY = BOSS_HOME.y + 0.4 * (1 - t);
-          bossGroup.rotation.z = -0.12 * (1 - t);
+          // 3. Return smoothly to ready stance
+          const t = (prog - 0.70) / 0.30;
+          baseY = THREE.MathUtils.lerp(BOSS_HOME.y - 0.25, BOSS_HOME.y, t);
+          bossGroup.rotation.z = THREE.MathUtils.lerp(-0.15, 0, t);
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(0.35, -Math.PI / 4, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(0.35, 0, t);
         }
+
+        if (prog >= 0.70 && !anim.peakFired) {
+          anim.peakFired = true;
+          if (anim.onPeak) anim.onPeak();
+        }
+
+        if (prog >= 1.0) {
+          anim.active = false;
+          baseY = BOSS_HOME.y;
+          bossGroup.rotation.z = 0;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = -Math.PI / 4;
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = 0;
+          if (anim.onComplete) anim.onComplete();
+        }
+
+      } else if (el === 'fire') {
+        // 🔥 Boss Hỏa (Meteor Shower)
+        // 1. Windup & Summon Sky Aura (prog < 0.35): raises arms summoning fiery aura above
+        if (prog < 0.35) {
+          const t = prog / 0.35;
+          baseY = BOSS_HOME.y + 0.35 * t;
+          bossGroup.rotation.z = -0.15 * t;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI / 4, -Math.PI * 0.75, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(0, -Math.PI * 0.75, t);
+        } else if (prog < 0.70) {
+          // 2. Meteors rain down diagonally from top sky onto player position
+          baseY = BOSS_HOME.y + 0.35;
+          bossGroup.rotation.z = -0.15;
+          if (!anim.vfxFired) {
+            anim.vfxFired = true;
+            try { Audio.playFire?.(); } catch(e) {}
+            Effects.spawnBossMeteorShower(
+              new THREE.Vector3(-3.0, 0.5, 0),
+              () => {
+                if (!anim.peakFired) {
+                  anim.peakFired = true;
+                  if (anim.onPeak) anim.onPeak();
+                }
+              }
+            );
+          }
+        } else {
+          // 3. Return smoothly to ready stance
+          const t = (prog - 0.70) / 0.30;
+          baseY = THREE.MathUtils.lerp(BOSS_HOME.y + 0.35, BOSS_HOME.y, t);
+          bossGroup.rotation.z = THREE.MathUtils.lerp(-0.15, 0, t);
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.75, -Math.PI / 4, t);
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = THREE.MathUtils.lerp(-Math.PI * 0.75, 0, t);
+        }
+
+        if (prog >= 0.70 && !anim.peakFired) {
+          anim.peakFired = true;
+          if (anim.onPeak) anim.onPeak();
+        }
+
+        if (prog >= 1.0) {
+          anim.active = false;
+          baseY = BOSS_HOME.y;
+          bossGroup.rotation.z = 0;
+          if (bossArmRightPivot) bossArmRightPivot.rotation.x = -Math.PI / 4;
+          if (bossArmLeftPivot) bossArmLeftPivot.rotation.x = 0;
+          if (anim.onComplete) anim.onComplete();
+        }
+
+      } else {
+        // ⚡ Thunder Boss: Stationary charge and shoots direct linear lightning beam
+        if (prog < 0.30) {
+          // Windup raise staff/arm
+          const t = prog / 0.30;
+          baseY = BOSS_HOME.y + 0.35 * t;
+          bossGroup.rotation.z = -0.12 * t;
+        } else if (prog < 0.65) {
+          // Firing crackling beam directly across arena hitting player
+          baseY = BOSS_HOME.y + 0.35;
+          bossGroup.rotation.z = -0.12;
+          if (!anim.vfxFired) {
+            anim.vfxFired = true;
+            try { Audio.playThunder?.(); } catch(e) {}
+            Effects.spawnBossLightningBeam(
+              new THREE.Vector3(BOSS_HOME.x - 0.5, 3.8, 0),
+              new THREE.Vector3(-3.0, 1.5, 0),
+              380,
+              () => {
+                if (!anim.peakFired) {
+                  anim.peakFired = true;
+                  if (anim.onPeak) anim.onPeak();
+                }
+              }
+            );
+          }
+        } else {
+          // Return
+          const t = (prog - 0.65) / 0.35;
+          baseY = THREE.MathUtils.lerp(BOSS_HOME.y + 0.35, BOSS_HOME.y, t);
+          bossGroup.rotation.z = THREE.MathUtils.lerp(-0.12, 0, t);
+        }
+
         if (prog >= 0.65 && !anim.peakFired) {
           anim.peakFired = true;
           if (anim.onPeak) anim.onPeak();
         }
+
         if (prog >= 1.0) {
           anim.active = false;
+          baseY = BOSS_HOME.y;
           bossGroup.rotation.z = 0;
           if (anim.onComplete) anim.onComplete();
         }
@@ -1315,31 +1320,11 @@ export function playBossAttack(element, onPeak, onComplete) {
   anim.type = 'attack';
   anim.attackElement = el;
   anim.t = 0;
-  anim.duration = (el === 'frost') ? 0.75 : (el === 'fire') ? 0.65 : 0.88;
+  anim.duration = (el === 'frost') ? 0.95 : (el === 'fire') ? 0.95 : 0.90;
   anim.onPeak = onPeak || null;
   anim.onComplete = onComplete || null;
   anim.peakFired = false;
   anim.vfxFired = false;
-
-  if (el === 'fire' || el === 'frost') {
-    playGuaranteedBossHammerSlam(el, () => {
-      if (!anim.peakFired) {
-        anim.peakFired = true;
-        if (el === 'fire') {
-          try { Audio.playFire?.(); } catch (e) {}
-          Effects.triggerShake(0.38, 0.32);
-          Effects.spawnBossFireWave(new THREE.Vector3(BOSS_HOME.x, 0, 0), new THREE.Vector3(-2.8, 0, 0), () => {
-            if (anim.onPeak) anim.onPeak();
-          });
-        } else {
-          Effects.spawnBossFrostSlam(new THREE.Vector3(-0.8, 0.2, 0));
-          Effects.triggerShake(0.42, 0.35);
-          try { (Audio.playIceShatter || Audio.playFrost)?.(); } catch (e) {}
-          if (anim.onPeak) anim.onPeak();
-        }
-      }
-    });
-  }
 }
 
 let currentHpPercent = 100;

@@ -33,6 +33,32 @@
       "slashAngle": -75,
       "arc": 135
     },
+    "slashPoses": {
+      "pose1": {
+        "degX": 0,
+        "degY": 0,
+        "degZ": 60,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 1.0472
+      },
+      "pose2": {
+        "degX": 0,
+        "degY": 0,
+        "degZ": -75,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": -1.309
+      },
+      "pose3": {
+        "degX": 0,
+        "degY": 0,
+        "degZ": 0,
+        "rotX": 0,
+        "rotY": 0,
+        "rotZ": 0
+      }
+    },
     "default": {
       "handX": 0.65,
       "handY": 1.2,

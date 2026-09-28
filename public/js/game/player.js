@@ -71,6 +71,7 @@ const DEFAULT_PLAYER_SOCKETS = {
     shoulderX: -0.65,
     shoulderY: 1.2,
     shoulderZ: 0.0,
+    shoulderPivot: { x: -0.65, y: 1.2, z: 0.0 },
     weapon: {
       offsetX: 0.0,
       offsetY: -0.4,
@@ -79,6 +80,26 @@ const DEFAULT_PLAYER_SOCKETS = {
       rotY: 1.5708,
       rotZ: -0.7854,
       angle: -45
+    },
+    weaponOffset: {
+      offsetX: 0.0,
+      offsetY: -0.4,
+      offsetZ: 0.1,
+      rotX: 0.0,
+      rotY: 1.5708,
+      rotZ: -0.7854,
+      angle: -45
+    },
+    slashArc: {
+      idleAngle: 0,
+      windupAngle: 60,
+      slashAngle: -75,
+      arc: 135
+    },
+    slashPoses: {
+      pose1: { degX: 0, degY: 0, degZ: 60, rotX: 0, rotY: 0, rotZ: 1.0472 },
+      pose2: { degX: 0, degY: 0, degZ: -75, rotX: 0, rotY: 0, rotZ: -1.309 },
+      pose3: { degX: 0, degY: 0, degZ: 0, rotX: 0, rotY: 0, rotZ: 0 }
     },
     default: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
     thunder: { handX: 0.65, handY: 0.85, handZ: 0.1, weaponAngle: -45 },
@@ -660,8 +681,18 @@ if (typeof window !== 'undefined') {
 // ─── Sword builder ────────────────────────────────────────────────────────────
 function _buildSword() {
   swordGroup = new THREE.Group();
-  swordGroup.position.set(0, -0.9, 0.1);
-  swordGroup.rotation.x = Math.PI / 6;
+  const savedPivot = _socketsConfig?.player || {};
+  const savedWeapon = savedPivot.weaponOffset || savedPivot.weapon || {};
+  const wOffsetX = savedWeapon.offsetX ?? 0.0;
+  const wOffsetY = savedWeapon.offsetY ?? -0.4;
+  const wOffsetZ = savedWeapon.offsetZ ?? 0.1;
+  const wAngle = savedWeapon.angle ?? -45;
+  const wRotX = savedWeapon.rotX ?? 0.0;
+  const wRotY = savedWeapon.rotY ?? (Math.PI / 2);
+  const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
+
+  swordGroup.position.set(wOffsetX, -0.9 + wOffsetY, wOffsetZ);
+  swordGroup.rotation.set(wRotX, wRotY, wRotZ);
   swordGroup.scale.set(1.6, 1.6, 1.6);
 
   // ── Custom 2D Weapon Sprite (if uploaded for this element) ─────────────────
@@ -677,8 +708,6 @@ function _buildSword() {
     });
     const customSword = new THREE.Mesh(wGeo, wMat);
     customSword.rotation.y = Math.PI / 2; // face camera
-    swordGroup.position.set(0, -0.9, 0.1);
-    swordGroup.rotation.x = Math.PI / 5;  // point upward and forward
     swordGroup.add(customSword);
     swordGroup._customWeapon = customSword;
     if (leftShoulderPivot) leftShoulderPivot.add(swordGroup);
@@ -920,6 +949,12 @@ export const TWEEN = {
 if (typeof window !== 'undefined') window.TWEEN = TWEEN;
 
 export function getWeaponHandNode() {
+  if (combatArmCompound) {
+    return combatArmCompound;
+  }
+  if (playerArmPivot) {
+    return playerArmPivot;
+  }
   if (is3DModelMode) {
     return handNode || weaponSocket;
   }
@@ -930,10 +965,10 @@ export function getWeaponHandNode() {
 }
 
 /**
- * Bulletproof Single-Rotation Slash Motion (playGuaranteedPlayerSlash):
- * - Wind-up (Giương kiếm): Rotate combatArmCompound.rotation.z by +60 deg in 100ms (Quadratic.Out)
- * - Slash Strike (Chém bổ xuống): Rotate combatArmCompound.rotation.z down to -75 deg in 120ms (Quadratic.In), triggers onHit()
- * - Recover (Thu tay về): Reset rotation.z back to 0 in 100ms (Quadratic.Out), triggers onComplete()
+ * Bulletproof 3-Pose Slash Motion (playGuaranteedPlayerSlash):
+ * - Pose 1: Wind-up (Giương kiếm) -> 80ms (Quadratic.Out)
+ * - Pose 2: Strike Impact (Chém trúng) -> 120ms (Quadratic.In) -> triggers onHit()
+ * - Pose 3: Idle Guard (Thu kiếm về thế thủ) -> 100ms (Quadratic.Out) -> triggers onComplete()
  */
 export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
   let pivot = combatArmCompound || playerArmPivot || getWeaponHandNode();
@@ -956,29 +991,42 @@ export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
   }
 
   const arcCfg = _socketsConfig?.player?.slashArc || {};
-  const idleDeg = arcCfg.idleAngle ?? 0;
-  const windupDeg = arcCfg.windupAngle ?? (idleDeg + (arcCfg.arc ? arcCfg.arc * 0.45 : 60));
-  const strikeDeg = arcCfg.slashAngle ?? (idleDeg - (arcCfg.arc ? arcCfg.arc * 0.55 : 75));
+  const poses = _socketsConfig?.player?.slashPoses || _socketsConfig?.player?.slashKeyframes || {};
 
-  const idleAngle = (idleDeg * Math.PI) / 180;
-  const windupAngle = (windupDeg * Math.PI) / 180;
-  const strikeAngle = (strikeDeg * Math.PI) / 180;
+  const p1 = poses.pose1 || {};
+  const p2 = poses.pose2 || {};
+  const p3 = poses.pose3 || {};
 
-  // Phase 1: Wind-up (Giương kiếm)
+  const getPoseRot = (p, defaultDegZ = 0) => {
+    const rx = p.rotX ?? ((p.degX ?? 0) * Math.PI / 180);
+    const ry = p.rotY ?? ((p.degY ?? 0) * Math.PI / 180);
+    const rz = p.rotZ ?? ((p.degZ ?? (p.z ?? defaultDegZ)) * Math.PI / 180);
+    return { x: rx, y: ry, z: rz };
+  };
+
+  const defaultWindup = arcCfg.windupAngle ?? (arcCfg.arc ? (arcCfg.idleAngle ?? 0) + arcCfg.arc * 0.45 : 60);
+  const defaultStrike = arcCfg.slashAngle ?? (arcCfg.arc ? (arcCfg.idleAngle ?? 0) - arcCfg.arc * 0.55 : -75);
+  const defaultIdle = arcCfg.idleAngle ?? 0;
+
+  const rotPose1 = getPoseRot(p1, defaultWindup);
+  const rotPose2 = getPoseRot(p2, defaultStrike);
+  const rotPose3 = getPoseRot(p3, defaultIdle);
+
+  // Phase 1: Wind-up (Giương kiếm) - 80ms
   new TWEEN.Tween(pivot.rotation)
-    .to({ z: windupAngle }, 100)
+    .to(rotPose1, 80)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2: Slash Strike (Chém bổ xuống theo slashArc) -> Trigger hit damage
+      // Phase 2: Slash Strike (Chém bổ trúng) - 120ms -> Deal damage
       new TWEEN.Tween(pivot.rotation)
-        .to({ z: strikeAngle }, 120)
+        .to(rotPose2, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           if (onHit) onHit();
 
-          // Phase 3: Recover (Thu tay về góc idle)
+          // Phase 3: Recover / Idle Guard (Thu kiếm về thế thủ) - 100ms
           new TWEEN.Tween(pivot.rotation)
-            .to({ z: idleAngle }, 100)
+            .to(rotPose3, 100)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
               if (onComplete) onComplete();

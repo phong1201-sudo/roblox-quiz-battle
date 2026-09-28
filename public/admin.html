@@ -508,10 +508,102 @@
           </button>
         </div>
 
-        <!-- Section 3: Test & Save -->
+        <!-- Section 3: 3-Pose Visual Slash Keyframe Recorder -->
+        <div class="section-box" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
+          <div class="section-title" style="color:#38bdf8;">
+            <span>🎬</span> 3. Bộ Ghi Nhận 3 Tư Thế Chém (3-Pose Visual Slash Keyframe Recorder)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Xoay cánh tay &amp; kiếm để tạo dáng cho từng thời điểm trong đòn chém. Nhấn <b>Ghi nhận</b> để lưu góc xoay cho từng Pose.
+          </div>
+
+          <!-- Rotation Sliders for Posing Arm -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Góc xoay Z (Nghiêng Chém - Angle Z):</span>
+              <span class="val-text" id="val-player-pose-z">0°</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-player-pose-z" min="-180" max="180" step="1" value="0">
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>Góc xoay X (Gập Trước/Sau - Angle X):</span>
+              <span class="val-text" id="val-player-pose-x">0°</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-player-pose-x" min="-180" max="180" step="1" value="0">
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>Góc xoay Y (Xoay Ngang - Angle Y):</span>
+              <span class="val-text" id="val-player-pose-y">0°</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-player-pose-y" min="-180" max="180" step="1" value="0">
+            </div>
+          </div>
+
+          <!-- Pose 1 Record & Preview -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#38bdf8;">Pose 1: Giương Kiếm (Wind-up)</span>
+              <span id="badge-player-pose1" class="hud-badge" style="font-size:10px;">Z: 60° (80ms)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-record-pose1" class="tool-btn active arm-cyan" style="flex:1; font-size:10px;">
+                <span>🔴</span> Ghi Nhận Pose 1
+              </button>
+              <button id="btn-view-pose1" class="tool-btn" style="flex:1; font-size:10px;">
+                <span>👁️</span> Xem Pose 1
+              </button>
+            </div>
+          </div>
+
+          <!-- Pose 2 Record & Preview -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#f43f5e;">Pose 2: Chém Trúng (Strike Impact)</span>
+              <span id="badge-player-pose2" class="hud-badge" style="font-size:10px; color:#f43f5e;">Z: -75° (120ms)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-record-pose2" class="tool-btn active weapon-orange" style="flex:1; font-size:10px;">
+                <span>🔴</span> Ghi Nhận Pose 2
+              </button>
+              <button id="btn-view-pose2" class="tool-btn" style="flex:1; font-size:10px;">
+                <span>👁️</span> Xem Pose 2
+              </button>
+            </div>
+          </div>
+
+          <!-- Pose 3 Record & Preview -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#10b981;">Pose 3: Thu Kiếm (Idle Guard)</span>
+              <span id="badge-player-pose3" class="hud-badge" style="font-size:10px; color:#10b981;">Z: 0° (100ms)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-record-pose3" class="tool-btn active" style="flex:1; font-size:10px; background:rgba(16,185,129,0.2); color:#10b981; border-color:#10b981;">
+                <span>🔴</span> Ghi Nhận Pose 3
+              </button>
+              <button id="btn-view-pose3" class="tool-btn" style="flex:1; font-size:10px;">
+                <span>👁️</span> Xem Pose 3
+              </button>
+            </div>
+          </div>
+
+          <!-- Test 3-Pose Keyframe Tween Playback -->
+          <button id="btn-player-test-3pose" class="btn-test-swing" style="background:linear-gradient(135deg, #0284c7, #06b6d4); font-size:12px; font-weight:800; padding:12px;">
+            <span>▶️</span> CHẠY THỬ QUỸ ĐẠO CHÉM (TEST 3-POSE TWEEN)
+          </button>
+        </div>
+
+        <!-- Section 4: Test & Save -->
         <div style="display:flex; flex-direction:column; gap:8px;">
           <button id="btn-player-test-swing" class="btn-test-swing">
-            <span>⚔️</span> VUNG THỬ (TEST SWING)
+            <span>⚔️</span> VUNG THỬ NHANH (QUICK SWING)
           </button>
           <div id="toast-player" class="status-toast"></div>
           <button id="btn-player-save" class="btn-save-all">
@@ -616,9 +708,9 @@
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=27.0"></script>
+  <script type="module" src="js/admin.js?v=28.0"></script>
   <script type="module">
-    import { initBrushCalibrator } from './js/admin.js?v=27.0';
+    import { initBrushCalibrator } from './js/admin.js?v=28.0';
     window.addEventListener('DOMContentLoaded', () => {
       initBrushCalibrator();
     });

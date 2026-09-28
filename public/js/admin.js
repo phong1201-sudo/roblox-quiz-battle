@@ -689,6 +689,13 @@ export function initBrushCalibrator() {
   let playerNormalizedPose = null;
   let playerSwordOffset = { offsetX: 0.0, offsetY: -0.4, offsetZ: 0.1, angle: -45 };
 
+  let playerSlashPoses = {
+    pose1: { degX: 0, degY: 0, degZ: 60, rotX: 0, rotY: 0, rotZ: (60 * Math.PI) / 180 },
+    pose2: { degX: 0, degY: 0, degZ: -75, rotX: 0, rotY: 0, rotZ: (-75 * Math.PI) / 180 },
+    pose3: { degX: 0, degY: 0, degZ: 0, rotX: 0, rotY: 0, rotZ: 0 },
+  };
+  let currentPoseRot = { degX: 0, degY: 0, degZ: 0, rotX: 0, rotY: 0, rotZ: 0 };
+
   const playerPoseRig       = createPoseRigVisuals(vpPlayer.scene, false);
   const hudPlayerShoulder   = document.getElementById('hud-player-shoulder');
   const hudPlayerWrist      = document.getElementById('hud-player-wrist');
@@ -710,6 +717,26 @@ export function initBrushCalibrator() {
   const btnPlayerTestSwing  = document.getElementById('btn-player-test-swing');
   const btnPlayerSave       = document.getElementById('btn-player-save');
   const toastPlayer         = document.getElementById('toast-player');
+
+  // 3-Pose Visual Slash Keyframe Recorder DOM elements
+  const sliderPoseZ = document.getElementById('slider-player-pose-z');
+  const sliderPoseX = document.getElementById('slider-player-pose-x');
+  const sliderPoseY = document.getElementById('slider-player-pose-y');
+  const valPoseZ    = document.getElementById('val-player-pose-z');
+  const valPoseX    = document.getElementById('val-player-pose-x');
+  const valPoseY    = document.getElementById('val-player-pose-y');
+
+  const badgePose1  = document.getElementById('badge-player-pose1');
+  const badgePose2  = document.getElementById('badge-player-pose2');
+  const badgePose3  = document.getElementById('badge-player-pose3');
+
+  const btnRecordPose1 = document.getElementById('btn-record-pose1');
+  const btnViewPose1   = document.getElementById('btn-view-pose1');
+  const btnRecordPose2 = document.getElementById('btn-record-pose2');
+  const btnViewPose2   = document.getElementById('btn-view-pose2');
+  const btnRecordPose3 = document.getElementById('btn-record-pose3');
+  const btnViewPose3   = document.getElementById('btn-view-pose3');
+  const btnTest3Pose   = document.getElementById('btn-player-test-3pose');
 
   // Directional Nudge Buttons
   const btnNudgeXNeg = document.getElementById('btn-nudge-x-neg');
@@ -808,17 +835,33 @@ export function initBrushCalibrator() {
 
   // Update In-Context Sword Position in Viewport
   function updateInContextSwordTransform() {
-    const pos = new THREE.Vector3(
-      playerShoulderPivot.x + playerSwordOffset.offsetX,
-      playerShoulderPivot.y + playerSwordOffset.offsetY,
-      playerShoulderPivot.z + playerSwordOffset.offsetZ
-    );
-    inContextSword.position.copy(pos);
-    inContextSword.rotation.set(0, Math.PI / 2, (playerSwordOffset.angle * Math.PI) / 180);
+    const rx = (currentPoseRot.degX * Math.PI) / 180;
+    const ry = (currentPoseRot.degY * Math.PI) / 180;
+    const rz = (currentPoseRot.degZ * Math.PI) / 180;
 
-    playerHandSocket.x = Math.round(pos.x * 100) / 100;
-    playerHandSocket.y = Math.round(pos.y * 100) / 100;
-    playerHandSocket.z = Math.round(pos.z * 100) / 100;
+    const localOffset = new THREE.Vector3(
+      playerSwordOffset.offsetX,
+      playerSwordOffset.offsetY,
+      playerSwordOffset.offsetZ
+    );
+    localOffset.applyEuler(new THREE.Euler(rx, ry, rz, 'XYZ'));
+
+    const worldHandPos = new THREE.Vector3(
+      playerShoulderPivot.x + localOffset.x,
+      playerShoulderPivot.y + localOffset.y,
+      playerShoulderPivot.z + localOffset.z
+    );
+
+    inContextSword.position.copy(worldHandPos);
+    inContextSword.rotation.set(
+      rx,
+      Math.PI / 2 + ry,
+      (playerSwordOffset.angle * Math.PI) / 180 + rz
+    );
+
+    playerHandSocket.x = Math.round(worldHandPos.x * 100) / 100;
+    playerHandSocket.y = Math.round(worldHandPos.y * 100) / 100;
+    playerHandSocket.z = Math.round(worldHandPos.z * 100) / 100;
     playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
     if (hudPlayerWrist) {
       hudPlayerWrist.textContent = `(${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}, ${playerHandSocket.z.toFixed(2)})`;
@@ -951,6 +994,145 @@ export function initBrushCalibrator() {
     requestAnimationFrame(stepSwing);
   });
 
+  // ── 3-Pose Visual Slash Keyframe Recorder Logic ────────────────────────────
+  function updatePoseBadges() {
+    if (badgePose1) badgePose1.textContent = `Z: ${Math.round(playerSlashPoses.pose1.degZ ?? 60)}° X: ${Math.round(playerSlashPoses.pose1.degX ?? 0)}° (80ms)`;
+    if (badgePose2) badgePose2.textContent = `Z: ${Math.round(playerSlashPoses.pose2.degZ ?? -75)}° X: ${Math.round(playerSlashPoses.pose2.degX ?? 0)}° (120ms)`;
+    if (badgePose3) badgePose3.textContent = `Z: ${Math.round(playerSlashPoses.pose3.degZ ?? 0)}° X: ${Math.round(playerSlashPoses.pose3.degX ?? 0)}° (100ms)`;
+  }
+
+  function applyPoseSliderInputs() {
+    currentPoseRot.degZ = parseFloat(sliderPoseZ?.value || 0);
+    currentPoseRot.degX = parseFloat(sliderPoseX?.value || 0);
+    currentPoseRot.degY = parseFloat(sliderPoseY?.value || 0);
+    currentPoseRot.rotZ = (currentPoseRot.degZ * Math.PI) / 180;
+    currentPoseRot.rotX = (currentPoseRot.degX * Math.PI) / 180;
+    currentPoseRot.rotY = (currentPoseRot.degY * Math.PI) / 180;
+
+    if (valPoseZ) valPoseZ.textContent = `${Math.round(currentPoseRot.degZ)}°`;
+    if (valPoseX) valPoseX.textContent = `${Math.round(currentPoseRot.degX)}°`;
+    if (valPoseY) valPoseY.textContent = `${Math.round(currentPoseRot.degY)}°`;
+
+    updateInContextSwordTransform();
+  }
+
+  sliderPoseZ?.addEventListener('input', applyPoseSliderInputs);
+  sliderPoseX?.addEventListener('input', applyPoseSliderInputs);
+  sliderPoseY?.addEventListener('input', applyPoseSliderInputs);
+
+  function recordPose(poseKey) {
+    playerSlashPoses[poseKey] = {
+      degX: currentPoseRot.degX,
+      degY: currentPoseRot.degY,
+      degZ: currentPoseRot.degZ,
+      rotX: currentPoseRot.rotX,
+      rotY: currentPoseRot.rotY,
+      rotZ: currentPoseRot.rotZ,
+    };
+    updatePoseBadges();
+    const poseName = poseKey === 'pose1' ? 'Pose 1 (Giương Kiếm)' : poseKey === 'pose2' ? 'Pose 2 (Chém Trúng)' : 'Pose 3 (Thu Kiếm)';
+    if (toastPlayer) {
+      toastPlayer.className = 'status-toast success';
+      toastPlayer.innerHTML = `🔴 <b>Đã ghi nhận ${poseName}!</b> (Z: ${Math.round(currentPoseRot.degZ)}°, X: ${Math.round(currentPoseRot.degX)}°, Y: ${Math.round(currentPoseRot.degY)}°)`;
+      toastPlayer.style.display = 'block';
+      setTimeout(() => { toastPlayer.style.display = 'none'; }, 3000);
+    }
+  }
+
+  btnRecordPose1?.addEventListener('click', () => recordPose('pose1'));
+  btnRecordPose2?.addEventListener('click', () => recordPose('pose2'));
+  btnRecordPose3?.addEventListener('click', () => recordPose('pose3'));
+
+  function viewPose(poseKey) {
+    const p = playerSlashPoses[poseKey] || {};
+    const dz = p.degZ ?? (poseKey === 'pose1' ? 60 : poseKey === 'pose2' ? -75 : 0);
+    const dx = p.degX ?? 0;
+    const dy = p.degY ?? 0;
+
+    if (sliderPoseZ) sliderPoseZ.value = dz;
+    if (sliderPoseX) sliderPoseX.value = dx;
+    if (sliderPoseY) sliderPoseY.value = dy;
+
+    applyPoseSliderInputs();
+  }
+
+  btnViewPose1?.addEventListener('click', () => viewPose('pose1'));
+  btnViewPose2?.addEventListener('click', () => viewPose('pose2'));
+  btnViewPose3?.addEventListener('click', () => viewPose('pose3'));
+
+  // Test 3-Pose Keyframe Tween Playback
+  let isPlaying3PoseTween = false;
+  btnTest3Pose?.addEventListener('click', () => {
+    if (isPlaying3PoseTween) return;
+    isPlaying3PoseTween = true;
+
+    const p1 = playerSlashPoses.pose1 || { degZ: 60, degX: 0, degY: 0 };
+    const p2 = playerSlashPoses.pose2 || { degZ: -75, degX: 0, degY: 0 };
+    const p3 = playerSlashPoses.pose3 || { degZ: 0, degX: 0, degY: 0 };
+
+    const startRot = { ...currentPoseRot };
+    const startTime = performance.now();
+    let hitTriggered = false;
+
+    function step3Pose(now) {
+      const elapsed = now - startTime;
+
+      if (elapsed < 80) {
+        // Phase 1: To Pose 1 in 80ms (Quadratic.Out)
+        const t = Math.min(1, elapsed / 80);
+        const ease = t * (2 - t);
+        currentPoseRot.degX = THREE.MathUtils.lerp(startRot.degX, p1.degX, ease);
+        currentPoseRot.degY = THREE.MathUtils.lerp(startRot.degY, p1.degY, ease);
+        currentPoseRot.degZ = THREE.MathUtils.lerp(startRot.degZ, p1.degZ, ease);
+        updateInContextSwordTransform();
+        requestAnimationFrame(step3Pose);
+      } else if (elapsed < 200) {
+        // Phase 2: To Pose 2 in 120ms (Quadratic.In) -> triggers Hit Impact
+        const t = Math.min(1, (elapsed - 80) / 120);
+        const ease = t * t;
+        currentPoseRot.degX = THREE.MathUtils.lerp(p1.degX, p2.degX, ease);
+        currentPoseRot.degY = THREE.MathUtils.lerp(p1.degY, p2.degY, ease);
+        currentPoseRot.degZ = THREE.MathUtils.lerp(p1.degZ, p2.degZ, ease);
+        updateInContextSwordTransform();
+
+        if (t >= 0.95 && !hitTriggered) {
+          hitTriggered = true;
+          if (toastPlayer) {
+            toastPlayer.className = 'status-toast success';
+            toastPlayer.innerHTML = '💥 <b>TRÚNG ĐÍCH (HIT IMPACT)!</b> Điểm va chạm tại Pose 2.';
+            toastPlayer.style.display = 'block';
+            setTimeout(() => { toastPlayer.style.display = 'none'; }, 2000);
+          }
+        }
+        requestAnimationFrame(step3Pose);
+      } else if (elapsed < 300) {
+        // Phase 3: To Pose 3 in 100ms (Quadratic.Out)
+        const t = Math.min(1, (elapsed - 200) / 100);
+        const ease = t * (2 - t);
+        currentPoseRot.degX = THREE.MathUtils.lerp(p2.degX, p3.degX, ease);
+        currentPoseRot.degY = THREE.MathUtils.lerp(p2.degY, p3.degY, ease);
+        currentPoseRot.degZ = THREE.MathUtils.lerp(p2.degZ, p3.degZ, ease);
+        updateInContextSwordTransform();
+        requestAnimationFrame(step3Pose);
+      } else {
+        // Return to Pose 3 exactly
+        currentPoseRot.degX = p3.degX;
+        currentPoseRot.degY = p3.degY;
+        currentPoseRot.degZ = p3.degZ;
+        if (sliderPoseZ) sliderPoseZ.value = p3.degZ;
+        if (sliderPoseX) sliderPoseX.value = p3.degX;
+        if (sliderPoseY) sliderPoseY.value = p3.degY;
+        if (valPoseZ) valPoseZ.textContent = `${Math.round(p3.degZ)}°`;
+        if (valPoseX) valPoseX.textContent = `${Math.round(p3.degX)}°`;
+        if (valPoseY) valPoseY.textContent = `${Math.round(p3.degY)}°`;
+        updateInContextSwordTransform();
+        isPlaying3PoseTween = false;
+      }
+    }
+
+    requestAnimationFrame(step3Pose);
+  });
+
   // Save Player Calibration via brush-save
   btnPlayerSave?.addEventListener('click', async () => {
     try {
@@ -973,11 +1155,12 @@ export function initBrushCalibrator() {
           topY: playerShoulderPivot.y
         },
         slashArc: {
-          idleAngle: 0,
-          windupAngle: 60,
-          slashAngle: -75,
-          arc: 135
-        }
+          idleAngle: playerSlashPoses.pose3.degZ ?? 0,
+          windupAngle: playerSlashPoses.pose1.degZ ?? 60,
+          slashAngle: playerSlashPoses.pose2.degZ ?? -75,
+          arc: Math.abs((playerSlashPoses.pose1.degZ ?? 60) - (playerSlashPoses.pose2.degZ ?? -75))
+        },
+        slashPoses: playerSlashPoses
       };
 
       const res = await saveBrushRigging(payload);
@@ -1081,13 +1264,7 @@ export function initBrushCalibrator() {
           if (hudPlayerWrist) hudPlayerWrist.textContent = `(${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}, ${playerHandSocket.z.toFixed(2)})`;
         }
         playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
-        const pos = new THREE.Vector3(
-          playerShoulderPivot.x + playerSwordOffset.offsetX,
-          playerShoulderPivot.y + playerSwordOffset.offsetY,
-          playerShoulderPivot.z + playerSwordOffset.offsetZ
-        );
-        inContextSword.position.copy(pos);
-        inContextSword.rotation.set(0, Math.PI / 2, (playerSwordOffset.angle * Math.PI) / 180);
+        updateInContextSwordTransform();
       }
       return;
     }
@@ -1117,6 +1294,13 @@ export function initBrushCalibrator() {
     playerSwordOffset.offsetY = w.offsetY ?? -0.4;
     playerSwordOffset.offsetZ = w.offsetZ ?? 0.1;
     playerSwordOffset.angle   = w.angle ?? -45;
+
+    if (pCfg.slashPoses) {
+      if (pCfg.slashPoses.pose1) playerSlashPoses.pose1 = { ...playerSlashPoses.pose1, ...pCfg.slashPoses.pose1 };
+      if (pCfg.slashPoses.pose2) playerSlashPoses.pose2 = { ...playerSlashPoses.pose2, ...pCfg.slashPoses.pose2 };
+      if (pCfg.slashPoses.pose3) playerSlashPoses.pose3 = { ...playerSlashPoses.pose3, ...pCfg.slashPoses.pose3 };
+    }
+    updatePoseBadges();
 
     if (pCfg.handSocket) {
       playerHandSocket.x = pCfg.handSocket.x ?? (playerShoulderPivot.x + playerSwordOffset.offsetX);

@@ -476,6 +476,243 @@ export function spawnBossLightningBeam(startPos, targetPos, duration = 350, onIm
   }, 30);
 }
 
+export function spawnBossFrostTrailAndSpikes(startPos, targetPos, onImpact) {
+  if (!sceneRef) { if (onImpact) onImpact(); return; }
+
+  // 1. Crawling Frost Trail along floor
+  const trailSegments = 8;
+  const dx = (targetPos.x - startPos.x) / trailSegments;
+  const trailMeshes = [];
+
+  for (let i = 0; i <= trailSegments; i++) {
+    const delay = i * 40;
+    setTimeout(() => {
+      if (!sceneRef) return;
+      const x = startPos.x + dx * i;
+      const trailWidth = 0.5 + (i / trailSegments) * 0.8;
+      const trailGeo = new THREE.PlaneGeometry(Math.abs(dx) * 1.3, trailWidth);
+      trailGeo.rotateX(-Math.PI / 2);
+      const trailMat = new THREE.MeshBasicMaterial({
+        color: 0x88e5ff,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide
+      });
+      const segment = new THREE.Mesh(trailGeo, trailMat);
+      segment.position.set(x, 0.05, 0);
+      sceneRef.add(segment);
+      trailMeshes.push(segment);
+
+      // Frost puffs
+      for (let p = 0; p < 3; p++) {
+        const puff = new THREE.Mesh(
+          new THREE.BoxGeometry(0.18, 0.18, 0.18),
+          new THREE.MeshBasicMaterial({ color: 0xccffff, transparent: true, opacity: 0.8 })
+        );
+        puff.position.set(x + (Math.random() - 0.5) * 0.3, 0.15, (Math.random() - 0.5) * trailWidth);
+        sceneRef.add(puff);
+        particles.push({
+          mesh: puff,
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 0.8, 1.2 + Math.random() * 1.5, (Math.random() - 0.5) * 0.8),
+          life: 0.4,
+          maxLife: 0.4
+        });
+      }
+
+      // 2. Upon reaching target: Ice spikes eruption!
+      if (i === trailSegments) {
+        if (onImpact) onImpact();
+        triggerShake(0.38, 0.32);
+        try { (Audio.playIceShatter || Audio.playFrost)?.(); } catch (e) {}
+
+        const spikeCols = [0xaae5ff, 0xddf5ff, 0x00cfff, 0xffffff];
+        const spikeMeshes = [];
+        const spikeOffsets = [
+          { x: 0, z: 0, h: 2.0, r: 0.35, rotZ: 0 },
+          { x: -0.4, z: 0.3, h: 1.6, r: 0.28, rotZ: -0.2 },
+          { x: 0.35, z: -0.3, h: 1.7, r: 0.3, rotZ: 0.25 },
+          { x: -0.2, z: -0.35, h: 1.4, r: 0.25, rotZ: -0.15 },
+        ];
+
+        spikeOffsets.forEach(spk => {
+          const coneGeo = new THREE.ConeGeometry(spk.r, spk.h, 6);
+          coneGeo.translate(0, spk.h / 2, 0);
+          const coneMat = new THREE.MeshStandardMaterial({
+            color: spikeCols[Math.floor(Math.random() * spikeCols.length)],
+            emissive: 0x0088cc,
+            emissiveIntensity: 0.8,
+            roughness: 0.1,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.92
+          });
+          const spikeMesh = new THREE.Mesh(coneGeo, coneMat);
+          spikeMesh.position.set(targetPos.x + spk.x, 0.0, targetPos.z + spk.z);
+          spikeMesh.rotation.z = spk.rotZ;
+          spikeMesh.scale.set(0.1, 0.05, 0.1);
+          sceneRef.add(spikeMesh);
+          spikeMeshes.push(spikeMesh);
+        });
+
+        // Fast spike eruption animation
+        let eruptT = 0;
+        const eruptInterval = setInterval(() => {
+          eruptT += 0.18;
+          spikeMeshes.forEach(sm => {
+            const sc = Math.min(1.0, eruptT);
+            sm.scale.set(sc, sc, sc);
+          });
+          if (eruptT >= 1.0) {
+            clearInterval(eruptInterval);
+            // Shatter & disappear after 500ms
+            setTimeout(() => {
+              spikeMeshes.forEach(sm => {
+                if (sceneRef) sceneRef.remove(sm);
+                sm.geometry.dispose();
+                sm.material.dispose();
+              });
+              // Ice shards burst
+              for (let s = 0; s < 18; s++) {
+                const shard = new THREE.Mesh(
+                  new THREE.BoxGeometry(0.2, 0.2, 0.2),
+                  new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.8 })
+                );
+                shard.position.set(targetPos.x + (Math.random() - 0.5) * 0.8, 0.8 + Math.random() * 0.8, (Math.random() - 0.5) * 0.8);
+                sceneRef.add(shard);
+                particles.push({
+                  mesh: shard,
+                  velocity: new THREE.Vector3((Math.random() - 0.5) * 6, 2 + Math.random() * 4, (Math.random() - 0.5) * 4),
+                  life: 0.45,
+                  maxLife: 0.45
+                });
+              }
+            }, 500);
+          }
+        }, 20);
+
+        // Fade trail
+        setTimeout(() => {
+          trailMeshes.forEach(tm => {
+            if (sceneRef) sceneRef.remove(tm);
+            tm.geometry.dispose();
+            tm.material.dispose();
+          });
+        }, 700);
+      }
+    }, delay);
+  }
+}
+
+export function spawnBossMeteorShower(targetPos, onImpact) {
+  if (!sceneRef) { if (onImpact) onImpact(); return; }
+
+  const numMeteors = 4;
+  let impactReported = false;
+
+  for (let i = 0; i < numMeteors; i++) {
+    const delay = i * 110;
+    setTimeout(() => {
+      if (!sceneRef) return;
+      const startX = targetPos.x + 3.0 + (Math.random() - 0.5) * 1.5;
+      const startY = 8.5 + (Math.random() - 0.5) * 1.2;
+      const startZ = targetPos.z + (Math.random() - 0.5) * 1.5;
+
+      const endX = targetPos.x + (Math.random() - 0.5) * 0.8;
+      const endY = 0.2;
+      const endZ = targetPos.z + (Math.random() - 0.5) * 0.8;
+
+      const meteorGeo = new THREE.SphereGeometry(0.32, 12, 12);
+      const meteorMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
+      const meteorMesh = new THREE.Mesh(meteorGeo, meteorMat);
+      meteorMesh.position.set(startX, startY, startZ);
+      sceneRef.add(meteorMesh);
+
+      const startTime = performance.now();
+      const dropDuration = 320; // fast diagonal drop
+
+      const dropInterval = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(1.0, elapsed / dropDuration);
+
+        meteorMesh.position.x = THREE.MathUtils.lerp(startX, endX, progress);
+        meteorMesh.position.y = THREE.MathUtils.lerp(startY, endY, progress);
+        meteorMesh.position.z = THREE.MathUtils.lerp(startZ, endZ, progress);
+
+        // Fire particle trail behind meteor
+        const trailPuff = new THREE.Mesh(
+          new THREE.BoxGeometry(0.22, 0.22, 0.22),
+          new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff6600 : 0xffcc00, transparent: true, opacity: 0.9 })
+        );
+        trailPuff.position.copy(meteorMesh.position);
+        sceneRef.add(trailPuff);
+        particles.push({
+          mesh: trailPuff,
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 1.2, 1 + Math.random() * 2, (Math.random() - 0.5) * 1.2),
+          life: 0.25,
+          maxLife: 0.25
+        });
+
+        if (progress >= 1.0) {
+          clearInterval(dropInterval);
+          if (sceneRef) sceneRef.remove(meteorMesh);
+          meteorGeo.dispose();
+          meteorMat.dispose();
+
+          // Fiery ground impact ripple
+          const rippleGeo = new THREE.RingGeometry(0.2, 1.4, 24);
+          rippleGeo.rotateX(-Math.PI / 2);
+          const rippleMat = new THREE.MeshBasicMaterial({
+            color: 0xff4400,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9
+          });
+          const ripple = new THREE.Mesh(rippleGeo, rippleMat);
+          ripple.position.set(endX, 0.06, endZ);
+          sceneRef.add(ripple);
+
+          let ripT = 0;
+          const ripInterval = setInterval(() => {
+            ripT += 0.12;
+            ripple.scale.set(1 + ripT * 1.8, 1, 1 + ripT * 1.8);
+            rippleMat.opacity = Math.max(0, 0.9 - ripT * 0.9);
+            if (ripT >= 1.0) {
+              clearInterval(ripInterval);
+              if (sceneRef) sceneRef.remove(ripple);
+              rippleGeo.dispose();
+              rippleMat.dispose();
+            }
+          }, 30);
+
+          // Fiery debris explosion
+          for (let f = 0; f < 10; f++) {
+            const debris = new THREE.Mesh(
+              new THREE.BoxGeometry(0.2, 0.2, 0.2),
+              new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff2200 : 0xffaa00 })
+            );
+            debris.position.set(endX, endY, endZ);
+            sceneRef.add(debris);
+            particles.push({
+              mesh: debris,
+              velocity: new THREE.Vector3((Math.random() - 0.5) * 5, 2 + Math.random() * 4, (Math.random() - 0.5) * 5),
+              life: 0.4,
+              maxLife: 0.4
+            });
+          }
+
+          triggerShake(0.28, 0.24);
+          try { Audio.playFire?.(); } catch (e) {}
+
+          if (!impactReported) {
+            impactReported = true;
+            if (onImpact) onImpact();
+          }
+        }
+      }, 16);
+    }, delay);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 💀 3 UNIQUE ELEMENTAL BOSS DEATH VFX
 // ─────────────────────────────────────────────────────────────────────────────
