@@ -1,6 +1,7 @@
 import { socket } from '../socket.js';
 import { showScreen } from '../main.js';
 import { initVisualSocketCalibrator } from '../admin.js';
+import * as Audio from '../audio.js';
 // THREE is available as a global from the CDN script tag
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1471,6 +1472,9 @@ function _buildAdminDashboard(container, gameState) {
   btnOpenModal.addEventListener('mouseleave', () => { btnOpenModal.style.background = 'rgba(0,207,255,0.12)'; });
 
   btnOpenModal.addEventListener('click', () => {
+    // Stop Lobby BGM when entering Studio
+    Audio.stopBGM();
+
     let modal = document.getElementById('admin-calib-modal');
     if (!modal) {
       modal = document.createElement('div');
@@ -1487,7 +1491,26 @@ function _buildAdminDashboard(container, gameState) {
       const btnClose = document.createElement('button');
       btnClose.textContent = '✕ ĐÓNG STUDIO';
       btnClose.style.cssText = 'background:#ef4444;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:800;font-size:11px;font-family:"Be Vietnam Pro",sans-serif;box-shadow:0 0 10px rgba(239,68,68,0.4);';
-      btnClose.onclick = () => { modal.style.display = 'none'; };
+      
+      const closeModal = () => {
+        modal.style.display = 'none';
+        const iframe = modal.querySelector('iframe');
+        if (iframe) {
+          try {
+            if (iframe.contentWindow?.Audio) {
+              iframe.contentWindow.Audio.stopBGM?.();
+            }
+          } catch (e) {}
+          iframe.src = 'about:blank';
+        }
+        // Strict stop and clean restart of Lobby BGM
+        Audio.stopBGM();
+        try {
+          Audio.playBGM('lobby');
+        } catch (e) {}
+      };
+
+      btnClose.onclick = closeModal;
       header.appendChild(btnClose);
       modal.appendChild(header);
 

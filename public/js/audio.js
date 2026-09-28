@@ -90,11 +90,14 @@ export function playBGM(trackKey) {
   }
 }
 
-/** Stop BGM immediately. */
+/** Stop BGM immediately and guarantee single audio stream. */
 export function stopBGM() {
   if (_bgmAudio) {
-    _bgmAudio.pause();
-    _bgmAudio.currentTime = 0;
+    try {
+      _bgmAudio.pause();
+      _bgmAudio.currentTime = 0;
+    } catch (e) {}
+    _bgmAudio = null;
   }
   _bgmTrack = null;
 }

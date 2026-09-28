@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=39.0">
+  <link rel="stylesheet" href="css/style.css?v=40.0">
   <!-- Core Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- GLTF Loader for r128 -->
@@ -328,7 +328,7 @@
       <div class="canvas-card">
         <div class="canvas-viewport" id="canvas-player"></div>
         <div class="canvas-hud-overlay">
-          <div>💡 <b>Chuột trái:</b> Quét cọ chọn khớp | <b>Chuột phải:</b> Xoay camera 3D</div>
+          <div>💡 <b>Chuột trái:</b> Nhấp chọn bộ phận nhân vật | <b>Kéo chuột:</b> Xoay camera 3D</div>
           <div>📍 Khớp Vai (Shoulder Pivot): <span id="hud-player-shoulder" class="hud-badge">(0.65, 1.10, 0.00)</span></div>
           <div>✋ Cổ Tay/Chuôi Kiếm (Grip): <span id="hud-player-wrist" class="hud-badge">(0.65, 0.85, 0.10)</span></div>
           <div>🗡️ Mô hình hiện tại: <span id="hud-player-model" class="hud-badge">3D GLB Pipeline</span></div>
@@ -358,41 +358,46 @@
           </div>
         </div>
 
-        <!-- Section 2: Arm / Shoulder Pivot Position -->
-        <div class="section-box">
-          <div class="section-title">
-            <span>💪</span> 2. Khớp Vai Cánh Tay Phải (Shoulder Pivot)
+        <!-- Section 2: Raycast Click-to-Select Body Parts & Rigid Weapon Locking -->
+        <div class="section-box" style="border-color:#00e5ff; background:rgba(0, 229, 255, 0.06);">
+          <div class="section-title" style="color:#00e5ff;">
+            <span>🎯</span> 2. Chọn Khớp Trên Mô Hình (Click-to-Select Raycaster)
           </div>
           <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Vị trí khớp vai gắn cánh tay cầm vũ khí. Mặc định: (0.65, 1.10, 0.00).
+            Nhấp chuột trực tiếp vào bộ phận nhân vật trên màn hình 3D để gán khớp:
           </div>
 
-          <div class="control-row">
-            <div class="control-label">
-              <span>Tọa độ Vai X:</span>
-              <span class="val-text" id="val-shoulder-x">0.65</span>
+          <div style="margin-top:8px; padding:10px; background:#0f172a; border:1px solid #1e293b; border-radius:6px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+              <span style="color:#94a3b8;">Khớp đang chọn:</span>
+              <span id="badge-selected-mesh" class="hud-badge" style="background:#0284c7; color:#fff; font-weight:700;">Nhấp chuột vào mô hình 3D</span>
             </div>
-            <div class="slider-row">
-              <input type="range" id="slider-shoulder-x" min="-2.0" max="2.0" step="0.05" value="0.65">
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px;">
+              <button id="btn-assign-right-arm" class="tool-btn active" style="font-size:10px; padding:6px 2px; background:#0284c7; border-color:#38bdf8;">
+                💪 Cánh Tay Phải
+              </button>
+              <button id="btn-assign-torso" class="tool-btn" style="font-size:10px; padding:6px 2px;">
+                🥋 Thân (Torso)
+              </button>
+              <button id="btn-assign-head" class="tool-btn" style="font-size:10px; padding:6px 2px;">
+                👤 Đầu (Head)
+              </button>
             </div>
           </div>
-          <div class="control-row">
-            <div class="control-label">
-              <span>Tọa độ Vai Y:</span>
-              <span class="val-text" id="val-shoulder-y">1.10</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-shoulder-y" min="0.0" max="3.0" step="0.05" value="1.10">
-            </div>
+
+          <div style="margin-top:8px; display:flex; flex-direction:column; gap:4px; font-size:11px; color:#cbd5e1;">
+            <div>📍 <b>Khớp Vai (Shoulder Pivot):</b> <span id="val-computed-shoulder" style="color:#38bdf8; font-family:monospace;">(0.65, 1.10, 0.00)</span></div>
+            <div>🗡️ <b>Khóa Vũ Khí:</b> <span id="val-arm-lock-status" style="color:#10b981; font-weight:600;">Khóa trực tiếp vào Cánh Tay Phải</span></div>
           </div>
-          <div class="control-row">
-            <div class="control-label">
-              <span>Tọa độ Vai Z:</span>
-              <span class="val-text" id="val-shoulder-z">0.00</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-shoulder-z" min="-1.5" max="1.5" step="0.05" value="0.00">
-            </div>
+
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button id="btn-auto-detect-arm" class="tool-btn" style="flex:1; font-size:10px; background:rgba(56,189,248,0.15); color:#38bdf8; border-color:#38bdf8;">
+              🔍 Tự Động Tìm Tay Phải
+            </button>
+            <button id="btn-player-snap-weapon" class="tool-btn" style="flex:1; font-size:10px; background:rgba(16,185,129,0.15); color:#10b981; border-color:#10b981;">
+              🎯 Hút Kiếm Vào Tay
+            </button>
           </div>
         </div>
 
@@ -405,8 +410,8 @@
             Dịch chuyển và xoay thanh kiếm 3D hướng thẳng về phía Boss (+X axis):
           </div>
 
-          <button id="btn-player-snap-weapon" class="btn-action-primary">
-            <span>🎯</span> Hút Kiếm Vào Khớp Tay (Snap to Hand)
+          <button id="btn-player-reset-weapon" class="btn-action-primary">
+            <span>🎯</span> Căn Lại Kiếm Chuẩn Trên Tay (Reset Hilt)
           </button>
 
           <div class="nudge-grid">
@@ -514,9 +519,9 @@
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=39.0"></script>
+  <script type="module" src="js/admin.js?v=40.0"></script>
   <script type="module">
-    import { initModelCalibrator } from './js/admin.js?v=39.0';
+    import { initModelCalibrator } from './js/admin.js?v=40.0';
     window.addEventListener('DOMContentLoaded', () => {
       initModelCalibrator();
     });
