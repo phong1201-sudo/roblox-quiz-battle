@@ -4,11 +4,117 @@ import * as Boss    from './boss.js';
 import * as Effects from './effects.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
+import { triggerCinematicShot, resetCameraToDefault } from './scene.js';
 
 export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, slashAnimation, getPlayerArmPivot, combatArmCompound, getCombatArmCompound } from './player.js';
 export { playGuaranteedBossHammerSlam, getBossArmPivot, bossCombatArmCompound, getBossCombatArmCompound } from './boss.js';
 
 const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
+
+/**
+ * Triggers the anime-style Eye Cut-In banner overlay
+ * @param {Object} options
+ * @param {'player'|'boss'} options.type
+ * @param {string} options.element
+ * @param {Function} options.onDone
+ */
+export function playCutInBanner({ type = 'player', element = 'fire', onDone }) {
+  const banner = document.getElementById('cinematic-cutin-banner');
+  if (!banner) {
+    if (onDone) onDone();
+    return;
+  }
+
+  let finished = false;
+  const finishOnce = () => {
+    if (!finished) {
+      finished = true;
+      if (onDone) onDone();
+    }
+  };
+
+  const bannerTimeout = setTimeout(() => {
+    console.warn('[combat] Cut-in banner safety timeout triggered');
+    cleanup();
+    finishOnce();
+  }, 2500);
+
+  const cleanup = () => {
+    clearTimeout(bannerTimeout);
+    banner.classList.remove('active', 'flash-active', 'cutin-theme-fire', 'cutin-theme-ice', 'cutin-theme-lightning', 'cutin-theme-boss');
+    banner.style.display = 'none';
+  };
+
+  const portrait = document.getElementById('cutin-portrait');
+  const faction = document.getElementById('cutin-faction');
+  const title = document.getElementById('cutin-title');
+
+  banner.classList.remove('active', 'flash-active', 'cutin-theme-fire', 'cutin-theme-ice', 'cutin-theme-lightning', 'cutin-theme-boss');
+
+  const normElem = (element || 'fire').toLowerCase();
+
+  if (type === 'player') {
+    try { Audio.playMetallicSlice?.(); } catch (e) {}
+
+    let img = '/assets/character/Player.png';
+    let themeClass = 'cutin-theme-lightning';
+    let titleText = 'DECISIVE HERO STRIKE';
+
+    if (normElem === 'fire') {
+      img = '/assets/character/Fire player.png';
+      themeClass = 'cutin-theme-fire';
+      titleText = 'PURGATORY FIRE BLADE';
+    } else if (normElem === 'frost' || normElem === 'ice') {
+      img = '/assets/character/Ice player.png';
+      themeClass = 'cutin-theme-ice';
+      titleText = 'GLACIAL ZERO SLASH';
+    } else if (normElem === 'thunder' || normElem === 'lightning') {
+      img = '/assets/character/Lightning player.png';
+      themeClass = 'cutin-theme-lightning';
+      titleText = "THUNDER GOD'S JUDGMENT";
+    }
+
+    if (portrait) portrait.style.backgroundImage = `url("${img}")`;
+    if (faction) faction.textContent = 'PLAYER AWAKENING';
+    if (title) title.textContent = titleText;
+    banner.classList.add(themeClass);
+
+  } else {
+    // Boss menace
+    try { Audio.playBassDropRoar?.(); } catch (e) {}
+
+    let img = '/assets/character/Lightning boss.png';
+    if (normElem === 'fire') {
+      img = '/assets/character/Fire boss.png';
+    } else if (normElem === 'frost' || normElem === 'ice') {
+      img = '/assets/character/Ice boss.png';
+    }
+
+    if (portrait) portrait.style.backgroundImage = `url("${img}")`;
+    if (faction) faction.textContent = 'BOSS MENACE';
+    if (title) title.textContent = 'WRATH OF THE TITAN';
+    banner.classList.add('cutin-theme-boss');
+  }
+
+  banner.style.display = 'flex';
+
+  // Force reflow for CSS transition
+  void banner.offsetWidth;
+  banner.classList.add('active');
+
+  // Slow-mo hold (~450ms), then flash and slice-out
+  setTimeout(() => {
+    banner.classList.add('flash-active');
+    setTimeout(() => {
+      banner.classList.remove('active');
+      setTimeout(() => {
+        cleanup();
+        finishOnce();
+      }, 200);
+    }, 200);
+  }, 450);
+}
+
 
 /**
  * Executes the counter-attack sequence after the player dodges.
@@ -74,8 +180,13 @@ export function executePlayerCounterAttack(selectedElement, isFullSet, onCounter
         try { Audio.playSlash?.(); } catch (e) {}
         if (applyHit1Damage) applyHit1Damage();
         Effects.spawnHitSpark(BOSS_VFX_POS);
-        Effects.spawnDamageNumber(BOSS_VFX_POS, '-1 HP', '#ffee44', 28);
-        Effects.triggerShake(0.18, 0.22);
+        if (context.isMilestone) {
+          Effects.spawnHitSpark(new THREE.Vector3(BOSS_VFX_POS.x + 0.3, BOSS_VFX_POS.y + 0.3, BOSS_VFX_POS.z));
+          Effects.triggerShake(0.35, 0.35);
+        } else {
+          Effects.triggerShake(0.18, 0.22);
+        }
+        Effects.spawnDamageNumber(BOSS_VFX_POS, '-1 HP', '#ffee44', context.isMilestone ? 36 : 28);
       },
       onDone: () => {
         // Character has returned to origin position -> turn finishes cleanly
@@ -100,8 +211,13 @@ export function executePlayerCounterAttack(selectedElement, isFullSet, onCounter
         try { Audio.playSlash?.(); } catch (e) {}
         if (applyHit1Damage) applyHit1Damage(); // decreases HP bar by (50 / totalQuestions)%
         Effects.spawnHitSpark(BOSS_VFX_POS);
-        Effects.spawnDamageNumber(BOSS_VFX_POS, hit1Label, hit1Color, 28);
-        Effects.triggerShake(0.2, 0.25);
+        if (context.isMilestone) {
+          Effects.spawnHitSpark(new THREE.Vector3(BOSS_VFX_POS.x + 0.3, BOSS_VFX_POS.y + 0.3, BOSS_VFX_POS.z));
+          Effects.triggerShake(0.35, 0.35);
+        } else {
+          Effects.triggerShake(0.2, 0.25);
+        }
+        Effects.spawnDamageNumber(BOSS_VFX_POS, hit1Label, hit1Color, context.isMilestone ? 36 : 28);
       },
       onDone: () => {
         // Step 2: Elemental Follow-up (Hit 2) AFTER character returns to origin position
@@ -273,28 +389,45 @@ export function executeCombatTurn(ev, onDone) {
     applyHit2Damage,
   };
 
-  if (isCorrect) {
-    // ═════════════════════════════════════════════════════════════════════════
-    // BRANCH A: Player answered CORRECTLY
-    // ═════════════════════════════════════════════════════════════════════════
-    handleCorrectAnswer(selectedElement, isFullSet, doneWrapper, context);
+  const qNum = qIdx + 1;
+  const isPlayerMilestone = isCorrect && (qNum % 10 === 0);
+  const isBossMilestone = !isCorrect && (qNum % 10 === 5);
 
-  } else {
-    // ═════════════════════════════════════════════════════════════════════════
-    // BRANCH B: Player INCORRECT or TIMEOUT -> Takes direct boss hit
-    // ═════════════════════════════════════════════════════════════════════════
+  const executeCorrectBranch = () => {
+    if (isPlayerMilestone) {
+      // Shot 2: Hero Low-Angle locked near floor looking up toward boss
+      triggerCinematicShot(2, 2400, true);
+    } else {
+      // Dynamic camera cycling 1-5
+      triggerCinematicShot(null, 1800, true);
+    }
+
+    handleCorrectAnswer(selectedElement, isFullSet, () => {
+      resetCameraToDefault(500, doneWrapper);
+    }, { ...context, isMilestone: isPlayerMilestone });
+  };
+
+  const executeBossBranch = () => {
+    if (isBossMilestone) {
+      // Shot 3: Over-the-Shoulder Boss View looking down at player
+      triggerCinematicShot(3, 2400, false);
+    } else {
+      // Dynamic camera cycling 1-5
+      triggerCinematicShot(null, 1800, false);
+    }
+
     Boss.playBossAttack(bossElement, () => {
       try { Audio.playHit?.(); } catch (e) {}
-      Effects.triggerShake(0.35, 0.35);
+      const shakeAmt = isBossMilestone ? 0.55 : 0.35;
+      Effects.triggerShake(shakeAmt, shakeAmt);
 
-      // Damage: Normal/Incomplete set: -2 HP, Full set: -1 HP
       const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
-      const dmgLabel = `-${playerDmg} HP`;
+      const dmgLabel = isBossMilestone ? `💥 BARRAGE -${playerDmg} HP` : `-${playerDmg} HP`;
       const dmgColor = isFullSet ? '#ffd166' : '#ef233c';
 
       const playerPos = Player.getPosition();
       const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-      Effects.spawnDamageNumber(textPos, dmgLabel, dmgColor, 32);
+      Effects.spawnDamageNumber(textPos, dmgLabel, dmgColor, isBossMilestone ? 38 : 32);
 
       // Player staggers and flashes red
       Player.playHurt(() => {
@@ -308,9 +441,38 @@ export function executeCombatTurn(ev, onDone) {
       });
     }, () => {
       setTimeout(() => {
-        doneWrapper();
+        resetCameraToDefault(500, doneWrapper);
       }, 150);
     });
+  };
+
+  if (isCorrect) {
+    // ═════════════════════════════════════════════════════════════════════════
+    // BRANCH A: Player answered CORRECTLY
+    // ═════════════════════════════════════════════════════════════════════════
+    if (isPlayerMilestone) {
+      playCutInBanner({
+        type: 'player',
+        element: selectedElement || 'thunder',
+        onDone: executeCorrectBranch,
+      });
+    } else {
+      executeCorrectBranch();
+    }
+
+  } else {
+    // ═════════════════════════════════════════════════════════════════════════
+    // BRANCH B: Player INCORRECT or TIMEOUT -> Takes direct boss hit
+    // ═════════════════════════════════════════════════════════════════════════
+    if (isBossMilestone) {
+      playCutInBanner({
+        type: 'boss',
+        element: bossElement,
+        onDone: executeBossBranch,
+      });
+    } else {
+      executeBossBranch();
+    }
   }
 }
 

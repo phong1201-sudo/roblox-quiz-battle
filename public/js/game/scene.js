@@ -270,7 +270,208 @@ export function resetGameMatch() {
     clearInterval(socketMoveInterval);
     socketMoveInterval = null;
   }
+  resetCameraToDefault(300);
   Player.resetPlayerState?.();
   Boss.resetBossState?.();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5-ANGLE DYNAMIC CINEMATIC CAMERA SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+let activeCamTween = null;
+let activeTargetTween = null;
+let currentCamTarget = CAM_TARGET.clone();
+let shotCycleIndex = 0;
+
+/**
+ * Triggers one of 5 choreographed dynamic cinematic camera shots:
+ * - Shot 1: Sweeping Orbit (210°) around arena center
+ * - Shot 2: Hero Low-Angle locked near floor behind player looking up toward boss
+ * - Shot 3: Over-the-Shoulder Boss View peering down at player
+ * - Shot 4: High Aerial Dolly looking down at projectile impacts
+ * - Shot 5: Side-Action Tracking following projectile across the arena
+ *
+ * @param {number|null} shotNum - 1 to 5 (or null to cycle sequentially)
+ * @param {number} [duration=1600] - Duration in ms
+ * @param {boolean} [isPlayerAttack=true] - Direction flag for tracking shots
+ */
+export function triggerCinematicShot(shotNum = null, duration = 1600, isPlayerAttack = true) {
+  if (!camera || typeof TWEEN === 'undefined') return;
+
+  if (activeCamTween) { activeCamTween.stop(); activeCamTween = null; }
+  if (activeTargetTween) { activeTargetTween.stop(); activeTargetTween = null; }
+
+  const shot = shotNum || ((shotCycleIndex % 5) + 1);
+  shotCycleIndex = (shotCycleIndex % 5) + 1;
+
+  if (shot === 1) {
+    // Shot 1: Sweeping Orbit (210°) around arena center (0, 1.8, 0) at height 4.5
+    const center = new THREE.Vector3(0, 1.8, 0);
+    const radius = 10.5;
+    const startAngle = isPlayerAttack ? -Math.PI * 0.35 : Math.PI * 0.65;
+    const endAngle = startAngle + (210 * Math.PI / 180);
+    const orbitObj = { angle: startAngle };
+
+    currentCamTarget.copy(center);
+    camera.position.set(Math.sin(startAngle) * radius, 4.5, Math.cos(startAngle) * radius);
+    camera.lookAt(currentCamTarget);
+
+    activeCamTween = new TWEEN.Tween(orbitObj)
+      .to({ angle: endAngle }, duration)
+      .easing(TWEEN.Easing.Cubic.InOut)
+      .onUpdate(() => {
+        const a = orbitObj.angle;
+        camera.position.set(Math.sin(a) * radius, 4.5, Math.cos(a) * radius);
+        camera.lookAt(currentCamTarget);
+      })
+      .start();
+
+  } else if (shot === 2) {
+    // Shot 2: Hero Low-Angle: Camera locked low near floor behind player looking up toward boss
+    const startPos = camera.position.clone();
+    const targetPos = new THREE.Vector3(-6.0, 1.2, 2.5);
+    const targetLook = new THREE.Vector3(3.0, 3.5, 0.0);
+
+    const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
+    const lookObj = { x: currentCamTarget.x, y: currentCamTarget.y, z: currentCamTarget.z };
+
+    activeCamTween = new TWEEN.Tween(posObj)
+      .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, Math.min(duration, 500))
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(() => {
+        camera.position.set(posObj.x, posObj.y, posObj.z);
+      })
+      .start();
+
+    activeTargetTween = new TWEEN.Tween(lookObj)
+      .to({ x: targetLook.x, y: targetLook.y, z: targetLook.z }, Math.min(duration, 500))
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(() => {
+        currentCamTarget.set(lookObj.x, lookObj.y, lookObj.z);
+        camera.lookAt(currentCamTarget);
+      })
+      .start();
+
+  } else if (shot === 3) {
+    // Shot 3: Over-the-Shoulder Boss View: Near boss's flank peering down at player
+    const startPos = camera.position.clone();
+    const targetPos = new THREE.Vector3(4.5, 3.5, 2.0);
+    const targetLook = new THREE.Vector3(-4.5, 1.5, 0.0);
+
+    const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
+    const lookObj = { x: currentCamTarget.x, y: currentCamTarget.y, z: currentCamTarget.z };
+
+    activeCamTween = new TWEEN.Tween(posObj)
+      .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, Math.min(duration, 500))
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(() => {
+        camera.position.set(posObj.x, posObj.y, posObj.z);
+      })
+      .start();
+
+    activeTargetTween = new TWEEN.Tween(lookObj)
+      .to({ x: targetLook.x, y: targetLook.y, z: targetLook.z }, Math.min(duration, 500))
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(() => {
+        currentCamTarget.set(lookObj.x, lookObj.y, lookObj.z);
+        camera.lookAt(currentCamTarget);
+      })
+      .start();
+
+  } else if (shot === 4) {
+    // Shot 4: High Aerial Dolly: Top-down looking down at projectile impacts
+    const startPos = camera.position.clone();
+    const targetPos = new THREE.Vector3(0.0, 9.0, 9.0);
+    const targetLook = new THREE.Vector3(0.0, 1.0, 0.0);
+
+    const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
+    const lookObj = { x: currentCamTarget.x, y: currentCamTarget.y, z: currentCamTarget.z };
+
+    activeCamTween = new TWEEN.Tween(posObj)
+      .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, Math.min(duration, 600))
+      .easing(TWEEN.Easing.Cubic.Out)
+      .onUpdate(() => {
+        camera.position.set(posObj.x, posObj.y, posObj.z);
+      })
+      .start();
+
+    activeTargetTween = new TWEEN.Tween(lookObj)
+      .to({ x: targetLook.x, y: targetLook.y, z: targetLook.z }, Math.min(duration, 600))
+      .easing(TWEEN.Easing.Cubic.Out)
+      .onUpdate(() => {
+        currentCamTarget.set(lookObj.x, lookObj.y, lookObj.z);
+        camera.lookAt(currentCamTarget);
+      })
+      .start();
+
+  } else if (shot === 5) {
+    // Shot 5: Side-Action Tracking: Glides horizontally following projectile across arena
+    const startX = isPlayerAttack ? -3.5 : 3.0;
+    const endX   = isPlayerAttack ? 2.5 : -3.5;
+    const lookStartX = isPlayerAttack ? -1.5 : 1.5;
+    const lookEndX   = isPlayerAttack ? 3.0 : -4.0;
+
+    const trackObj = { x: startX, lookX: lookStartX };
+    camera.position.set(startX, 3.0, 8.0);
+    currentCamTarget.set(lookStartX, 1.8, 0);
+    camera.lookAt(currentCamTarget);
+
+    activeCamTween = new TWEEN.Tween(trackObj)
+      .to({ x: endX, lookX: lookEndX }, duration)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+      .onUpdate(() => {
+        camera.position.set(trackObj.x, 3.0, 8.0);
+        currentCamTarget.set(trackObj.lookX, 1.8, 0);
+        camera.lookAt(currentCamTarget);
+      })
+      .start();
+  }
+}
+
+/**
+ * Smoothly interpolates the camera back to default arena viewing angle
+ * @param {number} [duration=600]
+ * @param {Function} [onDone]
+ */
+export function resetCameraToDefault(duration = 600, onDone = null) {
+  if (!camera || typeof TWEEN === 'undefined') {
+    if (onDone) onDone();
+    return;
+  }
+
+  if (activeCamTween) { activeCamTween.stop(); activeCamTween = null; }
+  if (activeTargetTween) { activeTargetTween.stop(); activeTargetTween = null; }
+
+  const startPos = camera.position.clone();
+  const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
+  const lookObj = { x: currentCamTarget.x, y: currentCamTarget.y, z: currentCamTarget.z };
+
+  let completedCount = 0;
+  const checkComplete = () => {
+    completedCount++;
+    if (completedCount >= 2) {
+      if (onDone) onDone();
+    }
+  };
+
+  activeCamTween = new TWEEN.Tween(posObj)
+    .to({ x: CAM_POS.x, y: CAM_POS.y, z: CAM_POS.z }, duration)
+    .easing(TWEEN.Easing.Cubic.Out)
+    .onUpdate(() => {
+      camera.position.set(posObj.x, posObj.y, posObj.z);
+    })
+    .onComplete(checkComplete)
+    .start();
+
+  activeTargetTween = new TWEEN.Tween(lookObj)
+    .to({ x: CAM_TARGET.x, y: CAM_TARGET.y, z: CAM_TARGET.z }, duration)
+    .easing(TWEEN.Easing.Cubic.Out)
+    .onUpdate(() => {
+      currentCamTarget.set(lookObj.x, lookObj.y, lookObj.z);
+      camera.lookAt(currentCamTarget);
+    })
+    .onComplete(checkComplete)
+    .start();
+}
+
 

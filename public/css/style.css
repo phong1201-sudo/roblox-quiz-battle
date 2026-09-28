@@ -1031,3 +1031,193 @@ button[disabled] {
 #user-badge {
   position: static !important;
 }
+
+/* ─── ANIME EYE CUT-IN BANNER OVERLAY ────────────────────────────────────── */
+.cutin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cutin-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.cutin-slash-bar {
+  position: relative;
+  width: 120vw;
+  height: 140px;
+  background: rgba(10, 10, 20, 0.95);
+  transform: skewX(-10deg) scaleY(0);
+  transform-origin: center;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.6), inset 0 0 25px rgba(0, 229, 255, 0.4);
+  border-top: 3px solid #00e5ff;
+  border-bottom: 3px solid #00e5ff;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cutin-glow-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #fff;
+  filter: blur(2px);
+  z-index: 5;
+}
+.cutin-glow-top { top: 0; }
+.cutin-glow-bottom { bottom: 0; }
+
+.cutin-speedlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  animation: speedlines-drift 0.15s linear infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes speedlines-drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(32px); }
+}
+
+.cutin-eye-wrapper {
+  position: relative;
+  width: 45%;
+  height: 100%;
+  overflow: hidden;
+  transform: skewX(10deg);
+  margin-left: 10vw;
+  flex-shrink: 0;
+}
+
+.cutin-portrait {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center 25%;
+  background-repeat: no-repeat;
+  filter: contrast(1.2) saturate(1.2);
+}
+
+.cutin-eye-glare {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+  transform: skewX(-25deg);
+  animation: glare-sweep 0.45s ease-out forwards;
+  z-index: 4;
+}
+
+@keyframes glare-sweep {
+  0% { left: -60px; opacity: 0; }
+  30% { opacity: 1; }
+  100% { left: 120%; opacity: 0; }
+}
+
+.cutin-content {
+  position: relative;
+  flex: 1;
+  padding: 0 40px;
+  transform: skewX(10deg);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cutin-faction {
+  font-family: 'Press Start 2P', monospace, sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #00e5ff;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.cutin-title {
+  font-family: 'Press Start 2P', monospace, sans-serif;
+  font-size: 15px;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000, 0 0 16px rgba(0, 229, 255, 0.9);
+  text-transform: uppercase;
+}
+
+.cutin-flash-white {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.08s ease-out;
+}
+
+/* Elemental Cut-in Themes */
+.cutin-theme-fire .cutin-slash-bar {
+  border-color: #ff4500;
+  box-shadow: 0 0 35px rgba(255, 69, 0, 0.7), inset 0 0 30px rgba(255, 69, 0, 0.4);
+}
+.cutin-theme-fire .cutin-faction { color: #ff9100; text-shadow: 0 0 10px #ff4500; }
+.cutin-theme-fire .cutin-title { text-shadow: 2px 2px 0 #000, 0 0 16px #ff4500; }
+
+.cutin-theme-ice .cutin-slash-bar {
+  border-color: #00e5ff;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.7), inset 0 0 30px rgba(0, 229, 255, 0.4);
+}
+.cutin-theme-ice .cutin-faction { color: #80d8ff; text-shadow: 0 0 10px #00e5ff; }
+.cutin-theme-ice .cutin-title { text-shadow: 2px 2px 0 #000, 0 0 16px #00e5ff; }
+
+.cutin-theme-lightning .cutin-slash-bar {
+  border-color: #ffd700;
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), inset 0 0 30px rgba(168, 85, 247, 0.4);
+}
+.cutin-theme-lightning .cutin-faction { color: #ffd700; text-shadow: 0 0 10px #eab308; }
+.cutin-theme-lightning .cutin-title { text-shadow: 2px 2px 0 #000, 0 0 16px #a855f7; }
+
+/* Menacing Boss Cut-in Theme */
+.cutin-theme-boss .cutin-vignette {
+  background: radial-gradient(circle at center, rgba(30,0,10,0.6) 0%, rgba(10,0,5,0.95) 100%);
+}
+.cutin-theme-boss .cutin-slash-bar {
+  background: rgba(20, 5, 10, 0.96);
+  border-color: #ef233c;
+  box-shadow: 0 0 40px rgba(239, 35, 60, 0.8), inset 0 0 35px rgba(147, 51, 234, 0.5);
+}
+.cutin-theme-boss .cutin-faction { color: #ef233c; text-shadow: 0 0 12px #ef233c; }
+.cutin-theme-boss .cutin-title { color: #fca5a5; text-shadow: 2px 2px 0 #000, 0 0 20px #ef233c; }
+
+/* Active States */
+.cutin-overlay.active .cutin-vignette {
+  opacity: 1;
+}
+.cutin-overlay.active .cutin-slash-bar {
+  transform: skewX(-10deg) scaleY(1);
+}
+.cutin-overlay.flash-active .cutin-flash-white {
+  opacity: 0.9;
+}
+

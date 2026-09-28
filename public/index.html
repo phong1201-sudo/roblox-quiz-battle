@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=40.0">
+    <link rel="stylesheet" href="css/style.css?v=42.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -231,8 +231,27 @@
             <button id="reward-modal-close" class="btn btn-success">Claim Reward</button>
           </div>
         </div>
+
+        <!-- Anime Eye Cut-In Banner Overlay -->
+        <div id="cinematic-cutin-banner" class="cutin-overlay" style="display:none;">
+            <div class="cutin-vignette" id="cutin-vignette"></div>
+            <div class="cutin-slash-bar" id="cutin-slash-bar">
+                <div class="cutin-speedlines"></div>
+                <div class="cutin-glow-edge cutin-glow-top"></div>
+                <div class="cutin-glow-edge cutin-glow-bottom"></div>
+                <div class="cutin-eye-wrapper">
+                    <div class="cutin-portrait" id="cutin-portrait"></div>
+                    <div class="cutin-eye-glare"></div>
+                </div>
+                <div class="cutin-content">
+                    <div class="cutin-faction" id="cutin-faction">PLAYER AWAKENING</div>
+                    <div class="cutin-title" id="cutin-title">ULTIMATE ELEMENTAL SLICE</div>
+                </div>
+            </div>
+            <div class="cutin-flash-white" id="cutin-flash"></div>
+        </div>
     </div>
 
-    <script type="module" src="js/main.js?v=40.0"></script>
+    <script type="module" src="js/main.js?v=42.0"></script>
 </body>
 </html>

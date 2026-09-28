@@ -376,3 +376,36 @@ export function playHeavyThunder() {
   }
 }
 
+export function playMetallicSlice() {
+  const ctx = _getCtx(); if (!ctx || _muted) return;
+  const t = _now();
+  // High metallic shimmer
+  _noise(t, 0.22, 0.45, 12000);
+  _osc('sine', 3400, t, t + 0.18, 0.4, 0);
+  _osc('triangle', 2600, t, t + 0.22, 0.35, 0);
+  _osc('sawtooth', 1800, t + 0.02, t + 0.15, 0.25, 0);
+  // Resonant steel ring
+  _osc('sine', 4800, t + 0.04, t + 0.45, 0.3, 0);
+  _osc('sine', 5200, t + 0.05, t + 0.35, 0.2, 0);
+}
+
+export function playBassDropRoar() {
+  const ctx = _getCtx(); if (!ctx || _muted) return;
+  const t = _now();
+  // Sub-bass pitch dive
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(140, t);
+  osc.frequency.exponentialRampToValueAtTime(28, t + 0.75);
+  g.gain.setValueAtTime(0.7, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.75);
+  osc.connect(g); g.connect(_sfxGain);
+  osc.start(t); osc.stop(t + 0.78);
+
+  // Monster low roar rumble
+  _noise(t, 0.65, 0.55, 300);
+  _noise(t + 0.08, 0.9, 0.45, 160);
+  _osc('square', 45, t, t + 0.6, 0.4, 0);
+}
+
