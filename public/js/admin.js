@@ -1,13 +1,9 @@
 // Admin 3D GLB Model Viewer & Arm Rigging Calibrator
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
+const OrbitControls = (typeof THREE !== 'undefined' && THREE.OrbitControls) ? THREE.OrbitControls : (typeof window !== 'undefined' ? window.THREE?.OrbitControls : null);
+const GLTFLoader = (typeof THREE !== 'undefined' && THREE.GLTFLoader) ? THREE.GLTFLoader : (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
 
-const draco = new DRACOLoader();
-draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-export const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(draco);
+export const gltfLoader = GLTFLoader ? new GLTFLoader() : null;
 
 export async function upload3DModel(element, type, file) {
   const fd = new FormData();
@@ -463,6 +459,4 @@ export function initModelCalibrator() {
 export function initBrushCalibrator() {
   initModelCalibrator();
 }
-export function initSkeletonCalibrator() {
-  initModelCalibrator();
-}
+

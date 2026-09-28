@@ -1,28 +1,14 @@
-// THREE is available as a global from CDN or importmap
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+// Pure 3D GLB Character & Combat Pipeline with Fail-Safe Fallbacks
+// Uses global window.THREE loaded via CDN
+const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
 
-// Setup DRACOLoader and GLTFLoader
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-export const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(dracoLoader);
-
-if (typeof window !== 'undefined' && window.THREE && !window.THREE.GLTFLoader) {
-  window.THREE.GLTFLoader = GLTFLoader;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Module state
-// ─────────────────────────────────────────────────────────────────────────────
 let playerGroup = null;
 let activeElement = null; // 'thunder' | 'fire' | 'frost' | 'default'
 
-// Root container for 3D character mesh
 let characterRoot = null;
-let characterMesh = null;
-let weaponMesh = null;
+let currentCharacterMesh = null;
+let currentWeaponMesh = null;
 
 // Universal 3D Arm Pivot & Compound Limb Hierarchy
 export let combatArmCompound = null;
@@ -42,9 +28,9 @@ export function getWeaponHandNode() {
 const HOME_X = -4.5;
 const HOME_Y = 0.0;
 const HOME_Z = 0.0;
-const FACE_ROT_Y = Math.PI / 2; // Face +X axis towards Boss
+const FACE_ROT_Y = Math.PI / 2; // Face towards Boss (+X)
 
-// Socket & Pivot defaults
+// Default shoulder and weapon offsets
 let shoulderPivotPos = { x: 0.65, y: 1.10, z: 0.0 };
 let weaponOffsetPos  = { offsetX: 0.0, offsetY: -0.4, offsetZ: 0.1, angle: -45 };
 
@@ -55,10 +41,140 @@ let isDodging = false;
 let isHurt = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROCEDURAL 3D MESH BUILDERS (ROBUST FALLBACK IF GLB NOT ON DISK)
+// FAIL-SAFE 3D CHARACTER LOADING (EXACT SPECIFICATION)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Loads a 3D player GLB model with automatic bounding-box scaling and emergency fallback.
+ * @param {THREE.Scene|THREE.Group} targetScene 
+ * @param {string} outfitElement 
+ * @param {Function} [onLoaded] 
+ */
+export function loadPlayerModel(targetScene, outfitElement = 'fire', onLoaded) {
+  const scene = targetScene || playerGroup;
+  const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
+    ? THREE.GLTFLoader
+    : (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+
+  const modelPath = `/assets/character/player_${outfitElement}.glb`;
+
+  // Candidate URLs in priority order
+  const candidateUrls = [
+    modelPath,
+    `/assets/character/${outfitElement === 'fire' ? 'Fire%20player' : outfitElement === 'thunder' ? 'Lightning%20player' : outfitElement === 'frost' ? 'Ice%20player' : 'Player'}.glb`,
+    `/assets/character/${outfitElement}_character.glb`,
+    `/assets/character/Player.glb`,
+    `/assets/models/${outfitElement}_character.glb`,
+    `/assets/models/default_character.glb`
+  ];
+
+  if (!GLTFLoaderClass) {
+    console.warn('[player] THREE.GLTFLoader not available, using emergency placeholder');
+    createEmergencyPlaceholder(scene, onLoaded);
+    return;
+  }
+
+  const loader = new GLTFLoaderClass();
+
+  function tryLoadIndex(idx) {
+    if (idx >= candidateUrls.length) {
+      console.warn(`[player] Failed to load GLB at ${modelPath}, using emergency placeholder`);
+      createEmergencyPlaceholder(scene, onLoaded);
+      return;
+    }
+
+    const currentUrl = candidateUrls[idx];
+    loader.load(
+      currentUrl,
+      (gltf) => {
+        try {
+          const model = gltf.scene;
+
+          // Safe bounding box calculation
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+          const scale = 3.5 / maxDim;
+          model.scale.set(scale, scale, scale);
+
+          // Positioning on arena floor
+          model.position.set(-4.5, 0, 0);
+          model.rotation.y = Math.PI / 2; // Face towards Boss (+X)
+
+          // Enable shadows
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          // Replace placeholder if characterRoot exists
+          if (characterRoot) {
+            while (characterRoot.children.length > 0) {
+              characterRoot.remove(characterRoot.children[0]);
+            }
+            // If mounted inside playerGroup, offset relative to group
+            model.position.set(0, 0, 0);
+            model.rotation.y = 0;
+            characterRoot.add(model);
+          } else if (scene) {
+            scene.add(model);
+          }
+
+          currentCharacterMesh = model;
+          console.log(`[player] 3D GLB successfully instantiated from ${currentUrl}`);
+          if (onLoaded) onLoaded(model);
+        } catch (err) {
+          console.error('[player] Error processing GLB mesh:', err);
+          createEmergencyPlaceholder(scene, onLoaded);
+        }
+      },
+      undefined,
+      (error) => {
+        // Try next candidate or fallback
+        tryLoadIndex(idx + 1);
+      }
+    );
+  }
+
+  tryLoadIndex(0);
+}
+
+function createEmergencyPlaceholder(scene, onLoaded) {
+  if (!THREE) return;
+  // Emergency Fallback: Blocky placeholder so the screen NEVER goes black
+  const placeholder = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 3.5, 1.2),
+    new THREE.MeshStandardMaterial({
+      color: activeElement === 'fire' ? 0xff4400 : activeElement === 'thunder' ? 0x00cfff : activeElement === 'frost' ? 0x00b4d8 : 0x2255cc,
+      metalness: 0.2,
+      roughness: 0.5
+    })
+  );
+
+  if (characterRoot) {
+    while (characterRoot.children.length > 0) {
+      characterRoot.remove(characterRoot.children[0]);
+    }
+    placeholder.position.set(0, 1.75, 0);
+    characterRoot.add(placeholder);
+  } else if (scene) {
+    placeholder.position.set(-4.5, 1.75, 0);
+    placeholder.rotation.y = Math.PI / 2;
+    scene.add(placeholder);
+  }
+
+  currentCharacterMesh = placeholder;
+  if (onLoaded) onLoaded(placeholder);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEAPON & ARM COMPOUND SETUP
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createProceduralSword(element) {
+  if (!THREE) return new THREE.Group();
   const group = new THREE.Group();
 
   let bladeColor = 0xdddddd;
@@ -74,7 +190,7 @@ function createProceduralSword(element) {
     emissiveColor = 0x00aaff;
   }
 
-  // Blade (tall and sharp)
+  // Blade (tall and sharp, pointing +Y along group)
   const bladeGeo = new THREE.BoxGeometry(0.14, 1.8, 0.04);
   const bladeMat = new THREE.MeshStandardMaterial({
     color: bladeColor,
@@ -85,6 +201,7 @@ function createProceduralSword(element) {
   });
   const blade = new THREE.Mesh(bladeGeo, bladeMat);
   blade.position.y = 0.9;
+  blade.castShadow = true;
   group.add(blade);
 
   // Crossguard
@@ -101,192 +218,13 @@ function createProceduralSword(element) {
   hilt.position.y = -0.2;
   group.add(hilt);
 
-  // Pommel
-  const pommelGeo = new THREE.SphereGeometry(0.06, 8, 8);
-  const pommelMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.6 });
-  const pommel = new THREE.Mesh(pommelGeo, pommelMat);
-  pommel.position.y = -0.42;
-  group.add(pommel);
-
   return group;
 }
 
-function createProceduralHumanoid(element, playerColor) {
-  const group = new THREE.Group();
-
-  let bodyColor = playerColor ? new THREE.Color(playerColor).getHex() : 0x2255cc;
-  let accentColor = 0xff6b35;
-
-  if (element === 'fire') {
-    bodyColor = 0xcc2200;
-    accentColor = 0xff6600;
-  } else if (element === 'thunder') {
-    bodyColor = 0x0088cc;
-    accentColor = 0x00ffff;
-  } else if (element === 'frost') {
-    bodyColor = 0x4499cc;
-    accentColor = 0x88ddff;
-  }
-
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5c4a0, roughness: 0.6 });
-  const clothMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.5 });
-  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.7 });
-  const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.4, emissive: accentColor, emissiveIntensity: 0.2 });
-
-  // Head (height: ~3.2, size: 0.9)
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), skinMat);
-  head.position.y = 3.25;
-  head.castShadow = true;
-  group.add(head);
-
-  // Face / Eyes
-  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
-  const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.05), eyeMat);
-  leftEye.position.set(-0.2, 3.3, 0.46);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.05), eyeMat);
-  rightEye.position.set(0.2, 3.3, 0.46);
-  group.add(rightEye);
-
-  // Torso (height: ~2.1, size: 1.2 x 1.4 x 0.6)
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.6), clothMat);
-  torso.position.y = 2.1;
-  torso.castShadow = true;
-  group.add(torso);
-
-  // Chest emblem
-  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.05), accentMat);
-  chest.position.set(0, 2.2, 0.32);
-  group.add(chest);
-
-  // Left Arm
-  const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.3, 0.4), skinMat);
-  lArm.position.set(-0.85, 2.05, 0);
-  lArm.castShadow = true;
-  group.add(lArm);
-
-  // Left Leg & Right Leg
-  const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.4, 0.45), pantsMat);
-  lLeg.position.set(-0.3, 0.7, 0);
-  lLeg.castShadow = true;
-  group.add(lLeg);
-
-  const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.4, 0.45), pantsMat);
-  rLeg.position.set(0.3, 0.7, 0);
-  rLeg.castShadow = true;
-  group.add(rLeg);
-
-  return group;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 3D GLTF MODEL LOADING & BOUNDING BOX NORMALIZATION
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function loadGLTFModel(url) {
-  return new Promise((resolve) => {
-    try {
-      gltfLoader.load(
-        url,
-        (gltf) => resolve(gltf),
-        undefined,
-        () => resolve(null)
-      );
-    } catch (e) {
-      resolve(null);
-    }
-  });
-}
-
-async function loadPlayer3DCharacterAndWeapon(element, playerColor) {
-  const el = element || 'default';
-
-  // 1. Candidate paths for Character GLB
-  const charCandidates = [
-    `/assets/character/${el === 'fire' ? 'Fire%20player' : el === 'thunder' ? 'Lightning%20player' : el === 'frost' ? 'Ice%20player' : 'Player'}.glb`,
-    `/assets/character/${el}_character.glb`,
-    `/assets/character/Player.glb`,
-    `/assets/character/default_character.glb`,
-    `/assets/models/${el}_character.glb`,
-    `/assets/models/default_character.glb`,
-  ];
-
-  let charGltf = null;
-  for (const url of charCandidates) {
-    charGltf = await loadGLTFModel(url);
-    if (charGltf && charGltf.scene) {
-      console.log('[player] Successfully loaded 3D character GLB:', url);
-      break;
-    }
-  }
-
-  // Clear previous mesh in characterRoot
-  while (characterRoot.children.length > 0) {
-    characterRoot.remove(characterRoot.children[0]);
-  }
-
-  if (charGltf && charGltf.scene) {
-    characterMesh = charGltf.scene;
-
-    // Compute bounding box & normalize to human scale (~3.8 units tall)
-    const box = new THREE.Box3().setFromObject(characterMesh);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-
-    const targetHeight = 3.8;
-    const scale = size.y > 0 ? (targetHeight / size.y) : 1.0;
-    characterMesh.scale.set(scale, scale, scale);
-
-    // Center horizontally and align feet directly to floor (y = 0.0)
-    characterMesh.position.x = -center.x * scale;
-    characterMesh.position.y = -box.min.y * scale;
-    characterMesh.position.z = -center.z * scale;
-
-    characterMesh.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-
-    characterRoot.add(characterMesh);
-  } else {
-    // Fallback: Procedural 3D box humanoid standing tall on floor
-    console.log('[player] Using procedural 3D humanoid model for', el);
-    characterMesh = createProceduralHumanoid(el, playerColor);
-    characterRoot.add(characterMesh);
-  }
-
-  // 2. Candidate paths for Weapon GLB
-  const weaponCandidates = [
-    `/assets/character/${el === 'fire' ? 'Fire%20sword' : el === 'thunder' ? 'Lightning%20sword' : el === 'frost' ? 'Ice%20sword' : 'Normal%20Sword'}.glb`,
-    `/assets/character/${el}_weapon.glb`,
-    `/assets/character/Normal Sword.glb`,
-    `/assets/character/default_weapon.glb`,
-    `/assets/models/${el}_weapon.glb`,
-    `/assets/models/default_weapon.glb`,
-  ];
-
-  let weaponGltf = null;
-  for (const url of weaponCandidates) {
-    weaponGltf = await loadGLTFModel(url);
-    if (weaponGltf && weaponGltf.scene) {
-      console.log('[player] Successfully loaded 3D weapon GLB:', url);
-      break;
-    }
-  }
-
-  // Mount arm compound
-  buildArmAndWeaponCompound(weaponGltf ? weaponGltf.scene : null, el);
-}
-
-function buildArmAndWeaponCompound(loadedWeaponScene, element) {
-  // Remove previous arm compound
-  if (combatArmCompound && characterRoot) {
-    characterRoot.remove(combatArmCompound);
+function buildArmAndWeapon(element) {
+  if (!THREE) return;
+  if (combatArmCompound && playerGroup) {
+    playerGroup.remove(combatArmCompound);
     combatArmCompound = null;
   }
 
@@ -297,41 +235,34 @@ function buildArmAndWeaponCompound(loadedWeaponScene, element) {
   const rightArmGeo = new THREE.BoxGeometry(0.38, 1.3, 0.38);
   const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5c4a0, roughness: 0.6 });
   const rightArmMesh = new THREE.Mesh(rightArmGeo, skinMat);
-  rightArmMesh.position.set(0, -0.65, 0); // Hang down from shoulder pivot
+  rightArmMesh.position.set(0, -0.65, 0); // Hangs down from shoulder pivot
   rightArmMesh.castShadow = true;
   combatArmCompound.add(rightArmMesh);
 
-  // Weapon socket mounted into arm
+  // Weapon socket inside arm, pointing forward toward Boss
   const weaponSocket = new THREE.Group();
   weaponSocket.position.set(weaponOffsetPos.offsetX, weaponOffsetPos.offsetY, weaponOffsetPos.offsetZ);
   weaponSocket.rotation.set(0, 0, (weaponOffsetPos.angle * Math.PI) / 180);
 
-  if (loadedWeaponScene) {
-    weaponMesh = loadedWeaponScene;
-    // Normalize weapon bounding box
-    const wBox = new THREE.Box3().setFromObject(weaponMesh);
-    const wSize = new THREE.Vector3();
-    wBox.getSize(wSize);
-    const wTargetLength = 2.2;
-    const wScale = wSize.y > 0 ? (wTargetLength / wSize.y) : 1.0;
-    weaponMesh.scale.set(wScale, wScale, wScale);
-    weaponSocket.add(weaponMesh);
-  } else {
-    weaponMesh = createProceduralSword(element);
-    weaponSocket.add(weaponMesh);
-  }
+  currentWeaponMesh = createProceduralSword(element);
+  weaponSocket.add(currentWeaponMesh);
 
   combatArmCompound.add(weaponSocket);
-  characterRoot.add(combatArmCompound);
+  playerGroup.add(combatArmCompound);
 
   playerArmPivot = combatArmCompound;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PUBLIC API: CREATE & UPDATE PLAYER
+// PUBLIC API: CREATE & MANAGE PLAYER
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function createPlayer(color = '#ff6b35', element = 'fire', equippedGear = null) {
+  if (!THREE) {
+    console.error('[player] THREE is not loaded in window!');
+    return null;
+  }
+
   activeElement = element || 'fire';
 
   if (!playerGroup) {
@@ -343,15 +274,22 @@ export function createPlayer(color = '#ff6b35', element = 'fire', equippedGear =
     playerGroup.remove(playerGroup.children[0]);
   }
 
-  // Character root sits at home position facing +X towards Boss
-  characterRoot = new THREE.Group();
-  playerGroup.add(characterRoot);
-
   playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
   playerGroup.rotation.y = FACE_ROT_Y; // Face +X (Boss)
 
-  // Load 3D model with fallback
-  loadPlayer3DCharacterAndWeapon(activeElement, color);
+  characterRoot = new THREE.Group();
+  playerGroup.add(characterRoot);
+
+  // Create immediate visual placeholder so the scene NEVER starts black
+  createEmergencyPlaceholder(characterRoot);
+
+  // Attach arm compound with sword
+  buildArmAndWeapon(activeElement);
+
+  // Asynchronously attempt to load 3D GLB model
+  loadPlayerModel(characterRoot, activeElement, (loadedModel) => {
+    // Model loaded and mounted seamlessly
+  });
 
   return playerGroup;
 }
@@ -359,7 +297,8 @@ export function createPlayer(color = '#ff6b35', element = 'fire', equippedGear =
 export function createPlayerMesh(element, equippedGear) {
   activeElement = element || 'fire';
   if (playerGroup) {
-    loadPlayer3DCharacterAndWeapon(activeElement);
+    loadPlayerModel(characterRoot, activeElement);
+    buildArmAndWeapon(activeElement);
   }
 }
 
@@ -367,7 +306,8 @@ export function applyElementalSet(element) {
   if (!element) return;
   activeElement = element;
   if (playerGroup) {
-    loadPlayer3DCharacterAndWeapon(activeElement);
+    loadPlayerModel(characterRoot, activeElement);
+    buildArmAndWeapon(activeElement);
   }
 }
 
@@ -376,11 +316,11 @@ export function getPlayerObject() {
 }
 
 export function getPosition() {
-  return playerGroup ? playerGroup.position : new THREE.Vector3(HOME_X, HOME_Y, HOME_Z);
+  return playerGroup ? playerGroup.position : (THREE ? new THREE.Vector3(HOME_X, HOME_Y, HOME_Z) : { x: HOME_X, y: HOME_Y, z: HOME_Z });
 }
 
 export function getRotation() {
-  return playerGroup ? playerGroup.rotation : new THREE.Euler(0, FACE_ROT_Y, 0);
+  return playerGroup ? playerGroup.rotation : (THREE ? new THREE.Euler(0, FACE_ROT_Y, 0) : { x: 0, y: FACE_ROT_Y, z: 0 });
 }
 
 export function getActiveElement() {
@@ -402,15 +342,15 @@ export function resetPlayerState() {
 }
 
 export function updatePlayer(deltaTime) {
-  // Can be used for idle floating or breathing
+  // Safe tick
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3D COMBAT SLASHING & DODGE ANIMATIONS
+// 3D COMBAT SLASHING ANIMATION
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Executes pure 3D combat slashing animation:
+ * Pure 3D combat slashing animation:
  * 1. Dash forward to Boss.
  * 2. Rotate 3D arm pivot:
  *    - Wind-up: rotation.z = Math.PI / 3 (~100ms)
@@ -420,7 +360,7 @@ export function updatePlayer(deltaTime) {
  * 4. Call onDone() when back at home.
  */
 export function playCombatAnimation(animType, { onHit, onDone } = {}) {
-  if (!playerGroup) {
+  if (!playerGroup || !THREE) {
     if (onHit) onHit();
     if (onDone) onDone();
     return;
@@ -431,10 +371,10 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
   const targetX = 0.5; // Forward near Boss
   let hitTriggered = false;
 
-  const DASH_FWD_MS = 160;
-  const WINDUP_MS   = 100;
-  const SLASH_MS    = 120;
-  const RETURN_MS   = 100;
+  const DASH_FWD_MS  = 160;
+  const WINDUP_MS    = 100;
+  const SLASH_MS     = 120;
+  const RETURN_MS    = 100;
   const DASH_BACK_MS = 160;
 
   const t0 = 0;
@@ -462,7 +402,7 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
       const p = (elapsed - t1) / WINDUP_MS;
       if (arm) arm.rotation.z = THREE.MathUtils.lerp(0, Math.PI / 3, p);
     }
-    // 3. Slash Down Across -> Hit
+    // 3. Slash Down Across -> Trigger Hit
     else if (elapsed < t3) {
       playerGroup.position.x = targetX;
       const p = (elapsed - t2) / SLASH_MS;
@@ -521,11 +461,8 @@ export function playAttack(onDone) {
   playCombatAnimation(activeElement || 'normal', { onDone });
 }
 
-/**
- * Player executes evasive dodge roll / hop
- */
 export function playDodge(onDone) {
-  if (!playerGroup) {
+  if (!playerGroup || !THREE) {
     if (onDone) onDone();
     return;
   }
@@ -556,11 +493,8 @@ export function playDodge(onDone) {
   requestAnimationFrame(stepDodge);
 }
 
-/**
- * Player flinches and flashes red on taking damage
- */
 export function playHurt(onDone) {
-  if (!playerGroup) {
+  if (!playerGroup || !THREE) {
     if (onDone) onDone();
     return;
   }
@@ -597,7 +531,6 @@ export function playHurt(onDone) {
     if (p < 1.0) {
       requestAnimationFrame(stepHurt);
     } else {
-      // Restore emissive
       originalEmissives.forEach(({ mesh, color, intensity }) => {
         if (mesh.material && mesh.material.emissive) {
           mesh.material.emissive.setHex(color);

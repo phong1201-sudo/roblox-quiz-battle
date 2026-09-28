@@ -53,11 +53,11 @@ export function initScene(canvas) {
   scene.fog = new THREE.FogExp2(0x0d0528, 0.022);
 
   camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 500);
-  camera.position.copy(CAM_POS);
-  camera.lookAt(CAM_TARGET);
+  camera.position.set(0, 4, 12);
+  camera.lookAt(0, 1.5, 0);
 
   // ── Lighting ──
-  const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambient);
 
   const keyLight = new THREE.DirectionalLight(0xfff4cc, 1.0);
@@ -75,8 +75,17 @@ export function initScene(canvas) {
   rimLight.position.set(0, 6, -8);
   scene.add(rimLight);
 
-  Arena.initArena(scene);
-  Effects.initEffects(scene, camera);
+  try {
+    Arena.initArena(scene);
+  } catch (err) {
+    console.warn('[scene] initArena warning:', err);
+  }
+  try {
+    Effects.initEffects(scene, camera);
+  } catch (err) {
+    console.warn('[scene] initEffects warning:', err);
+  }
+
   window.addEventListener('resize', onWindowResize, false);
   animate();
 }
@@ -215,14 +224,37 @@ function onWindowResize() {
 // ─────────────────────────────────────────────────────────────────────────────
 // RENDER LOOP
 // ─────────────────────────────────────────────────────────────────────────────
-function animate() {
+function animate(time) {
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.1);
-  Player.updatePlayer(dt, camera);
-  Effects.update(dt);
-  Arena.updateArena(dt);
-  if (bossActive) Boss.updateBoss(dt);
-  renderer.render(scene, camera);
+  if (typeof TWEEN !== 'undefined' && TWEEN.update) {
+    try {
+      TWEEN.update(time);
+    } catch (e) {
+      console.warn("TWEEN update error:", e);
+    }
+  }
+
+  let dt = 0.016;
+  try {
+    if (clock) dt = Math.min(clock.getDelta(), 0.1);
+  } catch (e) {}
+
+  try {
+    if (Player.updatePlayer) Player.updatePlayer(dt, camera);
+    if (Effects.update) Effects.update(dt);
+    if (Arena.updateArena) Arena.updateArena(dt);
+    if (bossActive && Boss.updateBoss) Boss.updateBoss(dt);
+  } catch (err) {
+    console.warn("[scene] Subsystem update error:", err);
+  }
+
+  try {
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+  } catch (err) {
+    console.error("Render loop error:", err);
+  }
 }
 
 export function resetGameMatch() {
