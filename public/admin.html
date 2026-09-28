@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin 3D Brush Highlighter & In-Context Rigging | Quiz Battle 3D</title>
+  <title>Admin 3D Model Viewer & Rigging | Quiz Battle 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=31.0">
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="css/style.css?v=34.0">
   <script type="importmap">
   {
     "imports": {
@@ -68,55 +66,12 @@
       background: rgba(255, 107, 53, 0.15);
       transform: translateY(-1px);
     }
-    /* Main Navigation Tabs */
-    .nav-tabs {
-      display: flex;
-      gap: 8px;
-      background: rgba(15, 23, 42, 0.8);
-      padding: 6px;
-      border-radius: 10px;
-      border: 1.5px solid rgba(255, 255, 255, 0.1);
-    }
-    .nav-tab-btn {
-      flex: 1;
-      padding: 12px 18px;
-      font-size: 13px;
-      font-weight: 800;
-      color: #94a3b8;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.2s;
-    }
-    .nav-tab-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-    }
-    .nav-tab-btn.active {
-      background: #00b4d8;
-      color: #041019;
-      box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45);
-    }
-    .nav-tab-btn.boss-tab.active {
-      background: #f59e0b;
-      color: #051320;
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
-    }
     /* Tab Content Layout */
     .tab-pane {
       display: grid;
       grid-template-columns: 1fr 420px;
       gap: 16px;
       min-height: 600px;
-    }
-    .tab-pane.hidden {
-      display: none;
     }
     @media (max-width: 1080px) {
       .tab-pane {
@@ -148,41 +103,39 @@
       pointer-events: none;
       background: rgba(0, 0, 0, 0.78);
       backdrop-filter: blur(6px);
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 11px;
-      color: #cbd5e1;
       border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
       line-height: 1.6;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      color: #cbd5e1;
+      z-index: 10;
     }
     .hud-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-block;
+      background: rgba(0, 180, 216, 0.2);
+      color: #00e5ff;
+      border: 1px solid #00e5ff;
+      padding: 1px 6px;
+      border-radius: 4px;
       font-weight: 700;
-      color: #00cfff;
-      font-family: monospace;
-      font-size: 12px;
     }
-    .hud-badge.boss { color: #f59e0b; }
     /* Controls Panel */
     .controls-panel {
-      background: rgba(15, 23, 42, 0.9);
-      border: 2px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
-      padding: 18px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
+      max-height: 85vh;
       overflow-y: auto;
     }
     .section-box {
       background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
       padding: 12px;
       display: flex;
       flex-direction: column;
@@ -191,56 +144,51 @@
     .section-title {
       font-size: 12px;
       font-weight: 800;
-      color: #38bdf8;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #f1f5f9;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .section-title.boss { color: #fbbf24; }
     .brush-tools-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .tool-btn {
-      flex: 1;
-      padding: 9px 12px;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
       font-size: 11px;
       font-weight: 700;
-      border: 1.5px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.06);
-      color: #94a3b8;
-      border-radius: 7px;
-      cursor: pointer;
       font-family: inherit;
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 6px;
       transition: all 0.15s;
     }
     .tool-btn:hover {
-      background: rgba(255, 255, 255, 0.14);
+      background: #334155;
       color: #fff;
     }
     .tool-btn.active.arm-cyan {
-      background: rgba(0, 229, 255, 0.25);
-      color: #00e5ff;
+      background: rgba(0, 229, 255, 0.2);
       border-color: #00e5ff;
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+      color: #00e5ff;
     }
     .tool-btn.active.weapon-orange {
-      background: rgba(255, 153, 0, 0.25);
-      color: #ff9900;
-      border-color: #ff9900;
-      box-shadow: 0 0 12px rgba(255, 153, 0, 0.4);
+      background: rgba(249, 115, 22, 0.2);
+      border-color: #f97316;
+      color: #f97316;
     }
-    .tool-btn.active.eraser {
-      background: rgba(239, 68, 68, 0.25);
-      color: #ef4444;
+    .tool-btn.eraser.active {
+      background: rgba(239, 68, 68, 0.2);
       border-color: #ef4444;
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+      color: #ef4444;
     }
     .control-row {
       display: flex;
@@ -249,77 +197,70 @@
     }
     .control-label {
       font-size: 11px;
-      font-weight: 700;
-      color: #cbd5e1;
+      color: #94a3b8;
       display: flex;
       justify-content: space-between;
     }
-    .control-label span.val-text {
-      color: #00cfff;
-      font-family: monospace;
-      font-size: 12px;
+    .val-text {
+      color: #00e5ff;
+      font-weight: 700;
     }
     .slider-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
-    .slider-row input[type="range"] {
+    .slider-row input[type=range] {
       flex: 1;
-      accent-color: #00b4d8;
-      cursor: pointer;
-    }
-    .nudge-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-    }
-    .nudge-btn {
-      background: rgba(255, 255, 255, 0.08);
-      color: #e2e8f0;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 6px;
-      padding: 6px;
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: all 0.15s;
-    }
-    .nudge-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      accent-color: #00e5ff;
     }
     .btn-action-primary {
-      background: linear-gradient(135deg, #0284c7, #00b4d8);
+      background: linear-gradient(135deg, #00b4d8, #0077b6);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 11px;
       font-weight: 800;
       cursor: pointer;
       font-family: inherit;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s;
-      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
     }
     .btn-action-primary:hover {
       filter: brightness(1.15);
       transform: translateY(-1px);
     }
+    .nudge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+    .nudge-btn {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .nudge-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
     .btn-test-swing {
       background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #fff;
       border: none;
+      padding: 11px;
       border-radius: 8px;
-      padding: 11px 16px;
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -332,51 +273,38 @@
     }
     .btn-test-swing:hover {
       filter: brightness(1.15);
-      transform: translateY(-1px);
     }
     .btn-save-all {
-      background: linear-gradient(135deg, #06d6a0, #00b4d8);
-      color: #042416;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
       border: none;
+      padding: 12px;
       border-radius: 8px;
-      padding: 12px 18px;
       font-size: 13px;
-      font-weight: 900;
+      font-weight: 800;
       cursor: pointer;
       font-family: inherit;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 16px rgba(6, 214, 160, 0.35);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
       transition: all 0.2s;
     }
     .btn-save-all:hover {
-      filter: brightness(1.1);
-      transform: translateY(-2px);
+      filter: brightness(1.15);
+      transform: translateY(-1px);
     }
     .status-toast {
       padding: 8px 12px;
       border-radius: 6px;
       font-size: 11px;
       display: none;
-      animation: fadeIn 0.3s;
     }
     .status-toast.success {
-      background: rgba(6, 214, 160, 0.15);
-      border: 1px solid #06d6a0;
-      color: #06d6a0;
-      display: block;
-    }
-    .status-toast.error {
-      background: rgba(239, 35, 60, 0.15);
-      border: 1px solid #ef233c;
-      color: #ef233c;
-      display: block;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #10b981;
     }
   </style>
 </head>
@@ -384,101 +312,213 @@
   <div class="admin-container">
     <header class="admin-header">
       <div class="admin-title">
-        <span style="font-size:24px;">🦴</span>
+        <span style="font-size:24px;">⚔️</span>
         <div>
-          <div>HỆ THỐNG GẮN XƯƠNG 2D (META ANIMATED DRAWINGS SKELETON)</div>
-          <div style="font-size:11px; color:#64748b; font-weight:normal;">Kéo thả 14 khớp xương trực tiếp trên sprite 2D để biến dạng hình ảnh và gắn kiếm vào tay</div>
+          <div>HỆ THỐNG CÂN CHỈNH MÔ HÌNH 3D GLB & VŨ KHÍ</div>
+          <div style="font-size:11px; color:#64748b; font-weight:normal;">Không gian 3D chuẩn xác cho nhân vật GLB, căn chỉnh khớp xoay vai (Shoulder Pivot) và khóa vũ khí chém</div>
         </div>
       </div>
       <a href="/" class="back-btn">⬅️ Quay lại trò chơi</a>
     </header>
 
     <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <!-- GẮN XƯƠNG 2D (META ANIMATED DRAWINGS SKELETAL RIGGING) -->
+    <!-- CÂN CHỈNH NHÂN VẬT 3D (3D PLAYER CALIBRATION) -->
     <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <div id="pane-skeleton" class="tab-pane">
-      <div class="canvas-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#070a13; position:relative; min-height:600px; padding:12px;">
-        <div id="skeleton-stage-wrap" style="position:relative; width:480px; height:580px; max-width:100%; border-radius:8px; overflow:hidden; border:2px solid #334155; box-shadow:0 10px 25px rgba(0,0,0,0.5); background:#070a13;">
-          <div id="skeleton-three-container" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
-          <canvas id="skeleton-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; cursor:grab; z-index:2;"></canvas>
-          <img id="skeleton-target-img" src="/assets/character/Fire%20player.png" alt="Character Art" style="display:none;">
-        </div>
+    <div id="pane-player" class="tab-pane">
+      <div class="canvas-card">
+        <div class="canvas-viewport" id="canvas-player"></div>
         <div class="canvas-hud-overlay">
-          <div>💡 <b>Chuột trái:</b> Kéo thả 14 điểm khớp xương (Head, Shoulders, Elbows, Hands, Hips, Knees, Feet)</div>
-          <div>🦴 Khớp đang chọn: <span id="hud-skel-selected" class="hud-badge" style="color:#00e5ff;">Chưa chọn</span></div>
-          <div>⚔️ Điểm cầm kiếm (r_hand): <span id="hud-skel-rhand" class="hud-badge" style="color:#f97316;">(0.90, 0.50)</span></div>
+          <div>💡 <b>Chuột trái:</b> Quét cọ chọn khớp | <b>Chuột phải:</b> Xoay camera 3D</div>
+          <div>📍 Khớp Vai (Shoulder Pivot): <span id="hud-player-shoulder" class="hud-badge">(0.65, 1.10, 0.00)</span></div>
+          <div>✋ Cổ Tay/Chuôi Kiếm (Grip): <span id="hud-player-wrist" class="hud-badge">(0.65, 0.85, 0.10)</span></div>
+          <div>🗡️ Mô hình hiện tại: <span id="hud-player-model" class="hud-badge">3D GLB Pipeline</span></div>
         </div>
       </div>
 
       <div class="controls-panel">
-        <!-- Section 1: Character Art Selection & Upload -->
+        <!-- Section 1: 3D Model Preset & Upload -->
         <div class="section-box" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
           <div class="section-title" style="color:#38bdf8;">
-            <span>🖼️</span> 1. Chọn Ảnh Nhân Vật 2D
+            <span>🧊</span> 1. Chọn Bộ Trang Phục 3D (Outfit Set)
           </div>
           <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Chọn ảnh nguyên mẫu có sẵn hoặc tải ảnh vẽ nhân vật (PNG/JPG) lên để tiến hành gắn khung xương:
+            Chọn set trang bị để tải mô hình 3D GLB tương ứng:
           </div>
 
           <div class="brush-tools-row" style="margin-top:6px;">
-            <button class="tool-btn active" data-img-el="fire" id="btn-skel-preset-fire">🔥 Set Lửa</button>
-            <button class="tool-btn" data-img-el="thunder" id="btn-skel-preset-thunder">⚡ Set Sét</button>
-            <button class="tool-btn" data-img-el="frost" id="btn-skel-preset-frost">❄️ Set Băng</button>
-            <button class="tool-btn" data-img-el="default" id="btn-skel-preset-default">👤 Mặc Định</button>
+            <button class="tool-btn active" data-element="fire" id="btn-player-set-fire">🔥 Set Lửa</button>
+            <button class="tool-btn" data-element="thunder" id="btn-player-set-thunder">⚡ Set Sét</button>
+            <button class="tool-btn" data-element="frost" id="btn-player-set-frost">❄️ Set Băng</button>
+            <button class="tool-btn" data-element="default" id="btn-player-set-default">👤 Mặc Định</button>
           </div>
 
           <div style="margin-top:8px;">
-            <label style="font-size:10px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Hoặc tải ảnh vẽ nhân vật mới (.PNG / .JPG):</label>
-            <input type="file" id="input-skel-upload" accept="image/*" style="font-size:11px; color:#94a3b8; width:100%;">
+            <label style="font-size:10px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Tải lên mô hình nhân vật 3D (.glb / .gltf):</label>
+            <input type="file" id="input-player-model-upload" accept=".glb,.gltf" style="font-size:11px; color:#94a3b8; width:100%;">
           </div>
         </div>
 
-        <!-- Section 2: Rigging Controls & Auto Detect -->
-        <div class="section-box" style="border-color:#a855f7; background:rgba(168, 85, 247, 0.08);">
-          <div class="section-title" style="color:#a855f7;">
-            <span>🤖</span> 2. Tự Động Định Vị Khung Xương (AI Pose)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Quét ảnh qua <b>MediaPipe Pose</b> để tự động định vị toàn bộ 14 khớp xương theo phong cách <i>Meta Animated Drawings</i>.
-          </div>
-          <button id="btn-skel-auto-pose" class="btn-action-primary" style="background:linear-gradient(135deg, #a855f7, #6366f1); font-size:12px; font-weight:800;">
-            <span>🤖</span> TỰ ĐỘNG BẮT 14 KHỚP XƯƠNG (AUTO-RIG)
-          </button>
-          <div id="skel-pose-status" style="font-size:11px; font-weight:600; color:#c084fc; display:none; padding:4px 0;"></div>
-        </div>
-
-        <!-- Section 3: Node List & Reset -->
+        <!-- Section 2: Arm / Shoulder Pivot Position -->
         <div class="section-box">
           <div class="section-title">
-            <span>🦴</span> 3. Danh Sách 14 Điểm Khớp (14 Skeletal Nodes)
+            <span>💪</span> 2. Khớp Vai Cánh Tay Phải (Shoulder Pivot)
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; max-height:150px; overflow-y:auto; padding-right:4px;" id="skel-node-list">
-            <!-- Populated dynamically via JS -->
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Vị trí khớp vai gắn cánh tay cầm vũ khí. Mặc định: (0.65, 1.10, 0.00).
           </div>
-          <button id="btn-skel-reset-default" class="tool-btn" style="margin-top:8px; width:100%;">
-            <span>🔄</span> Khôi Phục Vị Trí Xương Mặc Định
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Tọa độ Vai X:</span>
+              <span class="val-text" id="val-shoulder-x">0.65</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-shoulder-x" min="-2.0" max="2.0" step="0.05" value="0.65">
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>Tọa độ Vai Y:</span>
+              <span class="val-text" id="val-shoulder-y">1.10</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-shoulder-y" min="0.0" max="3.0" step="0.05" value="1.10">
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>Tọa độ Vai Z:</span>
+              <span class="val-text" id="val-shoulder-z">0.00</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-shoulder-z" min="-1.5" max="1.5" step="0.05" value="0.00">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Weapon Attachment & Offset -->
+        <div class="section-box">
+          <div class="section-title">
+            <span>⚔️</span> 3. Khóa Vũ Khí Vào Tay (Weapon Attachment)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Dịch chuyển và xoay thanh kiếm 3D hướng thẳng về phía Boss (+X axis):
+          </div>
+
+          <button id="btn-player-snap-weapon" class="btn-action-primary">
+            <span>🎯</span> Hút Kiếm Vào Khớp Tay (Snap to Hand)
+          </button>
+
+          <div class="nudge-grid">
+            <button id="btn-nudge-x-neg" class="nudge-btn">◀ X- Trái</button>
+            <button id="btn-nudge-y-pos" class="nudge-btn">▲ Y+ Lên</button>
+            <button id="btn-nudge-x-pos" class="nudge-btn">X+ Phải ▶</button>
+            <button id="btn-nudge-z-neg" class="nudge-btn">▲ Z- Lui</button>
+            <button id="btn-nudge-y-neg" class="nudge-btn">▼ Y- Xuống</button>
+            <button id="btn-nudge-z-pos" class="nudge-btn">Z+ Tới ▼</button>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Góc nghiêng kiếm (Blade Angle):</span>
+              <span class="val-text" id="val-player-sword-angle">-45°</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-player-sword-angle" min="-180" max="180" step="1" value="-45">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: 3-Pose Visual Slash Keyframe Recorder -->
+        <div class="section-box" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
+          <div class="section-title" style="color:#38bdf8;">
+            <span>🎬</span> 4. Bộ Ghi Nhận 3 Tư Thế Chém (3-Pose Visual Slash Recorder)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Ghi nhận 3 góc xoay của cánh tay 3D theo chu trình chém chuẩn:
+          </div>
+
+          <!-- Rotation Sliders for Posing Arm -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Góc xoay Z (Nghiêng Chém - Angle Z):</span>
+              <span class="val-text" id="val-player-pose-z">0°</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-player-pose-z" min="-180" max="180" step="1" value="0">
+            </div>
+          </div>
+
+          <!-- Pose 1 Record & Preview -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#38bdf8;">Pose 1: Giương Kiếm (Wind-up)</span>
+              <span id="badge-player-pose1" class="hud-badge" style="font-size:10px;">Z: 60° (100ms)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-record-pose1" class="tool-btn active arm-cyan" style="flex:1; font-size:10px;">
+                <span>🔴</span> Ghi Nhận Pose 1
+              </button>
+              <button id="btn-view-pose1" class="tool-btn" style="flex:1; font-size:10px;">
+                <span>👁️</span> Xem Pose 1
+              </button>
+            </div>
+          </div>
+
+          <!-- Pose 2 Record & Preview -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#f43f5e;">Pose 2: Chém Trúng (Strike Impact)</span>
+              <span id="badge-player-pose2" class="hud-badge" style="font-size:10px; color:#f43f5e;">Z: -72° (120ms)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-record-pose2" class="tool-btn active weapon-orange" style="flex:1; font-size:10px;">
+                <span>🔴</span> Ghi Nhận Pose 2
+              </button>
+              <button id="btn-view-pose2" class="tool-btn" style="flex:1; font-size:10px;">
+                <span>👁️</span> Xem Pose 2
+              </button>
+            </div>
+          </div>
+
+          <!-- Pose 3 Record & Preview -->
+          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#10b981;">Pose 3: Thu Kiếm (Idle Guard)</span>
+              <span id="badge-player-pose3" class="hud-badge" style="font-size:10px; color:#10b981;">Z: 0° (100ms)</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button id="btn-record-pose3" class="tool-btn active" style="flex:1; font-size:10px; background:rgba(16,185,129,0.2); color:#10b981; border-color:#10b981;">
+                <span>🔴</span> Ghi Nhận Pose 3
+              </button>
+              <button id="btn-view-pose3" class="tool-btn" style="flex:1; font-size:10px;">
+                <span>👁️</span> Xem Pose 3
+              </button>
+            </div>
+          </div>
+
+          <!-- Test 3-Pose Playback -->
+          <button id="btn-player-test-3pose" class="btn-test-swing" style="background:linear-gradient(135deg, #0284c7, #06b6d4); font-size:12px; font-weight:800; padding:12px;">
+            <span>▶️</span> CHẠY THỬ QUỸ ĐẠO CHÉM (TEST 3-POSE TWEEN)
           </button>
         </div>
 
-        <!-- Section 4: Test Slash & Save Rig -->
+        <!-- Section 5: Save -->
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <button id="btn-skel-test-slash" class="btn-test-swing" style="background:linear-gradient(135deg, #f97316, #ef4444); font-size:12px; font-weight:800; padding:12px;">
-            <span>⚔️</span> THỬ NGHIỆM CHÉM (TEST SKELETON SLASH)
-          </button>
-          <div id="toast-skeleton" class="status-toast"></div>
-          <button id="btn-skel-save" class="btn-save-all" style="background:linear-gradient(135deg, #059669, #10b981);">
-            <span>💾</span> LƯU KHUNG XƯƠNG (SAVE RIG)
+          <div id="toast-player" class="status-toast"></div>
+          <button id="btn-player-save" class="btn-save-all">
+            <span>💾</span> LƯU CẤU HÌNH NHÂN VẬT 3D
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=32.0"></script>
+  <script type="module" src="js/admin.js?v=34.0"></script>
   <script type="module">
-    import { initSkeletonCalibrator } from './js/admin.js?v=32.0';
+    import { initModelCalibrator } from './js/admin.js?v=34.0';
     window.addEventListener('DOMContentLoaded', () => {
-      initSkeletonCalibrator();
+      initModelCalibrator();
     });
   </script>
 </body>
