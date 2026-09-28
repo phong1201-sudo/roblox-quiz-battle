@@ -24,7 +24,7 @@ let pendingEvents = [];
 // ── Fighter positions — face-to-face stance ───────────────────────────────────
 //   Player on left (x = -3), Boss on right (x = +3)
 //   Camera sits slightly off-centre on the Z axis to show a nice 3/4 view
-const PLAYER_HOME = new THREE.Vector3(-3.0, 1.5, 0);
+const PLAYER_HOME = new THREE.Vector3(-4.5, 2.0, 0);
 const BOSS_HOME   = new THREE.Vector3( 3.0, 0,   0);
 
 // ── Camera — pulled back to show full fighters head-to-feet on platform ───────

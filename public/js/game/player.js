@@ -1,19 +1,8 @@
-// THREE is available as a global from the CDN script tag, GLTFLoader & DRACOLoader from three/addons
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-
-export const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(dracoLoader);
-
-if (typeof window !== 'undefined' && window.THREE && !window.THREE.GLTFLoader) {
-  window.THREE.GLTFLoader = GLTFLoader;
-}
+// THREE is available as a global from the CDN script tag (window.THREE)
+// 2D Rigged Sprite Puppet Engine (Meta Animated Drawings style)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Colour maps
+// Colour maps & constants
 // ─────────────────────────────────────────────────────────────────────────────
 const EQUIP_COLORS = {
   hat:    { cap:0xcc2222,  helm:0x888899  },
@@ -37,32 +26,26 @@ const DEFAULT_EQUIP = { hat:'cap', shirt:'hoodie', pants:'jeans', shoes:'sneak',
 let playerGroup = null;
 let activeElement = null;   // player's OWN equippedSet — never boss element
 
-// Body-part mesh references
-let headMesh, hatMesh, torsoMesh, pantsMesh;
-let rightArm = null;                // plain right arm mesh
-let leftArm = null;                 // left arm ref
-let leftShoulderPivot = null;       // shoulder joint Group (holds weapon on opposite hand)
-let rightShoulderPivot = null;       // shoulder joint Group alias for backwards compatibility
-let leftLeg, rightLeg;
-let leftShoe, rightShoe;
-let swordGroup = null;               // weapon, child of leftShoulderPivot
-
-// Native 3D GLB Model state
+// 2D Skinned Sprite Puppet state
+let is2DMode = true;
+let isSkinned2DMode = true;
 let is3DModelMode = false;
-let characterModel = null;           // Root scene of loaded character GLB
-let characterRoot = null;            // THREE.Group containing characterModel
-let weaponModel = null;              // Root scene of loaded weapon GLB
-let weaponSocket = null;             // THREE.Group attached to character hand bone
-let handNode = null;                 // Left-hand bone or arm node
+let skinnedCharacterMesh = null;     // THREE.SkinnedMesh
+let skinnedSkeleton = null;          // THREE.Skeleton
+let skinnedBones = null;             // Bone map { hip, torso, neck, head, l_shoulder, l_elbow, l_hand, r_shoulder, r_elbow, r_hand, l_knee, l_foot, r_knee, r_foot }
+let bodyMesh = null;                 // THREE.SkinnedMesh
+let weaponMesh = null;               // THREE.Mesh (PlaneGeometry for 2D sword)
+let weaponArmPivot = null;           // alias to r_hand
+let _skeletonConfig = null;
 
 // Universal Procedural Player Arm Pivot & Compound Limb Hierarchy
 export let combatArmCompound = null;
 export let playerArmPivot = null;
 export function getCombatArmCompound() {
-  return combatArmCompound || playerArmPivot || getWeaponHandNode();
+  return skinnedBones?.r_shoulder || playerArmPivot || combatArmCompound || getWeaponHandNode();
 }
 export function getPlayerArmPivot() {
-  return combatArmCompound || playerArmPivot || getWeaponHandNode();
+  return skinnedBones?.r_shoulder || playerArmPivot || combatArmCompound || getWeaponHandNode();
 }
 
 // ── Visual Socket & Pivot Calibration Configuration ───────────────────────────
@@ -122,9 +105,7 @@ export async function loadSocketsConfig() {
         _socketsConfig = data.sockets;
       }
     }
-  } catch (e) {
-    // fallback to defaults
-  }
+  } catch (e) {}
   return _socketsConfig;
 }
 
@@ -139,17 +120,6 @@ if (typeof window !== 'undefined') {
     }
   });
 }
-
-// 2.5D Sprite Mesh state & Skeletal Rigging state (Meta Animated Drawings style)
-let is2DMode = false;
-let isSkinned2DMode = false;
-let skinnedCharacterMesh = null;     // THREE.SkinnedMesh
-let skinnedSkeleton = null;          // THREE.Skeleton
-let skinnedBones = null;             // Bone map { hip, torso, neck, head, l_shoulder, l_elbow, l_hand, r_shoulder, r_elbow, r_hand, l_knee, l_foot, r_knee, r_foot }
-let bodyMesh = null;                 // THREE.Mesh / THREE.SkinnedMesh (PlaneGeometry 2.4 x 3.2)
-let weaponMesh = null;               // THREE.Mesh (PlaneGeometry 0.85 x 2.2)
-let weaponArmPivot = null;           // THREE.Group attached at hand / r_hand
-let _skeletonConfig = null;
 
 const DEFAULT_SKELETON_CONFIG = {
   nodes: {
@@ -209,22 +179,19 @@ export async function _getSkeletonConfig() {
         return _skeletonConfig;
       }
     }
-  } catch (e) {
-    // fallback
-  }
+  } catch (e) {}
+
   _skeletonConfig = DEFAULT_SKELETON_CONFIG;
   return _skeletonConfig;
 }
 
 if (typeof window !== 'undefined') {
-  // Listen for storage changes from other windows/tabs/iframes
   window.addEventListener('storage', (ev) => {
     if (ev.key === 'rigged_skeleton' && ev.newValue) {
       try {
         const data = JSON.parse(ev.newValue);
         if (data && data.nodes) {
           _skeletonConfig = data;
-          console.log('[player] Skeleton rig synced via localStorage storage event');
           if (playerGroup && activeElement !== undefined) {
             createPlayerMesh(activeElement, window.gameState?.equipment);
           }
@@ -233,7 +200,6 @@ if (typeof window !== 'undefined') {
     }
   });
 
-  // Listen for custom in-window event
   window.addEventListener('skeleton-updated', (ev) => {
     if (ev.detail) {
       _skeletonConfig = ev.detail;
@@ -243,7 +209,6 @@ if (typeof window !== 'undefined') {
     }
   });
 
-  // Listen for iframe / parent postMessage
   window.addEventListener('message', (ev) => {
     if (ev.data && ev.data.type === 'skeleton-updated' && ev.data.skeleton) {
       _skeletonConfig = ev.data.skeleton;
@@ -254,12 +219,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-const WEAPON_HAND_POS = { x: -0.6, y: 0.9, z: 0.1 };
-const WEAPON_READY_ROT_Z = Math.PI / 6; // blade pointing forward/upward in ready combat stance
-
-// Material refs for hurt recolor
-let hatMat, shirtMat, pantsMat;
-
 // Elemental aura
 let elementalAura = null;
 let elementalParticles = [];
@@ -267,7 +226,7 @@ let elementalParticles = [];
 // Flame wave projectile (Fire set)
 let flameWave = null;
 let flameWaveActive = false;
-let flameWaveDX = 0;                 // accumulated X travel from spawn point
+let flameWaveDX = 0;
 
 // Combat animation state
 let anim = { active:false, type:'default', t:0, duration:1.0,
@@ -275,434 +234,125 @@ let anim = { active:false, type:'default', t:0, duration:1.0,
 let walkCycle = 0;
 
 // ─── Spatial constants ────────────────────────────────────────────────────────
-// Player faces +X (toward boss on the right); rotation.y = -Math.PI/2
-const HOME_X  = -3.0;
-const HOME_Y  =  1.5;
+// Player positioned on Left side of arena (x: -4.5, y: 2.0, z: 0) facing +X Boss
+const HOME_X  = -4.5;
+const HOME_Y  =  2.0;
 const HOME_Z  =  0;
 const BOSS_X  =  3.0;
 const BOSS_Y  =  4.0;
-const FACE_Y  = -Math.PI / 2;   // player faces right (+X direction)
+const FACE_Y  =  0;
+
+// Character & Weapon Scale (Proportional height ~3.8 units to match Boss scale)
+const CHAR_HEIGHT   = 3.8;
+const CHAR_WIDTH    = 3.08; // 3.8 * 0.81 aspect ratio
+const WEAPON_HEIGHT = 2.6;
+const WEAPON_WIDTH  = 0.55;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// 2D Character & Sword Assets mapping directly from public/assets/character/
 // ─────────────────────────────────────────────────────────────────────────────
-function makeBox(w, h, d, color) {
-  return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
-         new THREE.MeshLambertMaterial({ color }));
-}
-
-function getEquipColor(slot) {
-  if (activeElement && ELEMENTAL_PALETTES[activeElement])
-    return ELEMENTAL_PALETTES[activeElement][slot];
-  const eq = window.gameState?.equipment || DEFAULT_EQUIP;
-  return EQUIP_COLORS[slot][eq[slot] || DEFAULT_EQUIP[slot]] || 0x888888;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BUILD CHARACTER
-// ─────────────────────────────────────────────────────────────────────────────
-export function createPlayer(color, avatarPreset, cutoutUrl) {
-  // Element strictly from player's own equippedSet
-  activeElement = window.gameState?.equippedSet || null;
-  if (playerGroup) return;
-  playerGroup = new THREE.Group();
-  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  createPlayerMesh(activeElement, window.gameState?.equipment);
-}
-
-function _build3DBoxCharacter() {
-  // Clear old children
-  while (playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
-  headMesh = hatMesh = torsoMesh = pantsMesh = null;
-  leftArm = null; rightShoulderPivot = null; swordGroup = null;
-  leftLeg = rightLeg = null; leftShoe = rightShoe = null;
-  elementalAura = null; elementalParticles = [];
-
-  // ── Head ──────────────────────────────────────────────────────────────────
-  headMesh = makeBox(0.9,0.9,0.9, SKIN_TONE);
-  headMesh.position.set(0, 1.4, 0);
-  headMesh.castShadow = true;
-
-  // Eyes (visible from front face = +Z in local space)
-  const eyeW = new THREE.MeshLambertMaterial({ color:0xffffff });
-  const eyeD = new THREE.MeshLambertMaterial({ color:0x111111 });
-  for (const s of [-1,1]) {
-    const w = new THREE.Mesh(new THREE.BoxGeometry(0.22,0.22,0.05), eyeW);
-    w.position.set(s*0.2, 0.07, 0.47); headMesh.add(w);
-    const p = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.05), eyeD);
-    p.position.set(s*0.2, 0.05, 0.50); headMesh.add(p);
+const ELEMENT_SPRITES = {
+  fire: {
+    body: '/assets/character/Fire%20player.png',
+    weapon: '/assets/character/Fire%20sword.png'
+  },
+  thunder: {
+    body: '/assets/character/Lightning%20player.png',
+    weapon: '/assets/character/Lightning%20sword.png'
+  },
+  frost: {
+    body: '/assets/character/Ice%20player.png',
+    weapon: '/assets/character/Ice%20sword.png'
+  },
+  default: {
+    body: '/assets/character/Player.png',
+    weapon: '/assets/character/Normal%20Sword.png'
   }
-  // Hat
-  hatMat  = new THREE.MeshLambertMaterial({ color: getEquipColor('hat') });
-  hatMesh = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.45,1.0), hatMat);
-  hatMesh.position.set(0, 0.62, 0);
-  headMesh.add(hatMesh);
+};
 
-  // ── Torso / shirt ─────────────────────────────────────────────────────────
-  shirtMat  = new THREE.MeshLambertMaterial({ color: getEquipColor('shirt') });
-  torsoMesh = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.95,0.55), shirtMat);
-  torsoMesh.position.set(0, 0.35, 0);
-  torsoMesh.castShadow = true;
-
-  // Pants
-  pantsMat  = new THREE.MeshLambertMaterial({ color: getEquipColor('pants') });
-  pantsMesh = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.55,0.55), pantsMat);
-  pantsMesh.position.set(0,-0.3,0);
-  torsoMesh.add(pantsMesh);
-
-  // ── Left arm — shoulder pivot rig (holds weapon on opposite hand) ─────────
-  //   leftShoulderPivot sits at shoulder joint (top-left of torso)
-  //   Rotating pivot.rotation swings the whole arm+sword facing the arena/boss
-  leftShoulderPivot = new THREE.Group();
-  leftShoulderPivot.position.set(-0.65, 1.8, 0);   // shoulder position on opposite side
-
-  const lArmGeo = new THREE.BoxGeometry(0.34,0.9,0.34);
-  lArmGeo.translate(0, -0.45, 0);
-  const lArmMesh = new THREE.Mesh(lArmGeo, new THREE.MeshLambertMaterial({ color: SKIN_TONE }));
-  leftShoulderPivot.add(lArmMesh);
-
-  // Weapon attached at hand (bottom of arm, y = -0.9)
-  _buildSword();   // creates swordGroup and adds to leftShoulderPivot
-
-  playerGroup.leftArmPivot = leftShoulderPivot;
-  playerGroup.rightArmPivot = leftShoulderPivot;  // alias
-
-  // ── Right arm (plain — no weapon) ─────────────────────────────────────────
-  const rArmGeo = new THREE.BoxGeometry(0.34,0.9,0.34);
-  rArmGeo.translate(0, -0.45, 0);
-  rightArm = new THREE.Mesh(rArmGeo, new THREE.MeshLambertMaterial({ color: SKIN_TONE }));
-  rightArm.position.set(0.65, 1.8, 0);
-
-  // ── Legs ──────────────────────────────────────────────────────────────────
-  const legMat = new THREE.MeshLambertMaterial({ color: LEG_TONE });
-  leftLeg  = new THREE.Mesh(new THREE.BoxGeometry(0.42,1.0,0.42), legMat.clone());
-  leftLeg.position.set(-0.28,-1.05,0);
-  rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.42,1.0,0.42), legMat.clone());
-  rightLeg.position.set(0.28,-1.05,0);
-
-  // ── Shoes ─────────────────────────────────────────────────────────────────
-  const shoeMat = new THREE.MeshLambertMaterial({ color: getEquipColor('shoes') });
-  leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.28,0.56), shoeMat.clone());
-  leftShoe.position.set(0,-0.62,0.06); leftLeg.add(leftShoe);
-  rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.28,0.56), shoeMat.clone());
-  rightShoe.position.set(0,-0.62,0.06); rightLeg.add(rightShoe);
-
-  // ── Assemble ──────────────────────────────────────────────────────────────
-  playerGroup.add(headMesh, torsoMesh, rightArm, leftShoulderPivot,
-                  leftLeg, rightLeg);
-
-  // ── Elemental aura ────────────────────────────────────────────────────────
-  if (activeElement) _buildElementalAura(activeElement);
-
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2.5D SPRITE CHARACTER BUILDER & ART SYSTEM
-// ─────────────────────────────────────────────────────────────────────────────
 const _artCache = {
+  default: { body: null, weapon: null },
   thunder: { body: null, weapon: null },
   fire:    { body: null, weapon: null },
   frost:   { body: null, weapon: null },
 };
 
-/**
- * Chroma-key: removes near-white backgrounds from images
- */
-function _cleanWhiteBackground(img) {
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth || img.width;
-  c.height = img.naturalHeight || img.height;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  const imgData = ctx.getImageData(0, 0, c.width, c.height);
-  const d = imgData.data;
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i] > 220 && d[i + 1] > 220 && d[i + 2] > 220) {
-      d[i + 3] = 0; // Transparent
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  return c;
-}
-
-/**
- * Load body or weapon texture from /assets/characters/${element}_${type}.png
- */
 function _loadArtTexture(element, type) {
   return new Promise((resolve) => {
-    if (!element || !['thunder', 'fire', 'frost', 'default'].includes(element)) return resolve(null);
-    if (!['body', 'weapon'].includes(type)) return resolve(null);
+    const el = element || 'default';
+    const entry = ELEMENT_SPRITES[el] || ELEMENT_SPRITES['default'];
+    const url = type === 'weapon' ? entry.weapon : entry.body;
 
-    if (_artCache[element]?.[type]) return resolve(_artCache[element][type]);
+    if (_artCache[el]?.[type]) return resolve(_artCache[el][type]);
 
-    const urls = [
-      `/assets/characters/${element}_${type}.png`,
-    ];
-    if (type === 'body') {
-      urls.push(`/assets/characters/${element}.png`);
-      urls.push(`/assets/characters/${element}.jpg`);
-      if (element === 'fire') {
-        urls.push('/assets/characters/fireblade.png');
-        urls.push('/assets/characters/fireblade(cho%20game)_0.jpg');
-      }
-    } else {
-      urls.push(`/assets/characters/${element}_weapon.png`);
-      urls.push(`/assets/characters/${element}_weapon.jpg`);
-    }
-
-    const img = new window.Image();
-    img.crossOrigin = 'anonymous';
-
-    let idx = 0;
-    const tryNext = () => {
-      if (idx >= urls.length) return resolve(null);
-      img.src = urls[idx++];
-    };
-
-    img.onload = () => {
-      try {
-        const cleanCanvas = _cleanWhiteBackground(img);
-        const tex = new THREE.CanvasTexture(cleanCanvas);
+    const texLoader = new THREE.TextureLoader();
+    texLoader.load(
+      url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
         tex.needsUpdate = true;
-        if (!_artCache[element]) _artCache[element] = { body: null, weapon: null };
-        _artCache[element][type] = tex;
-        console.log(`[player] Loaded ${element}_${type} texture`);
+        if (!_artCache[el]) _artCache[el] = { body: null, weapon: null };
+        _artCache[el][type] = tex;
+        console.log(`[player] Loaded 2D sprite: ${url}`);
         resolve(tex);
-      } catch (err) {
-        console.warn(`[player] Texture processing error for ${element}_${type}:`, err);
-        tryNext();
+      },
+      undefined,
+      (err) => {
+        console.warn(`[player] Failed to load ${url}, trying fallback`, err);
+        const fbUrl = type === 'weapon' ? ELEMENT_SPRITES.default.weapon : ELEMENT_SPRITES.default.body;
+        texLoader.load(fbUrl, (fbTex) => {
+          if (fbTex) fbTex.colorSpace = THREE.SRGBColorSpace;
+          resolve(fbTex);
+        }, undefined, () => resolve(null));
       }
-    };
-    img.onerror = tryNext;
-    tryNext();
+    );
   });
+}
+
+function _createFallbackCharacterTexture(element) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 680;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = element === 'fire' ? '#ff4400' : element === 'thunder' ? '#00e5ff' : '#00b4d8';
+  ctx.fillRect(196, 60, 120, 120); // Head
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(260, 100, 30, 20); // Eye
+  ctx.fillStyle = element === 'fire' ? '#cc2200' : '#0077b6';
+  ctx.fillRect(166, 180, 180, 240); // Torso
+  ctx.fillStyle = '#f5c4a0';
+  ctx.fillRect(346, 200, 60, 160); // Right arm
+  ctx.fillRect(106, 200, 60, 160); // Left arm
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(176, 420, 70, 220); // Left leg
+  ctx.fillRect(266, 420, 70, 220); // Right leg
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3D GLB/GLTF MODEL LOADER & BONE SOCKETING SYSTEM
+// 2D Skeletal SkinnedMesh Builder (Meta Animated Drawings style)
 // ─────────────────────────────────────────────────────────────────────────────
-const _modelCache = {
-  default: { character: null, weapon: null },
-  thunder: { character: null, weapon: null },
-  fire:    { character: null, weapon: null },
-  frost:   { character: null, weapon: null },
-};
-
-function _findHandBone(root, side = 'left') {
-  if (!root) return null;
-  const isLeft = (side === 'left');
-  const candidateNames = isLeft ? [
-    'LeftHand', 'Hand_L', 'mixamorigLeftHand', 'mixamorig:LeftHand',
-    'hand.L', 'Left_Hand', 'hand_l', 'leftHandBone', 'LeftHandAttachment',
-    'Hand.L', 'LeftArm', 'Arm_L', 'mixamorigLeftArm', 'mixamorig:LeftArm'
-  ] : [
-    'RightHand', 'Hand_R', 'mixamorigRightHand', 'mixamorig:RightHand',
-    'hand.R', 'Right_Hand', 'hand_r', 'rightHandBone', 'RightHandAttachment',
-    'Hand.R', 'RightArm', 'Arm_R'
-  ];
-  for (const name of candidateNames) {
-    const obj = root.getObjectByName(name);
-    if (obj) return obj;
-  }
-  let found = null;
-  root.traverse((child) => {
-    if (found) return;
-    const n = (child.name || '').toLowerCase();
-    if (isLeft) {
-      if (n.includes('lefthand') || n.includes('hand_l') || n.includes('hand.l') ||
-          (n.includes('hand') && (n.includes('left') || n.endsWith('_l') || n.endsWith('.l')))) {
-        found = child;
-      }
-    } else {
-      if (n.includes('righthand') || n.includes('hand_r') || n.includes('hand.r') ||
-          (n.includes('hand') && (n.includes('right') || n.endsWith('_r') || n.endsWith('.r')))) {
-        found = child;
-      }
-    }
-  });
-  return found;
-}
-
-function _loadGLTFModel(url) {
-  return new Promise((resolve) => {
-    try {
-      gltfLoader.load(
-        url,
-        (gltf) => {
-          console.log('[player] Successfully loaded 3D model:', url);
-          resolve(gltf);
-        },
-        undefined,
-        () => resolve(null) // Return null on 404/failure without error
-      );
-    } catch (e) {
-      console.warn('[player] GLTFLoader error for', url, e);
-      resolve(null);
-    }
-  });
-}
-
-/**
- * Loads a 3D GLB Character and sockets its weapon into RightHand node
- */
-async function _tryLoad3DCharacterAndWeapon(elementKey) {
-  const el = elementKey || 'default';
-
-  // Load Character model
-  let charGltf = await _loadGLTFModel(`/assets/models/${el}_character.glb`);
-  if (!charGltf) {
-    charGltf = await _loadGLTFModel(`/assets/models/${el}_character.gltf`);
-  }
-  if (!charGltf && el !== 'default') {
-    // If elemental 3D model not found, try fallback to default 3D model
-    charGltf = await _loadGLTFModel(`/assets/models/default_character.glb`) ||
-               await _loadGLTFModel(`/assets/models/default_character.gltf`);
-  }
-  if (!charGltf || !charGltf.scene) return false;
-
-  is3DModelMode = true;
-  playerGroup.rotation.set(0, 0, 0);
-  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-
-  characterRoot = new THREE.Group();
-  characterRoot.name = 'CharacterRoot';
-
-  characterModel = charGltf.scene.clone(true);
-  characterModel.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-
-  // Normalize character model scale to ~2.8 units height
-  const bBox = new THREE.Box3().setFromObject(characterModel);
-  const bSize = new THREE.Vector3();
-  bBox.getSize(bSize);
-  if (bSize.y > 0.01) {
-    const targetHeight = 2.8;
-    const scaleFactor = targetHeight / bSize.y;
-    characterModel.scale.setScalar(scaleFactor);
-  }
-
-  // Center horizontally and align base/feet at y = 0
-  const scaledBox = new THREE.Box3().setFromObject(characterModel);
-  characterModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
-  characterModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
-  characterModel.position.y = - scaledBox.min.y;
-
-  // Face towards Boss on the right (+X)
-  characterRoot.rotation.y = Math.PI / 2;
-  characterRoot.add(characterModel);
-  playerGroup.add(characterRoot);
-
-  // Load 3D Weapon Model (try element weapon, then default weapon)
-  const weapEl = window.gameState?.equipped?.weapon || el;
-  let weapGltf = await _loadGLTFModel(`/assets/models/${weapEl}_weapon.glb`);
-  if (!weapGltf) {
-    weapGltf = await _loadGLTFModel(`/assets/models/${weapEl}_weapon.gltf`);
-  }
-  if (!weapGltf && weapEl !== 'default') {
-    weapGltf = await _loadGLTFModel(`/assets/models/default_weapon.glb`) ||
-               await _loadGLTFModel(`/assets/models/default_weapon.gltf`);
-  }
-
-  // Read compound limb and weapon transform configuration
-  const savedPivot = _socketsConfig?.player || {};
-  const sPivot = savedPivot.shoulderPivot || {};
-  const shoulderX = sPivot.x ?? savedPivot.shoulderX ?? (savedPivot.default?.handX ? -Math.abs(savedPivot.default.handX) : -0.65);
-  const shoulderY = sPivot.y ?? savedPivot.shoulderY ?? (savedPivot.default?.handY ?? 1.2);
-  const shoulderZ = sPivot.z ?? savedPivot.shoulderZ ?? (savedPivot.default?.handZ ?? 0.0);
-
-  const savedWeapon = savedPivot.weaponOffset || savedPivot.weapon || {};
-  const wOffsetX = savedWeapon.offsetX ?? 0.0;
-  const wOffsetY = savedWeapon.offsetY ?? -0.4;
-  const wOffsetZ = savedWeapon.offsetZ ?? 0.1;
-  const wAngle = savedWeapon.angle ?? (savedPivot[el]?.weaponAngle ?? -45);
-  const wRotX = savedWeapon.rotX ?? 0.0;
-  const wRotY = savedWeapon.rotY ?? (Math.PI / 2);
-  const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
-
-  // Compound arm container centered at calibrated shoulderPivot
-  combatArmCompound = new THREE.Group();
-  combatArmCompound.name = 'PlayerCombatArmCompound';
-  combatArmCompound.position.set(shoulderX, shoulderY, shoulderZ);
-  const initialIdleAngle = ((savedPivot.slashArc?.idleAngle ?? 0) * Math.PI) / 180;
-  combatArmCompound.rotation.set(0, 0, initialIdleAngle);
-  playerArmPivot = combatArmCompound;
-
-  if (weapGltf && weapGltf.scene) {
-    weaponModel = weapGltf.scene.clone(true);
-    weaponModel.traverse((c) => {
-      if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
-    });
-
-    // Scale weapon to match blocky character proportions
-    weaponModel.scale.set(2.2, 2.2, 2.2);
-
-    const scaledBox = new THREE.Box3().setFromObject(weaponModel);
-    const localHiltX = - (scaledBox.min.x + scaledBox.max.x) / 2;
-    const localHiltY = - scaledBox.min.y;
-    const localHiltZ = - (scaledBox.min.z + scaledBox.max.z) / 2;
-
-    // Mount weapon as locked child with saved local offset (blade tip points towards Boss +X)
-    weaponModel.position.set(localHiltX + wOffsetX, localHiltY + wOffsetY, localHiltZ + wOffsetZ);
-    weaponModel.rotation.set(wRotX, wRotY, wRotZ);
-
-    combatArmCompound.add(weaponModel);
-  } else {
-    // Fallback procedural blade
-    const bladeColor = el === 'fire' ? 0xff4400 : el === 'frost' ? 0x88ddff : el === 'thunder' ? 0x00cfff : 0xddaa33;
-    const blade = makeBox(0.2, 2.2, 0.12, bladeColor);
-    blade.position.set(wOffsetX, 0.8 + wOffsetY, wOffsetZ);
-    blade.rotation.set(wRotX, wRotY, wRotZ);
-    combatArmCompound.add(blade);
-  }
-
-  // Attach combatArmCompound directly to playerGroup
-  playerGroup.add(combatArmCompound);
-  weaponSocket = combatArmCompound;
-  console.log(`[player] Unified combatArmCompound mounted at (${shoulderX.toFixed(2)}, ${shoulderY.toFixed(2)}, ${shoulderZ.toFixed(2)}) with weapon offset (${wOffsetX}, ${wOffsetY}, ${wOffsetZ}) at ${wAngle}°`);
-
-  if (activeElement) _buildElementalAura(activeElement);
-  console.log(`[player] 3D GLB model loaded & socketed for ${el}`);
-  return true;
-}
-
-/**
- * 2D Skeletal SkinnedMesh Builder (Meta Animated Drawings style)
- * Creates a dense PlaneGeometry (32x32 segments) deformed by a 14-bone skeleton hierarchy.
- * Uses Linear Blend Skinning (LBS) assigning skinIndex and skinWeight based on inverse distance to the closest 2 bones.
- */
 export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
   const skel = await _getSkeletonConfig();
   const nodes = { ...DEFAULT_SKELETON_CONFIG.nodes, ...(skel?.nodes || {}) };
 
-  const characterWidth = 2.4;
-  const characterHeight = 3.2;
+  const characterWidth = CHAR_WIDTH;
+  const characterHeight = CHAR_HEIGHT;
 
   // 1. Create dense plane geometry (32x32 segments for high-fidelity deformation)
   const geometry = new THREE.PlaneGeometry(characterWidth, characterHeight, 32, 32);
 
   // 2. Bone hierarchy keys
   const BONE_KEYS = [
-    'hip',        // 0
-    'torso',      // 1
-    'neck',       // 2
-    'head',       // 3
-    'l_shoulder', // 4
-    'l_elbow',    // 5
-    'l_hand',     // 6
-    'r_shoulder', // 7
-    'r_elbow',    // 8
-    'r_hand',     // 9
-    'l_knee',     // 10
-    'l_foot',     // 11
-    'r_knee',     // 12
-    'r_foot'      // 13
+    'hip', 'torso', 'neck', 'head',
+    'l_shoulder', 'l_elbow', 'l_hand',
+    'r_shoulder', 'r_elbow', 'r_hand',
+    'l_knee', 'l_foot', 'r_knee', 'r_foot'
   ];
 
-  // Map 2D normalized coordinates (0..1) to local 3D Plane coordinates (-width/2..width/2, height/2..-height/2)
+  // Map 2D normalized coordinates (0..1) to local 3D Plane coordinates
   const boneLocs = {};
   for (const k of BONE_KEYS) {
     const n = nodes[k] || DEFAULT_SKELETON_CONFIG.nodes[k] || { x: 0.5, y: 0.5 };
@@ -827,7 +477,6 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
 
     distList.sort((a, b) => a.dist - b.dist);
 
-    // Closest 2 bones
     const b0 = distList[0].index;
     const d0 = distList[0].dist;
     const b1 = distList[1].index;
@@ -863,10 +512,8 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
 
   // 5. Attach 2D Weapon Sprite directly to r_hand bone so it naturally follows arm movement
   let weaponMesh = null;
-  const weaponWidth = 0.85;
-  const weaponHeight = 2.2;
-  const wGeo = new THREE.PlaneGeometry(weaponWidth, weaponHeight);
-  wGeo.translate(0, weaponHeight / 2, 0); // hilt is at (0, 0) of the geometry
+  const wGeo = new THREE.PlaneGeometry(WEAPON_WIDTH, WEAPON_HEIGHT);
+  wGeo.translate(0, WEAPON_HEIGHT / 2, 0); // hilt is at (0, 0) of the geometry
 
   if (weaponTexture) {
     const wMat = new THREE.MeshBasicMaterial({
@@ -879,13 +526,11 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
     weaponMesh = new THREE.Mesh(wGeo, wMat);
   } else {
     const bladeColor = targetEl === 'fire' ? 0xff4400 : targetEl === 'frost' ? 0x88ddff : targetEl === 'thunder' ? 0x00cfff : 0xddaa33;
-    const blade = makeBox(0.14, 1.8, 0.08, bladeColor);
-    blade.position.set(0, 0.9, 0);
-    weaponMesh = new THREE.Group();
-    weaponMesh.add(blade);
+    const bladeMat = new THREE.MeshBasicMaterial({ color: bladeColor, side: THREE.DoubleSide });
+    weaponMesh = new THREE.Mesh(wGeo, bladeMat);
   }
 
-  // Position weapon hilt right at hand bone position, pointing forward toward the Boss
+  // Mount weapon with hilt right at hand node, pointed forward (+X) toward the Boss
   weaponMesh.position.set(0, 0, 0.02);
   weaponMesh.rotation.set(0, 0, -Math.PI / 4);
 
@@ -899,45 +544,29 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
   };
 }
 
-function _createFallbackCharacterTexture(element) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 680;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = element === 'fire' ? '#ff4400' : element === 'thunder' ? '#00e5ff' : '#00b4d8';
-  ctx.fillRect(196, 60, 120, 120); // Head
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(260, 100, 30, 20); // Eye
-  ctx.fillStyle = element === 'fire' ? '#cc2200' : '#0077b6';
-  ctx.fillRect(166, 180, 180, 240); // Torso
-  ctx.fillStyle = '#f5c4a0';
-  ctx.fillRect(346, 200, 60, 160); // Right arm
-  ctx.fillRect(106, 200, 60, 160); // Left arm
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(176, 420, 70, 220); // Left leg
-  ctx.fillRect(266, 420, 70, 220); // Right leg
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD CHARACTER
+// ─────────────────────────────────────────────────────────────────────────────
+export function createPlayer(color, avatarPreset, cutoutUrl) {
+  activeElement = window.gameState?.equippedSet || null;
+  if (playerGroup) return;
+  playerGroup = new THREE.Group();
+  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+  createPlayerMesh(activeElement, window.gameState?.equipment);
 }
 
-/**
- * Main Player Mesh Constructor:
- * Strictly instantiate Player using the 2D Skinned Mesh system (32x32) generated from 2D artwork and skeleton.json.
- * 3D GLB Character & Weapon models are temporarily disabled for rigorous 2D skeletal rigging testing.
- */
 export async function createPlayerMesh(element, equippedGear) {
   if (!playerGroup) return;
-  const targetEl = element || activeElement || 'fire';
+  const targetEl = element || activeElement || window.gameState?.equippedSet || 'default';
 
-  // Clear existing meshes & state
+  // Clear existing children
   while (playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
-  headMesh = hatMesh = torsoMesh = pantsMesh = null;
-  leftArm = null; rightShoulderPivot = null; swordGroup = null;
-  leftLeg = rightLeg = null; leftShoe = rightShoe = null;
-  elementalAura = null; elementalParticles = [];
-  bodyMesh = null; weaponMesh = null; weaponArmPivot = null; playerArmPivot = null;
-  characterModel = null; characterRoot = null; weaponModel = null; weaponSocket = null; handNode = null;
+  elementalAura = null;
+  elementalParticles = [];
+  bodyMesh = null;
+  weaponMesh = null;
+  weaponArmPivot = null;
+  playerArmPivot = null;
   is3DModelMode = false;
   is2DMode = true;
   isSkinned2DMode = true;
@@ -945,25 +574,17 @@ export async function createPlayerMesh(element, equippedGear) {
   skinnedSkeleton = null;
   skinnedBones = null;
 
-  // STRICT 2D SKINNED MESH MODE (3D GLB character & weapon temporarily disabled as requested)
-  // 1. Try to load body art for current element, fallback to other elements / defaults
+  // 1. Load textures directly from public/assets/character/
   let bTex = await _loadArtTexture(targetEl, 'body');
-  if (!bTex && targetEl !== 'fire') bTex = await _loadArtTexture('fire', 'body');
-  if (!bTex && targetEl !== 'thunder') bTex = await _loadArtTexture('thunder', 'body');
   if (!bTex) bTex = await _loadArtTexture('default', 'body');
+  if (!bTex) bTex = _createFallbackCharacterTexture(targetEl);
 
-  // If still no texture, create fallback canvas texture with stylized character art
-  if (!bTex) {
-    bTex = _createFallbackCharacterTexture(targetEl);
-  }
-
-  // 2. Try to load weapon art
   let wTex = await _loadArtTexture(targetEl, 'weapon');
-  if (!wTex && targetEl !== 'fire') wTex = await _loadArtTexture('fire', 'weapon');
-  if (!wTex && targetEl !== 'thunder') wTex = await _loadArtTexture('thunder', 'weapon');
+  if (!wTex) wTex = await _loadArtTexture('default', 'weapon');
 
-  playerGroup.rotation.y = 0; // Face camera in 2D mode
+  // Place player on Left side of arena facing Boss (+X)
   playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+  playerGroup.rotation.set(0, 0, 0);
 
   try {
     const skinnedRig = await build2DSkinnedMesh(bTex, wTex, targetEl);
@@ -973,338 +594,69 @@ export async function createPlayerMesh(element, equippedGear) {
     bodyMesh = skinnedCharacterMesh;
     weaponMesh = skinnedRig.weaponMesh;
     playerArmPivot = skinnedBones.r_shoulder;
+    weaponArmPivot = skinnedBones.r_hand;
 
     skinnedCharacterMesh.position.set(0, 0, 0);
-    skinnedCharacterMesh.rotation.y = Math.PI / 6; // Angled 30° toward the Boss on the right
+    // Face toward Boss (+X) while remaining clearly visible in 3/4 camera view
+    skinnedCharacterMesh.rotation.y = Math.PI / 8;
     playerGroup.add(skinnedCharacterMesh);
 
     if (activeElement) _buildElementalAura(activeElement);
-    console.log(`[player] Real 2D SkinnedMesh (32x32) constructed with 14 bones for ${targetEl}`);
+    console.log(`[player] 2D Rigged Sprite Puppet successfully mounted at (${HOME_X}, ${HOME_Y}, ${HOME_Z}) for ${targetEl}`);
   } catch (err) {
     console.error('[player] Failed to build 2D SkinnedMesh:', err);
   }
 }
 
-// Hot-reload listener for admin uploads
-if (typeof window !== 'undefined') {
-  const onArtUpdated = (ev) => {
-    const { element, type } = ev.detail || {};
-    if (!element) return;
-    if (_artCache[element]) {
-      if (type) _artCache[element][type] = null;
-      else _artCache[element] = { body: null, weapon: null };
-    }
-    createPlayerMesh(activeElement, window.gameState?.equipment);
-  };
-  window.addEventListener('character-art-updated', onArtUpdated);
-  window.addEventListener('character-image-updated', onArtUpdated);
-  window.addEventListener('character-model-updated', onArtUpdated);
-
-  // Pre-load existing textures on startup
-  ['thunder', 'fire', 'frost'].forEach(el => {
-    _loadArtTexture(el, 'body');
-    _loadArtTexture(el, 'weapon');
-  });
-}
-
-
-
-
-
-// ─── Sword builder ────────────────────────────────────────────────────────────
-function _buildSword() {
-  swordGroup = new THREE.Group();
-  const savedPivot = _socketsConfig?.player || {};
-  const savedWeapon = savedPivot.weaponOffset || savedPivot.weapon || {};
-  const wOffsetX = savedWeapon.offsetX ?? 0.0;
-  const wOffsetY = savedWeapon.offsetY ?? -0.4;
-  const wOffsetZ = savedWeapon.offsetZ ?? 0.1;
-  const wAngle = savedWeapon.angle ?? -45;
-  const wRotX = savedWeapon.rotX ?? 0.0;
-  const wRotY = savedWeapon.rotY ?? (Math.PI / 2);
-  const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
-
-  swordGroup.position.set(wOffsetX, -0.9 + wOffsetY, wOffsetZ);
-  swordGroup.rotation.set(wRotX, wRotY, wRotZ);
-  swordGroup.scale.set(1.6, 1.6, 1.6);
-
-  // ── Custom 2D Weapon Sprite (if uploaded for this element) ─────────────────
-  if (activeElement && _artCache[activeElement]?.weapon) {
-    const wGeo = new THREE.PlaneGeometry(0.75, 1.8);
-    wGeo.translate(0, 0.8, 0); // hilt at bottom (pivot at hand)
-    const wMat = new THREE.MeshBasicMaterial({
-      map: _artCache[activeElement].weapon,
-      transparent: true,
-      alphaTest: 0.05,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const customSword = new THREE.Mesh(wGeo, wMat);
-    customSword.rotation.y = Math.PI / 2; // face camera
-    swordGroup.add(customSword);
-    swordGroup._customWeapon = customSword;
-    if (leftShoulderPivot) leftShoulderPivot.add(swordGroup);
-    else if (rightShoulderPivot) rightShoulderPivot.add(swordGroup);
-    return;
-  }
-
-
-  if (activeElement === 'thunder') {
-    // ── Thunder Blade: jagged lightning katana ────────────────────────────
-    // Blade: bright electric yellow-cyan, high emissive
-    const bladeMat = new THREE.MeshStandardMaterial({
-      color: 0xeeffaa,
-      emissive: 0x00ffff,
-      emissiveIntensity: 2.5,
-      roughness: 0.1, metalness: 0.9,
-    });
-    // Main blade shaft
-    const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.35, 0.05), bladeMat);
-    shaft.position.set(0, -0.67, 0);
-    // Zigzag teeth: 3 small protrusions along the blade edge
-    const toothMat = new THREE.MeshStandardMaterial({ color:0xffff00, emissive:0x00ccff, emissiveIntensity:3.0, roughness:0.0, metalness:1.0 });
-    const teeth = [[-0.12,-0.3],[-0.12,-0.55],[-0.12,-0.80]].map(([dx,y]) => {
-      const t = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.11,0.05), toothMat);
-      t.position.set(dx, y, 0); return t;
-    });
-    // Guard: wide flat crosspiece in cyan
-    const guardMat = new THREE.MeshStandardMaterial({ color:0x00ffff, emissive:0x006666, emissiveIntensity:1.5, roughness:0.2, metalness:0.8 });
-    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.10, 0.10), guardMat);
-    guard.position.set(0, 0, 0);
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.09),
-      new THREE.MeshStandardMaterial({ color:0x003366, roughness:0.8, metalness:0.3 }));
-    grip.position.set(0, 0.20, 0);
-    // Store flickering blade ref for update loop
-    swordGroup._thunderBlade = [shaft, ...teeth];
-    swordGroup._thunderT = 0;
-    swordGroup.add(shaft, ...teeth, guard, grip);
-
-  } else if (activeElement === 'fire') {
-    // ── Fire Blade: glowing magma sword ──────────────────────────────────
-    const bladeMat = new THREE.MeshStandardMaterial({
-      color: 0xff6600,
-      emissive: 0xff3300,
-      emissiveIntensity: 2.0,
-      roughness: 0.25, metalness: 0.7,
-    });
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.30, 0.08), bladeMat);
-    blade.position.set(0, -0.65, 0);
-    // Wider tip that tapers (simulate taper with a box scaled)
-    const tipMat = new THREE.MeshStandardMaterial({ color:0xff8800, emissive:0xffcc00, emissiveIntensity:3.0, roughness:0.1, metalness:0.8 });
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.30, 0.06), tipMat);
-    tip.position.set(0, -1.30, 0);
-    const guardMat = new THREE.MeshStandardMaterial({ color:0xff6600, emissive:0xff2200, emissiveIntensity:1.5, roughness:0.3, metalness:0.6 });
-    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.12, 0.12), guardMat);
-    guard.position.set(0, 0, 0);
-    const gripMat = new THREE.MeshStandardMaterial({ color:0x661100, roughness:0.9, metalness:0.2 });
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.34, 0.12), gripMat);
-    grip.position.set(0, 0.20, 0);
-    // Store for pulsing update
-    swordGroup._fireBlade = blade;
-    swordGroup._fireTip   = tip;
-    swordGroup.add(blade, tip, guard, grip);
-
-  } else if (activeElement === 'frost') {
-    // ── Frost Blade: crystalline ice spear ───────────────────────────────
-    const iceMat = new THREE.MeshStandardMaterial({
-      color: 0x88e5ff,
-      emissive: 0x0088cc,
-      emissiveIntensity: 1.2,
-      roughness: 0.05, metalness: 0.0,
-      transparent: true, opacity: 0.82,
-    });
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.10, 1.45, 0.10), iceMat);
-    blade.position.set(0, -0.72, 0);
-    // Crystal tip: sharper bright-white facets
-    const crystalMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff, emissive: 0x88ccff, emissiveIntensity: 2.0,
-      roughness: 0.0, metalness: 0.0, transparent: true, opacity: 0.90,
-    });
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 0.18), crystalMat);
-    tip.position.set(0, -1.45, 0);
-    // Side crystal shards (decorative)
-    const shard1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.06), crystalMat);
-    shard1.position.set(0.09, -0.55, 0); shard1.rotation.z = 0.35;
-    const shard2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.06), crystalMat);
-    shard2.position.set(-0.09, -0.80, 0); shard2.rotation.z = -0.35;
-    const guardMat = new THREE.MeshStandardMaterial({ color:0x4499cc, emissive:0x002244, emissiveIntensity:0.8, roughness:0.3, metalness:0.5 });
-    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.10, 0.42), guardMat);
-    guard.position.set(0, 0, 0);
-    swordGroup._iceBlade = [blade, tip, shard1, shard2];
-    swordGroup.add(blade, tip, shard1, shard2, guard);
-
-  } else {
-    // ── Default: wooden training sword ───────────────────────────────────
-    const wColor = getEquipColor('weapon');
-    const wM = new THREE.MeshLambertMaterial({ color: wColor });
-    const bl = new THREE.Mesh(new THREE.BoxGeometry(0.13, 1.15, 0.08), wM);
-    bl.position.set(0, -0.58, 0);
-    const gu = makeBox(0.50, 0.11, 0.11, 0x555566); gu.position.set(0, 0, 0);
-    const gr = makeBox(0.11, 0.36, 0.11, 0x6b3320); gr.position.set(0, 0.18, 0);
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.06), wM);
-    tip.position.set(0, -1.15, 0);
-    swordGroup.add(bl, gu, gr, tip);
-  }
-
-  if (leftShoulderPivot) leftShoulderPivot.add(swordGroup);
-  else if (rightShoulderPivot) rightShoulderPivot.add(swordGroup);
-}
-
-// ─── Elemental aura ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Elemental aura
+// ─────────────────────────────────────────────────────────────────────────────
 function _buildElementalAura(element) {
-  if (elementalAura) playerGroup.remove(elementalAura);
-  elementalParticles.forEach(p => playerGroup.remove(p));
+  if (elementalAura && playerGroup) playerGroup.remove(elementalAura);
+  elementalAura = null;
   elementalParticles = [];
-  const cols = {
-    thunder:{ ring:0x00ffff, spark:0xffcc00 },
-    fire:   { ring:0xff4400, spark:0xff8800 },
-    frost:  { ring:0x88ddff, spark:0xffffff },
-  };
-  const c = cols[element]; if (!c) return;
-  const ringGeo = new THREE.TorusGeometry(1.3,0.06,8,32);
-  elementalAura  = new THREE.Mesh(ringGeo,
-    new THREE.MeshBasicMaterial({ color:c.ring, transparent:true, opacity:0.7 }));
-  elementalAura.rotation.x = Math.PI/2;
-  elementalAura.position.set(0,-0.3,0);
-  playerGroup.add(elementalAura);
-  for (let i=0;i<6;i++) {
-    const sp = makeBox(0.1,0.1,0.1, i%2===0 ? c.ring : c.spark);
-    playerGroup.add(sp); elementalParticles.push(sp);
+
+  const auraGroup = new THREE.Group();
+  const auraColors = { thunder: 0x00cfff, fire: 0xff4400, frost: 0x88ddff };
+  const auraColor = auraColors[element] || 0xffffff;
+
+  for (let i = 0; i < 8; i++) {
+    const pGeo = new THREE.PlaneGeometry(0.18, 0.18);
+    const pMat = new THREE.MeshBasicMaterial({ color: auraColor, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const p = new THREE.Mesh(pGeo, pMat);
+    p.position.set((Math.random() - 0.5) * 1.8, Math.random() * 3.0, (Math.random() - 0.5) * 0.5);
+    p._speedY = 0.5 + Math.random() * 1.0;
+    auraGroup.add(p);
+    elementalParticles.push(p);
   }
+  elementalAura = auraGroup;
+  playerGroup.add(elementalAura);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ELEMENTAL SET API
+// Getters and Compatibility exports
 // ─────────────────────────────────────────────────────────────────────────────
 export function applyElementalSet(element) {
   activeElement = element;
   if (window.gameState) {
     window.gameState.equippedSet = element;
     window.gameState.thunderSet  = element === 'thunder';
-    // damagePerHit determined server-side from inventory hasFullSet check
   }
   createPlayerMesh(element, window.gameState?.equipment);
 }
 export function applyThunderSet() { applyElementalSet('thunder'); }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Getters / stubs
-// ─────────────────────────────────────────────────────────────────────────────
 export function getPlayerObject()  { return playerGroup; }
 export function getPosition()      { return playerGroup ? playerGroup.position.clone() : new THREE.Vector3(HOME_X,HOME_Y,HOME_Z); }
 export function getRotation()      { return { y: playerGroup ? playerGroup.rotation.y : 0 }; }
 export function getActiveElement() { return activeElement; }
 export function applySkin()        {}
 export function switchToCutout()   {}
+export function getWeaponHandNode(){ return skinnedBones?.r_hand || weaponArmPivot; }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dedicated Sword Slashing Arm Motion Tween (slashMotion)
+// 3-Phase Slash Animation: Wind-up (100ms) -> Strike (120ms) -> Recover (100ms)
 // ─────────────────────────────────────────────────────────────────────────────
-const _activeTweens = [];
-
-class MiniTween {
-  constructor(target) {
-    this.target = target;
-    this.toValues = {};
-    this.fromValues = {};
-    this.duration = 100;
-    this.onCompleteCb = null;
-    this.onUpdateCb = null;
-    this.startTime = null;
-    this._easing = null;
-  }
-  to(values, duration) {
-    this.toValues = values;
-    this.duration = duration || 100;
-    return this;
-  }
-  easing(fn) {
-    this._easing = fn;
-    return this;
-  }
-  onUpdate(cb) {
-    this.onUpdateCb = cb;
-    return this;
-  }
-  onComplete(cb) {
-    this.onCompleteCb = cb;
-    return this;
-  }
-  start() {
-    this.startTime = performance.now();
-    for (const k in this.toValues) {
-      if (this.target && this.target[k] !== undefined) {
-        this.fromValues[k] = this.target[k];
-      }
-    }
-    _activeTweens.push(this);
-    return this;
-  }
-  update(now) {
-    const elapsed = now - this.startTime;
-    const t = Math.min(1, Math.max(0, elapsed / Math.max(1, this.duration)));
-    const ease = this._easing ? this._easing(t) : (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
-    for (const k in this.toValues) {
-      if (this.target && this.fromValues[k] !== undefined) {
-        this.target[k] = this.fromValues[k] + (this.toValues[k] - this.fromValues[k]) * ease;
-      }
-    }
-    if (this.onUpdateCb) this.onUpdateCb(ease);
-    if (t >= 1) {
-      if (this.onCompleteCb) this.onCompleteCb();
-      return true;
-    }
-    return false;
-  }
-}
-
-export const TWEEN = {
-  Tween: MiniTween,
-  Easing: {
-    Quadratic: {
-      In: (t) => t * t,
-      Out: (t) => t * (2 - t),
-      InOut: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
-    }
-  },
-  update() {
-    const now = performance.now();
-    for (let i = _activeTweens.length - 1; i >= 0; i--) {
-      if (_activeTweens[i].update(now)) {
-        _activeTweens.splice(i, 1);
-      }
-    }
-  },
-  removeAll() {
-    _activeTweens.length = 0;
-  }
-};
-if (typeof window !== 'undefined') window.TWEEN = TWEEN;
-
-export function getWeaponHandNode() {
-  if (isSkinned2DMode && skinnedBones?.r_shoulder) {
-    return skinnedBones.r_shoulder;
-  }
-  if (combatArmCompound) {
-    return combatArmCompound;
-  }
-  if (playerArmPivot) {
-    return playerArmPivot;
-  }
-  if (is3DModelMode) {
-    return handNode || weaponSocket;
-  }
-  if (is2DMode) {
-    return weaponArmPivot;
-  }
-  return leftShoulderPivot || rightShoulderPivot;
-}
-
-/**
- * 2D Skeletal Slash Animation (Meta Animated Drawings style)
- * Animates r_shoulder and r_elbow bones with forward slashing arc.
- * Weapon mounted to r_hand naturally traces the full swinging path.
- */
 export function slashAnimation(onHit, onComplete) {
   let hitCalled = false;
   let completeCalled = false;
@@ -1331,33 +683,32 @@ export function slashAnimation(onHit, onComplete) {
   }
 
   const safetyTimer = setTimeout(() => {
-    console.warn('[player] Skeletal slash animation safety timeout');
     safeOnComplete();
-  }, 600);
+  }, 500);
 
-  // Phase 1: Wind-up (Giương kiếm) - 90ms: shoulder swings back/up, elbow flexes
+  // Phase 1: Lift arm up & back (Wind-up: 100ms)
   new TWEEN.Tween(rShoulder.rotation)
-    .to({ z: 0.95 }, 90)
+    .to({ z: 1.05 }, 100)
     .easing(TWEEN.Easing.Quadratic.Out)
     .start();
 
   new TWEEN.Tween(rElbow.rotation)
-    .to({ z: 0.65 }, 90)
+    .to({ z: 0.75 }, 100)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // Phase 2: Slash Strike (Chém bổ cực mạnh) - 120ms: shoulder whips forward/down, elbow extends
+      // Phase 2: Slash arm forward & down across (Strike: 120ms -> Deal damage to boss)
       new TWEEN.Tween(rShoulder.rotation)
-        .to({ z: -1.25 }, 120)
+        .to({ z: -1.35 }, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .start();
 
       new TWEEN.Tween(rElbow.rotation)
-        .to({ z: -0.25 }, 120)
+        .to({ z: -0.35 }, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           safeOnHit();
 
-          // Phase 3: Recover (Thu kiếm về thế thủ) - 100ms: return to base rotation
+          // Phase 3: Return to combat ready pose (100ms)
           new TWEEN.Tween(rShoulder.rotation)
             .to({ z: 0 }, 100)
             .easing(TWEEN.Easing.Quadratic.Out)
@@ -1377,150 +728,36 @@ export function slashAnimation(onHit, onComplete) {
     .start();
 }
 
-/**
- * Bulletproof 3-Pose Slash Motion (playGuaranteedPlayerSlash):
- * - If 2D Skeletal Rig is active -> delegates to slashAnimation()
- * - Otherwise:
- *   - Pose 1: Wind-up (Giương kiếm) -> 80ms (Quadratic.Out)
- *   - Pose 2: Strike Impact (Chém trúng) -> 120ms (Quadratic.In) -> triggers onHit()
- *   - Pose 3: Idle Guard (Thu kiếm về thế thủ) -> 100ms (Quadratic.Out) -> triggers onComplete()
- */
-export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
-  let pivot = combatArmCompound || playerArmPivot || getWeaponHandNode();
-  let onHit = null;
-  let onComplete = null;
-
-  if (arg1 && (arg1.isObject3D || arg1.rotation)) {
-    pivot = arg1;
-    onHit = arg2;
-    onComplete = arg3;
-  } else {
-    onHit = arg1;
-    onComplete = arg2;
-  }
-
-  let hitCalled = false;
-  let completeCalled = false;
-  const safeOnHit = () => {
-    if (!hitCalled) {
-      hitCalled = true;
-      if (onHit) onHit();
-    }
-  };
-  const safeOnComplete = () => {
-    if (!completeCalled) {
-      completeCalled = true;
-      safeOnHit();
-      if (onComplete) onComplete();
-    }
-  };
-
-  // If 2D skeletal skinned mesh is active, execute skeletal slash animation directly!
-  if (isSkinned2DMode && skinnedBones?.r_shoulder) {
-    return slashAnimation(safeOnHit, safeOnComplete);
-  }
-
-  if (!pivot) {
-    safeOnComplete();
-    return;
-  }
-
-  // Safety fallback timer to prevent combat turn from ever locking
-  const safetyTimer = setTimeout(() => {
-    console.warn('[player] Slash animation safety timeout triggered');
-    safeOnComplete();
-  }, 600);
-
-  const poses = _socketsConfig?.player?.slashPoses || _socketsConfig?.player?.slashKeyframes || {};
-
-  // Built-in fallback swing values in radians if custom poses do not exist
-  const FALLBACK_POSES = {
-    pose1: { x: -0.5, y: 0, z: 0.8 },
-    pose2: { x: 0.6, y: 0, z: -1.0 },
-    pose3: { x: 0, y: 0, z: -0.3 },
-  };
-
-  const getPoseRot = (p, fallback) => {
-    if (!p || (p.x === undefined && p.rotX === undefined && p.degX === undefined && p.z === undefined && p.rotZ === undefined && p.degZ === undefined)) {
-      return { ...fallback };
-    }
-    const rx = p.rotX ?? (p.x !== undefined ? p.x : ((p.degX ?? 0) * Math.PI / 180));
-    const ry = p.rotY ?? (p.y !== undefined ? p.y : ((p.degY ?? 0) * Math.PI / 180));
-    const rz = p.rotZ ?? (p.z !== undefined ? p.z : ((p.degZ ?? 0) * Math.PI / 180));
-    return { x: rx, y: ry, z: rz };
-  };
-
-  const rotPose1 = getPoseRot(poses.pose1, FALLBACK_POSES.pose1);
-  const rotPose2 = getPoseRot(poses.pose2, FALLBACK_POSES.pose2);
-  const rotPose3 = getPoseRot(poses.pose3, FALLBACK_POSES.pose3);
-
-  // Phase 1: Wind-up (Giương kiếm) - 80ms
-  new TWEEN.Tween(pivot.rotation)
-    .to(rotPose1, 80)
-    .easing(TWEEN.Easing.Quadratic.Out)
-    .onComplete(() => {
-      // Phase 2: Slash Strike (Chém bổ trúng) - 120ms -> Deal damage
-      new TWEEN.Tween(pivot.rotation)
-        .to(rotPose2, 120)
-        .easing(TWEEN.Easing.Quadratic.In)
-        .onComplete(() => {
-          safeOnHit();
-
-          // Phase 3: Recover / Idle Guard (Thu kiếm về thế thủ) - 100ms
-          new TWEEN.Tween(pivot.rotation)
-            .to(rotPose3, 100)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .onComplete(() => {
-              clearTimeout(safetyTimer);
-              safeOnComplete();
-            })
-            .start();
-        })
-        .start();
-    })
-    .start();
+export function playArmSwingSlash(pivot, onHit, onComplete) {
+  slashAnimation(onHit, onComplete);
 }
-export const playArmSwingSlash = playGuaranteedPlayerSlash;
-export const playSwordSlashAnimation = playGuaranteedPlayerSlash;
+export function playSwordSlashAnimation(pivot, onHit, onComplete) {
+  slashAnimation(onHit, onComplete);
+}
+export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
+  let onHit = typeof arg1 === 'function' ? arg1 : arg2;
+  let onComplete = typeof arg1 === 'function' ? arg2 : arg3;
+  slashAnimation(onHit, onComplete);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Combat Animation triggers
+// ─────────────────────────────────────────────────────────────────────────────
 export function playDodge(onDone) {
   if (!playerGroup) { if (onDone) onDone(); return; }
-  clearTimeout(window._combatSafetyTimer);
-  window._combatSafetyTimer = setTimeout(() => {
-    if (anim.active && anim.type === 'dodge') {
-      console.warn('[player] Combat safety timeout — releasing dodge');
-      _resetAll();
-      const cb = anim.onDone;
-      anim.active = false;
-      anim.onDone = null;
-      if (cb) cb();
-    }
-  }, 1200);
-
-  anim = {
-    active: true,
-    type: 'dodge',
-    t: 0,
-    duration: 0.45,
-    onHit: null,
-    onDone: onDone || null,
-    hitFired: false,
-    _hitEmitted: false,
-  };
+  anim = { active: true, type: 'dodge', t: 0, duration: 0.45,
+           onHit: null, onDone: onDone || null, hitFired: false, _hitEmitted: false };
 }
-export function playPunch()        { playAttack(null,null); }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMBAT — 4 distinct animation sequences
-// ─────────────────────────────────────────────────────────────────────────────
+export function playPunch() { playAttack(null, null); }
+
 export function playCombatAnimation(type = 'normal', { onHit, onDone } = {}) {
   if (!playerGroup) { if (onHit) onHit(); if (onDone) onDone(); return; }
-  const durations = { normal: 0.73, default: 0.73, thunder: 0.81, fire: 0.55, frost: 0.55 };
-  const dur = durations[type] || 0.73;
+  const dur = 0.75;
 
   clearTimeout(window._combatSafetyTimer);
   window._combatSafetyTimer = setTimeout(() => {
     if (anim.active) {
-      console.warn('[player] Combat safety timeout — releasing combatBusy');
       _resetAll();
       const cb = anim.onDone;
       anim.active = false;
@@ -1540,106 +777,54 @@ export function playAttack(onHitMoment, onDone) {
 
 export function playRushMiss(onDone) {
   if (!playerGroup) { if (onDone) onDone(); return; }
-  clearTimeout(window._combatSafetyTimer);
-  window._combatSafetyTimer = setTimeout(() => {
-    if (anim.active) {
-      console.warn('[player] Combat safety timeout fired (miss) — releasing combatBusy');
-      _resetAll(); anim.active = false;
-      if (anim.onDone) { const cb = anim.onDone; anim.onDone = null; cb(); }
-    }
-  }, 2500);
-  anim = { active:true, type:'miss', t:0, duration:0.85,
-           onHit:null, onDone:onDone||null, hitFired:false, _hitEmitted:false };
+  anim = { active: true, type: 'miss', t: 0, duration: 0.75,
+           onHit: null, onDone: onDone || null, hitFired: false, _hitEmitted: false };
 }
 
 export function playHurt(onDone) {
   if (!playerGroup) { if (onDone) onDone(); return; }
-  if (is3DModelMode) {
-    if (characterModel) {
-      characterModel.traverse((c) => {
-        if (c.isMesh && c.material) {
-          if (c._origColor === undefined && c.material.color) c._origColor = c.material.color.getHex();
-          if (c.material.color) c.material.color.setHex(0xFF3333);
-        }
-      });
-    }
-  } else if (is2DMode) {
-    if (bodyMesh?.material) bodyMesh.material.color.setHex(0xFF3333);
-  } else {
-    [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
-      if (m?.material) m.material.color.setHex(0xFF3333);
-    });
+  if (skinnedCharacterMesh?.material) {
+    skinnedCharacterMesh.material.color.setHex(0xFF3333);
+    setTimeout(() => {
+      if (skinnedCharacterMesh?.material) skinnedCharacterMesh.material.color.setHex(0xFFFFFF);
+    }, 250);
   }
-
-  // Stagger backward
-  playerGroup.position.x = HOME_X - 0.7;
-
-  let shakes = 0;
-  const iv = setInterval(() => {
-    if (playerGroup) playerGroup.position.x = (HOME_X - 0.7) + (Math.random()-0.5)*0.3;
-    if (++shakes >= 6) {
-      clearInterval(iv);
-      if (playerGroup) playerGroup.position.x = HOME_X;
+  let shakeTime = 0;
+  const origX = playerGroup.position.x;
+  const shakeInterval = setInterval(() => {
+    shakeTime += 0.05;
+    playerGroup.position.x = origX + (Math.random() - 0.5) * 0.35;
+    if (shakeTime >= 0.3) {
+      clearInterval(shakeInterval);
+      playerGroup.position.x = origX;
+      if (onDone) onDone();
     }
-  }, 45);
-
-  setTimeout(() => {
-    if (is3DModelMode) {
-      if (characterModel) {
-        characterModel.traverse((c) => {
-          if (c.isMesh && c.material && c._origColor !== undefined) {
-            c.material.color.setHex(c._origColor);
-          }
-        });
-      }
-    } else if (is2DMode) {
-      if (bodyMesh?.material) bodyMesh.material.color.setHex(0xFFFFFF);
-    } else {
-      [headMesh, torsoMesh, leftArm].filter(Boolean).forEach(m => {
-        if (m?.material) m.material.color.setHex(SKIN_TONE);
-      });
-      if (hatMat)   hatMat.color.setHex(getEquipColor('hat'));
-      if (shirtMat) shirtMat.color.setHex(getEquipColor('shirt'));
-    }
-    if (playerGroup) playerGroup.position.x = HOME_X;
-    if (onDone) onDone();
-  }, 350);
+  }, 30);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// UPDATE LOOP
+// Frame update
 // ─────────────────────────────────────────────────────────────────────────────
 export function updatePlayer(deltaTime, camera) {
   if (!playerGroup) return;
 
-  // Elemental aura
-  if (elementalAura) {
-    elementalAura.rotation.z += deltaTime * (activeElement==='frost' ? 1.5 : 2.8);
-    elementalAura.material.opacity = 0.5 + 0.25 * Math.sin(Date.now()*0.004);
+  // Update elemental particles
+  if (elementalParticles.length > 0) {
+    elementalParticles.forEach(p => {
+      p.position.y += p._speedY * deltaTime;
+      if (p.position.y > 3.5) p.position.y = 0;
+    });
   }
-  elementalParticles.forEach((sp,i) => {
-    const t = Date.now()*0.002 + i*1.1;
-    sp.position.x = Math.cos(t)*1.2;
-    sp.position.z = Math.sin(t)*0.5;
-    sp.position.y = Math.sin(t*0.8+i)*1.3;
-    sp.visible = Math.sin(t*3+i) > -0.3;
-  });
 
-  // Tick active sword slash tweens
-  TWEEN.update();
-
-  // Flame wave projectile travel
-  if (flameWaveActive && flameWave && flameWave.parent) {
-    flameWaveDX += deltaTime * 18;
-    // World X = HOME_X + fwd direction (player faces +X, so wave goes +X in world)
-    flameWave.position.x = HOME_X + 3.5 + flameWaveDX;
-    flameWave.rotation.z += deltaTime * 8;
-    if (!flameWave._hit && flameWave.position.x >= BOSS_X - 0.5) {
-      flameWave._hit = true;
-      if (!anim._hitEmitted) { anim._hitEmitted = true; if (anim.onHit) anim.onHit(); }
-    }
-    if (flameWave.position.x > BOSS_X + 5) {
-      flameWave.parent.remove(flameWave); flameWave = null; flameWaveActive = false;
+  // Update flame wave if active
+  if (flameWaveActive && flameWave) {
+    flameWaveDX += 14 * deltaTime;
+    flameWave.position.x = HOME_X + flameWaveDX;
+    flameWave.scale.x = 1.0 + flameWaveDX * 0.2;
+    flameWave.scale.y = 1.0 + flameWaveDX * 0.15;
+    if (flameWaveDX > (BOSS_X - HOME_X + 2)) {
+      flameWaveActive = false;
+      if (flameWave.parent) flameWave.parent.remove(flameWave);
     }
   }
 
@@ -1648,14 +833,22 @@ export function updatePlayer(deltaTime, camera) {
     const prog = Math.min(anim.t / anim.duration, 1.0);
 
     switch (anim.type) {
-      case 'normal':  _animNormal(prog, deltaTime);  break;
-      case 'default': _animNormal(prog, deltaTime);  break;
-      case 'thunder': _animThunder(prog, deltaTime); break;
-      case 'frost':   _animFrost(prog, deltaTime);   break;
-      case 'fire':    _animFire(prog, deltaTime);    break;
-      case 'miss':    _animMiss(prog, deltaTime);    break;
-      case 'dodge':   _animDodge(prog, deltaTime);   break;
-      default:        _animNormal(prog, deltaTime);  break;
+      case 'normal':
+      case 'default':
+      case 'thunder':
+      case 'frost':
+      case 'fire':
+        _animNormal(prog, deltaTime);
+        break;
+      case 'miss':
+        _animMiss(prog, deltaTime);
+        break;
+      case 'dodge':
+        _animDodge(prog, deltaTime);
+        break;
+      default:
+        _animNormal(prog, deltaTime);
+        break;
     }
 
     if (prog >= 1.0) {
@@ -1665,367 +858,79 @@ export function updatePlayer(deltaTime, camera) {
       anim.onDone = null;
       if (cb) cb();
     }
-
   } else {
-    if (is3DModelMode) {
-      playerGroup.position.x = HOME_X;
-      playerGroup.position.y = HOME_Y + Math.sin(Date.now() * 0.002) * 0.04;
-      playerGroup.rotation.y = 0;
-      if (playerArmPivot && !anim.active) {
-        playerArmPivot.rotation.set(0, 0, Math.sin(Date.now() * 0.002) * 0.03);
-      }
-    } else if (is2DMode) {
-      playerGroup.position.x = HOME_X;
-      playerGroup.position.y = HOME_Y;
-      playerGroup.rotation.y = 0;
-      const breath = Math.sin(Date.now() * 0.003) * 0.05;
-      if (bodyMesh) {
-        bodyMesh.position.y = breath;
-        bodyMesh.rotation.y = Math.PI / 6;
-      }
-      if (weaponArmPivot) {
-        weaponArmPivot.position.set(WEAPON_HAND_POS.x, WEAPON_HAND_POS.y + breath, WEAPON_HAND_POS.z);
-        weaponArmPivot.rotation.set(0, Math.PI / 6, WEAPON_READY_ROT_Z);
-      }
-    } else {
-      // Idle bob
-      playerGroup.position.x = HOME_X;
-      playerGroup.position.y = HOME_Y + Math.sin(Date.now()*0.0018)*0.06;
-      playerGroup.rotation.y = FACE_Y;
-      if (rightArm)           rightArm.rotation.x           =  Math.sin(Date.now()*0.0015)*0.06;
-      if (leftShoulderPivot)  leftShoulderPivot.rotation.x  = -Math.PI / 6 + Math.sin(Date.now()*0.0015)*0.06;
-    }
-  }
-
-  // ── Elemental sword glow pulse ─────────────────────────────────────────────
-  if (swordGroup) {
-    const now = Date.now();
-    if (activeElement === 'thunder' && swordGroup._thunderBlade) {
-      // Fast crackle flicker: rapid emissiveIntensity oscillation
-      const flicker = 2.0 + 1.5 * Math.abs(Math.sin(now * 0.018));
-      swordGroup._thunderBlade.forEach(m => {
-        if (m.material) m.material.emissiveIntensity = flicker;
-      });
-    } else if (activeElement === 'fire' && swordGroup._fireBlade) {
-      // Slow lava pulse
-      const pulse = 1.8 + 0.6 * Math.sin(now * 0.003);
-      if (swordGroup._fireBlade.material)  swordGroup._fireBlade.material.emissiveIntensity = pulse;
-      if (swordGroup._fireTip?.material)   swordGroup._fireTip.material.emissiveIntensity   = pulse + 1.0;
-    } else if (activeElement === 'frost' && swordGroup._iceBlade) {
-      // Gentle ice shimmer
-      const shimmer = 1.0 + 0.4 * Math.sin(now * 0.002);
-      swordGroup._iceBlade.forEach(m => {
-        if (m.material) m.material.emissiveIntensity = shimmer;
-      });
-    }
+    // Idle stance: Left side of arena standing tall, slight breathing bob
+    playerGroup.position.x = HOME_X;
+    playerGroup.position.y = HOME_Y + Math.sin(Date.now() * 0.002) * 0.04;
+    playerGroup.position.z = HOME_Z;
+    playerGroup.rotation.y = 0;
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ① NORMAL — Basic Slash (Chém Thường / Chưa đủ bộ)
-//   1. Lao vào (250ms, boss front)
-//   2. Chém xuống 75° (150ms, boss torso, -1 HP)
-//   3. Lùi về (250ms)
-// ═════════════════════════════════════════════════════════════════════════════
 function _animNormal(prog, dt) {
-  const ATTACK_X = BOSS_X - 1.2;
-  const pivot = getWeaponHandNode();
-
-  // 1. Dash to Boss (prog < 0.32)
-  if (prog < 0.32) {
-    const t = prog / 0.32;
+  const ATTACK_X = BOSS_X - 2.8;
+  // 1. Dash to Boss (prog < 0.3)
+  if (prog < 0.3) {
+    const t = prog / 0.3;
     playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
     playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.25;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 18);
-  } else if (prog < 0.64) {
-    // 2. Strike moment at Boss: trigger dedicated arm slashing swing
+  } else if (prog < 0.7) {
+    // 2. Strike moment at Boss: trigger 3-phase slash animation
     playerGroup.position.x = ATTACK_X;
     playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
     if (!anim._slashTriggered) {
       anim._slashTriggered = true;
-      playArmSwingSlash(pivot, () => {
-        if (!anim._hitEmitted) {
-          anim._hitEmitted = true;
-          if (anim.onHit) anim.onHit();
-        }
-      });
+      slashAnimation(
+        () => {
+          if (!anim._hitEmitted) {
+            anim._hitEmitted = true;
+            if (anim.onHit) anim.onHit();
+          }
+        },
+        () => {}
+      );
     }
-    const b = 1 + Math.sin((prog - 0.32) / 0.32 * Math.PI) * 0.12;
-    playerGroup.scale.set(b, 1 / b, 1);
   } else {
     // 3. Step back to origin
-    const t = (prog - 0.64) / 0.36;
+    const t = (prog - 0.7) / 0.3;
     playerGroup.position.x = THREE.MathUtils.lerp(ATTACK_X, HOME_X, t);
     playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.25;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    playerGroup.scale.set(1, 1, 1);
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 12);
-  }
-}
-function _animDefault(prog, dt) { _animNormal(prog, dt); }
-
-// ═════════════════════════════════════════════════════════════════════════════
-// ② THUNDER — Lôi Long Trảm (Full Set Sét)
-//   1. Bay lên cao (350ms, y+3.5, bossX-0.5)
-//   2. Bổ xuống (180ms, sword onto boss head, hit)
-//   3. Lùi về (280ms)
-// ═════════════════════════════════════════════════════════════════════════════
-function _animThunder(prog, dt) {
-  const APEX_X = BOSS_X - 0.5;
-  const APEX_Y = HOME_Y + 3.5;
-  const pivot = getWeaponHandNode();
-
-  if (prog < 0.43) {
-    // 1. Bay lên cao (350ms): leap high above Boss
-    const t = prog / 0.43;
-    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, APEX_X, t);
-    playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI * 0.5) * 3.5;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 10);
-  } else if (prog < 0.65) {
-    // 2. Bổ xuống chém cực mạnh (180ms): dive straight down, trigger arm swing slash onto boss head
-    const t = (prog - 0.43) / 0.22;
-    playerGroup.position.x = APEX_X;
-    playerGroup.position.y = APEX_Y - t * 3.5;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    if (!anim._slashTriggered) {
-      anim._slashTriggered = true;
-      playArmSwingSlash(pivot, () => {
-        if (!anim._hitEmitted) {
-          anim._hitEmitted = true;
-          if (anim.onHit) anim.onHit();
-        }
-      });
-    }
-    const b = 1 + Math.sin(t * Math.PI) * 0.12;
-    playerGroup.scale.set(b, 1 / b, 1);
-  } else {
-    // 3. Lùi về và trở về thế thủ (280ms)
-    const t = (prog - 0.65) / 0.35;
-    playerGroup.position.x = THREE.MathUtils.lerp(APEX_X, HOME_X, t);
-    playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 1.5;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    playerGroup.scale.set(1, 1, 1);
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 14);
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ③ FROST — Băng Tinh Trượt Trảm (Full Set Băng)
-//   1. Lướt chém: Glides quickly forward into Boss, slashes horizontally (200ms)
-//   2. Hold ngang kiếm (100ms)
-//   3. Lùi lại: Slides backward to original stance (250ms)
-// ═════════════════════════════════════════════════════════════════════════════
-function _animFrost(prog, dt) {
-  const ATTACK_X = BOSS_X - 0.8;
-  const pivot = getWeaponHandNode();
-
-  if (prog < 0.36) {
-    // 1. Lướt chém vào Boss (200ms)
-    const t = prog / 0.36;
-    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
-    playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    // Trigger arm slashing swing right as cutting through boss
-    if (!anim._slashTriggered && prog >= 0.18) {
-      anim._slashTriggered = true;
-      playArmSwingSlash(pivot, () => {
-        if (!anim._hitEmitted) {
-          anim._hitEmitted = true;
-          if (anim.onHit) anim.onHit();
-        }
-      });
-    }
-    const b = 1 + Math.sin(t * Math.PI) * 0.08;
-    playerGroup.scale.set(b, 1 / b, 1);
-  } else if (prog < 0.54) {
-    // 2. Hold pose (100ms)
-    playerGroup.position.x = ATTACK_X;
-    playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    playerGroup.scale.set(1, 1, 1);
-  } else {
-    // 3. Lùi lại về thế thủ (250ms)
-    const t = (prog - 0.54) / 0.46;
-    playerGroup.position.x = THREE.MathUtils.lerp(ATTACK_X, HOME_X, t);
-    playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    playerGroup.scale.set(1, 1, 1);
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 14);
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// ④ FIRE — Hỏa Luân Trảm (Full Set Lửa)
-//   1. Lướt tới Boss: Dash forward to Boss (ATTACK_X = BOSS_X - 1.2)
-//   2. Chém kiếm 3-pose slash strike
-//   3. Lùi về vị trí ban đầu
-// ═════════════════════════════════════════════════════════════════════════════
-function _animFire(prog, dt) {
-  const ATTACK_X = BOSS_X - 1.2;
-  const pivot = getWeaponHandNode();
-
-  if (prog < 0.35) {
-    // 1. Dash to Boss (ATTACK_X = BOSS_X - 1.2)
-    const t = prog / 0.35;
-    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
-    playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 14);
-  } else if (prog < 0.65) {
-    // 2. Play 3-pose slash strike at Boss
-    playerGroup.position.x = ATTACK_X;
-    playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    if (!anim._slashTriggered) {
-      anim._slashTriggered = true;
-      _spawnFlameWave();
-      playArmSwingSlash(pivot, () => {
-        if (!anim._hitEmitted) {
-          anim._hitEmitted = true;
-          if (anim.onHit) anim.onHit();
-        }
-      });
-    }
-    const b = 1 + Math.sin((prog - 0.35) / 0.30 * Math.PI) * 0.12;
-    playerGroup.scale.set(b, 1 / b, 1);
-  } else {
-    // 3. Dash back to origin
-    const t = (prog - 0.65) / 0.35;
-    playerGroup.position.x = THREE.MathUtils.lerp(ATTACK_X, HOME_X, t);
-    playerGroup.position.y = HOME_Y;
-    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    playerGroup.scale.set(1, 1, 1);
-    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 12);
-  }
-}
-
-function _spawnFlameWave() {
-  const waveGroup = new THREE.Group();
-  const waveCols  = [0xff4400, 0xff8800, 0xffcc00, 0xff2200];
-  for (let i=0; i<8; i++) {
-    const a = (i/8)*Math.PI;
-    const seg = makeBox(0.22,0.22,0.15, waveCols[i%waveCols.length]);
-    seg.position.set(Math.cos(a-Math.PI/2)*0.55, Math.sin(a-Math.PI/2)*0.55, 0);
-    waveGroup.add(seg);
-  }
-  waveGroup.add(makeBox(0.18,0.18,0.18, 0xffff00));
-  waveGroup.position.set(BOSS_X - 0.7, HOME_Y+0.6, 0);
-  // Add to scene (player's parent)
-  const sceneRef = playerGroup.parent;
-  if (sceneRef) sceneRef.add(waveGroup);
-  flameWave = waveGroup; flameWave._hit = false;
-  flameWaveDX = 0; flameWaveActive = true;
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// ⑤ MISS
-// ═════════════════════════════════════════════════════════════════════════════
 function _animMiss(prog, dt) {
-  const RUSH_X = HOME_X + (BOSS_X-HOME_X)*0.75;
-  if (is3DModelMode || is2DMode) {
-    const pivot = is3DModelMode ? weaponSocket : weaponArmPivot;
-    if (prog < 0.40) {
-      const t = prog / 0.40;
-      playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, RUSH_X, t);
-      playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.4;
-      playerGroup.rotation.y = 0;
-      if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(WEAPON_READY_ROT_Z, 0.35, t);
-    } else if (prog < 0.56) {
-      playerGroup.position.x = RUSH_X;
-      playerGroup.position.y = HOME_Y;
-      playerGroup.rotation.y = 0;
-      if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(0.35, -80 * Math.PI / 180, (prog - 0.40) / 0.16);
-    } else {
-      const t = (prog - 0.56) / 0.44;
-      playerGroup.position.x = THREE.MathUtils.lerp(RUSH_X, HOME_X, t);
-      playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.6;
-      playerGroup.rotation.y = 0;
-      if (pivot) pivot.rotation.z = THREE.MathUtils.lerp(-80 * Math.PI / 180, WEAPON_READY_ROT_Z, t);
-    }
-    return;
-  }
-  if (prog < 0.40) {
-    const t=prog/0.40;
-    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X,RUSH_X,t);
-    playerGroup.position.y = HOME_Y+Math.sin(t*Math.PI)*0.8;
-    playerGroup.rotation.y = FACE_Y;
-    _runLimbs(dt,18);
-    if (rightShoulderPivot) { rightShoulderPivot.rotation.x=THREE.MathUtils.lerp(0,-Math.PI/1.2,t); rightShoulderPivot.rotation.z=THREE.MathUtils.lerp(0,-0.3,t); }
-  } else if (prog < 0.56) {
-    playerGroup.position.x=RUSH_X; playerGroup.rotation.y=FACE_Y;
-    if (rightShoulderPivot) { rightShoulderPivot.rotation.x=Math.PI/3; rightShoulderPivot.rotation.z=0.2; }
+  const ATTACK_X = BOSS_X - 2.8;
+  if (prog < 0.4) {
+    const t = prog / 0.4;
+    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
+    playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.3;
   } else {
-    const t=(prog-0.56)/0.44;
-    playerGroup.position.x=THREE.MathUtils.lerp(RUSH_X,HOME_X,t);
-    playerGroup.position.y=HOME_Y+Math.sin(t*Math.PI)*1.0;
-    playerGroup.rotation.y=FACE_Y;
-    if (rightShoulderPivot) { rightShoulderPivot.rotation.x=THREE.MathUtils.lerp(Math.PI/3,0,t); rightShoulderPivot.rotation.z=THREE.MathUtils.lerp(0.2,0,t); }
-    _runLimbs(dt,12);
+    const t = (prog - 0.4) / 0.6;
+    playerGroup.position.x = THREE.MathUtils.lerp(ATTACK_X, HOME_X, t);
+    playerGroup.position.y = HOME_Y;
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ⑥ DODGE — Evasive Leap Back
-// ═════════════════════════════════════════════════════════════════════════════
 function _animDodge(prog, dt) {
-  const LEAP_BACK = -1.6;
-  const LEAP_UP   =  1.5;
-  const t = Math.sin(prog * Math.PI);
-  playerGroup.position.x = HOME_X + LEAP_BACK * t;
-  playerGroup.position.y = HOME_Y + LEAP_UP * t;
-  playerGroup.rotation.z = -0.35 * Math.sin(prog * Math.PI * 2);
-  if (is3DModelMode || is2DMode) {
-    playerGroup.rotation.y = 0;
+  if (prog < 0.5) {
+    const t = prog / 0.5;
+    playerGroup.position.x = HOME_X - Math.sin(t * Math.PI) * 1.5;
+    playerGroup.position.y = HOME_Y + Math.sin(t * Math.PI) * 0.8;
   } else {
-    playerGroup.rotation.y = FACE_Y;
+    const t = (prog - 0.5) / 0.5;
+    playerGroup.position.x = HOME_X - (1 - t) * 1.5;
+    playerGroup.position.y = HOME_Y + (1 - t) * 0.8;
   }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared helpers
-// ─────────────────────────────────────────────────────────────────────────────
-function _runLimbs(dt, speed) {
-  walkCycle += dt*speed;
-  if (leftLeg)  leftLeg.rotation.x  =  Math.sin(walkCycle)*0.65;
-  if (rightLeg) rightLeg.rotation.x = -Math.sin(walkCycle)*0.65;
-  if (leftArm)  leftArm.rotation.x  = -Math.sin(walkCycle)*0.45;
 }
 
 function _resetAll() {
-  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  playerGroup.rotation.set(0, (is3DModelMode || is2DMode) ? 0 : FACE_Y, 0);
-  playerGroup.scale.set(1, 1, 1);
-  if (is3DModelMode) {
-    if (characterRoot) characterRoot.rotation.set(0, Math.PI / 2, 0);
-    if (handNode && handNode._baseRotZ !== undefined) handNode.rotation.z = handNode._baseRotZ;
-    if (playerArmPivot) playerArmPivot.rotation.set(0, 0, 0);
-  } else if (is2DMode) {
-    if (bodyMesh) {
-      bodyMesh.position.set(0, 0, 0);
-      bodyMesh.rotation.set(0, Math.PI / 6, 0);
-    }
-    if (weaponArmPivot) {
-      weaponArmPivot.position.set(WEAPON_HAND_POS.x, WEAPON_HAND_POS.y, WEAPON_HAND_POS.z);
-      weaponArmPivot.rotation.set(0, Math.PI / 6, WEAPON_READY_ROT_Z);
-    }
-    if (skinnedBones) {
-      if (skinnedBones.r_shoulder) skinnedBones.r_shoulder.rotation.set(0, 0, 0);
-      if (skinnedBones.r_elbow) skinnedBones.r_elbow.rotation.set(0, 0, 0);
-    }
-  } else {
-    if (leftLeg)            leftLeg.rotation.x            = 0;
-    if (rightLeg)           rightLeg.rotation.x           = 0;
-    if (rightArm)           rightArm.rotation.x           = 0;
-    if (leftShoulderPivot)  { leftShoulderPivot.rotation.x = -Math.PI / 6; leftShoulderPivot.rotation.z = 0; }
+  if (playerGroup) {
+    playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+    playerGroup.rotation.set(0, 0, 0);
   }
-  walkCycle = 0;
-  if (anim) anim._slashTriggered = false;
-  // Clean up stray flame wave
-  if (flameWave && flameWave.parent) { flameWave.parent.remove(flameWave); }
-  flameWave = null; flameWaveActive = false; flameWaveDX = 0;
+  if (skinnedBones?.r_shoulder) skinnedBones.r_shoulder.rotation.set(0, 0, 0);
+  if (skinnedBones?.r_elbow) skinnedBones.r_elbow.rotation.set(0, 0, 0);
+  if (skinnedCharacterMesh) skinnedCharacterMesh.updateMatrixWorld(true);
 }
 
 export function resetPlayerState() {
@@ -2034,6 +939,5 @@ export function resetPlayerState() {
   anim.t = 0;
   anim.duration = 0;
   anim._hitEmitted = false;
-  if (playerGroup) _resetAll();
+  _resetAll();
 }
-
