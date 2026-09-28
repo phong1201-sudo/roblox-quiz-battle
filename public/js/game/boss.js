@@ -1,14 +1,6 @@
-// THREE is available as a global from the CDN script tag
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
 import * as Effects from './effects.js';
 import * as Audio from '../audio.js';
-
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-
-const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(dracoLoader);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Boss Roster — 3 elemental stages + 1 bonus
@@ -761,11 +753,18 @@ function buildShadowKing(d) {
 
 
 
-// ─── 3D Model & 2.5D Asset Loader for Bosses ─────────────────────────────────
 function _loadGLTF(url) {
   return new Promise((resolve) => {
     try {
-      gltfLoader.load(
+      const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
+        ? THREE.GLTFLoader
+        : (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+      if (!GLTFLoaderClass) {
+        console.warn('[boss] GLTFLoader not available');
+        return resolve(null);
+      }
+      const loader = new GLTFLoaderClass();
+      loader.load(
         url,
         (gltf) => {
           console.log('[boss] Loaded GLTF model:', url);
