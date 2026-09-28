@@ -461,8 +461,12 @@ export function initModelCalibrator() {
   });
 }
 
-// Compatibility alias
+// Compatibility aliases
 export function initBrushCalibrator() {
   initModelCalibrator();
+}
+
+export function initVisualSocketCalibrator(opts) {
+  initModelCalibrator(opts);
 }
 

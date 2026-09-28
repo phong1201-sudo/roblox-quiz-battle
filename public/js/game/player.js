@@ -457,6 +457,47 @@ export function playArmSwingSlash(onHit, onDone) {
   playCombatAnimation(activeElement || 'normal', { onHit, onDone });
 }
 
+/**
+ * Executes the sword slashing motion for player
+ */
+export function playSwordSlashAnimation(onHit, onComplete) {
+  if (typeof playGuaranteedPlayerSlash === 'function') {
+    return playGuaranteedPlayerSlash(onHit, onComplete);
+  }
+
+  // Fallback safe implementation
+  const arm = combatArmCompound || playerArmPivot || (typeof window !== 'undefined' ? (window.playerArmPivot || window.playerModel) : null);
+  if (!arm || typeof TWEEN === 'undefined') {
+    if (onHit) onHit();
+    if (onComplete) onComplete();
+    return;
+  }
+
+  // 1. Wind-up
+  new TWEEN.Tween(arm.rotation)
+    .to({ z: Math.PI / 3, x: -Math.PI / 6 }, 100)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onComplete(() => {
+      // 2. Downward Slash Strike
+      new TWEEN.Tween(arm.rotation)
+        .to({ z: -Math.PI / 3, x: Math.PI / 4 }, 120)
+        .easing(TWEEN.Easing.Quadratic.In)
+        .onComplete(() => {
+          if (onHit) onHit();
+
+          // 3. Return to ready stance
+          new TWEEN.Tween(arm.rotation)
+            .to({ z: 0, x: 0 }, 100)
+            .onComplete(() => {
+              if (onComplete) onComplete();
+            })
+            .start();
+        })
+        .start();
+    })
+    .start();
+}
+
 export function playAttack(onDone) {
   playCombatAnimation(activeElement || 'normal', { onDone });
 }
