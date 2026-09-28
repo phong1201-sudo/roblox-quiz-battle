@@ -1463,16 +1463,51 @@ function _buildAdminDashboard(container, gameState) {
   btnSave.innerHTML = '💾 LƯU KHỚP';
   btnSave.style.cssText = 'font-size:10px;font-weight:800;padding:6px 14px;border-radius:6px;background:linear-gradient(135deg,#06d6a0,#00b4d8);color:#000;border:none;cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;box-shadow:0 0 10px rgba(6,214,160,0.4);';
 
-  const linkFullscreen = document.createElement('a');
-  linkFullscreen.href = '/admin.html';
-  linkFullscreen.target = '_blank';
-  linkFullscreen.textContent = '🔗 Toàn Màn Hình';
-  linkFullscreen.style.cssText = 'font-size:10px;color:#00cfff;text-decoration:none;padding:5px 8px;border:1px solid rgba(0,207,255,0.4);border-radius:6px;background:rgba(0,207,255,0.1);';
+  const btnOpenModal = document.createElement('button');
+  btnOpenModal.type = 'button';
+  btnOpenModal.textContent = '🛠️ Studio Cân Chỉnh (In-Page)';
+  btnOpenModal.style.cssText = 'font-size:10px;font-weight:700;color:#00cfff;padding:5px 10px;border:1px solid rgba(0,207,255,0.4);border-radius:6px;background:rgba(0,207,255,0.12);cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;transition:all 0.2s;';
+  btnOpenModal.addEventListener('mouseenter', () => { btnOpenModal.style.background = 'rgba(0,207,255,0.25)'; });
+  btnOpenModal.addEventListener('mouseleave', () => { btnOpenModal.style.background = 'rgba(0,207,255,0.12)'; });
+
+  btnOpenModal.addEventListener('click', () => {
+    let modal = document.getElementById('admin-calib-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'admin-calib-modal';
+      modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.88);z-index:99999;display:flex;flex-direction:column;backdrop-filter:blur(6px);';
+
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#0f172a;border-bottom:2px solid #00b4d8;color:#fff;box-shadow:0 4px 15px rgba(0,0,0,0.5);';
+      header.innerHTML = `
+        <div style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:10px;font-family:'Be Vietnam Pro',sans-serif;">
+          <span style="font-size:18px;">🛠️</span> Admin Studio Cân Chỉnh Khung Xương 2D & Socket 3D
+        </div>
+      `;
+      const btnClose = document.createElement('button');
+      btnClose.textContent = '✕ ĐÓNG STUDIO';
+      btnClose.style.cssText = 'background:#ef4444;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:800;font-size:11px;font-family:"Be Vietnam Pro",sans-serif;box-shadow:0 0 10px rgba(239,68,68,0.4);';
+      btnClose.onclick = () => { modal.style.display = 'none'; };
+      header.appendChild(btnClose);
+      modal.appendChild(header);
+
+      const iframe = document.createElement('iframe');
+      iframe.src = '/admin.html';
+      iframe.style.cssText = 'flex:1;width:100%;border:none;background:#080c16;';
+      modal.appendChild(iframe);
+
+      document.body.appendChild(modal);
+    } else {
+      modal.style.display = 'flex';
+      const iframe = modal.querySelector('iframe');
+      if (iframe) iframe.src = '/admin.html';
+    }
+  });
 
   calibBtnGroup.appendChild(btnTest);
   calibBtnGroup.appendChild(btnReset);
   calibBtnGroup.appendChild(btnSave);
-  calibBtnGroup.appendChild(linkFullscreen);
+  calibBtnGroup.appendChild(btnOpenModal);
 
   calibHeaderRow.appendChild(selectTargetEl);
   calibHeaderRow.appendChild(calibBtnGroup);

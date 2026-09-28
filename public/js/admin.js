@@ -1370,9 +1370,10 @@ export function initStandaloneCalibrator() {
 // 2D SKELETAL RIGGING UI (Meta Animated Drawings style)
 // ─────────────────────────────────────────────────────────────────────────────
 export function initSkeletonCalibrator() {
+  const container = document.getElementById('skeleton-three-container');
   const canvas = document.getElementById('skeleton-canvas');
   const img = document.getElementById('skeleton-target-img');
-  if (!canvas || !img) return null;
+  if (!canvas || !img || !container) return null;
 
   const ctx = canvas.getContext('2d');
 
@@ -1412,10 +1413,19 @@ export function initSkeletonCalibrator() {
 
   const DEFAULT_SKELETON = JSON.parse(JSON.stringify(skeletonData));
 
+  const BONE_KEYS = [
+    'hip', 'torso', 'neck', 'head',
+    'l_shoulder', 'l_elbow', 'l_hand',
+    'r_shoulder', 'r_elbow', 'r_hand',
+    'l_knee', 'l_foot', 'r_knee', 'r_foot'
+  ];
+
+  const characterWidth = 2.4;
+  const characterHeight = 3.2;
+
   let activeDragNode = null;
   let hoveredNode = null;
   let isTestingSlash = false;
-  let testAnimOffset = { r_shoulder: { x: 0, y: 0 }, r_elbow: { x: 0, y: 0 }, r_hand: { x: 0, y: 0 } };
 
   const hudSelected = document.getElementById('hud-skel-selected');
   const hudRHand    = document.getElementById('hud-skel-rhand');
@@ -1428,7 +1438,286 @@ export function initSkeletonCalibrator() {
   const toastEl     = document.getElementById('toast-skeleton');
   const fileInput   = document.getElementById('input-skel-upload');
 
-  // Load saved skeleton from server
+  // ── Three.js Scene Setup ─────────────────────────────────────────────────────
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x070a13);
+
+  const initW = container.clientWidth || 480;
+  const initH = container.clientHeight || 580;
+
+  const camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 100);
+  camera.position.set(0, 0, 4.4);
+  camera.lookAt(0, 0, 0);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+  scene.add(ambientLight);
+
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setSize(initW, initH);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  container.innerHTML = '';
+  container.appendChild(renderer.domElement);
+
+  let currentTexture = null;
+  let skinnedMesh = null;
+  let skeleton = null;
+  let boneMap = {};
+  let weaponMesh = null;
+
+  function normToLocal(nx, ny) {
+    return {
+      x: (nx - 0.5) * characterWidth,
+      y: (0.5 - ny) * characterHeight,
+      z: 0
+    };
+  }
+
+  const _vProj = new THREE.Vector3();
+  function worldToCanvas(worldPos) {
+    _vProj.copy(worldPos);
+    _vProj.project(camera);
+    return {
+      x: (_vProj.x * 0.5 + 0.5) * canvas.width,
+      y: (-_vProj.y * 0.5 + 0.5) * canvas.height
+    };
+  }
+
+  const _raycaster = new THREE.Raycaster();
+  const _planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  const _mouseNDC = new THREE.Vector2();
+  const _intersectPoint = new THREE.Vector3();
+
+  function canvasToNorm(cx, cy) {
+    const rect = canvas.getBoundingClientRect();
+    _mouseNDC.x = (cx / rect.width) * 2 - 1;
+    _mouseNDC.y = - (cy / rect.height) * 2 + 1;
+    _raycaster.setFromCamera(_mouseNDC, camera);
+    if (_raycaster.ray.intersectPlane(_planeZ, _intersectPoint)) {
+      const nx = _intersectPoint.x / characterWidth + 0.5;
+      const ny = 0.5 - _intersectPoint.y / characterHeight;
+      return {
+        x: Math.max(0.01, Math.min(0.99, Math.round(nx * 1000) / 1000)),
+        y: Math.max(0.01, Math.min(0.99, Math.round(ny * 1000) / 1000))
+      };
+    }
+    return {
+      x: Math.max(0.01, Math.min(0.99, cx / rect.width)),
+      y: Math.max(0.01, Math.min(0.99, cy / rect.height))
+    };
+  }
+
+  // ── 2D SkinnedMesh Builder with Linear Blend Skinning (LBS) ───────────────────
+  function buildSkinnedMesh(texture) {
+    if (skinnedMesh) {
+      scene.remove(skinnedMesh);
+      if (skinnedMesh.geometry) skinnedMesh.geometry.dispose();
+      skinnedMesh = null;
+    }
+
+    const geometry = new THREE.PlaneGeometry(characterWidth, characterHeight, 32, 32);
+
+    const boneLocs = {};
+    for (const k of BONE_KEYS) {
+      const n = skeletonData.nodes[k] || DEFAULT_SKELETON.nodes[k] || { x: 0.5, y: 0.5 };
+      boneLocs[k] = normToLocal(n.x, n.y);
+    }
+
+    boneMap = {};
+    const bonesArray = [];
+    for (const k of BONE_KEYS) {
+      const bone = new THREE.Bone();
+      bone.name = 'Bone_' + k;
+      boneMap[k] = bone;
+      bonesArray.push(bone);
+    }
+
+    boneMap.hip.position.set(boneLocs.hip.x, boneLocs.hip.y, 0);
+
+    function attachChild(parentKey, childKey) {
+      const pBone = boneMap[parentKey];
+      const cBone = boneMap[childKey];
+      cBone.position.set(
+        boneLocs[childKey].x - boneLocs[parentKey].x,
+        boneLocs[childKey].y - boneLocs[parentKey].y,
+        0
+      );
+      pBone.add(cBone);
+    }
+
+    attachChild('hip', 'torso');
+    attachChild('torso', 'neck');
+    attachChild('neck', 'head');
+
+    attachChild('neck', 'l_shoulder');
+    attachChild('l_shoulder', 'l_elbow');
+    attachChild('l_elbow', 'l_hand');
+
+    attachChild('neck', 'r_shoulder');
+    attachChild('r_shoulder', 'r_elbow');
+    attachChild('r_elbow', 'r_hand');
+
+    attachChild('hip', 'l_knee');
+    attachChild('l_knee', 'l_foot');
+
+    attachChild('hip', 'r_knee');
+    attachChild('r_knee', 'r_foot');
+
+    function distToSegment(px, py, x1, y1, x2, y2) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+      let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+    }
+
+    function getDistToBone(boneKey, vx, vy) {
+      switch (boneKey) {
+        case 'r_shoulder':
+          return distToSegment(vx, vy, boneLocs.r_shoulder.x, boneLocs.r_shoulder.y, boneLocs.r_elbow.x, boneLocs.r_elbow.y);
+        case 'r_elbow':
+          return distToSegment(vx, vy, boneLocs.r_elbow.x, boneLocs.r_elbow.y, boneLocs.r_hand.x, boneLocs.r_hand.y);
+        case 'r_hand':
+          return Math.hypot(vx - boneLocs.r_hand.x, vy - boneLocs.r_hand.y);
+        case 'l_shoulder':
+          return distToSegment(vx, vy, boneLocs.l_shoulder.x, boneLocs.l_shoulder.y, boneLocs.l_elbow.x, boneLocs.l_elbow.y);
+        case 'l_elbow':
+          return distToSegment(vx, vy, boneLocs.l_elbow.x, boneLocs.l_elbow.y, boneLocs.l_hand.x, boneLocs.l_hand.y);
+        case 'l_hand':
+          return Math.hypot(vx - boneLocs.l_hand.x, vy - boneLocs.l_hand.y);
+        case 'head':
+          return distToSegment(vx, vy, boneLocs.neck.x, boneLocs.neck.y, boneLocs.head.x, boneLocs.head.y);
+        case 'neck':
+          return Math.hypot(vx - boneLocs.neck.x, vy - boneLocs.neck.y);
+        case 'torso':
+          return Math.min(
+            distToSegment(vx, vy, boneLocs.hip.x, boneLocs.hip.y, boneLocs.torso.x, boneLocs.torso.y),
+            distToSegment(vx, vy, boneLocs.torso.x, boneLocs.torso.y, boneLocs.neck.x, boneLocs.neck.y)
+          );
+        case 'hip':
+          return Math.hypot(vx - boneLocs.hip.x, vy - boneLocs.hip.y);
+        case 'l_knee':
+          return distToSegment(vx, vy, boneLocs.hip.x, boneLocs.hip.y, boneLocs.l_knee.x, boneLocs.l_knee.y);
+        case 'l_foot':
+          return distToSegment(vx, vy, boneLocs.l_knee.x, boneLocs.l_knee.y, boneLocs.l_foot.x, boneLocs.l_foot.y);
+        case 'r_knee':
+          return distToSegment(vx, vy, boneLocs.hip.x, boneLocs.hip.y, boneLocs.r_knee.x, boneLocs.r_knee.y);
+        case 'r_foot':
+          return distToSegment(vx, vy, boneLocs.r_knee.x, boneLocs.r_knee.y, boneLocs.r_foot.x, boneLocs.r_foot.y);
+        default:
+          return Math.hypot(vx - boneLocs[boneKey].x, vy - boneLocs[boneKey].y);
+      }
+    }
+
+    const posAttr = geometry.attributes.position;
+    const skinIndices = [];
+    const skinWeights = [];
+
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vy = posAttr.getY(i);
+
+      const distList = [];
+      for (let b = 0; b < BONE_KEYS.length; b++) {
+        const k = BONE_KEYS[b];
+        const d = getDistToBone(k, vx, vy);
+        distList.push({ index: b, dist: d });
+      }
+      distList.sort((a, b) => a.dist - b.dist);
+
+      const b0 = distList[0].index;
+      const d0 = distList[0].dist;
+      const b1 = distList[1].index;
+      const d1 = distList[1].dist;
+
+      const w0 = 1.0 / Math.pow(Math.max(d0, 0.025), 3.0);
+      const w1 = 1.0 / Math.pow(Math.max(d1, 0.025), 3.0);
+      const sum = w0 + w1;
+
+      skinIndices.push(b0, b1, 0, 0);
+      skinWeights.push(w0 / sum, w1 / sum, 0, 0);
+    }
+
+    geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+    geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      alphaTest: 0.05
+    });
+
+    skinnedMesh = new THREE.SkinnedMesh(geometry, material);
+    skinnedMesh.add(boneMap.hip);
+    skinnedMesh.updateMatrixWorld(true);
+
+    skeleton = new THREE.Skeleton(bonesArray);
+    skeleton.calculateInverses();
+    skinnedMesh.bind(skeleton);
+
+    // Attach 2D sword to r_hand
+    const weaponWidth = 0.85;
+    const weaponHeight = 2.2;
+    const wGeo = new THREE.PlaneGeometry(weaponWidth, weaponHeight);
+    wGeo.translate(0, weaponHeight / 2, 0);
+    const wMat = new THREE.MeshBasicMaterial({
+      color: 0xff4400,
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+    new THREE.TextureLoader().load('/assets/characters/fireblade(cho%20game)_weapon.png', (wTex) => {
+      wMat.map = wTex;
+      wMat.color.setHex(0xffffff);
+      wMat.needsUpdate = true;
+    }, undefined, () => {});
+
+    weaponMesh = new THREE.Mesh(wGeo, wMat);
+    weaponMesh.position.set(0, 0, 0.02);
+    weaponMesh.rotation.set(0, 0, -Math.PI / 4);
+    boneMap.r_hand.add(weaponMesh);
+
+    scene.add(skinnedMesh);
+    skinnedMesh.updateMatrixWorld(true);
+  }
+
+  const texLoader = new THREE.TextureLoader();
+  function loadTexture(url) {
+    texLoader.load(url, (tex) => {
+      currentTexture = tex;
+      buildSkinnedMesh(tex);
+      redraw();
+    }, undefined, () => {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 680;
+      const ctx2 = c.getContext('2d');
+      ctx2.fillStyle = '#ff4400';
+      ctx2.fillRect(166, 180, 180, 240);
+      const fallbackTex = new THREE.CanvasTexture(c);
+      currentTexture = fallbackTex;
+      buildSkinnedMesh(fallbackTex);
+      redraw();
+    });
+  }
+
+  // Load initial texture
+  loadTexture(img.src || '/assets/characters/fireblade(cho%20game)_0.jpg');
+
+  // Load saved skeleton from localStorage or server
+  try {
+    const cached = localStorage.getItem('rigged_skeleton');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.nodes) {
+        skeletonData.nodes = { ...skeletonData.nodes, ...parsed.nodes };
+        if (parsed.links) skeletonData.links = parsed.links;
+        syncUI();
+      }
+    }
+  } catch (e) {}
+
   fetch('/api/admin/skeleton')
     .then(r => r.json())
     .then(data => {
@@ -1436,26 +1725,34 @@ export function initSkeletonCalibrator() {
         skeletonData.nodes = { ...skeletonData.nodes, ...data.nodes };
         if (data.links) skeletonData.links = data.links;
         syncUI();
+        if (currentTexture) buildSkinnedMesh(currentTexture);
         redraw();
       }
     })
     .catch(() => {});
 
-  function resizeCanvasToImage() {
-    const rect = img.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      canvas.width = Math.round(rect.width);
-      canvas.height = Math.round(rect.height);
+  function resizeViewport() {
+    const wrap = document.getElementById('skeleton-stage-wrap');
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width) || 480;
+    const h = Math.round(rect.height) || 580;
+    if (w > 0 && h > 0) {
+      canvas.width = w;
+      canvas.height = h;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      if (skinnedMesh) skinnedMesh.updateMatrixWorld(true);
       redraw();
     }
   }
 
-  img.addEventListener('load', resizeCanvasToImage);
-  window.addEventListener('resize', resizeCanvasToImage);
+  window.addEventListener('resize', resizeViewport);
   window.addEventListener('skeleton-tab-activated', () => {
-    setTimeout(resizeCanvasToImage, 60);
+    setTimeout(resizeViewport, 60);
   });
-  if (img.complete) setTimeout(resizeCanvasToImage, 50);
+  setTimeout(resizeViewport, 80);
 
   function getNodeColor(name) {
     if (name === 'r_hand') return '#ff4500';
@@ -1465,58 +1762,51 @@ export function initSkeletonCalibrator() {
     return '#00e5ff';
   }
 
+  const _boneWorldPos = new THREE.Vector3();
+  function getBoneCanvasCoords(name) {
+    if (boneMap[name] && skinnedMesh) {
+      skinnedMesh.updateMatrixWorld(true);
+      boneMap[name].getWorldPosition(_boneWorldPos);
+      return worldToCanvas(_boneWorldPos);
+    }
+    const n = skeletonData.nodes[name] || { x: 0.5, y: 0.5 };
+    return { x: n.x * canvas.width, y: n.y * canvas.height };
+  }
+
   function redraw() {
     if (!canvas.width || !canvas.height) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const w = canvas.width;
-    const h = canvas.height;
 
     // Draw link bones
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
     for (const [from, to] of skeletonData.links) {
-      const n1 = skeletonData.nodes[from];
-      const n2 = skeletonData.nodes[to];
-      if (!n1 || !n2) continue;
-
-      let p1x = n1.x * w;
-      let p1y = n1.y * h;
-      let p2x = n2.x * w;
-      let p2y = n2.y * h;
-
-      if (isTestingSlash) {
-        if (testAnimOffset[from]) { p1x += testAnimOffset[from].x * w; p1y += testAnimOffset[from].y * h; }
-        if (testAnimOffset[to])   { p2x += testAnimOffset[to].x * w;   p2y += testAnimOffset[to].y * h; }
-      }
+      const p1 = getBoneCanvasCoords(from);
+      const p2 = getBoneCanvasCoords(to);
 
       // Outer bone glow
       ctx.beginPath();
-      ctx.moveTo(p1x, p1y);
-      ctx.lineTo(p2x, p2y);
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
       ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
       ctx.lineWidth = 6;
       ctx.stroke();
 
       // Inner bone line
       ctx.beginPath();
-      ctx.moveTo(p1x, p1y);
-      ctx.lineTo(p2x, p2y);
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
       ctx.strokeStyle = '#e0f2fe';
       ctx.lineWidth = 2.5;
       ctx.stroke();
     }
 
-    // Draw nodes
+    // Draw joints
     for (const [name, node] of Object.entries(skeletonData.nodes)) {
-      let nx = node.x * w;
-      let ny = node.y * h;
-
-      if (isTestingSlash && testAnimOffset[name]) {
-        nx += testAnimOffset[name].x * w;
-        ny += testAnimOffset[name].y * h;
-      }
+      const pt = getBoneCanvasCoords(name);
+      const nx = pt.x;
+      const ny = pt.y;
 
       const isHovered = (name === hoveredNode);
       const isDragged = (name === activeDragNode);
@@ -1571,15 +1861,12 @@ export function initSkeletonCalibrator() {
   }
 
   function findNodeUnder(x, y) {
-    const w = canvas.width;
-    const h = canvas.height;
     let closestName = null;
-    let minDist = 18;
+    let minDist = 22;
 
-    for (const [name, node] of Object.entries(skeletonData.nodes)) {
-      const nx = node.x * w;
-      const ny = node.y * h;
-      const d = Math.hypot(x - nx, y - ny);
+    for (const name of Object.keys(skeletonData.nodes)) {
+      const pt = getBoneCanvasCoords(name);
+      const d = Math.hypot(x - pt.x, y - pt.y);
       if (d < minDist) {
         minDist = d;
         closestName = name;
@@ -1604,16 +1891,18 @@ export function initSkeletonCalibrator() {
   canvas.addEventListener('pointermove', (e) => {
     const { x, y } = getCanvasCoords(e);
     if (activeDragNode) {
-      const normX = Math.max(0.01, Math.min(0.99, x / canvas.width));
-      const normY = Math.max(0.01, Math.min(0.99, y / canvas.height));
-      skeletonData.nodes[activeDragNode] = {
-        x: Math.round(normX * 1000) / 1000,
-        y: Math.round(normY * 1000) / 1000
-      };
+      const norm = canvasToNorm(x, y);
+      skeletonData.nodes[activeDragNode] = norm;
+
       if (activeDragNode === 'r_hand' && hudRHand) {
-        hudRHand.textContent = `(${skeletonData.nodes.r_hand.x.toFixed(2)}, ${skeletonData.nodes.r_hand.y.toFixed(2)})`;
+        hudRHand.textContent = `(${norm.x.toFixed(2)}, ${norm.y.toFixed(2)})`;
       }
       syncNodeItem(activeDragNode);
+
+      // Rebuild skinned mesh in real time so vertices update dynamically
+      if (currentTexture) {
+        buildSkinnedMesh(currentTexture);
+      }
       redraw();
     } else {
       const hit = findNodeUnder(x, y);
@@ -1630,6 +1919,9 @@ export function initSkeletonCalibrator() {
       try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
       activeDragNode = null;
       canvas.style.cursor = hoveredNode ? 'grab' : 'crosshair';
+      if (currentTexture) {
+        buildSkinnedMesh(currentTexture);
+      }
       redraw();
     }
   };
@@ -1642,7 +1934,7 @@ export function initSkeletonCalibrator() {
     for (const [name, node] of Object.entries(skeletonData.nodes)) {
       const item = document.createElement('div');
       item.id = `skel-node-item-${name}`;
-      item.style.cssText = 'background:#1e293b; padding:4px 6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border:1px solid #334155;';
+      item.style.cssText = 'background:#1e293b; padding:4px 6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border:1px solid #344155;';
       item.innerHTML = `
         <span style="font-weight:700; color:${getNodeColor(name)};">${name}</span>
         <span style="font-family:monospace; color:#94a3b8;">(${node.x.toFixed(2)}, ${node.y.toFixed(2)})</span>
@@ -1682,6 +1974,7 @@ export function initSkeletonCalibrator() {
       ['fire', 'thunder', 'frost'].forEach(k => document.getElementById(`btn-skel-preset-${k}`)?.classList.remove('active'));
       btn.classList.add('active');
       img.src = presets[el];
+      loadTexture(presets[el]);
     });
   });
 
@@ -1692,6 +1985,7 @@ export function initSkeletonCalibrator() {
       const reader = new FileReader();
       reader.onload = (evt) => {
         img.src = evt.target.result;
+        loadTexture(evt.target.result);
       };
       reader.readAsDataURL(file);
     }
@@ -1701,50 +1995,52 @@ export function initSkeletonCalibrator() {
   btnReset?.addEventListener('click', () => {
     skeletonData.nodes = JSON.parse(JSON.stringify(DEFAULT_SKELETON.nodes));
     syncUI();
+    if (currentTexture) buildSkinnedMesh(currentTexture);
     redraw();
   });
 
-  // Test Slash Animation in 2D
+  // Test Slash Animation in 3D WebGL SkinnedMesh
   btnTestSlash?.addEventListener('click', () => {
-    if (isTestingSlash) return;
+    if (isTestingSlash || !boneMap.r_shoulder || !boneMap.r_elbow) return;
     isTestingSlash = true;
 
-    let startTime = performance.now();
+    const startTime = performance.now();
     const duration = 650;
+
+    const origShoulderZ = boneMap.r_shoulder.rotation.z;
+    const origElbowZ = boneMap.r_elbow.rotation.z;
 
     function animateSlash(now) {
       const elapsed = now - startTime;
       const prog = Math.min(1.0, elapsed / duration);
 
       if (prog < 0.3) {
-        // Wind-up: shoulder back, elbow bent
+        // Wind-up: shoulder raises back, elbow bends
         const t = prog / 0.3;
-        testAnimOffset.r_shoulder = { x: -0.04 * t, y: -0.05 * t };
-        testAnimOffset.r_elbow    = { x: -0.08 * t, y: -0.09 * t };
-        testAnimOffset.r_hand     = { x: -0.14 * t, y: -0.15 * t };
+        boneMap.r_shoulder.rotation.z = origShoulderZ + 0.8 * t;
+        boneMap.r_elbow.rotation.z    = origElbowZ + 0.5 * t;
       } else if (prog < 0.6) {
-        // Strike: forward slash motion
+        // Strike: forward slash motion!
         const t = (prog - 0.3) / 0.3;
-        testAnimOffset.r_shoulder = { x: -0.04 + 0.10 * t, y: -0.05 + 0.08 * t };
-        testAnimOffset.r_elbow    = { x: -0.08 + 0.18 * t, y: -0.09 + 0.14 * t };
-        testAnimOffset.r_hand     = { x: -0.14 + 0.28 * t, y: -0.15 + 0.22 * t };
+        boneMap.r_shoulder.rotation.z = origShoulderZ + 0.8 - 2.0 * t;
+        boneMap.r_elbow.rotation.z    = origElbowZ + 0.5 - 1.2 * t;
       } else {
         // Recover to rest position
         const t = (prog - 0.6) / 0.4;
-        testAnimOffset.r_shoulder = { x: 0.06 * (1 - t), y: 0.03 * (1 - t) };
-        testAnimOffset.r_elbow    = { x: 0.10 * (1 - t), y: 0.05 * (1 - t) };
-        testAnimOffset.r_hand     = { x: 0.14 * (1 - t), y: 0.07 * (1 - t) };
+        boneMap.r_shoulder.rotation.z = origShoulderZ - 1.2 * (1 - t);
+        boneMap.r_elbow.rotation.z    = origElbowZ - 0.7 * (1 - t);
       }
 
+      if (skinnedMesh) skinnedMesh.updateMatrixWorld(true);
       redraw();
 
       if (prog < 1.0) {
         requestAnimationFrame(animateSlash);
       } else {
+        boneMap.r_shoulder.rotation.z = origShoulderZ;
+        boneMap.r_elbow.rotation.z    = origElbowZ;
+        if (skinnedMesh) skinnedMesh.updateMatrixWorld(true);
         isTestingSlash = false;
-        testAnimOffset.r_shoulder = { x: 0, y: 0 };
-        testAnimOffset.r_elbow    = { x: 0, y: 0 };
-        testAnimOffset.r_hand     = { x: 0, y: 0 };
         redraw();
       }
     }
@@ -1819,6 +2115,7 @@ export function initSkeletonCalibrator() {
             poseStatus.textContent = '✓ Nhận diện 14 khớp xương thành công! Kéo các điểm để tinh chỉnh.';
           }
           syncUI();
+          if (currentTexture) buildSkinnedMesh(currentTexture);
           redraw();
         } else {
           throw new Error('Không nhận diện đủ các khớp trên ảnh');
@@ -1844,6 +2141,7 @@ export function initSkeletonCalibrator() {
     toastEl.textContent = '⏳ Đang lưu khung xương...';
 
     try {
+      // 1. POST to server
       const res = await fetch('/api/admin/skeleton', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1852,8 +2150,24 @@ export function initSkeletonCalibrator() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lỗi server');
 
+      // 2. Save to localStorage for instant cross-tab sync
+      try {
+        localStorage.setItem('rigged_skeleton', JSON.stringify(skeletonData));
+      } catch (err) {}
+
+      // 3. Dispatch window events for live sync
+      window.dispatchEvent(new CustomEvent('skeleton-updated', { detail: skeletonData }));
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'skeleton-updated', skeleton: skeletonData }, '*');
+        }
+        if (window.opener) {
+          window.opener.postMessage({ type: 'skeleton-updated', skeleton: skeletonData }, '*');
+        }
+      } catch (err) {}
+
       toastEl.className = 'status-toast success';
-      toastEl.textContent = '✓ Đã lưu khung xương 2D vào data/skeleton.json!';
+      toastEl.textContent = '✓ Đã lưu khung xương thành công!';
       setTimeout(() => { toastEl.style.display = 'none'; }, 4000);
     } catch (e) {
       toastEl.className = 'status-toast error';
@@ -1863,9 +2177,21 @@ export function initSkeletonCalibrator() {
     }
   });
 
+  // Continuous WebGL Render Loop
+  let reqId = null;
+  function renderLoop() {
+    reqId = requestAnimationFrame(renderLoop);
+    renderer.render(scene, camera);
+  }
+  renderLoop();
+
   syncUI();
   return {
     redraw,
-    resize: resizeCanvasToImage
+    resize: resizeViewport,
+    destroy: () => {
+      if (reqId) cancelAnimationFrame(reqId);
+      renderer.dispose();
+    }
   };
 }

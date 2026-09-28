@@ -187,6 +187,19 @@ const DEFAULT_SKELETON_CONFIG = {
 
 export async function _getSkeletonConfig() {
   if (_skeletonConfig) return _skeletonConfig;
+  // 1. Check localStorage first for instant sync across tabs & admin saves
+  try {
+    const cached = localStorage.getItem('rigged_skeleton');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.nodes) {
+        _skeletonConfig = parsed;
+        return _skeletonConfig;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Fetch from server endpoint
   try {
     const res = await fetch('/api/skeleton');
     if (res.ok) {
@@ -204,9 +217,36 @@ export async function _getSkeletonConfig() {
 }
 
 if (typeof window !== 'undefined') {
+  // Listen for storage changes from other windows/tabs/iframes
+  window.addEventListener('storage', (ev) => {
+    if (ev.key === 'rigged_skeleton' && ev.newValue) {
+      try {
+        const data = JSON.parse(ev.newValue);
+        if (data && data.nodes) {
+          _skeletonConfig = data;
+          console.log('[player] Skeleton rig synced via localStorage storage event');
+          if (playerGroup && activeElement !== undefined) {
+            createPlayerMesh(activeElement, window.gameState?.equipment);
+          }
+        }
+      } catch (err) {}
+    }
+  });
+
+  // Listen for custom in-window event
   window.addEventListener('skeleton-updated', (ev) => {
     if (ev.detail) {
       _skeletonConfig = ev.detail;
+      if (playerGroup && activeElement !== undefined) {
+        createPlayerMesh(activeElement, window.gameState?.equipment);
+      }
+    }
+  });
+
+  // Listen for iframe / parent postMessage
+  window.addEventListener('message', (ev) => {
+    if (ev.data && ev.data.type === 'skeleton-updated' && ev.data.skeleton) {
+      _skeletonConfig = ev.data.skeleton;
       if (playerGroup && activeElement !== undefined) {
         createPlayerMesh(activeElement, window.gameState?.equipment);
       }
@@ -631,35 +671,35 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
 
 /**
  * 2D Skeletal SkinnedMesh Builder (Meta Animated Drawings style)
- * Creates a dense PlaneGeometry (16x16 segments) deformed by a 14-bone skeleton hierarchy.
- * Uses Linear Blend Skinning (LBS) assigning skinIndex and skinWeight based on inverse distance.
+ * Creates a dense PlaneGeometry (32x32 segments) deformed by a 14-bone skeleton hierarchy.
+ * Uses Linear Blend Skinning (LBS) assigning skinIndex and skinWeight based on inverse distance to the closest 2 bones.
  */
 export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
   const skel = await _getSkeletonConfig();
   const nodes = { ...DEFAULT_SKELETON_CONFIG.nodes, ...(skel?.nodes || {}) };
 
-  const width = 2.4;
-  const height = 3.2;
+  const characterWidth = 2.4;
+  const characterHeight = 3.2;
 
-  // 1. Create dense plane geometry (16x16 segments for smooth bone bending)
-  const geometry = new THREE.PlaneGeometry(width, height, 16, 16);
+  // 1. Create dense plane geometry (32x32 segments for high-fidelity deformation)
+  const geometry = new THREE.PlaneGeometry(characterWidth, characterHeight, 32, 32);
 
   // 2. Bone hierarchy keys
   const BONE_KEYS = [
-    'hip',
-    'torso',
-    'neck',
-    'head',
-    'l_shoulder',
-    'l_elbow',
-    'l_hand',
-    'r_shoulder',
-    'r_elbow',
-    'r_hand',
-    'l_knee',
-    'l_foot',
-    'r_knee',
-    'r_foot'
+    'hip',        // 0
+    'torso',      // 1
+    'neck',       // 2
+    'head',       // 3
+    'l_shoulder', // 4
+    'l_elbow',    // 5
+    'l_hand',     // 6
+    'r_shoulder', // 7
+    'r_elbow',    // 8
+    'r_hand',     // 9
+    'l_knee',     // 10
+    'l_foot',     // 11
+    'r_knee',     // 12
+    'r_foot'      // 13
   ];
 
   // Map 2D normalized coordinates (0..1) to local 3D Plane coordinates (-width/2..width/2, height/2..-height/2)
@@ -667,8 +707,8 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
   for (const k of BONE_KEYS) {
     const n = nodes[k] || DEFAULT_SKELETON_CONFIG.nodes[k] || { x: 0.5, y: 0.5 };
     boneLocs[k] = {
-      x: (n.x - 0.5) * width,
-      y: (0.5 - n.y) * height,
+      x: (n.x - 0.5) * characterWidth,
+      y: (0.5 - n.y) * characterHeight,
       z: 0
     };
   }
@@ -720,7 +760,56 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
   attachChild('hip', 'r_knee');
   attachChild('r_knee', 'r_foot');
 
-  // 3. Compute Linear Blend Skinning (LBS) for all vertices using 4 closest bones
+  // Helper for segment distance
+  function distToSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+  }
+
+  function getDistToBone(boneKey, vx, vy) {
+    switch (boneKey) {
+      case 'r_shoulder':
+        return distToSegment(vx, vy, boneLocs.r_shoulder.x, boneLocs.r_shoulder.y, boneLocs.r_elbow.x, boneLocs.r_elbow.y);
+      case 'r_elbow':
+        return distToSegment(vx, vy, boneLocs.r_elbow.x, boneLocs.r_elbow.y, boneLocs.r_hand.x, boneLocs.r_hand.y);
+      case 'r_hand':
+        return Math.hypot(vx - boneLocs.r_hand.x, vy - boneLocs.r_hand.y);
+      case 'l_shoulder':
+        return distToSegment(vx, vy, boneLocs.l_shoulder.x, boneLocs.l_shoulder.y, boneLocs.l_elbow.x, boneLocs.l_elbow.y);
+      case 'l_elbow':
+        return distToSegment(vx, vy, boneLocs.l_elbow.x, boneLocs.l_elbow.y, boneLocs.l_hand.x, boneLocs.l_hand.y);
+      case 'l_hand':
+        return Math.hypot(vx - boneLocs.l_hand.x, vy - boneLocs.l_hand.y);
+      case 'head':
+        return distToSegment(vx, vy, boneLocs.neck.x, boneLocs.neck.y, boneLocs.head.x, boneLocs.head.y);
+      case 'neck':
+        return Math.hypot(vx - boneLocs.neck.x, vy - boneLocs.neck.y);
+      case 'torso':
+        return Math.min(
+          distToSegment(vx, vy, boneLocs.hip.x, boneLocs.hip.y, boneLocs.torso.x, boneLocs.torso.y),
+          distToSegment(vx, vy, boneLocs.torso.x, boneLocs.torso.y, boneLocs.neck.x, boneLocs.neck.y)
+        );
+      case 'hip':
+        return Math.hypot(vx - boneLocs.hip.x, vy - boneLocs.hip.y);
+      case 'l_knee':
+        return distToSegment(vx, vy, boneLocs.hip.x, boneLocs.hip.y, boneLocs.l_knee.x, boneLocs.l_knee.y);
+      case 'l_foot':
+        return distToSegment(vx, vy, boneLocs.l_knee.x, boneLocs.l_knee.y, boneLocs.l_foot.x, boneLocs.l_foot.y);
+      case 'r_knee':
+        return distToSegment(vx, vy, boneLocs.hip.x, boneLocs.hip.y, boneLocs.r_knee.x, boneLocs.r_knee.y);
+      case 'r_foot':
+        return distToSegment(vx, vy, boneLocs.r_knee.x, boneLocs.r_knee.y, boneLocs.r_foot.x, boneLocs.r_foot.y);
+      default:
+        return Math.hypot(vx - boneLocs[boneKey].x, vy - boneLocs[boneKey].y);
+    }
+  }
+
+  // 3. Compute Linear Blend Skinning (LBS) for every vertex with closest 2 bones
   const posAttr = geometry.attributes.position;
   const skinIndices = [];
   const skinWeights = [];
@@ -729,34 +818,27 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
     const vx = posAttr.getX(i);
     const vy = posAttr.getY(i);
 
-    // Compute distance to each bone rest position in plane space
     const distList = [];
     for (let b = 0; b < BONE_KEYS.length; b++) {
       const k = BONE_KEYS[b];
-      const loc = boneLocs[k];
-      const d = Math.hypot(vx - loc.x, vy - loc.y);
+      const d = getDistToBone(k, vx, vy);
       distList.push({ index: b, dist: d });
     }
 
-    // Sort ascending by distance
     distList.sort((a, b) => a.dist - b.dist);
 
-    // Top 4 bones
-    const top4 = distList.slice(0, 4);
-    let totalWeight = 0;
-    const rawWeights = [];
-    for (let j = 0; j < 4; j++) {
-      const clampedDist = Math.max(top4[j].dist, 0.08);
-      const w = 1.0 / Math.pow(clampedDist, 2.2);
-      rawWeights.push(w);
-      totalWeight += w;
-    }
+    // Closest 2 bones
+    const b0 = distList[0].index;
+    const d0 = distList[0].dist;
+    const b1 = distList[1].index;
+    const d1 = distList[1].dist;
 
-    if (totalWeight <= 0) totalWeight = 1.0;
-    for (let j = 0; j < 4; j++) {
-      skinIndices.push(top4[j].index);
-      skinWeights.push(rawWeights[j] / totalWeight);
-    }
+    const w0 = 1.0 / Math.pow(Math.max(d0, 0.025), 3.0);
+    const w1 = 1.0 / Math.pow(Math.max(d1, 0.025), 3.0);
+    const sum = w0 + w1;
+
+    skinIndices.push(b0, b1, 0, 0);
+    skinWeights.push(w0 / sum, w1 / sum, 0, 0);
   }
 
   geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
@@ -779,13 +861,14 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
   skeleton.calculateInverses();
   skinnedMesh.bind(skeleton);
 
-  // 5. Attach Weapon directly to r_hand bone so it naturally follows arm movement
-  const weaponMount = new THREE.Group();
-  weaponMount.name = 'SkinnedWeaponMount';
+  // 5. Attach 2D Weapon Sprite directly to r_hand bone so it naturally follows arm movement
+  let weaponMesh = null;
+  const weaponWidth = 0.85;
+  const weaponHeight = 2.2;
+  const wGeo = new THREE.PlaneGeometry(weaponWidth, weaponHeight);
+  wGeo.translate(0, weaponHeight / 2, 0); // hilt is at (0, 0) of the geometry
 
   if (weaponTexture) {
-    const wGeo = new THREE.PlaneGeometry(0.85, 2.2);
-    wGeo.translate(0, 0.95, 0); // blade extends from hand hilt
     const wMat = new THREE.MeshBasicMaterial({
       map: weaponTexture,
       transparent: true,
@@ -793,40 +876,59 @@ export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
       depthWrite: false,
       alphaTest: 0.05
     });
-    const wMesh = new THREE.Mesh(wGeo, wMat);
-    // Orient weapon blade forward toward Boss (+X)
-    wMesh.position.set(0.05, 0, 0.05);
-    wMesh.rotation.set(0, 0, -Math.PI / 4);
-    weaponMount.add(wMesh);
+    weaponMesh = new THREE.Mesh(wGeo, wMat);
   } else {
-    // Procedural fallback blade
     const bladeColor = targetEl === 'fire' ? 0xff4400 : targetEl === 'frost' ? 0x88ddff : targetEl === 'thunder' ? 0x00cfff : 0xddaa33;
-    const blade = makeBox(0.12, 1.6, 0.08, bladeColor);
-    blade.position.set(0.2, 0.6, 0.05);
-    blade.rotation.set(0, 0, -Math.PI / 4);
-    weaponMount.add(blade);
+    const blade = makeBox(0.14, 1.8, 0.08, bladeColor);
+    blade.position.set(0, 0.9, 0);
+    weaponMesh = new THREE.Group();
+    weaponMesh.add(blade);
   }
 
-  boneMap.r_hand.add(weaponMount);
+  // Position weapon hilt right at hand bone position, pointing forward toward the Boss
+  weaponMesh.position.set(0, 0, 0.02);
+  weaponMesh.rotation.set(0, 0, -Math.PI / 4);
+
+  boneMap.r_hand.add(weaponMesh);
 
   return {
     skinnedMesh,
     skeleton,
     bones: boneMap,
-    weaponMount
+    weaponMesh
   };
+}
+
+function _createFallbackCharacterTexture(element) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 680;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = element === 'fire' ? '#ff4400' : element === 'thunder' ? '#00e5ff' : '#00b4d8';
+  ctx.fillRect(196, 60, 120, 120); // Head
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(260, 100, 30, 20); // Eye
+  ctx.fillStyle = element === 'fire' ? '#cc2200' : '#0077b6';
+  ctx.fillRect(166, 180, 180, 240); // Torso
+  ctx.fillStyle = '#f5c4a0';
+  ctx.fillRect(346, 200, 60, 160); // Right arm
+  ctx.fillRect(106, 200, 60, 160); // Left arm
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(176, 420, 70, 220); // Left leg
+  ctx.fillRect(266, 420, 70, 220); // Right leg
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
 }
 
 /**
  * Main Player Mesh Constructor:
- * Priority 1: Native 3D GLTF/GLB models with Bone Socketing ([element]_character.glb & [element]_weapon.glb)
- * Priority 2: 2D Skeletal SkinnedMesh from uploaded art ([element]_body.png & [element]_weapon.png)
- * Priority 3: Admin Default 3D Model (default_character.glb & default_weapon.glb)
- * Priority 4: Procedural 3D Voxel Box Model (fallback if default 3D model not uploaded yet)
+ * Strictly instantiate Player using the 2D Skinned Mesh system (32x32) generated from 2D artwork and skeleton.json.
+ * 3D GLB Character & Weapon models are temporarily disabled for rigorous 2D skeletal rigging testing.
  */
 export async function createPlayerMesh(element, equippedGear) {
   if (!playerGroup) return;
-  const targetEl = element || activeElement;
+  const targetEl = element || activeElement || 'fire';
 
   // Clear existing meshes & state
   while (playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
@@ -837,93 +939,50 @@ export async function createPlayerMesh(element, equippedGear) {
   bodyMesh = null; weaponMesh = null; weaponArmPivot = null; playerArmPivot = null;
   characterModel = null; characterRoot = null; weaponModel = null; weaponSocket = null; handNode = null;
   is3DModelMode = false;
-  is2DMode = false;
-  isSkinned2DMode = false;
+  is2DMode = true;
+  isSkinned2DMode = true;
   skinnedCharacterMesh = null;
   skinnedSkeleton = null;
   skinnedBones = null;
 
-  // Case A: Specific Elemental Set equipped ('thunder' | 'fire' | 'frost')
-  if (targetEl && targetEl !== 'default') {
-    // 1. Native 3D Elemental GLB Model
-    const loaded3D = await _tryLoad3DCharacterAndWeapon(targetEl);
-    if (loaded3D) return;
+  // STRICT 2D SKINNED MESH MODE (3D GLB character & weapon temporarily disabled as requested)
+  // 1. Try to load body art for current element, fallback to other elements / defaults
+  let bTex = await _loadArtTexture(targetEl, 'body');
+  if (!bTex && targetEl !== 'fire') bTex = await _loadArtTexture('fire', 'body');
+  if (!bTex && targetEl !== 'thunder') bTex = await _loadArtTexture('thunder', 'body');
+  if (!bTex) bTex = await _loadArtTexture('default', 'body');
 
-    // 2. 2D Skeletal SkinnedMesh (if custom 2D art exists)
-    const [bTex, wTex] = await Promise.all([
-      _loadArtTexture(targetEl, 'body'),
-      _loadArtTexture(targetEl, 'weapon'),
-    ]);
-
-    if (bTex) {
-      is2DMode = true;
-      isSkinned2DMode = true;
-      playerGroup.rotation.y = 0; // Face camera in 2D mode
-      playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-
-      try {
-        const skinnedRig = await build2DSkinnedMesh(bTex, wTex, targetEl);
-        skinnedCharacterMesh = skinnedRig.skinnedMesh;
-        skinnedSkeleton = skinnedRig.skeleton;
-        skinnedBones = skinnedRig.bones;
-        bodyMesh = skinnedCharacterMesh;
-        weaponArmPivot = skinnedRig.weaponMount;
-        playerArmPivot = skinnedBones.r_shoulder;
-
-        skinnedCharacterMesh.position.set(0, 0, 0);
-        skinnedCharacterMesh.rotation.y = Math.PI / 6; // Angled 30° toward the Boss on the right
-        playerGroup.add(skinnedCharacterMesh);
-
-        if (activeElement) _buildElementalAura(activeElement);
-        console.log(`[player] 2D SkinnedMesh constructed with 14 bones for ${targetEl}`);
-        return;
-      } catch (err) {
-        console.warn(`[player] Failed to build 2D SkinnedMesh for ${targetEl}, falling back:`, err);
-      }
-    }
+  // If still no texture, create fallback canvas texture with stylized character art
+  if (!bTex) {
+    bTex = _createFallbackCharacterTexture(targetEl);
   }
 
-  // Case B: No Elemental Set equipped (or 'default' active) -> Load Admin's Default 3D Model
-  const loadedDefault3D = await _tryLoad3DCharacterAndWeapon('default');
-  if (loadedDefault3D) return;
+  // 2. Try to load weapon art
+  let wTex = await _loadArtTexture(targetEl, 'weapon');
+  if (!wTex && targetEl !== 'fire') wTex = await _loadArtTexture('fire', 'weapon');
+  if (!wTex && targetEl !== 'thunder') wTex = await _loadArtTexture('thunder', 'weapon');
 
-  // Check if 2D default art exists
-  const [defBTex, defWTex] = await Promise.all([
-    _loadArtTexture('default', 'body'),
-    _loadArtTexture('default', 'weapon'),
-  ]);
-  if (defBTex) {
-    is2DMode = true;
-    isSkinned2DMode = true;
-    playerGroup.rotation.y = 0;
-    playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+  playerGroup.rotation.y = 0; // Face camera in 2D mode
+  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
 
-    try {
-      const skinnedRig = await build2DSkinnedMesh(defBTex, defWTex, 'default');
-      skinnedCharacterMesh = skinnedRig.skinnedMesh;
-      skinnedSkeleton = skinnedRig.skeleton;
-      skinnedBones = skinnedRig.bones;
-      bodyMesh = skinnedCharacterMesh;
-      weaponArmPivot = skinnedRig.weaponMount;
-      playerArmPivot = skinnedBones.r_shoulder;
+  try {
+    const skinnedRig = await build2DSkinnedMesh(bTex, wTex, targetEl);
+    skinnedCharacterMesh = skinnedRig.skinnedMesh;
+    skinnedSkeleton = skinnedRig.skeleton;
+    skinnedBones = skinnedRig.bones;
+    bodyMesh = skinnedCharacterMesh;
+    weaponMesh = skinnedRig.weaponMesh;
+    playerArmPivot = skinnedBones.r_shoulder;
 
-      skinnedCharacterMesh.position.set(0, 0, 0);
-      skinnedCharacterMesh.rotation.y = Math.PI / 6;
-      playerGroup.add(skinnedCharacterMesh);
+    skinnedCharacterMesh.position.set(0, 0, 0);
+    skinnedCharacterMesh.rotation.y = Math.PI / 6; // Angled 30° toward the Boss on the right
+    playerGroup.add(skinnedCharacterMesh);
 
-      console.log(`[player] 2D SkinnedMesh constructed with 14 bones for default`);
-      return;
-    } catch (err) {
-      console.warn('[player] Failed to build default 2D SkinnedMesh:', err);
-    }
+    if (activeElement) _buildElementalAura(activeElement);
+    console.log(`[player] Real 2D SkinnedMesh (32x32) constructed with 14 bones for ${targetEl}`);
+  } catch (err) {
+    console.error('[player] Failed to build 2D SkinnedMesh:', err);
   }
-
-  // 3. Fallback: Only render basic geometric boxes if default_character.glb has not been uploaded yet
-  is2DMode = false;
-  isSkinned2DMode = false;
-  playerGroup.rotation.y = FACE_Y;
-  _build3DBoxCharacter();
-  playerArmPivot = leftShoulderPivot || rightShoulderPivot;
 }
 
 // Hot-reload listener for admin uploads
