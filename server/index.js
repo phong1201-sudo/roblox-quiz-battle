@@ -515,6 +515,94 @@ app.post('/api/admin/rigging/save', (req, res) => {
   }
 });
 
+// ── Admin: Dedicated 3D Brush Highlighter & In-Context Weapon Save Endpoint ──
+app.post('/api/admin/rigging/brush-save', (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload || !payload.target) {
+      return res.status(400).json({ success: false, error: 'Target (player or boss) is required' });
+    }
+    const current = readSocketsConfig();
+    const target = payload.target === 'boss' ? 'boss' : 'player';
+    if (!current[target]) current[target] = {};
+
+    const shoulderPivot = payload.shoulderPivot || {
+      x: current[target].shoulderX ?? (target === 'player' ? -0.65 : -1.8),
+      y: current[target].shoulderY ?? (target === 'player' ? 1.2 : 2.2),
+      z: current[target].shoulderZ ?? (target === 'player' ? 0.0 : 0.2),
+    };
+    const weaponOffset = payload.weaponOffset || current[target].weapon || {};
+    const slashArc = payload.slashArc || current[target].slashArc || {
+      idleAngle: 0,
+      windupAngle: target === 'player' ? 60 : 80,
+      slashAngle: target === 'player' ? -75 : -80,
+      arc: target === 'player' ? 135 : 160
+    };
+
+    current[target].shoulderPivot = shoulderPivot;
+    current[target].shoulderX = shoulderPivot.x;
+    current[target].shoulderY = shoulderPivot.y;
+    current[target].shoulderZ = shoulderPivot.z;
+
+    const angle = weaponOffset.angle ?? (target === 'player' ? -45 : 30);
+    const rotX = weaponOffset.rotX ?? 0.0;
+    const rotY = weaponOffset.rotY ?? (target === 'player' ? Math.PI / 2 : -Math.PI / 2);
+    const rotZ = weaponOffset.rotZ ?? ((angle * Math.PI) / 180);
+
+    const mergedWeapon = {
+      ...(current[target].weapon || {}),
+      ...weaponOffset,
+      offsetX: weaponOffset.offsetX ?? 0.0,
+      offsetY: weaponOffset.offsetY ?? (target === 'player' ? -0.4 : -0.6),
+      offsetZ: weaponOffset.offsetZ ?? (target === 'player' ? 0.1 : 0.5),
+      angle,
+      rotX,
+      rotY,
+      rotZ
+    };
+
+    current[target].weapon = mergedWeapon;
+    current[target].weaponOffset = mergedWeapon;
+    current[target].slashArc = slashArc;
+
+    if (payload.paintedArm) current[target].paintedArm = payload.paintedArm;
+    if (payload.paintedWeapon) current[target].paintedWeapon = payload.paintedWeapon;
+    if (payload.armMeshName) current[target].armMeshName = payload.armMeshName;
+
+    // Sync legacy keys for backward compatibility
+    if (target === 'player') {
+      ['default', 'thunder', 'fire', 'frost'].forEach(k => {
+        if (!current.player[k]) current.player[k] = {};
+        current.player[k].handX = -shoulderPivot.x;
+        current.player[k].handY = shoulderPivot.y;
+        current.player[k].handZ = shoulderPivot.z;
+        current.player[k].weaponAngle = angle;
+      });
+    } else {
+      ['thunder', 'fire', 'frost'].forEach(k => {
+        if (!current.boss[k]) current.boss[k] = {};
+        current.boss[k].handX = shoulderPivot.x;
+        current.boss[k].handY = shoulderPivot.y;
+        current.boss[k].handZ = shoulderPivot.z;
+      });
+    }
+
+    const dataDir = path.dirname(socketsFilePath);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(socketsFilePath, JSON.stringify(current, null, 2), 'utf8');
+    console.log(`[brush-save] Saved brush calibration for ${target}:`, { shoulderPivot, weaponOffset: mergedWeapon, slashArc });
+    res.json({
+      success: true,
+      message: `Đã lưu cấu hình bút tô & khớp đòn đánh cho ${target === 'player' ? 'Nhân vật' : 'Boss'} thành công!`,
+      sockets: current,
+      config: current
+    });
+  } catch (e) {
+    console.error('[brush-save] Error saving brush rigging:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.get(['/api/admin/rigging', '/api/rigging'], (req, res) => {
   const config = readSocketsConfig();
   res.json({ success: true, sockets: config, rigging: config });

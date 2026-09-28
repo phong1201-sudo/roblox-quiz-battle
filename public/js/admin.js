@@ -1,4 +1,4 @@
-// Admin API client helper for 3D GLB/GLTF models, Character Art and 3-Viewport Compound Rigging
+// Admin API client helper for 3D GLB/GLTF models, Character Art and 3D Brush Highlighter Calibrator
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -112,6 +112,17 @@ export async function saveRigging(payload) {
   return data;
 }
 
+export async function saveBrushRigging(payload) {
+  const res = await fetch('/api/admin/rigging/brush-save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || 'Lưu cấu hình bút tô thất bại');
+  return data;
+}
+
 export const DEFAULT_SOCKETS_CONFIG = {
   player: {
     armMeshName: 'Arm_L',
@@ -189,35 +200,60 @@ export const DEFAULT_SOCKETS_CONFIG = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3-VIEWPORT MESH SEGMENTER & SHOULDER-LOCKED COMPOUND RIGGING CALIBRATOR
+// 3D BRUSH HIGHLIGHTER & IN-CONTEXT WEAPON CALIBRATOR ENGINE
 // ─────────────────────────────────────────────────────────────────────────────
-export function init3ViewportCalibrator() {
-  const vpPlayerEl = document.getElementById('viewport-player');
-  const vpBossEl   = document.getElementById('viewport-boss');
-  const vpWeaponEl = document.getElementById('viewport-weapon');
+export function initBrushCalibrator() {
+  const canvasPlayerEl = document.getElementById('canvas-player');
+  const canvasBossEl   = document.getElementById('canvas-boss');
 
-  if (!vpPlayerEl || !vpBossEl || !vpWeaponEl) {
-    console.warn('[calibrator] 3 viewports not found in DOM');
+  if (!canvasPlayerEl || !canvasBossEl) {
+    console.warn('[brush-calibrator] Canvas containers not found in DOM');
     return null;
   }
 
-  // Active state
+  // Persistent sockets data
   let socketsData = JSON.parse(JSON.stringify(DEFAULT_SOCKETS_CONFIG));
-  let currentBossElement = 'fire';
-  let activeWeaponTarget = 'player'; // 'player' | 'boss'
-  let isTestingSwing = false;
+  fetchRigging().then(cfg => {
+    if (cfg && typeof cfg === 'object') {
+      socketsData = {
+        player: { ...DEFAULT_SOCKETS_CONFIG.player, ...(cfg.player || {}) },
+        boss:   { ...DEFAULT_SOCKETS_CONFIG.boss,   ...(cfg.boss || {}) },
+        weapon: { ...DEFAULT_SOCKETS_CONFIG.weapon, ...(cfg.weapon || {}) },
+      };
+      syncPlayerUI();
+      syncBossUI();
+    }
+  }).catch(() => {});
 
-  // Selected Meshes
-  let selectedPlayerArmMesh = null;
-  let selectedBossArmMesh   = null;
+  // Navigation Tab switching
+  const btnTabPlayer = document.getElementById('btn-tab-player');
+  const btnTabBoss   = document.getElementById('btn-tab-boss');
+  const panePlayer   = document.getElementById('pane-player');
+  const paneBoss     = document.getElementById('pane-boss');
 
-  // Helper: Create a standard 3D viewport
-  function createViewport(container, camPos, lookAt) {
+  btnTabPlayer?.addEventListener('click', () => {
+    btnTabPlayer.classList.add('active');
+    btnTabBoss?.classList.remove('active');
+    panePlayer?.classList.remove('hidden');
+    paneBoss?.classList.add('hidden');
+    vpPlayer.onResize();
+  });
+
+  btnTabBoss?.addEventListener('click', () => {
+    btnTabBoss.classList.add('active');
+    btnTabPlayer?.classList.remove('active');
+    paneBoss?.classList.remove('hidden');
+    panePlayer?.classList.add('hidden');
+    vpBoss.onResize();
+  });
+
+  // Helper: Setup a 3D Scene Viewport with OrbitControls
+  function setupScene(container, camPos, lookAt) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x070a13);
 
-    const w = container.clientWidth || 400;
-    const h = container.clientHeight || 360;
+    const w = container.clientWidth || 640;
+    const h = container.clientHeight || 580;
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
     camera.position.copy(camPos);
 
@@ -231,12 +267,17 @@ export function init3ViewportCalibrator() {
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.target.copy(lookAt);
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.NONE, // Left click reserved for brush painting / weapon snap!
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.ROTATE
+    };
 
-    // Standard lighting
+    // Lighting
     const amb = new THREE.AmbientLight(0xffffff, 1.2);
     const dir = new THREE.DirectionalLight(0xffffff, 2.0);
     dir.position.set(5, 10, 7);
-    const back = new THREE.DirectionalLight(0x00b4d8, 0.8);
+    const back = new THREE.DirectionalLight(0x00b4d8, 0.9);
     back.position.set(-5, 5, -5);
     scene.add(amb, dir, back);
 
@@ -244,21 +285,24 @@ export function init3ViewportCalibrator() {
     grid.position.y = 0;
     scene.add(grid);
 
-    const resizeObs = new ResizeObserver(() => {
-      const rw = container.clientWidth || 400;
-      const rh = container.clientHeight || 360;
+    const onResize = () => {
+      const rw = container.clientWidth || 640;
+      const rh = container.clientHeight || 580;
       camera.aspect = rw / rh;
       camera.updateProjectionMatrix();
       renderer.setSize(rw, rh);
-    });
+    };
+
+    const resizeObs = new ResizeObserver(onResize);
     resizeObs.observe(container);
 
-    return { scene, camera, renderer, controls, resizeObs };
+    return { scene, camera, renderer, controls, onResize, resizeObs };
   }
 
   // Create Shoulder Gizmo
   function createShoulderGizmo(colorHex = 0x00ff88) {
     const gizmo = new THREE.Group();
+    gizmo.name = 'ShoulderGizmo';
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(0.12, 16, 16),
       new THREE.MeshBasicMaterial({ color: colorHex })
@@ -277,136 +321,90 @@ export function init3ViewportCalibrator() {
     return { gizmo, ringX, ringY };
   }
 
-  // Helper: Find top-most vertex of a mesh in world coordinates
-  function computeTopVertexWorld(mesh) {
-    if (!mesh) return new THREE.Vector3(0, 0, 0);
-    mesh.updateMatrixWorld(true);
+  // Visual Point Cloud Renderer for Painted Vertices
+  function createPointManager(scene) {
+    const group = new THREE.Group();
+    group.name = 'PaintedPointsGroup';
+    scene.add(group);
 
-    const geom = mesh.geometry;
-    if (geom && geom.attributes && geom.attributes.position) {
-      const posAttr = geom.attributes.position;
-      const v = new THREE.Vector3();
-      let maxWorldY = -Infinity;
-      const topPt = new THREE.Vector3();
+    // Spherical markers
+    const sphereGeo = new THREE.SphereGeometry(0.045, 8, 8);
+    const cyanMat   = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const orangeMat = new THREE.MeshBasicMaterial({ color: 0xff9900 });
 
-      for (let i = 0; i < posAttr.count; i++) {
-        v.fromBufferAttribute(posAttr, i);
-        v.applyMatrix4(mesh.matrixWorld);
-        if (v.y > maxWorldY) {
-          maxWorldY = v.y;
-          topPt.copy(v);
-        }
+    let points = []; // Array of { pos: Vector3, type: 'arm' | 'weapon', mesh: THREE.Mesh }
+
+    function addPoint(pos, type = 'arm') {
+      // Check minimum spacing (0.05 units) to prevent dense stacking
+      for (const p of points) {
+        if (p.pos.distanceTo(pos) < 0.05) return false;
       }
-      if (maxWorldY > -Infinity) return topPt;
+      const m = new THREE.Mesh(sphereGeo, type === 'arm' ? cyanMat : orangeMat);
+      m.position.copy(pos);
+      group.add(m);
+      points.push({ pos: pos.clone(), type, mesh: m });
+      return true;
     }
 
-    const box = new THREE.Box3().setFromObject(mesh);
-    return new THREE.Vector3((box.min.x + box.max.x) / 2, box.max.y, (box.min.z + box.max.z) / 2);
+    function eraseWithin(pos, radius) {
+      const remaining = [];
+      let erasedCount = 0;
+      for (const p of points) {
+        if (p.pos.distanceTo(pos) <= radius) {
+          group.remove(p.mesh);
+          erasedCount++;
+        } else {
+          remaining.push(p);
+        }
+      }
+      points = remaining;
+      return erasedCount;
+    }
+
+    function clear() {
+      points.forEach(p => group.remove(p.mesh));
+      points = [];
+    }
+
+    function getArmPoints() {
+      return points.filter(p => p.type === 'arm');
+    }
+
+    function getWeaponPoints() {
+      return points.filter(p => p.type === 'weapon');
+    }
+
+    return {
+      group,
+      addPoint,
+      eraseWithin,
+      clear,
+      getArmPoints,
+      getWeaponPoints,
+      getAllPoints: () => points
+    };
   }
 
-  // ─── 1. Viewport 1: Player Viewport ──────────────────────────────────────────
-  const vpPlayer = createViewport(vpPlayerEl, new THREE.Vector3(2.5, 2.2, 3.8), new THREE.Vector3(0, 1.2, 0));
+  // ═════════════════════════════════════════════════════════════════════════════
+  // TAB 1: PLAYER VIEWPORT & IN-CONTEXT WEAPON CALIBRATION
+  // ═════════════════════════════════════════════════════════════════════════════
+  const vpPlayer = setupScene(canvasPlayerEl, new THREE.Vector3(2.6, 2.0, 4.0), new THREE.Vector3(0, 1.2, 0));
   const playerModelHolder = new THREE.Group();
   playerModelHolder.name = 'PlayerModelHolder';
   vpPlayer.scene.add(playerModelHolder);
 
-  const playerGizmoObj = createShoulderGizmo(0x00ff88);
-  const playerGizmo = playerGizmoObj.gizmo;
-  vpPlayer.scene.add(playerGizmo);
+  const playerGizmoObj = createShoulderGizmo(0x00e5ff);
+  vpPlayer.scene.add(playerGizmoObj.gizmo);
 
-  // Player Compound Arm for Live Test Swing in Viewport 1
-  const playerCompoundArm = new THREE.Group();
-  playerCompoundArm.name = 'VP1_PlayerCompoundArm';
-  vpPlayer.scene.add(playerCompoundArm);
+  const playerPoints = createPointManager(vpPlayer.scene);
 
-  // ─── 2. Viewport 2: Boss Viewport ────────────────────────────────────────────
-  const vpBoss = createViewport(vpBossEl, new THREE.Vector3(-3.5, 2.8, 5.0), new THREE.Vector3(0, 1.8, 0));
-  const bossModelHolder = new THREE.Group();
-  bossModelHolder.name = 'BossModelHolder';
-  vpBoss.scene.add(bossModelHolder);
+  // In-Context Sword Mesh spawned directly inside Player Viewport
+  const inContextSword = new THREE.Group();
+  inContextSword.name = 'InContextSword';
+  vpPlayer.scene.add(inContextSword);
 
-  const bossGizmoObj = createShoulderGizmo(0xffaa00);
-  const bossGizmo = bossGizmoObj.gizmo;
-  vpBoss.scene.add(bossGizmo);
-
-  // Boss Compound Arm for Live Test Swing in Viewport 2
-  const bossCompoundArm = new THREE.Group();
-  bossCompoundArm.name = 'VP2_BossCompoundArm';
-  vpBoss.scene.add(bossCompoundArm);
-
-  // ─── 3. Viewport 3: Weapon Alignment & Slash Tuning ──────────────────────────
-  const vpWeapon = createViewport(vpWeaponEl, new THREE.Vector3(0.0, 1.5, 3.8), new THREE.Vector3(0, 0.6, 0));
-  const weaponCompoundHolder = new THREE.Group();
-  weaponCompoundHolder.name = 'VP3_WeaponCompoundHolder';
-  vpWeapon.scene.add(weaponCompoundHolder);
-
-  // Arm Mesh Child & Weapon Mesh Child in VP3
-  const vp3ArmHolder = new THREE.Group();
-  const vp3WeaponHolder = new THREE.Group();
-  weaponCompoundHolder.add(vp3ArmHolder, vp3WeaponHolder);
-
-  // DOM Elements
-  const elPlayerSegName = document.getElementById('player-segment-name');
-  const elPlayerReadout = document.getElementById('player-shoulder-readout');
-  const sliderPlayerSx  = document.getElementById('slider-player-sx');
-  const numPlayerSx     = document.getElementById('num-player-sx');
-  const valPlayerSx     = document.getElementById('val-player-sx');
-  const sliderPlayerSy  = document.getElementById('slider-player-sy');
-  const numPlayerSy     = document.getElementById('num-player-sy');
-  const valPlayerSy     = document.getElementById('val-player-sy');
-  const sliderPlayerSz  = document.getElementById('slider-player-sz');
-  const numPlayerSz     = document.getElementById('num-player-sz');
-  const valPlayerSz     = document.getElementById('val-player-sz');
-  const btnQuickPlayer  = document.getElementById('btn-quick-arm-player');
-
-  const elBossSegName = document.getElementById('boss-segment-name');
-  const elBossReadout = document.getElementById('boss-shoulder-readout');
-  const sliderBossSx  = document.getElementById('slider-boss-sx');
-  const numBossSx     = document.getElementById('num-boss-sx');
-  const valBossSx     = document.getElementById('val-boss-sx');
-  const sliderBossSy  = document.getElementById('slider-boss-sy');
-  const numBossSy     = document.getElementById('num-boss-sy');
-  const valBossSy     = document.getElementById('val-boss-sy');
-  const sliderBossSz  = document.getElementById('slider-boss-sz');
-  const numBossSz     = document.getElementById('num-boss-sz');
-  const valBossSz     = document.getElementById('val-boss-sz');
-  const btnQuickBoss  = document.getElementById('btn-quick-arm-boss');
-
-  const tabBossThunder = document.getElementById('tab-boss-thunder');
-  const tabBossFire    = document.getElementById('tab-boss-fire');
-  const tabBossFrost   = document.getElementById('tab-boss-frost');
-
-  const btnTargetPlayer = document.getElementById('btn-mode-target-player');
-  const btnTargetBoss   = document.getElementById('btn-mode-target-boss');
-
-  const sliderWeaponOx    = document.getElementById('slider-weapon-ox');
-  const numWeaponOx       = document.getElementById('num-weapon-ox');
-  const valWeaponOx       = document.getElementById('val-weapon-ox');
-  const sliderWeaponOy    = document.getElementById('slider-weapon-oy');
-  const numWeaponOy       = document.getElementById('num-weapon-oy');
-  const valWeaponOy       = document.getElementById('val-weapon-oy');
-  const sliderWeaponOz    = document.getElementById('slider-weapon-oz');
-  const numWeaponOz       = document.getElementById('num-weapon-oz');
-  const valWeaponOz       = document.getElementById('val-weapon-oz');
-  const sliderWeaponAngle = document.getElementById('slider-weapon-angle');
-  const numWeaponAngle    = document.getElementById('num-weapon-angle');
-  const valWeaponAngle    = document.getElementById('val-weapon-angle');
-
-  const btnLockWeapon     = document.getElementById('btn-lock-weapon');
-  const sliderIdleAngle   = document.getElementById('slider-idle-angle');
-  const numIdleAngle      = document.getElementById('num-idle-angle');
-  const valIdleAngle      = document.getElementById('val-idle-angle');
-  const sliderSlashArc    = document.getElementById('slider-slash-arc');
-  const numSlashArc       = document.getElementById('num-slash-arc');
-  const valSlashArc       = document.getElementById('val-slash-arc');
-
-  const btnTestSwing      = document.getElementById('btn-test-swing');
-  const btnSaveRigging    = document.getElementById('btn-save-rigging');
-  const statusToast       = document.getElementById('status-toast');
-
-  // Build Preview Weapons
-  function buildPreviewSword() {
-    const grp = new THREE.Group();
+  function buildSwordMesh() {
+    while (inContextSword.children.length) inContextSword.remove(inContextSword.children[0]);
     const blade = new THREE.Mesh(
       new THREE.BoxGeometry(0.12, 1.8, 0.05),
       new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x0066aa, roughness: 0.3 })
@@ -422,122 +420,12 @@ export function init3ViewportCalibrator() {
       new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 })
     );
     grip.position.set(0, -0.18, 0);
-    grp.add(blade, guard, grip);
-    grp.scale.set(1.4, 1.4, 1.4);
-    return grp;
+    inContextSword.add(blade, guard, grip);
+    inContextSword.scale.set(1.4, 1.4, 1.4);
   }
+  buildSwordMesh();
 
-  function buildPreviewHammer() {
-    const grp = new THREE.Group();
-    const handle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 3.0, 0.18),
-      new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 })
-    );
-    handle.position.set(0, 0, 0);
-    const head = new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 1.3, 1.2),
-      new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0x882200, roughness: 0.4 })
-    );
-    head.position.set(0, 1.3, 0);
-    grp.add(handle, head);
-    grp.scale.set(0.9, 0.9, 0.9);
-    return grp;
-  }
-
-  function buildPreviewArm(target) {
-    const isPlayer = target === 'player';
-    const geo = isPlayer ? new THREE.BoxGeometry(0.35, 1.0, 0.35) : new THREE.BoxGeometry(0.9, 2.2, 0.9);
-    const mat = new THREE.MeshStandardMaterial({
-      color: isPlayer ? 0x2255cc : 0x882200,
-      roughness: 0.5
-    });
-    const arm = new THREE.Mesh(geo, mat);
-    // Center arm top at local origin (0, 0, 0)
-    arm.position.y = isPlayer ? -0.5 : -1.1;
-    return arm;
-  }
-
-  // Update VP3 compound arm representation
-  function refreshViewport3Compound() {
-    while (vp3ArmHolder.children.length) vp3ArmHolder.remove(vp3ArmHolder.children[0]);
-    while (vp3WeaponHolder.children.length) vp3WeaponHolder.remove(vp3WeaponHolder.children[0]);
-
-    const isPlayer = (activeWeaponTarget === 'player');
-    const armMesh = buildPreviewArm(activeWeaponTarget);
-    vp3ArmHolder.add(armMesh);
-
-    const weapon = isPlayer ? buildPreviewSword() : buildPreviewHammer();
-    vp3WeaponHolder.add(weapon);
-
-    updateVP3Transforms();
-  }
-
-  function updateVP3Transforms() {
-    const isPlayer = (activeWeaponTarget === 'player');
-    const targetKey = isPlayer ? 'player' : 'boss';
-    const cfg = socketsData[targetKey] || {};
-    const w = cfg.weapon || cfg.weaponOffset || {};
-
-    const ox = w.offsetX ?? 0.0;
-    const oy = w.offsetY ?? (isPlayer ? -0.4 : -0.6);
-    const oz = w.offsetZ ?? (isPlayer ? 0.1 : 0.5);
-    const angle = w.angle ?? (isPlayer ? -45 : 30);
-
-    vp3WeaponHolder.position.set(ox, oy, oz);
-    if (isPlayer) {
-      vp3WeaponHolder.rotation.set(0, Math.PI / 2, (angle * Math.PI) / 180);
-    } else {
-      vp3WeaponHolder.rotation.set(0, -Math.PI / 2, (angle * Math.PI) / 180);
-    }
-  }
-
-  // Fallback characters if GLB fails
-  function buildProceduralPlayer() {
-    const grp = new THREE.Group();
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.5), new THREE.MeshStandardMaterial({ color: 0x2255cc }));
-    torso.position.y = 1.3;
-    torso.name = 'Torso';
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
-    head.position.y = 2.3;
-    head.name = 'Head';
-
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
-    armL.position.set(-0.65, 1.2, 0);
-    armL.name = 'Arm_L';
-
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
-    armR.position.set(0.65, 1.2, 0);
-    armR.name = 'Arm_R';
-
-    grp.add(torso, head, armL, armR);
-    return grp;
-  }
-
-  function buildProceduralBoss(el) {
-    const grp = new THREE.Group();
-    const bodyCol = el === 'frost' ? 0x0088cc : el === 'thunder' ? 0x00aacc : 0x882200;
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.6, 1.2), new THREE.MeshStandardMaterial({ color: bodyCol }));
-    torso.position.y = 2.2;
-    torso.name = 'Boss_Torso';
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), new THREE.MeshStandardMaterial({ color: bodyCol }));
-    head.position.y = 4.2;
-    head.name = 'Boss_Head';
-
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), new THREE.MeshStandardMaterial({ color: bodyCol }));
-    armL.position.set(1.8, 2.2, 0);
-    armL.name = 'Boss_Arm_L';
-
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), new THREE.MeshStandardMaterial({ color: bodyCol }));
-    armR.position.set(-1.8, 2.2, 0);
-    armR.name = 'Boss_Arm_R';
-
-    grp.add(torso, head, armL, armR);
-    return grp;
-  }
-
-  // Load 3D Models
+  // Load 3D Character Model for Tab 1
   async function loadPlayerModel() {
     while (playerModelHolder.children.length) playerModelHolder.remove(playerModelHolder.children[0]);
     let loaded = false;
@@ -546,18 +434,12 @@ export function init3ViewportCalibrator() {
       if (gltf && gltf.scene) {
         const model = gltf.scene;
         model.traverse(c => {
-          if (c.isMesh) {
-            c.castShadow = true;
-            c.receiveShadow = true;
-            if (c.material) c.material = c.material.clone();
-          }
+          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
         });
         const bBox = new THREE.Box3().setFromObject(model);
         const bSize = new THREE.Vector3();
         bBox.getSize(bSize);
-        if (bSize.y > 0.01) {
-          model.scale.setScalar(2.8 / bSize.y);
-        }
+        if (bSize.y > 0.01) model.scale.setScalar(2.8 / bSize.y);
         const sBox = new THREE.Box3().setFromObject(model);
         model.position.x = - (sBox.min.x + sBox.max.x) / 2;
         model.position.z = - (sBox.min.z + sBox.max.z) / 2;
@@ -568,35 +450,406 @@ export function init3ViewportCalibrator() {
     } catch (e) {}
 
     if (!loaded) {
-      playerModelHolder.add(buildProceduralPlayer());
+      // Procedural Blocky Character
+      const grp = new THREE.Group();
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.5), new THREE.MeshStandardMaterial({ color: 0x2255cc }));
+      torso.position.y = 1.3;
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
+      head.position.y = 2.3;
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
+      armL.position.set(-0.65, 1.2, 0);
+      armL.name = 'Arm_L';
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), new THREE.MeshStandardMaterial({ color: 0xf5c4a0 }));
+      armR.position.set(0.65, 1.2, 0);
+      grp.add(torso, head, armL, armR);
+      playerModelHolder.add(grp);
     }
-
-    // Auto locate saved arm or LeftArm
-    selectPlayerArmByName(socketsData.player?.armMeshName || 'Arm_L');
   }
 
-  async function loadBossModel(element = 'fire') {
-    currentBossElement = element;
+  // Tab 1 State & Controls
+  let playerBrushMode = 'paint_arm'; // 'paint_arm' | 'erase'
+  let playerBrushSize = 0.25;
+  let playerShoulderPivot = { x: -0.65, y: 1.2, z: 0.0 };
+  let playerSwordOffset = { offsetX: 0.0, offsetY: -0.4, offsetZ: 0.1, angle: -45 };
+
+  const hudPlayerShoulder   = document.getElementById('hud-player-shoulder');
+  const hudPlayerPoints     = document.getElementById('hud-player-points');
+  const btnPlayerBrushPaint = document.getElementById('btn-player-brush-paint');
+  const btnPlayerBrushErase = document.getElementById('btn-player-brush-erase');
+  const sliderPlayerBrushSz = document.getElementById('slider-player-brush-size');
+  const valPlayerBrushSz    = document.getElementById('val-player-brush-size');
+  const btnPlayerQuickFill  = document.getElementById('btn-player-quick-fill');
+  const btnPlayerClearPts   = document.getElementById('btn-player-clear-points');
+
+  const btnPlayerSnapSword  = document.getElementById('btn-player-snap-weapon');
+  const sliderPlayerAngle   = document.getElementById('slider-player-sword-angle');
+  const valPlayerAngle      = document.getElementById('val-player-sword-angle');
+  const btnPlayerLockSword  = document.getElementById('btn-player-lock-weapon');
+  const btnPlayerTestSwing  = document.getElementById('btn-player-test-swing');
+  const btnPlayerSave       = document.getElementById('btn-player-save');
+  const toastPlayer         = document.getElementById('toast-player');
+
+  // Directional Nudge Buttons
+  const btnNudgeXNeg = document.getElementById('btn-nudge-x-neg');
+  const btnNudgeXPos = document.getElementById('btn-nudge-x-pos');
+  const btnNudgeYPos = document.getElementById('btn-nudge-y-pos');
+  const btnNudgeYNeg = document.getElementById('btn-nudge-y-neg');
+  const btnNudgeZNeg = document.getElementById('btn-nudge-z-neg');
+  const btnNudgeZPos = document.getElementById('btn-nudge-z-pos');
+
+  // Brush Mode Toggling
+  btnPlayerBrushPaint?.addEventListener('click', () => {
+    playerBrushMode = 'paint_arm';
+    btnPlayerBrushPaint.classList.add('active', 'arm-cyan');
+    btnPlayerBrushErase.classList.remove('active', 'eraser');
+  });
+
+  btnPlayerBrushErase?.addEventListener('click', () => {
+    playerBrushMode = 'erase';
+    btnPlayerBrushErase.classList.add('active', 'eraser');
+    btnPlayerBrushPaint.classList.remove('active', 'arm-cyan');
+  });
+
+  sliderPlayerBrushSz?.addEventListener('input', () => {
+    playerBrushSize = parseFloat(sliderPlayerBrushSz.value || 0.25);
+    if (valPlayerBrushSz) valPlayerBrushSz.textContent = playerBrushSize.toFixed(2);
+  });
+
+  // Calculate Shoulder Pivot from top edge of painted arm points
+  function recalculatePlayerPivot() {
+    const armPts = playerPoints.getArmPoints();
+    if (hudPlayerPoints) hudPlayerPoints.textContent = `${armPts.length} điểm`;
+
+    if (armPts.length > 0) {
+      let topPt = armPts[0].pos;
+      let sumX = 0, sumZ = 0;
+      for (const p of armPts) {
+        if (p.pos.y > topPt.y) topPt = p.pos;
+        sumX += p.pos.x;
+        sumZ += p.pos.z;
+      }
+      playerShoulderPivot = {
+        x: Math.round(topPt.x * 100) / 100,
+        y: Math.round(topPt.y * 100) / 100,
+        z: Math.round(topPt.z * 100) / 100
+      };
+    } else {
+      playerShoulderPivot = socketsData.player.shoulderPivot || { x: -0.65, y: 1.2, z: 0.0 };
+    }
+
+    playerGizmoObj.gizmo.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+    if (hudPlayerShoulder) {
+      hudPlayerShoulder.textContent = `(${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}, ${playerShoulderPivot.z.toFixed(2)})`;
+    }
+  }
+
+  // Update In-Context Sword Position in Viewport
+  function updateInContextSwordTransform() {
+    const pos = new THREE.Vector3(
+      playerShoulderPivot.x + playerSwordOffset.offsetX,
+      playerShoulderPivot.y + playerSwordOffset.offsetY,
+      playerShoulderPivot.z + playerSwordOffset.offsetZ
+    );
+    inContextSword.position.copy(pos);
+    inContextSword.rotation.set(0, Math.PI / 2, (playerSwordOffset.angle * Math.PI) / 180);
+  }
+
+  // Quick fill Left Arm preset
+  btnPlayerQuickFill?.addEventListener('click', () => {
+    playerPoints.clear();
+    // Fill vertical column for Left Arm around x=-0.65, y=0.7 to 1.25, z=0
+    for (let y = 0.70; y <= 1.26; y += 0.06) {
+      for (let x = -0.78; x <= -0.52; x += 0.08) {
+        for (let z = -0.12; z <= 0.12; z += 0.08) {
+          playerPoints.addPoint(new THREE.Vector3(x, y, z), 'arm');
+        }
+      }
+    }
+    recalculatePlayerPivot();
+    updateInContextSwordTransform();
+  });
+
+  btnPlayerClearPts?.addEventListener('click', () => {
+    playerPoints.clear();
+    recalculatePlayerPivot();
+  });
+
+  // Snap Sword to Hand (lowest / grip point of painted arm)
+  btnPlayerSnapSword?.addEventListener('click', () => {
+    const armPts = playerPoints.getArmPoints();
+    if (armPts.length > 0) {
+      let lowestPt = armPts[0].pos;
+      for (const p of armPts) {
+        if (p.pos.y < lowestPt.y) lowestPt = p.pos;
+      }
+      playerSwordOffset.offsetX = Math.round((lowestPt.x - playerShoulderPivot.x) * 100) / 100;
+      playerSwordOffset.offsetY = Math.round((lowestPt.y - playerShoulderPivot.y) * 100) / 100;
+      playerSwordOffset.offsetZ = Math.round((lowestPt.z - playerShoulderPivot.z + 0.08) * 100) / 100;
+    } else {
+      playerSwordOffset.offsetX = 0.0;
+      playerSwordOffset.offsetY = -0.4;
+      playerSwordOffset.offsetZ = 0.1;
+    }
+    updateInContextSwordTransform();
+
+    if (toastPlayer) {
+      toastPlayer.className = 'status-toast success';
+      toastPlayer.innerHTML = `🎯 <b>Đã hút chuôi kiếm vào bàn tay</b> (${playerSwordOffset.offsetX.toFixed(2)}, ${playerSwordOffset.offsetY.toFixed(2)}, ${playerSwordOffset.offsetZ.toFixed(2)})`;
+      toastPlayer.style.display = 'block';
+      setTimeout(() => { toastPlayer.style.display = 'none'; }, 3000);
+    }
+  });
+
+  // Nudge Sword Position
+  const STEP = 0.04;
+  btnNudgeXNeg?.addEventListener('click', () => { playerSwordOffset.offsetX -= STEP; updateInContextSwordTransform(); });
+  btnNudgeXPos?.addEventListener('click', () => { playerSwordOffset.offsetX += STEP; updateInContextSwordTransform(); });
+  btnNudgeYPos?.addEventListener('click', () => { playerSwordOffset.offsetY += STEP; updateInContextSwordTransform(); });
+  btnNudgeYNeg?.addEventListener('click', () => { playerSwordOffset.offsetY -= STEP; updateInContextSwordTransform(); });
+  btnNudgeZNeg?.addEventListener('click', () => { playerSwordOffset.offsetZ -= STEP; updateInContextSwordTransform(); });
+  btnNudgeZPos?.addEventListener('click', () => { playerSwordOffset.offsetZ += STEP; updateInContextSwordTransform(); });
+
+  sliderPlayerAngle?.addEventListener('input', () => {
+    playerSwordOffset.angle = parseFloat(sliderPlayerAngle.value || -45);
+    if (valPlayerAngle) valPlayerAngle.textContent = `${Math.round(playerSwordOffset.angle)}°`;
+    updateInContextSwordTransform();
+  });
+
+  btnPlayerLockSword?.addEventListener('click', () => {
+    if (toastPlayer) {
+      toastPlayer.className = 'status-toast success';
+      toastPlayer.innerHTML = `🔒 <b>Đã khóa kiếm vào tay!</b> Chuôi kiếm đã được cố định theo cánh tay.`;
+      toastPlayer.style.display = 'block';
+      setTimeout(() => { toastPlayer.style.display = 'none'; }, 3000);
+    }
+  });
+
+  // Test Slash Swing Animation in Tab 1
+  let isSwingingPlayer = false;
+  btnPlayerTestSwing?.addEventListener('click', () => {
+    if (isSwingingPlayer) return;
+    isSwingingPlayer = true;
+
+    // We animate a temporary Compound Arm containing inContextSword and painted points around shoulderPivot
+    const compoundGrp = new THREE.Group();
+    compoundGrp.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+    vpPlayer.scene.add(compoundGrp);
+
+    // Reparent sword and points relative to pivot
+    inContextSword.position.set(playerSwordOffset.offsetX, playerSwordOffset.offsetY, playerSwordOffset.offsetZ);
+    compoundGrp.add(inContextSword);
+
+    const relPts = playerPoints.getAllPoints().map(p => {
+      const origPos = p.mesh.position.clone();
+      p.mesh.position.sub(new THREE.Vector3(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z));
+      compoundGrp.add(p.mesh);
+      return { mesh: p.mesh, origPos };
+    });
+
+    const startTime = performance.now();
+    const windupAngle = (60 * Math.PI) / 180;
+    const strikeAngle = (-75 * Math.PI) / 180;
+
+    function stepSwing(now) {
+      const elapsed = now - startTime;
+      if (elapsed < 100) {
+        const t = elapsed / 100;
+        compoundGrp.rotation.z = THREE.MathUtils.lerp(0, windupAngle, t * t);
+        requestAnimationFrame(stepSwing);
+      } else if (elapsed < 220) {
+        const t = (elapsed - 100) / 120;
+        compoundGrp.rotation.z = THREE.MathUtils.lerp(windupAngle, strikeAngle, t * t);
+        requestAnimationFrame(stepSwing);
+      } else if (elapsed < 320) {
+        const t = (elapsed - 220) / 100;
+        compoundGrp.rotation.z = THREE.MathUtils.lerp(strikeAngle, 0, 1 - (1 - t) * (1 - t));
+        requestAnimationFrame(stepSwing);
+      } else {
+        compoundGrp.rotation.z = 0;
+        // Restore sword and points to scene
+        vpPlayer.scene.add(inContextSword);
+        updateInContextSwordTransform();
+        relPts.forEach(item => {
+          playerPoints.group.add(item.mesh);
+          item.mesh.position.copy(item.origPos);
+        });
+        vpPlayer.scene.remove(compoundGrp);
+        isSwingingPlayer = false;
+      }
+    }
+    requestAnimationFrame(stepSwing);
+  });
+
+  // Save Player Calibration via brush-save
+  btnPlayerSave?.addEventListener('click', async () => {
+    try {
+      btnPlayerSave.disabled = true;
+      btnPlayerSave.innerHTML = '<span>⏳</span> Đang lưu...';
+
+      const payload = {
+        target: 'player',
+        shoulderPivot: playerShoulderPivot,
+        weaponOffset: {
+          offsetX: playerSwordOffset.offsetX,
+          offsetY: playerSwordOffset.offsetY,
+          offsetZ: playerSwordOffset.offsetZ,
+          angle: playerSwordOffset.angle
+        },
+        paintedArm: {
+          count: playerPoints.getArmPoints().length,
+          topY: playerShoulderPivot.y
+        },
+        slashArc: {
+          idleAngle: 0,
+          windupAngle: 60,
+          slashAngle: -75,
+          arc: 135
+        }
+      };
+
+      const res = await saveBrushRigging(payload);
+      btnPlayerSave.disabled = false;
+      btnPlayerSave.innerHTML = '<span>💾</span> LƯU CẤU HÌNH NHÂN VẬT';
+
+      if (toastPlayer) {
+        toastPlayer.className = 'status-toast success';
+        toastPlayer.innerHTML = `✓ ${res.message || 'Lưu cấu hình thành công!'}`;
+        toastPlayer.style.display = 'block';
+        setTimeout(() => { toastPlayer.style.display = 'none'; }, 4000);
+      }
+    } catch (err) {
+      btnPlayerSave.disabled = false;
+      btnPlayerSave.innerHTML = '<span>💾</span> LƯU CẤU HÌNH NHÂN VẬT';
+      if (toastPlayer) {
+        toastPlayer.className = 'status-toast error';
+        toastPlayer.textContent = 'Lỗi khi lưu: ' + err.message;
+        toastPlayer.style.display = 'block';
+      }
+    }
+  });
+
+  // 3D Painting Raycaster on Player Viewport
+  let isPointerDownPlayer = false;
+  const raycasterPlayer = new THREE.Raycaster();
+  const mousePlayer = new THREE.Vector2();
+
+  function paintOnPlayerCanvas(e) {
+    const rect = vpPlayer.renderer.domElement.getBoundingClientRect();
+    mousePlayer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mousePlayer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterPlayer.setFromCamera(mousePlayer, vpPlayer.camera);
+    const hits = raycasterPlayer.intersectObjects(playerModelHolder.children, true);
+
+    if (hits.length > 0) {
+      const hitPt = hits[0].point;
+      if (playerBrushMode === 'paint_arm') {
+        playerPoints.addPoint(hitPt, 'arm');
+        recalculatePlayerPivot();
+        updateInContextSwordTransform();
+      } else if (playerBrushMode === 'erase') {
+        playerPoints.eraseWithin(hitPt, playerBrushSize);
+        recalculatePlayerPivot();
+      }
+    }
+  }
+
+  vpPlayer.renderer.domElement.addEventListener('pointerdown', (e) => {
+    if (e.button === 0) { // Left click = Paint/Erase
+      isPointerDownPlayer = true;
+      paintOnPlayerCanvas(e);
+    }
+  });
+
+  vpPlayer.renderer.domElement.addEventListener('pointermove', (e) => {
+    if (isPointerDownPlayer) {
+      paintOnPlayerCanvas(e);
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    isPointerDownPlayer = false;
+  });
+
+  function syncPlayerUI() {
+    const pCfg = socketsData.player || {};
+    const sPivot = pCfg.shoulderPivot || {};
+    playerShoulderPivot.x = sPivot.x ?? pCfg.shoulderX ?? -0.65;
+    playerShoulderPivot.y = sPivot.y ?? pCfg.shoulderY ?? 1.2;
+    playerShoulderPivot.z = sPivot.z ?? pCfg.shoulderZ ?? 0.0;
+
+    const w = pCfg.weaponOffset || pCfg.weapon || {};
+    playerSwordOffset.offsetX = w.offsetX ?? 0.0;
+    playerSwordOffset.offsetY = w.offsetY ?? -0.4;
+    playerSwordOffset.offsetZ = w.offsetZ ?? 0.1;
+    playerSwordOffset.angle   = w.angle ?? -45;
+
+    if (valPlayerAngle) valPlayerAngle.textContent = `${Math.round(playerSwordOffset.angle)}°`;
+    if (sliderPlayerAngle) sliderPlayerAngle.value = playerSwordOffset.angle;
+
+    playerGizmoObj.gizmo.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+    if (hudPlayerShoulder) {
+      hudPlayerShoulder.textContent = `(${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}, ${playerShoulderPivot.z.toFixed(2)})`;
+    }
+    updateInContextSwordTransform();
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // TAB 2: BOSS VIEWPORT & DUAL BRUSH MODE (ARM & WEAPON)
+  // ═════════════════════════════════════════════════════════════════════════════
+  const vpBoss = setupScene(canvasBossEl, new THREE.Vector3(-3.5, 2.5, 4.8), new THREE.Vector3(0, 1.8, 0));
+  const bossModelHolder = new THREE.Group();
+  bossModelHolder.name = 'BossModelHolder';
+  vpBoss.scene.add(bossModelHolder);
+
+  const bossGizmoObj = createShoulderGizmo(0xf59e0b);
+  vpBoss.scene.add(bossGizmoObj.gizmo);
+
+  const bossPoints = createPointManager(vpBoss.scene);
+
+  let currentBossElement = 'fire';
+  let bossBrushMode = 'paint_arm'; // 'paint_arm' | 'paint_weapon' | 'erase'
+  let bossBrushSize = 0.45;
+  let bossShoulderPivot = { x: -1.8, y: 2.2, z: 0.2 };
+  let bossWeaponOffset  = { offsetX: 0.0, offsetY: -0.6, offsetZ: 0.5, angle: 30 };
+
+  const hudBossShoulder     = document.getElementById('hud-boss-shoulder');
+  const hudBossArmPts       = document.getElementById('hud-boss-arm-pts');
+  const hudBossWeapPts      = document.getElementById('hud-boss-weap-pts');
+
+  const tabBossThunder      = document.getElementById('tab-boss-thunder');
+  const tabBossFire         = document.getElementById('tab-boss-fire');
+  const tabBossFrost        = document.getElementById('tab-boss-frost');
+
+  const btnBossBrushArm     = document.getElementById('btn-boss-brush-arm');
+  const btnBossBrushWeapon  = document.getElementById('btn-boss-brush-weapon');
+  const btnBossBrushErase   = document.getElementById('btn-boss-brush-erase');
+  const sliderBossBrushSz   = document.getElementById('slider-boss-brush-size');
+  const valBossBrushSz      = document.getElementById('val-boss-brush-size');
+  const btnBossQuickFill    = document.getElementById('btn-boss-quick-fill');
+  const btnBossClearPts     = document.getElementById('btn-boss-clear-points');
+
+  const btnBossTestSlam     = document.getElementById('btn-boss-test-slam');
+  const btnBossSave         = document.getElementById('btn-boss-save');
+  const toastBoss           = document.getElementById('toast-boss');
+
+  // Load Boss 3D Models
+  async function loadBossModel(el = 'fire') {
+    currentBossElement = el;
     while (bossModelHolder.children.length) bossModelHolder.remove(bossModelHolder.children[0]);
 
     let loaded = false;
     try {
-      const gltf = await new Promise(resolve => gltfLoader.load(`/assets/models/boss_${element}.glb`, resolve, undefined, () => resolve(null)));
+      const gltf = await new Promise(resolve => gltfLoader.load(`/assets/models/boss_${el}.glb`, resolve, undefined, () => resolve(null)));
       if (gltf && gltf.scene) {
         const model = gltf.scene;
         model.traverse(c => {
-          if (c.isMesh) {
-            c.castShadow = true;
-            c.receiveShadow = true;
-            if (c.material) c.material = c.material.clone();
-          }
+          if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
         });
         const bBox = new THREE.Box3().setFromObject(model);
         const bSize = new THREE.Vector3();
         bBox.getSize(bSize);
-        if (bSize.y > 0.01) {
-          model.scale.setScalar(4.0 / bSize.y);
-        }
+        if (bSize.y > 0.01) model.scale.setScalar(4.0 / bSize.y);
         const sBox = new THREE.Box3().setFromObject(model);
         model.position.x = - (sBox.min.x + sBox.max.x) / 2;
         model.position.z = - (sBox.min.z + sBox.max.z) / 2;
@@ -607,304 +860,30 @@ export function init3ViewportCalibrator() {
     } catch (e) {}
 
     if (!loaded) {
-      bossModelHolder.add(buildProceduralBoss(element));
+      // Procedural Boss with holding hammer
+      const grp = new THREE.Group();
+      const bodyCol = el === 'frost' ? 0x0088cc : el === 'thunder' ? 0x00aacc : 0x882200;
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.6, 1.2), new THREE.MeshStandardMaterial({ color: bodyCol }));
+      torso.position.y = 2.2;
+      const head = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), new THREE.MeshStandardMaterial({ color: bodyCol }));
+      head.position.y = 4.2;
+      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.4, 0.9), new THREE.MeshStandardMaterial({ color: bodyCol }));
+      armR.position.set(-1.8, 2.2, 0);
+      armR.name = 'Boss_Arm_R';
+
+      // Hammer attached to arm
+      const hammer = new THREE.Group();
+      const hHandle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.2, 0.18), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+      const hHead = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 1.2), new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0x882200 }));
+      hHead.position.y = 1.4;
+      hammer.add(hHandle, hHead);
+      hammer.position.set(-1.8, 1.6, 0.5);
+      hammer.name = 'Boss_Hammer';
+
+      grp.add(torso, head, armR, hammer);
+      bossModelHolder.add(grp);
     }
-
-    selectBossArmByName(socketsData.boss?.armMeshName || 'Arm_R');
   }
-
-  // ─── Raycasting & Mesh Segment Highlighting ──────────────────────────────────
-  function setupRaycasting(viewport, modelHolder, onMeshSelected) {
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    let hoveredMesh = null;
-    let prevEmissive = 0x000000;
-    let pDownTime = 0;
-    let pDownPos = { x: 0, y: 0 };
-
-    viewport.renderer.domElement.addEventListener('pointermove', (e) => {
-      const rect = viewport.renderer.domElement.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, viewport.camera);
-      const hits = raycaster.intersectObjects(modelHolder.children, true);
-
-      if (hits.length > 0) {
-        const hit = hits.find(h => h.object.isMesh);
-        if (hit && hit.object !== hoveredMesh) {
-          // Restore previous
-          if (hoveredMesh && hoveredMesh.material && hoveredMesh.material.emissive) {
-            hoveredMesh.material.emissive.setHex(prevEmissive);
-          }
-          hoveredMesh = hit.object;
-          if (hoveredMesh.material && hoveredMesh.material.emissive) {
-            prevEmissive = hoveredMesh.material.emissive.getHex();
-            hoveredMesh.material.emissive.setHex(0x00d4ff);
-          }
-        }
-      } else {
-        if (hoveredMesh && hoveredMesh.material && hoveredMesh.material.emissive) {
-          hoveredMesh.material.emissive.setHex(prevEmissive);
-          hoveredMesh = null;
-        }
-      }
-    });
-
-    viewport.renderer.domElement.addEventListener('pointerdown', (e) => {
-      pDownTime = performance.now();
-      pDownPos = { x: e.clientX, y: e.clientY };
-    });
-
-    viewport.renderer.domElement.addEventListener('pointerup', (e) => {
-      const elapsed = performance.now() - pDownTime;
-      const dist = Math.hypot(e.clientX - pDownPos.x, e.clientY - pDownPos.y);
-
-      if (elapsed < 320 && dist < 6) {
-        const rect = viewport.renderer.domElement.getBoundingClientRect();
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, viewport.camera);
-        const hits = raycaster.intersectObjects(modelHolder.children, true);
-        const hit = hits.find(h => h.object.isMesh);
-        if (hit) {
-          onMeshSelected(hit.object);
-        }
-      }
-    });
-  }
-
-  // Player Mesh Selection Handler
-  function selectPlayerArm(mesh) {
-    if (!mesh) return;
-    if (selectedPlayerArmMesh && selectedPlayerArmMesh.material?.emissive) {
-      selectedPlayerArmMesh.material.emissive.setHex(0x000000);
-    }
-    selectedPlayerArmMesh = mesh;
-    if (mesh.material && mesh.material.emissive) {
-      mesh.material.emissive.setHex(0x00ff88);
-    }
-
-    const topWorldPt = computeTopVertexWorld(mesh);
-    const name = mesh.name || 'Arm_L';
-
-    socketsData.player.armMeshName = name;
-    socketsData.player.shoulderPivot = {
-      x: Math.round(topWorldPt.x * 100) / 100,
-      y: Math.round(topWorldPt.y * 100) / 100,
-      z: Math.round(topWorldPt.z * 100) / 100
-    };
-    socketsData.player.shoulderX = socketsData.player.shoulderPivot.x;
-    socketsData.player.shoulderY = socketsData.player.shoulderPivot.y;
-    socketsData.player.shoulderZ = socketsData.player.shoulderPivot.z;
-
-    updatePlayerControlsUI();
-    updatePlayerGizmo();
-  }
-
-  function selectPlayerArmByName(name) {
-    let match = null;
-    playerModelHolder.traverse(c => {
-      if (!match && c.isMesh) {
-        const n = (c.name || '').toLowerCase();
-        if (n.includes('arm_l') || n.includes('leftarm') || n.includes('hand_l') || n === name.toLowerCase()) {
-          match = c;
-        }
-      }
-    });
-    if (match) selectPlayerArm(match);
-    else updatePlayerGizmo();
-  }
-
-  // Boss Mesh Selection Handler
-  function selectBossArm(mesh) {
-    if (!mesh) return;
-    if (selectedBossArmMesh && selectedBossArmMesh.material?.emissive) {
-      selectedBossArmMesh.material.emissive.setHex(0x000000);
-    }
-    selectedBossArmMesh = mesh;
-    if (mesh.material && mesh.material.emissive) {
-      mesh.material.emissive.setHex(0xffaa00);
-    }
-
-    const topWorldPt = computeTopVertexWorld(mesh);
-    const name = mesh.name || 'Arm_R';
-
-    socketsData.boss.armMeshName = name;
-    socketsData.boss.shoulderPivot = {
-      x: Math.round(topWorldPt.x * 100) / 100,
-      y: Math.round(topWorldPt.y * 100) / 100,
-      z: Math.round(topWorldPt.z * 100) / 100
-    };
-    socketsData.boss.shoulderX = socketsData.boss.shoulderPivot.x;
-    socketsData.boss.shoulderY = socketsData.boss.shoulderPivot.y;
-    socketsData.boss.shoulderZ = socketsData.boss.shoulderPivot.z;
-
-    updateBossControlsUI();
-    updateBossGizmo();
-  }
-
-  function selectBossArmByName(name) {
-    let match = null;
-    bossModelHolder.traverse(c => {
-      if (!match && c.isMesh) {
-        const n = (c.name || '').toLowerCase();
-        if (n.includes('arm_r') || n.includes('rightarm') || n.includes('hand_r') || n === name.toLowerCase()) {
-          match = c;
-        }
-      }
-    });
-    if (match) selectBossArm(match);
-    else updateBossGizmo();
-  }
-
-  // Gizmo & Transforms
-  function updatePlayerGizmo() {
-    const p = socketsData.player.shoulderPivot || { x: -0.65, y: 1.2, z: 0.0 };
-    playerGizmo.position.set(p.x, p.y, p.z);
-    playerCompoundArm.position.set(p.x, p.y, p.z);
-  }
-
-  function updateBossGizmo() {
-    const p = socketsData.boss.shoulderPivot || { x: -1.8, y: 2.2, z: 0.2 };
-    bossGizmo.position.set(p.x, p.y, p.z);
-    bossCompoundArm.position.set(p.x, p.y, p.z);
-  }
-
-  // Update Controls UI from State
-  function updatePlayerControlsUI() {
-    const p = socketsData.player.shoulderPivot || { x: -0.65, y: 1.2, z: 0.0 };
-    const name = socketsData.player.armMeshName || 'Arm_L';
-
-    if (elPlayerSegName) elPlayerSegName.textContent = name;
-    if (elPlayerReadout) elPlayerReadout.textContent = `(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`;
-
-    if (sliderPlayerSx) sliderPlayerSx.value = p.x;
-    if (numPlayerSx)    numPlayerSx.value = p.x.toFixed(2);
-    if (valPlayerSx)    valPlayerSx.textContent = p.x.toFixed(2);
-
-    if (sliderPlayerSy) sliderPlayerSy.value = p.y;
-    if (numPlayerSy)    numPlayerSy.value = p.y.toFixed(2);
-    if (valPlayerSy)    valPlayerSy.textContent = p.y.toFixed(2);
-
-    if (sliderPlayerSz) sliderPlayerSz.value = p.z;
-    if (numPlayerSz)    numPlayerSz.value = p.z.toFixed(2);
-    if (valPlayerSz)    valPlayerSz.textContent = p.z.toFixed(2);
-  }
-
-  function updateBossControlsUI() {
-    const p = socketsData.boss.shoulderPivot || { x: -1.8, y: 2.2, z: 0.2 };
-    const name = socketsData.boss.armMeshName || 'Arm_R';
-
-    if (elBossSegName) elBossSegName.textContent = name;
-    if (elBossReadout) elBossReadout.textContent = `(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`;
-
-    if (sliderBossSx) sliderBossSx.value = p.x;
-    if (numBossSx)    numBossSx.value = p.x.toFixed(2);
-    if (valBossSx)    valBossSx.textContent = p.x.toFixed(2);
-
-    if (sliderBossSy) sliderBossSy.value = p.y;
-    if (numBossSy)    numBossSy.value = p.y.toFixed(2);
-    if (valBossSy)    valBossSy.textContent = p.y.toFixed(2);
-
-    if (sliderBossSz) sliderBossSz.value = p.z;
-    if (numBossSz)    numBossSz.value = p.z.toFixed(2);
-    if (valBossSz)    valBossSz.textContent = p.z.toFixed(2);
-  }
-
-  function updateWeaponControlsUI() {
-    const targetKey = activeWeaponTarget;
-    const cfg = socketsData[targetKey] || {};
-    const w = cfg.weapon || cfg.weaponOffset || {};
-    const s = cfg.slashArc || {};
-
-    const ox = w.offsetX ?? 0.0;
-    const oy = w.offsetY ?? (targetKey === 'player' ? -0.4 : -0.6);
-    const oz = w.offsetZ ?? (targetKey === 'player' ? 0.1 : 0.5);
-    const angle = w.angle ?? (targetKey === 'player' ? -45 : 30);
-
-    const idle = s.idleAngle ?? 0;
-    const arc  = s.arc ?? (targetKey === 'player' ? 135 : 160);
-
-    if (sliderWeaponOx) sliderWeaponOx.value = ox;
-    if (numWeaponOx)    numWeaponOx.value = ox.toFixed(2);
-    if (valWeaponOx)    valWeaponOx.textContent = ox.toFixed(2);
-
-    if (sliderWeaponOy) sliderWeaponOy.value = oy;
-    if (numWeaponOy)    numWeaponOy.value = oy.toFixed(2);
-    if (valWeaponOy)    valWeaponOy.textContent = oy.toFixed(2);
-
-    if (sliderWeaponOz) sliderWeaponOz.value = oz;
-    if (numWeaponOz)    numWeaponOz.value = oz.toFixed(2);
-    if (valWeaponOz)    valWeaponOz.textContent = oz.toFixed(2);
-
-    if (sliderWeaponAngle) sliderWeaponAngle.value = angle;
-    if (numWeaponAngle)    numWeaponAngle.value = Math.round(angle);
-    if (valWeaponAngle)    valWeaponAngle.textContent = `${Math.round(angle)}°`;
-
-    if (sliderIdleAngle) sliderIdleAngle.value = idle;
-    if (numIdleAngle)    numIdleAngle.value = Math.round(idle);
-    if (valIdleAngle)    valIdleAngle.textContent = `${Math.round(idle)}°`;
-
-    if (sliderSlashArc) sliderSlashArc.value = arc;
-    if (numSlashArc)    numSlashArc.value = Math.round(arc);
-    if (valSlashArc)    valSlashArc.textContent = `${Math.round(arc)}°`;
-
-    refreshViewport3Compound();
-  }
-
-  // Setup raycasters
-  setupRaycasting(vpPlayer, playerModelHolder, selectPlayerArm);
-  setupRaycasting(vpBoss, bossModelHolder, selectBossArm);
-
-  // Manual Player Shoulder Sliders
-  function onPlayerSliderChanged() {
-    const x = parseFloat(sliderPlayerSx.value || 0);
-    const y = parseFloat(sliderPlayerSy.value || 0);
-    const z = parseFloat(sliderPlayerSz.value || 0);
-
-    socketsData.player.shoulderPivot = { x, y, z };
-    socketsData.player.shoulderX = x;
-    socketsData.player.shoulderY = y;
-    socketsData.player.shoulderZ = z;
-
-    updatePlayerControlsUI();
-    updatePlayerGizmo();
-  }
-
-  sliderPlayerSx?.addEventListener('input', onPlayerSliderChanged);
-  sliderPlayerSy?.addEventListener('input', onPlayerSliderChanged);
-  sliderPlayerSz?.addEventListener('input', onPlayerSliderChanged);
-  numPlayerSx?.addEventListener('change', () => { sliderPlayerSx.value = numPlayerSx.value; onPlayerSliderChanged(); });
-  numPlayerSy?.addEventListener('change', () => { sliderPlayerSy.value = numPlayerSy.value; onPlayerSliderChanged(); });
-  numPlayerSz?.addEventListener('change', () => { sliderPlayerSz.value = numPlayerSz.value; onPlayerSliderChanged(); });
-
-  btnQuickPlayer?.addEventListener('click', () => selectPlayerArmByName('Arm_L'));
-
-  // Manual Boss Shoulder Sliders
-  function onBossSliderChanged() {
-    const x = parseFloat(sliderBossSx.value || 0);
-    const y = parseFloat(sliderBossSy.value || 0);
-    const z = parseFloat(sliderBossSz.value || 0);
-
-    socketsData.boss.shoulderPivot = { x, y, z };
-    socketsData.boss.shoulderX = x;
-    socketsData.boss.shoulderY = y;
-    socketsData.boss.shoulderZ = z;
-
-    updateBossControlsUI();
-    updateBossGizmo();
-  }
-
-  sliderBossSx?.addEventListener('input', onBossSliderChanged);
-  sliderBossSy?.addEventListener('input', onBossSliderChanged);
-  sliderBossSz?.addEventListener('input', onBossSliderChanged);
-  numBossSx?.addEventListener('change', () => { sliderBossSx.value = numBossSx.value; onBossSliderChanged(); });
-  numBossSy?.addEventListener('change', () => { sliderBossSy.value = numBossSy.value; onBossSliderChanged(); });
-  numBossSz?.addEventListener('change', () => { sliderBossSz.value = numBossSz.value; onBossSliderChanged(); });
-
-  btnQuickBoss?.addEventListener('click', () => selectBossArmByName('Arm_R'));
 
   // Boss element switcher tabs
   function setBossTab(el) {
@@ -917,205 +896,272 @@ export function init3ViewportCalibrator() {
   tabBossFire?.addEventListener('click', () => setBossTab('fire'));
   tabBossFrost?.addEventListener('click', () => setBossTab('frost'));
 
-  // Weapon Target Switcher
-  function setWeaponTarget(target) {
-    activeWeaponTarget = target;
-    btnTargetPlayer?.classList.toggle('active', target === 'player');
-    btnTargetBoss?.classList.toggle('active', target === 'boss');
-    updateWeaponControlsUI();
-  }
-  btnTargetPlayer?.addEventListener('click', () => setWeaponTarget('player'));
-  btnTargetBoss?.addEventListener('click', () => setWeaponTarget('boss'));
-
-  // Weapon Offset & Slash Arc Sliders
-  function onWeaponSliderChanged() {
-    const targetKey = activeWeaponTarget;
-    if (!socketsData[targetKey]) socketsData[targetKey] = {};
-    if (!socketsData[targetKey].weapon) socketsData[targetKey].weapon = {};
-
-    const ox = parseFloat(sliderWeaponOx.value || 0);
-    const oy = parseFloat(sliderWeaponOy.value || 0);
-    const oz = parseFloat(sliderWeaponOz.value || 0);
-    const angle = parseFloat(sliderWeaponAngle.value || 0);
-
-    socketsData[targetKey].weapon.offsetX = ox;
-    socketsData[targetKey].weapon.offsetY = oy;
-    socketsData[targetKey].weapon.offsetZ = oz;
-    socketsData[targetKey].weapon.angle = angle;
-    socketsData[targetKey].weapon.rotX = 0;
-    socketsData[targetKey].weapon.rotY = targetKey === 'player' ? Math.PI / 2 : -Math.PI / 2;
-    socketsData[targetKey].weapon.rotZ = (angle * Math.PI) / 180;
-    socketsData[targetKey].weaponOffset = { ...socketsData[targetKey].weapon };
-
-    if (valWeaponOx) valWeaponOx.textContent = ox.toFixed(2);
-    if (numWeaponOx) numWeaponOx.value = ox.toFixed(2);
-    if (valWeaponOy) valWeaponOy.textContent = oy.toFixed(2);
-    if (numWeaponOy) numWeaponOy.value = oy.toFixed(2);
-    if (valWeaponOz) valWeaponOz.textContent = oz.toFixed(2);
-    if (numWeaponOz) numWeaponOz.value = oz.toFixed(2);
-    if (valWeaponAngle) valWeaponAngle.textContent = `${Math.round(angle)}°`;
-    if (numWeaponAngle) numWeaponAngle.value = Math.round(angle);
-
-    updateVP3Transforms();
-  }
-
-  sliderWeaponOx?.addEventListener('input', onWeaponSliderChanged);
-  sliderWeaponOy?.addEventListener('input', onWeaponSliderChanged);
-  sliderWeaponOz?.addEventListener('input', onWeaponSliderChanged);
-  sliderWeaponAngle?.addEventListener('input', onWeaponSliderChanged);
-
-  numWeaponOx?.addEventListener('change', () => { sliderWeaponOx.value = numWeaponOx.value; onWeaponSliderChanged(); });
-  numWeaponOy?.addEventListener('change', () => { sliderWeaponOy.value = numWeaponOy.value; onWeaponSliderChanged(); });
-  numWeaponOz?.addEventListener('change', () => { sliderWeaponOz.value = numWeaponOz.value; onWeaponSliderChanged(); });
-  numWeaponAngle?.addEventListener('change', () => { sliderWeaponAngle.value = numWeaponAngle.value; onWeaponSliderChanged(); });
-
-  function onSlashTuningChanged() {
-    const targetKey = activeWeaponTarget;
-    if (!socketsData[targetKey]) socketsData[targetKey] = {};
-    if (!socketsData[targetKey].slashArc) socketsData[targetKey].slashArc = {};
-
-    const idle = parseFloat(sliderIdleAngle.value || 0);
-    const arc  = parseFloat(sliderSlashArc.value || 135);
-
-    const windup = idle + (targetKey === 'player' ? arc * 0.45 : arc * 0.5);
-    const slash  = idle - (targetKey === 'player' ? arc * 0.55 : arc * 0.5);
-
-    socketsData[targetKey].slashArc = {
-      idleAngle: idle,
-      windupAngle: windup,
-      slashAngle: slash,
-      arc: arc
-    };
-
-    if (valIdleAngle) valIdleAngle.textContent = `${Math.round(idle)}°`;
-    if (numIdleAngle) numIdleAngle.value = Math.round(idle);
-    if (valSlashArc) valSlashArc.textContent = `${Math.round(arc)}°`;
-    if (numSlashArc) numSlashArc.value = Math.round(arc);
-  }
-
-  sliderIdleAngle?.addEventListener('input', onSlashTuningChanged);
-  sliderSlashArc?.addEventListener('input', onSlashTuningChanged);
-  numIdleAngle?.addEventListener('change', () => { sliderIdleAngle.value = numIdleAngle.value; onSlashTuningChanged(); });
-  numSlashArc?.addEventListener('change', () => { sliderSlashArc.value = numSlashArc.value; onSlashTuningChanged(); });
-
-  // Button: [🔒 Khóa Cứng Vũ Khí Vào Tay]
-  btnLockWeapon?.addEventListener('click', () => {
-    onWeaponSliderChanged();
-    onSlashTuningChanged();
-
-    // Visual feedback
-    if (statusToast) {
-      statusToast.className = 'status-toast success';
-      statusToast.innerHTML = `🔒 <b>Đã khóa cứng vũ khí vào cánh tay</b> (${activeWeaponTarget === 'player' ? 'Nhân vật' : 'Boss'})!`;
-      statusToast.style.display = 'block';
-      setTimeout(() => { statusToast.style.display = 'none'; }, 3000);
-    }
+  // Dual Brush Tool Selection
+  btnBossBrushArm?.addEventListener('click', () => {
+    bossBrushMode = 'paint_arm';
+    btnBossBrushArm.classList.add('active', 'arm-cyan');
+    btnBossBrushWeapon?.classList.remove('active', 'weapon-orange');
+    btnBossBrushErase?.classList.remove('active', 'eraser');
   });
 
-  // Button: [⚔️ Vung Thử (Test Swing)]
-  function playTestSwing() {
-    if (isTestingSwing) return;
-    isTestingSwing = true;
+  btnBossBrushWeapon?.addEventListener('click', () => {
+    bossBrushMode = 'paint_weapon';
+    btnBossBrushWeapon.classList.add('active', 'weapon-orange');
+    btnBossBrushArm?.classList.remove('active', 'arm-cyan');
+    btnBossBrushErase?.classList.remove('active', 'eraser');
+  });
 
-    const isPlayer = (activeWeaponTarget === 'player');
-    const targetKey = isPlayer ? 'player' : 'boss';
-    const s = socketsData[targetKey]?.slashArc || {};
-    const idleAngleRad = ((s.idleAngle ?? 0) * Math.PI) / 180;
-    const windupAngleRad = ((s.windupAngle ?? (isPlayer ? 60 : 80)) * Math.PI) / 180;
-    const strikeAngleRad = ((s.slashAngle ?? (isPlayer ? -75 : -80)) * Math.PI) / 180;
+  btnBossBrushErase?.addEventListener('click', () => {
+    bossBrushMode = 'erase';
+    btnBossBrushErase.classList.add('active', 'eraser');
+    btnBossBrushArm?.classList.remove('active', 'arm-cyan');
+    btnBossBrushWeapon?.classList.remove('active', 'weapon-orange');
+  });
+
+  sliderBossBrushSz?.addEventListener('input', () => {
+    bossBrushSize = parseFloat(sliderBossBrushSz.value || 0.45);
+    if (valBossBrushSz) valBossBrushSz.textContent = bossBrushSize.toFixed(2);
+  });
+
+  // Calculate Boss Pivot & Weapon offset from painted points
+  function recalculateBossPivot() {
+    const armPts = bossPoints.getArmPoints();
+    const weapPts = bossPoints.getWeaponPoints();
+
+    if (hudBossArmPts)  hudBossArmPts.textContent  = `${armPts.length} điểm`;
+    if (hudBossWeapPts) hudBossWeapPts.textContent = `${weapPts.length} điểm`;
+
+    if (armPts.length > 0) {
+      let topPt = armPts[0].pos;
+      for (const p of armPts) {
+        if (p.pos.y > topPt.y) topPt = p.pos;
+      }
+      bossShoulderPivot = {
+        x: Math.round(topPt.x * 100) / 100,
+        y: Math.round(topPt.y * 100) / 100,
+        z: Math.round(topPt.z * 100) / 100
+      };
+    } else {
+      bossShoulderPivot = socketsData.boss.shoulderPivot || { x: -1.8, y: 2.2, z: 0.2 };
+    }
+
+    if (weapPts.length > 0) {
+      const avg = new THREE.Vector3();
+      weapPts.forEach(p => avg.add(p.pos));
+      avg.divideScalar(weapPts.length);
+      bossWeaponOffset.offsetX = Math.round((avg.x - bossShoulderPivot.x) * 100) / 100;
+      bossWeaponOffset.offsetY = Math.round((avg.y - bossShoulderPivot.y) * 100) / 100;
+      bossWeaponOffset.offsetZ = Math.round((avg.z - bossShoulderPivot.z) * 100) / 100;
+    }
+
+    bossGizmoObj.gizmo.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+    if (hudBossShoulder) {
+      hudBossShoulder.textContent = `(${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}, ${bossShoulderPivot.z.toFixed(2)})`;
+    }
+  }
+
+  // Quick fill Arm & Weapon for Boss
+  btnBossQuickFill?.addEventListener('click', () => {
+    bossPoints.clear();
+    // Arm points (x ~ -1.8, y=1.2 to 2.3, z=0.0)
+    for (let y = 1.2; y <= 2.3; y += 0.12) {
+      for (let x = -2.1; x <= -1.5; x += 0.15) {
+        for (let z = -0.3; z <= 0.3; z += 0.15) {
+          bossPoints.addPoint(new THREE.Vector3(x, y, z), 'arm');
+        }
+      }
+    }
+    // Weapon / Hammer points (x ~ -1.8, y=0.8 to 2.8, z=0.5)
+    for (let y = 0.8; y <= 2.8; y += 0.15) {
+      for (let x = -2.2; x <= -1.4; x += 0.2) {
+        for (let z = 0.35; z <= 0.65; z += 0.15) {
+          bossPoints.addPoint(new THREE.Vector3(x, y, z), 'weapon');
+        }
+      }
+    }
+    recalculateBossPivot();
+  });
+
+  btnBossClearPts?.addEventListener('click', () => {
+    bossPoints.clear();
+    recalculateBossPivot();
+  });
+
+  // Test Slam Animation in Tab 2
+  let isSlammingBoss = false;
+  btnBossTestSlam?.addEventListener('click', () => {
+    if (isSlammingBoss) return;
+    isSlammingBoss = true;
+
+    // Temporary Compound Group containing all painted arm + weapon points
+    const compoundGrp = new THREE.Group();
+    compoundGrp.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+    vpBoss.scene.add(compoundGrp);
+
+    const relPts = bossPoints.getAllPoints().map(p => {
+      const origPos = p.mesh.position.clone();
+      p.mesh.position.sub(new THREE.Vector3(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z));
+      compoundGrp.add(p.mesh);
+      return { mesh: p.mesh, origPos };
+    });
 
     const startTime = performance.now();
-    const dur1 = isPlayer ? 100 : 160;
-    const dur2 = isPlayer ? 120 : 130;
-    const dur3 = isPlayer ? 100 : 150;
+    const raiseAngle = (80 * Math.PI) / 180;
+    const slamAngle  = (-80 * Math.PI) / 180;
 
-    function step(now) {
+    function stepSlam(now) {
       const elapsed = now - startTime;
-      let curAngle = idleAngleRad;
-
-      if (elapsed < dur1) {
-        const t = elapsed / dur1;
-        curAngle = THREE.MathUtils.lerp(idleAngleRad, windupAngleRad, t * t);
-        requestAnimationFrame(step);
-      } else if (elapsed < dur1 + dur2) {
-        const t = (elapsed - dur1) / dur2;
-        curAngle = THREE.MathUtils.lerp(windupAngleRad, strikeAngleRad, t * t);
-        requestAnimationFrame(step);
-      } else if (elapsed < dur1 + dur2 + dur3) {
-        const t = (elapsed - (dur1 + dur2)) / dur3;
-        curAngle = THREE.MathUtils.lerp(strikeAngleRad, idleAngleRad, 1 - (1 - t) * (1 - t));
-        requestAnimationFrame(step);
+      if (elapsed < 160) {
+        const t = elapsed / 160;
+        compoundGrp.rotation.z = THREE.MathUtils.lerp(0, raiseAngle, t * t);
+        requestAnimationFrame(stepSlam);
+      } else if (elapsed < 290) {
+        const t = (elapsed - 160) / 130;
+        compoundGrp.rotation.z = THREE.MathUtils.lerp(raiseAngle, slamAngle, t * t);
+        requestAnimationFrame(stepSlam);
+      } else if (elapsed < 440) {
+        const t = (elapsed - 290) / 150;
+        compoundGrp.rotation.z = THREE.MathUtils.lerp(slamAngle, 0, 1 - (1 - t) * (1 - t));
+        requestAnimationFrame(stepSlam);
       } else {
-        curAngle = idleAngleRad;
-        isTestingSwing = false;
-      }
-
-      // Rotate in Viewport 3
-      weaponCompoundHolder.rotation.z = curAngle;
-
-      // Rotate in Viewport 1 or 2
-      if (isPlayer) {
-        playerCompoundArm.rotation.z = curAngle;
-      } else {
-        bossCompoundArm.rotation.z = curAngle;
+        compoundGrp.rotation.z = 0;
+        relPts.forEach(item => {
+          bossPoints.group.add(item.mesh);
+          item.mesh.position.copy(item.origPos);
+        });
+        vpBoss.scene.remove(compoundGrp);
+        isSlammingBoss = false;
       }
     }
-    requestAnimationFrame(step);
-  }
+    requestAnimationFrame(stepSlam);
+  });
 
-  btnTestSwing?.addEventListener('click', playTestSwing);
-
-  // Button: [💾 Lưu Cấu Hình Khớp & Đòn Chém]
-  btnSaveRigging?.addEventListener('click', async () => {
+  // Save Boss Calibration
+  btnBossSave?.addEventListener('click', async () => {
     try {
-      btnSaveRigging.disabled = true;
-      btnSaveRigging.innerHTML = '<span>⏳</span> Đang lưu...';
-
-      // Save active target rigging
-      const targetKey = activeWeaponTarget;
-      const targetConfig = socketsData[targetKey];
+      btnBossSave.disabled = true;
+      btnBossSave.innerHTML = '<span>⏳</span> Đang lưu...';
 
       const payload = {
-        target: targetKey,
-        armMeshName: targetConfig.armMeshName,
-        shoulderPivot: targetConfig.shoulderPivot,
-        weaponOffset: targetConfig.weapon,
-        slashArc: targetConfig.slashArc
+        target: 'boss',
+        shoulderPivot: bossShoulderPivot,
+        weaponOffset: {
+          offsetX: bossWeaponOffset.offsetX,
+          offsetY: bossWeaponOffset.offsetY,
+          offsetZ: bossWeaponOffset.offsetZ,
+          angle: bossWeaponOffset.angle || 30
+        },
+        paintedArm: {
+          count: bossPoints.getArmPoints().length,
+          topY: bossShoulderPivot.y
+        },
+        paintedWeapon: {
+          count: bossPoints.getWeaponPoints().length
+        },
+        slashArc: {
+          idleAngle: 0,
+          windupAngle: 80,
+          slashAngle: -80,
+          arc: 160
+        }
       };
 
-      const res = await saveRigging(payload);
-      btnSaveRigging.disabled = false;
-      btnSaveRigging.innerHTML = '<span>💾</span> LƯU CẤU HÌNH KHỚP &amp; ĐÒN CHÉM';
+      const res = await saveBrushRigging(payload);
+      btnBossSave.disabled = false;
+      btnBossSave.innerHTML = '<span>💾</span> LƯU CẤU HÌNH BOSS';
 
-      if (statusToast) {
-        statusToast.className = 'status-toast success';
-        statusToast.innerHTML = `✓ ${res.message || 'Đã lưu cấu hình khớp & đòn chém thành công!'}`;
-        statusToast.style.display = 'block';
-        setTimeout(() => { statusToast.style.display = 'none'; }, 4000);
+      if (toastBoss) {
+        toastBoss.className = 'status-toast success';
+        toastBoss.innerHTML = `✓ ${res.message || 'Lưu cấu hình Boss thành công!'}`;
+        toastBoss.style.display = 'block';
+        setTimeout(() => { toastBoss.style.display = 'none'; }, 4000);
       }
-
-      window.dispatchEvent(new CustomEvent('sockets-updated', { detail: res.sockets || res.config }));
     } catch (err) {
-      btnSaveRigging.disabled = false;
-      btnSaveRigging.innerHTML = '<span>💾</span> LƯU CẤU HÌNH KHỚP &amp; ĐÒN CHÉM';
-      if (statusToast) {
-        statusToast.className = 'status-toast error';
-        statusToast.textContent = 'Lỗi khi lưu: ' + err.message;
-        statusToast.style.display = 'block';
+      btnBossSave.disabled = false;
+      btnBossSave.innerHTML = '<span>💾</span> LƯU CẤU HÌNH BOSS';
+      if (toastBoss) {
+        toastBoss.className = 'status-toast error';
+        toastBoss.textContent = 'Lỗi khi lưu: ' + err.message;
+        toastBoss.style.display = 'block';
       }
     }
   });
 
-  // Animation Loop across all 3 viewports
+  // 3D Painting Raycaster on Boss Viewport
+  let isPointerDownBoss = false;
+  const raycasterBoss = new THREE.Raycaster();
+  const mouseBoss = new THREE.Vector2();
+
+  function paintOnBossCanvas(e) {
+    const rect = vpBoss.renderer.domElement.getBoundingClientRect();
+    mouseBoss.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseBoss.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterBoss.setFromCamera(mouseBoss, vpBoss.camera);
+    const hits = raycasterBoss.intersectObjects(bossModelHolder.children, true);
+
+    if (hits.length > 0) {
+      const hitPt = hits[0].point;
+      if (bossBrushMode === 'paint_arm') {
+        bossPoints.addPoint(hitPt, 'arm');
+        recalculateBossPivot();
+      } else if (bossBrushMode === 'paint_weapon') {
+        bossPoints.addPoint(hitPt, 'weapon');
+        recalculateBossPivot();
+      } else if (bossBrushMode === 'erase') {
+        bossPoints.eraseWithin(hitPt, bossBrushSize);
+        recalculateBossPivot();
+      }
+    }
+  }
+
+  vpBoss.renderer.domElement.addEventListener('pointerdown', (e) => {
+    if (e.button === 0) {
+      isPointerDownBoss = true;
+      paintOnBossCanvas(e);
+    }
+  });
+
+  vpBoss.renderer.domElement.addEventListener('pointermove', (e) => {
+    if (isPointerDownBoss) {
+      paintOnBossCanvas(e);
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    isPointerDownBoss = false;
+  });
+
+  function syncBossUI() {
+    const bCfg = socketsData.boss || {};
+    const sPivot = bCfg.shoulderPivot || {};
+    bossShoulderPivot.x = sPivot.x ?? bCfg.shoulderX ?? -1.8;
+    bossShoulderPivot.y = sPivot.y ?? bCfg.shoulderY ?? 2.2;
+    bossShoulderPivot.z = sPivot.z ?? bCfg.shoulderZ ?? 0.2;
+
+    const w = bCfg.weaponOffset || bCfg.weapon || {};
+    bossWeaponOffset.offsetX = w.offsetX ?? 0.0;
+    bossWeaponOffset.offsetY = w.offsetY ?? -0.6;
+    bossWeaponOffset.offsetZ = w.offsetZ ?? 0.5;
+    bossWeaponOffset.angle   = w.angle ?? 30;
+
+    bossGizmoObj.gizmo.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+    if (hudBossShoulder) {
+      hudBossShoulder.textContent = `(${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}, ${bossShoulderPivot.z.toFixed(2)})`;
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // ANIMATION LOOP
+  // ═════════════════════════════════════════════════════════════════════════════
   let animId = null;
   function animate() {
     animId = requestAnimationFrame(animate);
 
     vpPlayer.controls.update();
     vpBoss.controls.update();
-    vpWeapon.controls.update();
 
-    // Pulse gizmos subtly
+    // Subtle pulsing for gizmo rings
     const t = Date.now() * 0.003;
     playerGizmoObj.ringX.scale.setScalar(1 + Math.sin(t) * 0.12);
     playerGizmoObj.ringY.scale.setScalar(1 + Math.cos(t) * 0.12);
@@ -1124,53 +1170,32 @@ export function init3ViewportCalibrator() {
 
     vpPlayer.renderer.render(vpPlayer.scene, vpPlayer.camera);
     vpBoss.renderer.render(vpBoss.scene, vpBoss.camera);
-    vpWeapon.renderer.render(vpWeapon.scene, vpWeapon.camera);
   }
   animate();
 
-  // Load configuration from backend
-  fetchRigging().then(cfg => {
-    if (cfg && typeof cfg === 'object') {
-      socketsData = {
-        player: { ...DEFAULT_SOCKETS_CONFIG.player, ...(cfg.player || {}) },
-        boss:   { ...DEFAULT_SOCKETS_CONFIG.boss,   ...(cfg.boss || {}) },
-        weapon: { ...DEFAULT_SOCKETS_CONFIG.weapon, ...(cfg.weapon || {}) },
-      };
-      updatePlayerControlsUI();
-      updateBossControlsUI();
-      updateWeaponControlsUI();
-      updatePlayerGizmo();
-      updateBossGizmo();
-    }
-  }).catch(() => {});
-
   loadPlayerModel();
   loadBossModel('fire');
-  updateWeaponControlsUI();
 
   return {
     destroy: () => {
       cancelAnimationFrame(animId);
       vpPlayer.resizeObs.disconnect();
       vpBoss.resizeObs.disconnect();
-      vpWeapon.resizeObs.disconnect();
       vpPlayer.renderer.dispose();
       vpBoss.renderer.dispose();
-      vpWeapon.renderer.dispose();
-    },
-    playTestSwing
+    }
   };
 }
 
 // Backwards-compatible init functions
+export function init3ViewportCalibrator() {
+  return initBrushCalibrator();
+}
+
 export function initVisualSocketCalibrator(opts = {}) {
-  // If called without specific container or for standalone 3-viewport mode
-  if (document.getElementById('viewport-player') && document.getElementById('viewport-boss')) {
-    return init3ViewportCalibrator();
-  }
-  return null;
+  return initBrushCalibrator();
 }
 
 export function initStandaloneCalibrator() {
-  return init3ViewportCalibrator();
+  return initBrushCalibrator();
 }

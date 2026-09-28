@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin 3-Viewport Mesh Segmenter & Compound Rigging | Quiz Battle 3D</title>
+  <title>Admin 3D Brush Highlighter & In-Context Rigging | Quiz Battle 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=25.0">
+  <link rel="stylesheet" href="css/style.css?v=26.0">
   <script type="importmap">
   {
     "imports": {
@@ -28,7 +28,7 @@
       box-sizing: border-box;
     }
     .admin-container {
-      max-width: 1600px;
+      max-width: 1440px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -66,119 +66,181 @@
       background: rgba(255, 107, 53, 0.15);
       transform: translateY(-1px);
     }
-    /* 3-Viewport Side-by-Side Grid */
-    .viewports-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1.15fr;
-      gap: 16px;
-      align-items: stretch;
+    /* Main Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 6px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
     }
-    @media (max-width: 1240px) {
-      .viewports-grid {
+    .nav-tab-btn {
+      flex: 1;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #94a3b8;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    .nav-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .nav-tab-btn.active {
+      background: #00b4d8;
+      color: #041019;
+      box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45);
+    }
+    .nav-tab-btn.boss-tab.active {
+      background: #f59e0b;
+      color: #051320;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
+    }
+    /* Tab Content Layout */
+    .tab-pane {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 16px;
+      min-height: 600px;
+    }
+    .tab-pane.hidden {
+      display: none;
+    }
+    @media (max-width: 1080px) {
+      .tab-pane {
         grid-template-columns: 1fr;
       }
     }
-    .viewport-panel {
-      background: rgba(15, 23, 42, 0.85);
+    /* 3D Canvas Box */
+    .canvas-card {
+      background: #070a13;
       border: 2px solid rgba(255, 255, 255, 0.12);
       border-radius: 12px;
+      position: relative;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      min-height: 580px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
-    .panel-header {
-      padding: 12px 16px;
-      background: rgba(0, 0, 0, 0.45);
-      border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-    .panel-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: #f8fafc;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .panel-title.player { color: #00b4d8; }
-    .panel-title.boss { color: #f59e0b; }
-    .panel-title.weapon { color: #06d6a0; }
-    .selector-tabs {
-      display: flex;
-      gap: 4px;
-    }
-    .selector-btn {
-      background: rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .selector-btn:hover {
-      background: rgba(255, 255, 255, 0.16);
-      color: #fff;
-    }
-    .selector-btn.active {
-      background: #00b4d8;
-      color: #041019;
-      border-color: #00b4d8;
-      box-shadow: 0 0 10px rgba(0, 180, 216, 0.5);
-    }
-    .viewport-canvas-box {
+    .canvas-viewport {
+      flex: 1;
       width: 100%;
-      height: 380px;
-      background: #070a13;
-      position: relative;
+      height: 100%;
       cursor: crosshair;
-      overflow: hidden;
     }
-    .canvas-overlay-tip {
+    .canvas-hud-overlay {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 12px;
+      left: 12px;
       pointer-events: none;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
-      padding: 6px 12px;
-      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(6px);
+      padding: 10px 14px;
+      border-radius: 8px;
       font-size: 11px;
       color: #cbd5e1;
       border: 1px solid rgba(255, 255, 255, 0.15);
-      line-height: 1.5;
-    }
-    .panel-body {
-      padding: 14px 16px;
+      line-height: 1.6;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      flex: 1;
+      gap: 4px;
     }
-    .segment-badge-row {
-      display: flex;
-      justify-content: space-between;
+    .hud-badge {
+      display: inline-flex;
       align-items: center;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 11px;
-    }
-    .val-badge {
+      gap: 6px;
+      font-weight: 700;
       color: #00cfff;
       font-family: monospace;
-      font-weight: 700;
       font-size: 12px;
     }
-    .control-group {
+    .hud-badge.boss { color: #f59e0b; }
+    /* Controls Panel */
+    .controls-panel {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+    .section-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section-title.boss { color: #fbbf24; }
+    .brush-tools-row {
+      display: flex;
+      gap: 8px;
+    }
+    .tool-btn {
+      flex: 1;
+      padding: 9px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+      border-radius: 7px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .tool-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+    .tool-btn.active.arm-cyan {
+      background: rgba(0, 229, 255, 0.25);
+      color: #00e5ff;
+      border-color: #00e5ff;
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+    }
+    .tool-btn.active.weapon-orange {
+      background: rgba(255, 153, 0, 0.25);
+      color: #ff9900;
+      border-color: #ff9900;
+      box-shadow: 0 0 12px rgba(255, 153, 0, 0.4);
+    }
+    .tool-btn.active.eraser {
+      background: rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+      border-color: #ef4444;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    }
+    .control-row {
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -190,48 +252,47 @@
       display: flex;
       justify-content: space-between;
     }
-    .control-label span.num-text {
+    .control-label span.val-text {
       color: #00cfff;
       font-family: monospace;
+      font-size: 12px;
     }
     .slider-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     .slider-row input[type="range"] {
       flex: 1;
       accent-color: #00b4d8;
       cursor: pointer;
     }
-    .slider-row input[type="number"] {
-      width: 65px;
-      background: #1e293b;
-      color: #00b4d8;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 6px;
-      padding: 4px 6px;
-      font-size: 11px;
-      font-family: monospace;
-      text-align: right;
+    .nudge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
     }
-    .btn-quick {
+    .nudge-btn {
       background: rgba(255, 255, 255, 0.08);
       color: #e2e8f0;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 11px;
+      padding: 6px;
+      font-size: 10px;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
       transition: all 0.15s;
     }
-    .btn-quick:hover {
-      background: rgba(255, 255, 255, 0.18);
+    .nudge-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
-    .btn-lock {
-      background: linear-gradient(135deg, #3b82f6, #00b4d8);
+    .btn-action-primary {
+      background: linear-gradient(135deg, #0284c7, #00b4d8);
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -244,14 +305,14 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
       transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
     }
-    .btn-lock:hover {
+    .btn-action-primary:hover {
       filter: brightness(1.15);
       transform: translateY(-1px);
     }
-    .btn-test {
+    .btn-test-swing {
       background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #fff;
       border: none;
@@ -267,11 +328,11 @@
       gap: 8px;
       transition: all 0.2s;
     }
-    .btn-test:hover {
+    .btn-test-swing:hover {
       filter: brightness(1.15);
       transform: translateY(-1px);
     }
-    .btn-save {
+    .btn-save-all {
       background: linear-gradient(135deg, #06d6a0, #00b4d8);
       color: #042416;
       border: none;
@@ -288,7 +349,7 @@
       box-shadow: 0 4px 16px rgba(6, 214, 160, 0.35);
       transition: all 0.2s;
     }
-    .btn-save:hover {
+    .btn-save-all:hover {
       filter: brightness(1.1);
       transform: translateY(-2px);
     }
@@ -321,254 +382,203 @@
   <div class="admin-container">
     <header class="admin-header">
       <div class="admin-title">
-        <span style="font-size:24px;">🎯</span>
+        <span style="font-size:24px;">🎨</span>
         <div>
-          <div>HỆ THỐNG CÂN CHỈNH 3 VIEWPORT: CHỌN KHỐI CHI, KHÓA VŨ KHÍ &amp; TINH CHỈNH ĐÒN CHÉM</div>
-          <div style="font-size:11px; color:#64748b; font-weight:normal;">Raycasting chọn cánh tay, tự động tính Khớp Vai (Shoulder Pivot) từ đỉnh khối &amp; chém xoay đơn trục uy lực</div>
+          <div>HỆ THỐNG CÂN CHỈNH BÚT TÔ 3D &amp; GẮN VŨ KHÍ TRỰC TIẾP</div>
+          <div style="font-size:11px; color:#64748b; font-weight:normal;">Dùng cọ quét trực tiếp lên cánh tay để xác định Khớp Vai (Shoulder Pivot) &amp; Căn chỉnh vũ khí ngay trong cùng không gian 3D</div>
         </div>
       </div>
       <a href="/" class="back-btn">⬅️ Quay lại trò chơi</a>
     </header>
 
-    <div class="viewports-grid">
-      <!-- KHUNG 1: NHÂN VẬT (PLAYER VIEWPORT) -->
-      <div class="viewport-panel">
-        <div class="panel-header">
-          <div class="panel-title player">
-            <span>👤</span> KHUNG 1: NHÂN VẬT (PLAYER)
-          </div>
-          <div style="font-size:10px; color:#94a3b8;">Dùng chung 4 trang phục</div>
-        </div>
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button id="btn-tab-player" class="nav-tab-btn active">
+        <span>👤</span> TAB 1: CÂN CHỈNH NHÂN VẬT (PLAYER)
+      </button>
+      <button id="btn-tab-boss" class="nav-tab-btn boss-tab">
+        <span>👾</span> TAB 2: CÂN CHỈNH BOSS (DUAL BRUSH MODE)
+      </button>
+    </div>
 
-        <div class="viewport-canvas-box" id="viewport-player">
-          <div class="canvas-overlay-tip">
-            💡 <b>Rê chuột:</b> Highlight cánh tay<br>
-            📍 <b>Click:</b> Tự động nhận diện đỉnh trên làm Khớp Vai
-          </div>
-        </div>
-
-        <div class="panel-body">
-          <div class="segment-badge-row">
-            <span>Khối cánh tay: <b id="player-segment-name" class="val-badge">Arm_L</b></span>
-            <span>Khớp Vai: <b id="player-shoulder-readout" class="val-badge">(-0.65, 1.20, 0.00)</b></span>
-          </div>
-
-          <div class="control-group">
-            <div class="control-label">
-              <span>Tọa độ Khớp Vai X:</span>
-              <span class="num-text" id="val-player-sx">-0.65</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-player-sx" min="-2.5" max="2.5" step="0.02" value="-0.65">
-              <input type="number" id="num-player-sx" step="0.02" value="-0.65">
-            </div>
-          </div>
-
-          <div class="control-group">
-            <div class="control-label">
-              <span>Tọa độ Khớp Vai Y (Chiều cao):</span>
-              <span class="num-text" id="val-player-sy">1.20</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-player-sy" min="0.0" max="3.5" step="0.02" value="1.20">
-              <input type="number" id="num-player-sy" step="0.02" value="1.20">
-            </div>
-          </div>
-
-          <div class="control-group">
-            <div class="control-label">
-              <span>Tọa độ Khớp Vai Z:</span>
-              <span class="num-text" id="val-player-sz">0.00</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-player-sz" min="-2.0" max="2.0" step="0.02" value="0.00">
-              <input type="number" id="num-player-sz" step="0.02" value="0.00">
-            </div>
-          </div>
-
-          <button id="btn-quick-arm-player" class="btn-quick">
-            🎯 Chọn Cánh Tay Cầm Kiếm (Tay Trái)
-          </button>
+    <!-- ───────────────────────────────────────────────────────────────────────── -->
+    <!-- TAB 1: CÂN CHỈNH NHÂN VẬT (PLAYER CALIBRATION) -->
+    <!-- ───────────────────────────────────────────────────────────────────────── -->
+    <div id="pane-player" class="tab-pane">
+      <div class="canvas-card">
+        <div class="canvas-viewport" id="canvas-player"></div>
+        <div class="canvas-hud-overlay">
+          <div>💡 <b>Chuột trái:</b> Quét cọ tô cánh tay | <b>Chuột phải:</b> Xoay góc nhìn 3D</div>
+          <div>📍 Khớp Vai tự động: <span id="hud-player-shoulder" class="hud-badge">(-0.65, 1.20, 0.00)</span></div>
+          <div>🖌️ Số điểm đã tô: <span id="hud-player-points" class="hud-badge">0 điểm</span></div>
         </div>
       </div>
 
-      <!-- KHUNG 2: TRÙM CUỐI (BOSS VIEWPORT) -->
-      <div class="viewport-panel">
-        <div class="panel-header">
-          <div class="panel-title boss">
-            <span>👾</span> KHUNG 2: TRÙM CUỐI (BOSS)
+      <div class="controls-panel">
+        <!-- Section 1: Arm Brush -->
+        <div class="section-box">
+          <div class="section-title">
+            <span>🖌️</span> 1. Bút Tô Cánh Tay (Arm Brush)
           </div>
-          <div class="selector-tabs">
-            <button class="selector-btn" data-boss="thunder" id="tab-boss-thunder">⚡ Sét</button>
-            <button class="selector-btn active" data-boss="fire" id="tab-boss-fire">🔥 Lửa</button>
-            <button class="selector-btn" data-boss="frost" id="tab-boss-frost">❄️ Băng</button>
-          </div>
-        </div>
-
-        <div class="viewport-canvas-box" id="viewport-boss">
-          <div class="canvas-overlay-tip">
-            💡 <b>Rê chuột:</b> Highlight cánh tay Boss<br>
-            📍 <b>Click:</b> Bắt đỉnh khớp vai cầm búa
-          </div>
-        </div>
-
-        <div class="panel-body">
-          <div class="segment-badge-row">
-            <span>Khối cánh tay: <b id="boss-segment-name" class="val-badge">Arm_R</b></span>
-            <span>Khớp Vai: <b id="boss-shoulder-readout" class="val-badge">(-1.80, 2.20, 0.20)</b></span>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Quét cọ lên cánh tay cầm kiếm. Điểm cao nhất của vùng tô sẽ tự động được chọn làm <b>Khớp Vai (Shoulder Pivot)</b>.
           </div>
 
-          <div class="control-group">
+          <div class="brush-tools-row">
+            <button id="btn-player-brush-paint" class="tool-btn active arm-cyan">
+              <span>🖌️</span> Tô Cánh Tay
+            </button>
+            <button id="btn-player-brush-erase" class="tool-btn eraser">
+              <span>🧹</span> Tẩy Vùng Tô
+            </button>
+          </div>
+
+          <div class="control-row">
             <div class="control-label">
-              <span>Tọa độ Khớp Vai X:</span>
-              <span class="num-text" id="val-boss-sx">-1.80</span>
+              <span>Kích thước cọ (Brush Size):</span>
+              <span class="val-text" id="val-player-brush-size">0.25</span>
             </div>
             <div class="slider-row">
-              <input type="range" id="slider-boss-sx" min="-4.0" max="4.0" step="0.02" value="-1.80">
-              <input type="number" id="num-boss-sx" step="0.02" value="-1.80">
+              <input type="range" id="slider-player-brush-size" min="0.05" max="0.80" step="0.02" value="0.25">
             </div>
           </div>
 
-          <div class="control-group">
-            <div class="control-label">
-              <span>Tọa độ Khớp Vai Y (Chiều cao):</span>
-              <span class="num-text" id="val-boss-sy">2.20</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-boss-sy" min="0.0" max="5.0" step="0.02" value="2.20">
-              <input type="number" id="num-boss-sy" step="0.02" value="2.20">
-            </div>
-          </div>
-
-          <div class="control-group">
-            <div class="control-label">
-              <span>Tọa độ Khớp Vai Z:</span>
-              <span class="num-text" id="val-boss-sz">0.20</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-boss-sz" min="-3.0" max="3.0" step="0.02" value="0.20">
-              <input type="number" id="num-boss-sz" step="0.02" value="0.20">
-            </div>
-          </div>
-
-          <button id="btn-quick-arm-boss" class="btn-quick">
-            🎯 Chọn Cánh Tay Cầm Búa (Tay Phải)
-          </button>
-        </div>
-      </div>
-
-      <!-- KHUNG 3: CĂN CHỈNH VŨ KHÍ & TINH CHỈNH ĐÒN CHÉM (WEAPON ALIGNMENT & SLASH TUNING) -->
-      <div class="viewport-panel">
-        <div class="panel-header">
-          <div class="panel-title weapon">
-            <span>⚔️</span> KHUNG 3: KHÓA VŨ KHÍ &amp; ĐÒN CHÉM
-          </div>
-          <div class="selector-tabs">
-            <button class="selector-btn active" id="btn-mode-target-player">👤 Nhân vật</button>
-            <button class="selector-btn" id="btn-mode-target-boss">👾 Boss</button>
+          <div style="display:flex; gap:6px;">
+            <button id="btn-player-quick-fill" class="tool-btn" style="flex:1;">
+              <span>🎯</span> Tô Nhanh Cánh Tay Trái
+            </button>
+            <button id="btn-player-clear-points" class="tool-btn" style="flex:1;">
+              <span>🗑️</span> Xóa Vùng Tô
+            </button>
           </div>
         </div>
 
-        <div class="viewport-canvas-box" id="viewport-weapon" style="height:260px;">
-          <div class="canvas-overlay-tip">
-            💡 <b>Cánh Tay + Chuôi Vũ Khí</b> liên kết thành khối đơn vị
+        <!-- Section 2: In-Context Weapon Snap -->
+        <div class="section-box">
+          <div class="section-title">
+            <span>⚔️</span> 2. Gắn Vũ Khí Trực Tiếp (In-Context Weapon Snap)
           </div>
-        </div>
-
-        <div class="panel-body">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-            <div class="control-group">
-              <div class="control-label">
-                <span>Dịch X:</span>
-                <span class="num-text" id="val-weapon-ox">0.00</span>
-              </div>
-              <div class="slider-row">
-                <input type="range" id="slider-weapon-ox" min="-1.5" max="1.5" step="0.02" value="0.00">
-                <input type="number" id="num-weapon-ox" step="0.02" value="0.00">
-              </div>
-            </div>
-
-            <div class="control-group">
-              <div class="control-label">
-                <span>Dịch Y:</span>
-                <span class="num-text" id="val-weapon-oy">-0.40</span>
-              </div>
-              <div class="slider-row">
-                <input type="range" id="slider-weapon-oy" min="-2.0" max="2.0" step="0.02" value="-0.40">
-                <input type="number" id="num-weapon-oy" step="0.02" value="-0.40">
-              </div>
-            </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Thanh kiếm được hiển thị ngay trong không gian 3D cùng nhân vật. Nhấn hút vào tay hoặc dịch chuyển chuôi kiếm vào lòng bàn tay.
           </div>
 
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-            <div class="control-group">
-              <div class="control-label">
-                <span>Dịch Z:</span>
-                <span class="num-text" id="val-weapon-oz">0.10</span>
-              </div>
-              <div class="slider-row">
-                <input type="range" id="slider-weapon-oz" min="-1.5" max="1.5" step="0.02" value="0.10">
-                <input type="number" id="num-weapon-oz" step="0.02" value="0.10">
-              </div>
-            </div>
-
-            <div class="control-group">
-              <div class="control-label">
-                <span>Góc nghiêng:</span>
-                <span class="num-text" id="val-weapon-angle">-45°</span>
-              </div>
-              <div class="slider-row">
-                <input type="range" id="slider-weapon-angle" min="-180" max="180" step="1" value="-45">
-                <input type="number" id="num-weapon-angle" step="1" value="-45">
-              </div>
-            </div>
-          </div>
-
-          <!-- Lock Button -->
-          <button id="btn-lock-weapon" class="btn-lock">
-            <span>🔒</span> KHÓA CỨNG VŨ KHÍ VÀO TAY
+          <button id="btn-player-snap-weapon" class="btn-action-primary">
+            <span>🎯</span> Hút Kiếm Vào Tay (Snap to Hand)
           </button>
 
-          <!-- Slash Tuning Controls -->
-          <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:8px;">
-            <div style="font-size:11px; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:6px;">
-              <span>🎛️</span> TINH CHỈNH ĐÒN CHÉM / ĐẬP BÚA (SLASH TUNING)
+          <!-- Quick Directional Arrows -->
+          <div class="nudge-grid">
+            <button id="btn-nudge-x-neg" class="nudge-btn">◀ X- Trái</button>
+            <button id="btn-nudge-y-pos" class="nudge-btn">▲ Y+ Lên</button>
+            <button id="btn-nudge-x-pos" class="nudge-btn">X+ Phải ▶</button>
+            <button id="btn-nudge-z-neg" class="nudge-btn">▲ Z- Lui</button>
+            <button id="btn-nudge-y-neg" class="nudge-btn">▼ Y- Xuống</button>
+            <button id="btn-nudge-z-pos" class="nudge-btn">Z+ Tới ▼</button>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Góc xoay kiếm (Blade Angle):</span>
+              <span class="val-text" id="val-player-sword-angle">-45°</span>
             </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-              <div class="control-group">
-                <div class="control-label">
-                  <span>Góc thủ ban đầu:</span>
-                  <span class="num-text" id="val-idle-angle">0°</span>
-                </div>
-                <div class="slider-row">
-                  <input type="range" id="slider-idle-angle" min="-90" max="90" step="1" value="0">
-                  <input type="number" id="num-idle-angle" step="1" value="0">
-                </div>
-              </div>
-
-              <div class="control-group">
-                <div class="control-label">
-                  <span>Biên độ vung chém:</span>
-                  <span class="num-text" id="val-slash-arc">135°</span>
-                </div>
-                <div class="slider-row">
-                  <input type="range" id="slider-slash-arc" min="40" max="220" step="1" value="135">
-                  <input type="number" id="num-slash-arc" step="1" value="135">
-                </div>
-              </div>
+            <div class="slider-row">
+              <input type="range" id="slider-player-sword-angle" min="-180" max="180" step="1" value="-45">
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <button id="btn-test-swing" class="btn-test">
+          <button id="btn-player-lock-weapon" class="tool-btn active arm-cyan" style="font-size:12px; padding:10px;">
+            <span>🔒</span> Khóa Kiếm Vào Tay
+          </button>
+        </div>
+
+        <!-- Section 3: Test & Save -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button id="btn-player-test-swing" class="btn-test-swing">
             <span>⚔️</span> VUNG THỬ (TEST SWING)
           </button>
+          <div id="toast-player" class="status-toast"></div>
+          <button id="btn-player-save" class="btn-save-all">
+            <span>💾</span> LƯU CẤU HÌNH NHÂN VẬT
+          </button>
+        </div>
+      </div>
+    </div>
 
-          <div id="status-toast" class="status-toast"></div>
+    <!-- ───────────────────────────────────────────────────────────────────────── -->
+    <!-- TAB 2: CÂN CHỈNH BOSS (BOSS DUAL BRUSH MODE) -->
+    <!-- ───────────────────────────────────────────────────────────────────────── -->
+    <div id="pane-boss" class="tab-pane hidden">
+      <div class="canvas-card">
+        <div class="canvas-viewport" id="canvas-boss"></div>
+        <div class="canvas-hud-overlay">
+          <div>💡 <b>Chuột trái:</b> Quét cọ tô | <b>Chuột phải:</b> Xoay camera</div>
+          <div>📍 Khớp Vai Boss: <span id="hud-boss-shoulder" class="hud-badge boss">(-1.80, 2.20, 0.20)</span></div>
+          <div>🟦 Vùng Tay: <span id="hud-boss-arm-pts" class="hud-badge boss">0 điểm</span> | 🟧 Vùng Búa: <span id="hud-boss-weap-pts" class="hud-badge boss">0 điểm</span></div>
+        </div>
+      </div>
 
-          <button id="btn-save-rigging" class="btn-save">
-            <span>💾</span> LƯU CẤU HÌNH KHỚP &amp; ĐÒN CHÉM
+      <div class="controls-panel">
+        <!-- Boss Element Switcher -->
+        <div class="section-box">
+          <div class="section-title boss">
+            <span>👾</span> Chọn Trùm Cuối (Boss Element)
+          </div>
+          <div class="brush-tools-row">
+            <button class="tool-btn" data-boss="thunder" id="tab-boss-thunder">⚡ Sét</button>
+            <button class="tool-btn active weapon-orange" data-boss="fire" id="tab-boss-fire">🔥 Lửa</button>
+            <button class="tool-btn" data-boss="frost" id="tab-boss-frost">❄️ Băng</button>
+          </div>
+        </div>
+
+        <!-- Dual Brush Mode -->
+        <div class="section-box">
+          <div class="section-title boss">
+            <span>🖌️</span> Hai Chế Độ Bút Màu (Dual Brush Mode)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Vì mô hình Boss đã cầm sẵn búa/vũ khí, hãy dùng <b>Bút 1</b> tô vùng cánh tay và <b>Bút 2</b> tô vùng vũ khí để hệ thống ghép thành một khối chi xoay đồng nhất.
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <button id="btn-boss-brush-arm" class="tool-btn active arm-cyan" style="justify-content:flex-start;">
+              <span>🟦</span> Bút 1: Tô Cánh Tay (Arm Area)
+            </button>
+            <button id="btn-boss-brush-weapon" class="tool-btn" style="justify-content:flex-start;">
+              <span>🟧</span> Bút 2: Tô Vũ Khí (Weapon/Hammer)
+            </button>
+            <button id="btn-boss-brush-erase" class="tool-btn eraser" style="justify-content:flex-start;">
+              <span>🧹</span> Tẩy Vùng Đã Tô (Eraser)
+            </button>
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">
+              <span>Kích thước cọ (Brush Size):</span>
+              <span class="val-text" id="val-boss-brush-size">0.45</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="slider-boss-brush-size" min="0.10" max="1.50" step="0.05" value="0.45">
+            </div>
+          </div>
+
+          <div style="display:flex; gap:6px;">
+            <button id="btn-boss-quick-fill" class="tool-btn" style="flex:1;">
+              <span>🎯</span> Tô Nhanh Tay &amp; Búa
+            </button>
+            <button id="btn-boss-clear-points" class="tool-btn" style="flex:1;">
+              <span>🗑️</span> Xóa Vùng Tô
+            </button>
+          </div>
+        </div>
+
+        <!-- Test Slam & Save -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button id="btn-boss-test-slam" class="btn-test-swing" style="background:linear-gradient(135deg, #ef4444, #f59e0b);">
+            <span>🔨</span> ĐẬP BÚA THỬ (TEST SLAM)
+          </button>
+          <div id="toast-boss" class="status-toast"></div>
+          <button id="btn-boss-save" class="btn-save-all">
+            <span>💾</span> LƯU CẤU HÌNH BOSS
           </button>
         </div>
       </div>
@@ -577,9 +587,9 @@
 
   <script type="module" src="js/admin.js"></script>
   <script type="module">
-    import { init3ViewportCalibrator } from './js/admin.js';
+    import { initBrushCalibrator } from './js/admin.js';
     window.addEventListener('DOMContentLoaded', () => {
-      init3ViewportCalibrator();
+      initBrushCalibrator();
     });
   </script>
 </body>
