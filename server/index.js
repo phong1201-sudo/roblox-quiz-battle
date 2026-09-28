@@ -568,6 +568,8 @@ app.post('/api/admin/rigging/brush-save', (req, res) => {
     if (payload.paintedArm) current[target].paintedArm = payload.paintedArm;
     if (payload.paintedWeapon) current[target].paintedWeapon = payload.paintedWeapon;
     if (payload.armMeshName) current[target].armMeshName = payload.armMeshName;
+    if (payload.handSocket) current[target].handSocket = payload.handSocket;
+    if (payload.normalizedPose) current[target].normalizedPose = payload.normalizedPose;
 
     // Sync legacy keys for backward compatibility
     if (target === 'player') {

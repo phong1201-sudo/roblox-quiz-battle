@@ -7,7 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=26.0">
+  <link rel="stylesheet" href="css/style.css?v=27.0">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
   <script type="importmap">
   {
     "imports": {
@@ -408,13 +410,28 @@
       <div class="canvas-card">
         <div class="canvas-viewport" id="canvas-player"></div>
         <div class="canvas-hud-overlay">
-          <div>💡 <b>Chuột trái:</b> Quét cọ tô cánh tay | <b>Chuột phải:</b> Xoay góc nhìn 3D</div>
-          <div>📍 Khớp Vai tự động: <span id="hud-player-shoulder" class="hud-badge">(-0.65, 1.20, 0.00)</span></div>
+          <div>💡 <b>Chuột trái:</b> Quét cọ tô / Kéo điểm khớp | <b>Chuột phải:</b> Xoay camera 3D</div>
+          <div>📍 Khớp Vai (Shoulder): <span id="hud-player-shoulder" class="hud-badge">(-0.65, 1.20, 0.00)</span></div>
+          <div>✋ Bàn Tay (Wrist/Grip): <span id="hud-player-wrist" class="hud-badge">(-0.65, 0.80, 0.10)</span></div>
           <div>🖌️ Số điểm đã tô: <span id="hud-player-points" class="hud-badge">0 điểm</span></div>
         </div>
       </div>
 
       <div class="controls-panel">
+        <!-- Section 0: MediaPipe Pose Auto-Detection -->
+        <div class="section-box" style="border-color:#00e5ff; background:rgba(0, 229, 255, 0.08);">
+          <div class="section-title" style="color:#00e5ff;">
+            <span>🤖</span> Nhận Diện Khớp Tự Động (Meta Animated Drawings Style)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Quét ảnh mô hình qua <b>MediaPipe Pose</b> để tự động định vị <b>Khớp Vai (Shoulder)</b> và <b>Bàn Tay (Wrist)</b>, gắn chuôi kiếm vào tay ngay lập tức! Có thể kéo thả các điểm Marker trực tiếp trên màn hình để tinh chỉnh.
+          </div>
+          <button id="btn-player-auto-pose" class="btn-action-primary" style="background:linear-gradient(135deg, #06d6a0, #00b4d8); font-size:12px; font-weight:800;">
+            <span>🤖</span> TỰ ĐỘNG BẮT KHỚP DÁNG NGƯỜI (AUTO-DETECT POSE)
+          </button>
+          <div id="player-pose-status" style="font-size:11px; font-weight:600; color:#00e5ff; display:none; padding:4px 0;"></div>
+        </div>
+
         <!-- Section 1: Arm Brush -->
         <div class="section-box">
           <div class="section-title">
@@ -511,13 +528,27 @@
       <div class="canvas-card">
         <div class="canvas-viewport" id="canvas-boss"></div>
         <div class="canvas-hud-overlay">
-          <div>💡 <b>Chuột trái:</b> Quét cọ tô | <b>Chuột phải:</b> Xoay camera</div>
+          <div>💡 <b>Chuột trái:</b> Quét cọ tô / Kéo điểm khớp | <b>Chuột phải:</b> Xoay camera 3D</div>
           <div>📍 Khớp Vai Boss: <span id="hud-boss-shoulder" class="hud-badge boss">(-1.80, 2.20, 0.20)</span></div>
+          <div>✋ Chuôi Búa / Bàn Tay: <span id="hud-boss-wrist" class="hud-badge boss">(-1.80, 1.20, 0.20)</span></div>
           <div>🟦 Vùng Tay: <span id="hud-boss-arm-pts" class="hud-badge boss">0 điểm</span> | 🟧 Vùng Búa: <span id="hud-boss-weap-pts" class="hud-badge boss">0 điểm</span></div>
         </div>
       </div>
 
       <div class="controls-panel">
+        <!-- Section 0: MediaPipe Pose Auto-Detection for Boss -->
+        <div class="section-box" style="border-color:#fbbf24; background:rgba(251, 191, 36, 0.08);">
+          <div class="section-title boss" style="color:#fbbf24;">
+            <span>🤖</span> Nhận Diện Khớp &amp; Búa Tự Động (Meta Animated Drawings Style)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Quét ảnh mô hình Boss qua <b>MediaPipe Pose</b> để tự động định vị <b>Khớp Vai Boss (Shoulder)</b> và <b>Chuôi Búa / Bàn Tay (Wrist/Grip)</b>. Có thể kéo thả các điểm Marker trực tiếp trên màn hình để tinh chỉnh.
+          </div>
+          <button id="btn-boss-auto-pose" class="btn-action-primary" style="background:linear-gradient(135deg, #f59e0b, #ef4444); font-size:12px; font-weight:800;">
+            <span>🤖</span> TỰ ĐỘNG BẮT KHỚP &amp; BÚA BOSS (AUTO-DETECT POSE)
+          </button>
+          <div id="boss-pose-status" style="font-size:11px; font-weight:600; color:#fbbf24; display:none; padding:4px 0;"></div>
+        </div>
         <!-- Boss Element Switcher -->
         <div class="section-box">
           <div class="section-title boss">
@@ -585,9 +616,9 @@
     </div>
   </div>
 
-  <script type="module" src="js/admin.js"></script>
+  <script type="module" src="js/admin.js?v=27.0"></script>
   <script type="module">
-    import { initBrushCalibrator } from './js/admin.js';
+    import { initBrushCalibrator } from './js/admin.js?v=27.0';
     window.addEventListener('DOMContentLoaded', () => {
       initBrushCalibrator();
     });

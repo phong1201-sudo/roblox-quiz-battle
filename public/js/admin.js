@@ -385,6 +385,220 @@ export function initBrushCalibrator() {
     };
   }
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // MEDIAPIPE POSE & VISUAL SKELETON RIGGING (Meta Animated Drawings Style)
+  // ───────────────────────────────────────────────────────────────────────────
+  let poseInstance = null;
+  let poseInitPromise = null;
+
+  async function getMediaPipePose() {
+    if (poseInstance) return poseInstance;
+    if (poseInitPromise) return poseInitPromise;
+
+    poseInitPromise = (async () => {
+      if (typeof window !== 'undefined' && window.Pose) {
+        try {
+          const pose = new window.Pose({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+          });
+          pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
+            minDetectionConfidence: 0.4,
+            minTrackingConfidence: 0.4,
+          });
+          await pose.initialize();
+          poseInstance = pose;
+          return poseInstance;
+        } catch (e) {
+          console.warn('[MediaPipe] Init warning, falling back to heuristics:', e);
+          return null;
+        }
+      }
+      return null;
+    })();
+
+    return poseInitPromise;
+  }
+
+  function createPoseRigVisuals(scene, isBoss = false) {
+    const group = new THREE.Group();
+    group.name = isBoss ? 'BossPoseRig' : 'PlayerPoseRig';
+
+    const shoulderColor = isBoss ? 0xf59e0b : 0x00e5ff;
+    const wristColor = isBoss ? 0xef4444 : 0xff9900;
+    const boneColor = isBoss ? 0xfbbf24 : 0x06d6a0;
+
+    // Shoulder marker sphere
+    const shoulderGeo = new THREE.SphereGeometry(isBoss ? 0.22 : 0.14, 16, 16);
+    const shoulderMat = new THREE.MeshBasicMaterial({ color: shoulderColor, depthTest: false, transparent: true, opacity: 0.95 });
+    const shoulderMesh = new THREE.Mesh(shoulderGeo, shoulderMat);
+    shoulderMesh.renderOrder = 999;
+    shoulderMesh.userData = { type: 'shoulder', isBoss };
+
+    const sHaloGeo = new THREE.RingGeometry(isBoss ? 0.24 : 0.16, isBoss ? 0.34 : 0.24, 24);
+    const sHaloMat = new THREE.MeshBasicMaterial({ color: shoulderColor, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthTest: false });
+    const sHalo = new THREE.Mesh(sHaloGeo, sHaloMat);
+    sHalo.renderOrder = 999;
+    shoulderMesh.add(sHalo);
+
+    // Wrist / Grip marker sphere
+    const wristGeo = new THREE.SphereGeometry(isBoss ? 0.20 : 0.12, 16, 16);
+    const wristMat = new THREE.MeshBasicMaterial({ color: wristColor, depthTest: false, transparent: true, opacity: 0.95 });
+    const wristMesh = new THREE.Mesh(wristGeo, wristMat);
+    wristMesh.renderOrder = 999;
+    wristMesh.userData = { type: 'wrist', isBoss };
+
+    const wHaloGeo = new THREE.RingGeometry(isBoss ? 0.22 : 0.14, isBoss ? 0.32 : 0.22, 24);
+    const wHaloMat = new THREE.MeshBasicMaterial({ color: wristColor, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthTest: false });
+    const wHalo = new THREE.Mesh(wHaloGeo, wHaloMat);
+    wHalo.renderOrder = 999;
+    wristMesh.add(wHalo);
+
+    // Connecting Bone Cylinder
+    const boneRadius = isBoss ? 0.07 : 0.04;
+    const boneGeo = new THREE.CylinderGeometry(boneRadius, boneRadius, 1, 12);
+    boneGeo.translate(0, 0.5, 0);
+    boneGeo.rotateX(Math.PI / 2);
+    const boneMat = new THREE.MeshBasicMaterial({ color: boneColor, transparent: true, opacity: 0.85, depthTest: false });
+    const boneMesh = new THREE.Mesh(boneGeo, boneMat);
+    boneMesh.renderOrder = 998;
+
+    group.add(shoulderMesh, wristMesh, boneMesh);
+    scene.add(group);
+
+    function updateBone(p1, p2) {
+      const v1 = new THREE.Vector3(p1.x, p1.y, p1.z);
+      const v2 = new THREE.Vector3(p2.x, p2.y, p2.z);
+      shoulderMesh.position.copy(v1);
+      wristMesh.position.copy(v2);
+
+      const dist = v1.distanceTo(v2);
+      boneMesh.position.copy(v1);
+      boneMesh.lookAt(v2);
+      boneMesh.scale.set(1, 1, Math.max(dist, 0.01));
+    }
+
+    return {
+      group,
+      shoulderMesh,
+      wristMesh,
+      boneMesh,
+      updateBone,
+      setVisible: (v) => { group.visible = v; }
+    };
+  }
+
+  async function runPoseDetectionOnCanvas(vp, modelHolder, isBoss = false) {
+    vp.renderer.render(vp.scene, vp.camera);
+    const canvas = vp.renderer.domElement;
+
+    let landmarks = null;
+    try {
+      const pose = await getMediaPipePose();
+      if (pose) {
+        landmarks = await new Promise((resolve) => {
+          let done = false;
+          const timer = setTimeout(() => {
+            if (!done) { done = true; resolve(null); }
+          }, 3500);
+
+          pose.onResults((results) => {
+            if (!done) {
+              done = true;
+              clearTimeout(timer);
+              if (results && results.poseLandmarks && results.poseLandmarks.length > 0) {
+                resolve(results.poseLandmarks);
+              } else {
+                resolve(null);
+              }
+            }
+          });
+
+          pose.send({ image: canvas }).catch((err) => {
+            if (!done) {
+              done = true;
+              clearTimeout(timer);
+              resolve(null);
+            }
+          });
+        });
+      }
+    } catch (err) {
+      console.warn('[runPoseDetectionOnCanvas] Pose inference note:', err);
+    }
+
+    const bBox = new THREE.Box3().setFromObject(modelHolder);
+    const bCenter = new THREE.Vector3();
+    bBox.getCenter(bCenter);
+
+    function unprojectLandmark(lm) {
+      if (!lm) return null;
+      const ndc = new THREE.Vector2(lm.x * 2 - 1, -(lm.y * 2 - 1));
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(ndc, vp.camera);
+
+      const hits = ray.intersectObjects(modelHolder.children, true);
+      if (hits.length > 0) {
+        return hits[0].point.clone();
+      }
+      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -bCenter.z);
+      const pt = new THREE.Vector3();
+      if (ray.ray.intersectPlane(plane, pt)) {
+        return pt;
+      }
+      return null;
+    }
+
+    let shoulderPt = null;
+    let wristPt = null;
+    let rawPoseData = null;
+
+    if (landmarks) {
+      const lShoulder = landmarks[11];
+      const rShoulder = landmarks[12];
+      const lWrist = landmarks[15] || landmarks[19];
+      const rWrist = landmarks[16] || landmarks[20];
+
+      const chosenShoulder = lShoulder || rShoulder;
+      const chosenWrist = lWrist || rWrist;
+
+      if (chosenShoulder) shoulderPt = unprojectLandmark(chosenShoulder);
+      if (chosenWrist) wristPt = unprojectLandmark(chosenWrist);
+
+      rawPoseData = {
+        shoulder: chosenShoulder ? { x: chosenShoulder.x, y: chosenShoulder.y, z: chosenShoulder.z, visibility: chosenShoulder.visibility } : null,
+        wrist: chosenWrist ? { x: chosenWrist.x, y: chosenWrist.y, z: chosenWrist.z, visibility: chosenWrist.visibility } : null,
+        method: 'mediapipe'
+      };
+    }
+
+    if (!shoulderPt || Math.abs(shoulderPt.x) > 10 || isNaN(shoulderPt.x)) {
+      shoulderPt = isBoss ? new THREE.Vector3(-1.80, 2.20, 0.20) : new THREE.Vector3(-0.65, 1.20, 0.00);
+      rawPoseData = { method: 'heuristic_geometry' };
+    }
+
+    if (!wristPt || Math.abs(wristPt.x) > 10 || isNaN(wristPt.x)) {
+      wristPt = isBoss ? new THREE.Vector3(-1.80, 1.20, 0.20) : new THREE.Vector3(-0.65, 0.80, 0.10);
+    }
+
+    return {
+      shoulder: {
+        x: Math.round(shoulderPt.x * 100) / 100,
+        y: Math.round(shoulderPt.y * 100) / 100,
+        z: Math.round(shoulderPt.z * 100) / 100
+      },
+      wrist: {
+        x: Math.round(wristPt.x * 100) / 100,
+        y: Math.round(wristPt.y * 100) / 100,
+        z: Math.round(wristPt.z * 100) / 100
+      },
+      rawPose: rawPoseData
+    };
+  }
+
   // ═════════════════════════════════════════════════════════════════════════════
   // TAB 1: PLAYER VIEWPORT & IN-CONTEXT WEAPON CALIBRATION
   // ═════════════════════════════════════════════════════════════════════════════
@@ -464,16 +678,24 @@ export function initBrushCalibrator() {
       grp.add(torso, head, armL, armR);
       playerModelHolder.add(grp);
     }
+    syncPlayerUI();
   }
 
   // Tab 1 State & Controls
   let playerBrushMode = 'paint_arm'; // 'paint_arm' | 'erase'
   let playerBrushSize = 0.25;
   let playerShoulderPivot = { x: -0.65, y: 1.2, z: 0.0 };
+  let playerHandSocket    = { x: -0.65, y: 0.8, z: 0.1 };
+  let playerNormalizedPose = null;
   let playerSwordOffset = { offsetX: 0.0, offsetY: -0.4, offsetZ: 0.1, angle: -45 };
 
+  const playerPoseRig       = createPoseRigVisuals(vpPlayer.scene, false);
   const hudPlayerShoulder   = document.getElementById('hud-player-shoulder');
+  const hudPlayerWrist      = document.getElementById('hud-player-wrist');
   const hudPlayerPoints     = document.getElementById('hud-player-points');
+  const btnPlayerAutoPose   = document.getElementById('btn-player-auto-pose');
+  const playerPoseStatus    = document.getElementById('player-pose-status');
+
   const btnPlayerBrushPaint = document.getElementById('btn-player-brush-paint');
   const btnPlayerBrushErase = document.getElementById('btn-player-brush-erase');
   const sliderPlayerBrushSz = document.getElementById('slider-player-brush-size');
@@ -496,6 +718,46 @@ export function initBrushCalibrator() {
   const btnNudgeYNeg = document.getElementById('btn-nudge-y-neg');
   const btnNudgeZNeg = document.getElementById('btn-nudge-z-neg');
   const btnNudgeZPos = document.getElementById('btn-nudge-z-pos');
+
+  // Auto-Detect Pose Button Click
+  btnPlayerAutoPose?.addEventListener('click', async () => {
+    if (playerPoseStatus) {
+      playerPoseStatus.style.display = 'block';
+      playerPoseStatus.style.color = '#00e5ff';
+      playerPoseStatus.innerHTML = '⏳ <i>Đang quét ảnh mô hình &amp; phát hiện khớp (MediaPipe Pose)...</i>';
+    }
+    btnPlayerAutoPose.disabled = true;
+
+    try {
+      const res = await runPoseDetectionOnCanvas(vpPlayer, playerModelHolder, false);
+      playerShoulderPivot = res.shoulder;
+      playerHandSocket = res.wrist;
+      playerNormalizedPose = res.rawPose;
+
+      playerSwordOffset.offsetX = Math.round((playerHandSocket.x - playerShoulderPivot.x) * 100) / 100;
+      playerSwordOffset.offsetY = Math.round((playerHandSocket.y - playerShoulderPivot.y) * 100) / 100;
+      playerSwordOffset.offsetZ = Math.round((playerHandSocket.z - playerShoulderPivot.z) * 100) / 100;
+
+      playerGizmoObj.gizmo.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+      playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
+      updateInContextSwordTransform();
+
+      if (hudPlayerShoulder) hudPlayerShoulder.textContent = `(${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}, ${playerShoulderPivot.z.toFixed(2)})`;
+      if (hudPlayerWrist) hudPlayerWrist.textContent = `(${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}, ${playerHandSocket.z.toFixed(2)})`;
+
+      if (playerPoseStatus) {
+        playerPoseStatus.style.color = '#06d6a0';
+        playerPoseStatus.innerHTML = `✓ <b>Bắt khớp thành công!</b> Vai: (${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}), Tay: (${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}). Hãy kéo thả các điểm Marker để tinh chỉnh nếu cần!`;
+      }
+    } catch (e) {
+      if (playerPoseStatus) {
+        playerPoseStatus.style.color = '#ef4444';
+        playerPoseStatus.textContent = 'Lỗi phát hiện dáng: ' + e.message;
+      }
+    } finally {
+      btnPlayerAutoPose.disabled = false;
+    }
+  });
 
   // Brush Mode Toggling
   btnPlayerBrushPaint?.addEventListener('click', () => {
@@ -538,6 +800,7 @@ export function initBrushCalibrator() {
     }
 
     playerGizmoObj.gizmo.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+    playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
     if (hudPlayerShoulder) {
       hudPlayerShoulder.textContent = `(${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}, ${playerShoulderPivot.z.toFixed(2)})`;
     }
@@ -552,6 +815,14 @@ export function initBrushCalibrator() {
     );
     inContextSword.position.copy(pos);
     inContextSword.rotation.set(0, Math.PI / 2, (playerSwordOffset.angle * Math.PI) / 180);
+
+    playerHandSocket.x = Math.round(pos.x * 100) / 100;
+    playerHandSocket.y = Math.round(pos.y * 100) / 100;
+    playerHandSocket.z = Math.round(pos.z * 100) / 100;
+    playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
+    if (hudPlayerWrist) {
+      hudPlayerWrist.textContent = `(${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}, ${playerHandSocket.z.toFixed(2)})`;
+    }
   }
 
   // Quick fill Left Arm preset
@@ -689,6 +960,8 @@ export function initBrushCalibrator() {
       const payload = {
         target: 'player',
         shoulderPivot: playerShoulderPivot,
+        handSocket: playerHandSocket,
+        normalizedPose: playerNormalizedPose,
         weaponOffset: {
           offsetX: playerSwordOffset.offsetX,
           offsetY: playerSwordOffset.offsetY,
@@ -728,8 +1001,11 @@ export function initBrushCalibrator() {
     }
   });
 
-  // 3D Painting Raycaster on Player Viewport
+  // 3D Painting & Interactive Skeleton Dragging on Player Viewport
   let isPointerDownPlayer = false;
+  let activeDragMarkerPlayer = null;
+  const dragPlanePlayer = new THREE.Plane();
+  const planeIntersectPtPlayer = new THREE.Vector3();
   const raycasterPlayer = new THREE.Raycaster();
   const mousePlayer = new THREE.Vector2();
 
@@ -755,13 +1031,67 @@ export function initBrushCalibrator() {
   }
 
   vpPlayer.renderer.domElement.addEventListener('pointerdown', (e) => {
-    if (e.button === 0) { // Left click = Paint/Erase
+    if (e.button === 0) { // Left click
+      const rect = vpPlayer.renderer.domElement.getBoundingClientRect();
+      mousePlayer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mousePlayer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterPlayer.setFromCamera(mousePlayer, vpPlayer.camera);
+      const markerHits = raycasterPlayer.intersectObjects([playerPoseRig.shoulderMesh, playerPoseRig.wristMesh], true);
+
+      if (markerHits.length > 0) {
+        let hitObj = markerHits[0].object;
+        while (hitObj && !hitObj.userData?.type && hitObj.parent) hitObj = hitObj.parent;
+        if (hitObj?.userData?.type) {
+          activeDragMarkerPlayer = hitObj;
+          vpPlayer.controls.enabled = false;
+          const camDir = vpPlayer.camera.getWorldDirection(new THREE.Vector3());
+          dragPlanePlayer.setFromNormalAndCoplanarPoint(camDir.negate(), activeDragMarkerPlayer.position);
+          return;
+        }
+      }
+
       isPointerDownPlayer = true;
       paintOnPlayerCanvas(e);
     }
   });
 
   vpPlayer.renderer.domElement.addEventListener('pointermove', (e) => {
+    const rect = vpPlayer.renderer.domElement.getBoundingClientRect();
+    mousePlayer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mousePlayer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    if (activeDragMarkerPlayer) {
+      raycasterPlayer.setFromCamera(mousePlayer, vpPlayer.camera);
+      if (raycasterPlayer.ray.intersectPlane(dragPlanePlayer, planeIntersectPtPlayer)) {
+        const type = activeDragMarkerPlayer.userData.type;
+        if (type === 'shoulder') {
+          playerShoulderPivot.x = Math.round(planeIntersectPtPlayer.x * 100) / 100;
+          playerShoulderPivot.y = Math.round(planeIntersectPtPlayer.y * 100) / 100;
+          playerShoulderPivot.z = Math.round(planeIntersectPtPlayer.z * 100) / 100;
+          playerGizmoObj.gizmo.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+          if (hudPlayerShoulder) hudPlayerShoulder.textContent = `(${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}, ${playerShoulderPivot.z.toFixed(2)})`;
+        } else if (type === 'wrist') {
+          playerHandSocket.x = Math.round(planeIntersectPtPlayer.x * 100) / 100;
+          playerHandSocket.y = Math.round(planeIntersectPtPlayer.y * 100) / 100;
+          playerHandSocket.z = Math.round(planeIntersectPtPlayer.z * 100) / 100;
+          playerSwordOffset.offsetX = Math.round((playerHandSocket.x - playerShoulderPivot.x) * 100) / 100;
+          playerSwordOffset.offsetY = Math.round((playerHandSocket.y - playerShoulderPivot.y) * 100) / 100;
+          playerSwordOffset.offsetZ = Math.round((playerHandSocket.z - playerShoulderPivot.z) * 100) / 100;
+          if (hudPlayerWrist) hudPlayerWrist.textContent = `(${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}, ${playerHandSocket.z.toFixed(2)})`;
+        }
+        playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
+        const pos = new THREE.Vector3(
+          playerShoulderPivot.x + playerSwordOffset.offsetX,
+          playerShoulderPivot.y + playerSwordOffset.offsetY,
+          playerShoulderPivot.z + playerSwordOffset.offsetZ
+        );
+        inContextSword.position.copy(pos);
+        inContextSword.rotation.set(0, Math.PI / 2, (playerSwordOffset.angle * Math.PI) / 180);
+      }
+      return;
+    }
+
     if (isPointerDownPlayer) {
       paintOnPlayerCanvas(e);
     }
@@ -769,6 +1099,10 @@ export function initBrushCalibrator() {
 
   window.addEventListener('pointerup', () => {
     isPointerDownPlayer = false;
+    if (activeDragMarkerPlayer) {
+      activeDragMarkerPlayer = null;
+      vpPlayer.controls.enabled = true;
+    }
   });
 
   function syncPlayerUI() {
@@ -784,12 +1118,26 @@ export function initBrushCalibrator() {
     playerSwordOffset.offsetZ = w.offsetZ ?? 0.1;
     playerSwordOffset.angle   = w.angle ?? -45;
 
+    if (pCfg.handSocket) {
+      playerHandSocket.x = pCfg.handSocket.x ?? (playerShoulderPivot.x + playerSwordOffset.offsetX);
+      playerHandSocket.y = pCfg.handSocket.y ?? (playerShoulderPivot.y + playerSwordOffset.offsetY);
+      playerHandSocket.z = pCfg.handSocket.z ?? (playerShoulderPivot.z + playerSwordOffset.offsetZ);
+    } else {
+      playerHandSocket.x = playerShoulderPivot.x + playerSwordOffset.offsetX;
+      playerHandSocket.y = playerShoulderPivot.y + playerSwordOffset.offsetY;
+      playerHandSocket.z = playerShoulderPivot.z + playerSwordOffset.offsetZ;
+    }
+
     if (valPlayerAngle) valPlayerAngle.textContent = `${Math.round(playerSwordOffset.angle)}°`;
     if (sliderPlayerAngle) sliderPlayerAngle.value = playerSwordOffset.angle;
 
     playerGizmoObj.gizmo.position.set(playerShoulderPivot.x, playerShoulderPivot.y, playerShoulderPivot.z);
+    playerPoseRig.updateBone(playerShoulderPivot, playerHandSocket);
     if (hudPlayerShoulder) {
       hudPlayerShoulder.textContent = `(${playerShoulderPivot.x.toFixed(2)}, ${playerShoulderPivot.y.toFixed(2)}, ${playerShoulderPivot.z.toFixed(2)})`;
+    }
+    if (hudPlayerWrist) {
+      hudPlayerWrist.textContent = `(${playerHandSocket.x.toFixed(2)}, ${playerHandSocket.y.toFixed(2)}, ${playerHandSocket.z.toFixed(2)})`;
     }
     updateInContextSwordTransform();
   }
@@ -811,11 +1159,17 @@ export function initBrushCalibrator() {
   let bossBrushMode = 'paint_arm'; // 'paint_arm' | 'paint_weapon' | 'erase'
   let bossBrushSize = 0.45;
   let bossShoulderPivot = { x: -1.8, y: 2.2, z: 0.2 };
+  let bossHandSocket    = { x: -1.8, y: 1.2, z: 0.2 };
+  let bossNormalizedPose = null;
   let bossWeaponOffset  = { offsetX: 0.0, offsetY: -0.6, offsetZ: 0.5, angle: 30 };
 
+  const bossPoseRig         = createPoseRigVisuals(vpBoss.scene, true);
   const hudBossShoulder     = document.getElementById('hud-boss-shoulder');
+  const hudBossWrist        = document.getElementById('hud-boss-wrist');
   const hudBossArmPts       = document.getElementById('hud-boss-arm-pts');
   const hudBossWeapPts      = document.getElementById('hud-boss-weap-pts');
+  const btnBossAutoPose     = document.getElementById('btn-boss-auto-pose');
+  const bossPoseStatus      = document.getElementById('boss-pose-status');
 
   const tabBossThunder      = document.getElementById('tab-boss-thunder');
   const tabBossFire         = document.getElementById('tab-boss-fire');
@@ -832,6 +1186,45 @@ export function initBrushCalibrator() {
   const btnBossTestSlam     = document.getElementById('btn-boss-test-slam');
   const btnBossSave         = document.getElementById('btn-boss-save');
   const toastBoss           = document.getElementById('toast-boss');
+
+  // Auto-Detect Pose Button Click for Boss
+  btnBossAutoPose?.addEventListener('click', async () => {
+    if (bossPoseStatus) {
+      bossPoseStatus.style.display = 'block';
+      bossPoseStatus.style.color = '#fbbf24';
+      bossPoseStatus.innerHTML = '⏳ <i>Đang quét ảnh mô hình Boss &amp; phát hiện khớp (MediaPipe Pose)...</i>';
+    }
+    btnBossAutoPose.disabled = true;
+
+    try {
+      const res = await runPoseDetectionOnCanvas(vpBoss, bossModelHolder, true);
+      bossShoulderPivot = res.shoulder;
+      bossHandSocket = res.wrist;
+      bossNormalizedPose = res.rawPose;
+
+      bossWeaponOffset.offsetX = Math.round((bossHandSocket.x - bossShoulderPivot.x) * 100) / 100;
+      bossWeaponOffset.offsetY = Math.round((bossHandSocket.y - bossShoulderPivot.y) * 100) / 100;
+      bossWeaponOffset.offsetZ = Math.round((bossHandSocket.z - bossShoulderPivot.z) * 100) / 100;
+
+      bossGizmoObj.gizmo.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+      bossPoseRig.updateBone(bossShoulderPivot, bossHandSocket);
+
+      if (hudBossShoulder) hudBossShoulder.textContent = `(${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}, ${bossShoulderPivot.z.toFixed(2)})`;
+      if (hudBossWrist) hudBossWrist.textContent = `(${bossHandSocket.x.toFixed(2)}, ${bossHandSocket.y.toFixed(2)}, ${bossHandSocket.z.toFixed(2)})`;
+
+      if (bossPoseStatus) {
+        bossPoseStatus.style.color = '#06d6a0';
+        bossPoseStatus.innerHTML = `✓ <b>Bắt khớp Boss thành công!</b> Vai: (${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}), Chuôi Búa: (${bossHandSocket.x.toFixed(2)}, ${bossHandSocket.y.toFixed(2)}). Có thể kéo thả các điểm Marker để tinh chỉnh!`;
+      }
+    } catch (e) {
+      if (bossPoseStatus) {
+        bossPoseStatus.style.color = '#ef4444';
+        bossPoseStatus.textContent = 'Lỗi phát hiện dáng Boss: ' + e.message;
+      }
+    } finally {
+      btnBossAutoPose.disabled = false;
+    }
+  });
 
   // Load Boss 3D Models
   async function loadBossModel(el = 'fire') {
@@ -883,6 +1276,7 @@ export function initBrushCalibrator() {
       grp.add(torso, head, armR, hammer);
       bossModelHolder.add(grp);
     }
+    syncBossUI();
   }
 
   // Boss element switcher tabs
@@ -955,8 +1349,12 @@ export function initBrushCalibrator() {
     }
 
     bossGizmoObj.gizmo.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+    bossPoseRig.updateBone(bossShoulderPivot, bossHandSocket);
     if (hudBossShoulder) {
       hudBossShoulder.textContent = `(${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}, ${bossShoulderPivot.z.toFixed(2)})`;
+    }
+    if (hudBossWrist) {
+      hudBossWrist.textContent = `(${bossHandSocket.x.toFixed(2)}, ${bossHandSocket.y.toFixed(2)}, ${bossHandSocket.z.toFixed(2)})`;
     }
   }
 
@@ -1045,6 +1443,8 @@ export function initBrushCalibrator() {
       const payload = {
         target: 'boss',
         shoulderPivot: bossShoulderPivot,
+        handSocket: bossHandSocket,
+        normalizedPose: bossNormalizedPose,
         weaponOffset: {
           offsetX: bossWeaponOffset.offsetX,
           offsetY: bossWeaponOffset.offsetY,
@@ -1087,8 +1487,11 @@ export function initBrushCalibrator() {
     }
   });
 
-  // 3D Painting Raycaster on Boss Viewport
+  // 3D Painting & Interactive Skeleton Dragging on Boss Viewport
   let isPointerDownBoss = false;
+  let activeDragMarkerBoss = null;
+  const dragPlaneBoss = new THREE.Plane();
+  const planeIntersectPtBoss = new THREE.Vector3();
   const raycasterBoss = new THREE.Raycaster();
   const mouseBoss = new THREE.Vector2();
 
@@ -1116,13 +1519,60 @@ export function initBrushCalibrator() {
   }
 
   vpBoss.renderer.domElement.addEventListener('pointerdown', (e) => {
-    if (e.button === 0) {
+    if (e.button === 0) { // Left click
+      const rect = vpBoss.renderer.domElement.getBoundingClientRect();
+      mouseBoss.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseBoss.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterBoss.setFromCamera(mouseBoss, vpBoss.camera);
+      const markerHits = raycasterBoss.intersectObjects([bossPoseRig.shoulderMesh, bossPoseRig.wristMesh], true);
+
+      if (markerHits.length > 0) {
+        let hitObj = markerHits[0].object;
+        while (hitObj && !hitObj.userData?.type && hitObj.parent) hitObj = hitObj.parent;
+        if (hitObj?.userData?.type) {
+          activeDragMarkerBoss = hitObj;
+          vpBoss.controls.enabled = false;
+          const camDir = vpBoss.camera.getWorldDirection(new THREE.Vector3());
+          dragPlaneBoss.setFromNormalAndCoplanarPoint(camDir.negate(), activeDragMarkerBoss.position);
+          return;
+        }
+      }
+
       isPointerDownBoss = true;
       paintOnBossCanvas(e);
     }
   });
 
   vpBoss.renderer.domElement.addEventListener('pointermove', (e) => {
+    const rect = vpBoss.renderer.domElement.getBoundingClientRect();
+    mouseBoss.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseBoss.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    if (activeDragMarkerBoss) {
+      raycasterBoss.setFromCamera(mouseBoss, vpBoss.camera);
+      if (raycasterBoss.ray.intersectPlane(dragPlaneBoss, planeIntersectPtBoss)) {
+        const type = activeDragMarkerBoss.userData.type;
+        if (type === 'shoulder') {
+          bossShoulderPivot.x = Math.round(planeIntersectPtBoss.x * 100) / 100;
+          bossShoulderPivot.y = Math.round(planeIntersectPtBoss.y * 100) / 100;
+          bossShoulderPivot.z = Math.round(planeIntersectPtBoss.z * 100) / 100;
+          bossGizmoObj.gizmo.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+          if (hudBossShoulder) hudBossShoulder.textContent = `(${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}, ${bossShoulderPivot.z.toFixed(2)})`;
+        } else if (type === 'wrist') {
+          bossHandSocket.x = Math.round(planeIntersectPtBoss.x * 100) / 100;
+          bossHandSocket.y = Math.round(planeIntersectPtBoss.y * 100) / 100;
+          bossHandSocket.z = Math.round(planeIntersectPtBoss.z * 100) / 100;
+          bossWeaponOffset.offsetX = Math.round((bossHandSocket.x - bossShoulderPivot.x) * 100) / 100;
+          bossWeaponOffset.offsetY = Math.round((bossHandSocket.y - bossShoulderPivot.y) * 100) / 100;
+          bossWeaponOffset.offsetZ = Math.round((bossHandSocket.z - bossShoulderPivot.z) * 100) / 100;
+          if (hudBossWrist) hudBossWrist.textContent = `(${bossHandSocket.x.toFixed(2)}, ${bossHandSocket.y.toFixed(2)}, ${bossHandSocket.z.toFixed(2)})`;
+        }
+        bossPoseRig.updateBone(bossShoulderPivot, bossHandSocket);
+      }
+      return;
+    }
+
     if (isPointerDownBoss) {
       paintOnBossCanvas(e);
     }
@@ -1130,6 +1580,10 @@ export function initBrushCalibrator() {
 
   window.addEventListener('pointerup', () => {
     isPointerDownBoss = false;
+    if (activeDragMarkerBoss) {
+      activeDragMarkerBoss = null;
+      vpBoss.controls.enabled = true;
+    }
   });
 
   function syncBossUI() {
@@ -1145,9 +1599,23 @@ export function initBrushCalibrator() {
     bossWeaponOffset.offsetZ = w.offsetZ ?? 0.5;
     bossWeaponOffset.angle   = w.angle ?? 30;
 
+    if (bCfg.handSocket) {
+      bossHandSocket.x = bCfg.handSocket.x ?? (bossShoulderPivot.x + bossWeaponOffset.offsetX);
+      bossHandSocket.y = bCfg.handSocket.y ?? (bossShoulderPivot.y + bossWeaponOffset.offsetY);
+      bossHandSocket.z = bCfg.handSocket.z ?? (bossShoulderPivot.z + bossWeaponOffset.offsetZ);
+    } else {
+      bossHandSocket.x = bossShoulderPivot.x + bossWeaponOffset.offsetX;
+      bossHandSocket.y = bossShoulderPivot.y + bossWeaponOffset.offsetY;
+      bossHandSocket.z = bossShoulderPivot.z + bossWeaponOffset.offsetZ;
+    }
+
     bossGizmoObj.gizmo.position.set(bossShoulderPivot.x, bossShoulderPivot.y, bossShoulderPivot.z);
+    bossPoseRig.updateBone(bossShoulderPivot, bossHandSocket);
     if (hudBossShoulder) {
       hudBossShoulder.textContent = `(${bossShoulderPivot.x.toFixed(2)}, ${bossShoulderPivot.y.toFixed(2)}, ${bossShoulderPivot.z.toFixed(2)})`;
+    }
+    if (hudBossWrist) {
+      hudBossWrist.textContent = `(${bossHandSocket.x.toFixed(2)}, ${bossHandSocket.y.toFixed(2)}, ${bossHandSocket.z.toFixed(2)})`;
     }
   }
 
