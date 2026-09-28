@@ -189,14 +189,20 @@ export function initModelCalibrator() {
     ];
 
     let loadedGltf = null;
-    for (const url of candidateUrls) {
-      try {
-        loadedGltf = await new Promise((resolve) => {
-          gltfLoader.load(url, resolve, undefined, () => resolve(null));
-        });
-        if (loadedGltf && loadedGltf.scene) break;
-      } catch (e) {
-        loadedGltf = null;
+    const loader = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
+      ? new THREE.GLTFLoader()
+      : (typeof window !== 'undefined' && window.THREE?.GLTFLoader ? new window.THREE.GLTFLoader() : null);
+
+    if (loader) {
+      for (const url of candidateUrls) {
+        try {
+          loadedGltf = await new Promise((resolve) => {
+            loader.load(url, resolve, undefined, () => resolve(null));
+          });
+          if (loadedGltf && loadedGltf.scene) break;
+        } catch (e) {
+          loadedGltf = null;
+        }
       }
     }
 
