@@ -396,10 +396,7 @@
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
       <button id="btn-tab-player" class="nav-tab-btn active">
-        <span>👤</span> TAB 1: CÂN CHỈNH NHÂN VẬT (PLAYER)
-      </button>
-      <button id="btn-tab-boss" class="nav-tab-btn boss-tab">
-        <span>👾</span> TAB 2: CÂN CHỈNH BOSS (DUAL BRUSH MODE)
+        <span>👤</span> CÂN CHỈNH NHÂN VẬT (PLAYER CALIBRATION)
       </button>
     </div>
 
@@ -612,105 +609,11 @@
         </div>
       </div>
     </div>
-
-    <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <!-- TAB 2: CÂN CHỈNH BOSS (BOSS DUAL BRUSH MODE) -->
-    <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <div id="pane-boss" class="tab-pane hidden">
-      <div class="canvas-card">
-        <div class="canvas-viewport" id="canvas-boss"></div>
-        <div class="canvas-hud-overlay">
-          <div>💡 <b>Chuột trái:</b> Quét cọ tô / Kéo điểm khớp | <b>Chuột phải:</b> Xoay camera 3D</div>
-          <div>📍 Khớp Vai Boss: <span id="hud-boss-shoulder" class="hud-badge boss">(-1.80, 2.20, 0.20)</span></div>
-          <div>✋ Chuôi Búa / Bàn Tay: <span id="hud-boss-wrist" class="hud-badge boss">(-1.80, 1.20, 0.20)</span></div>
-          <div>🟦 Vùng Tay: <span id="hud-boss-arm-pts" class="hud-badge boss">0 điểm</span> | 🟧 Vùng Búa: <span id="hud-boss-weap-pts" class="hud-badge boss">0 điểm</span></div>
-        </div>
-      </div>
-
-      <div class="controls-panel">
-        <!-- Section 0: MediaPipe Pose Auto-Detection for Boss -->
-        <div class="section-box" style="border-color:#fbbf24; background:rgba(251, 191, 36, 0.08);">
-          <div class="section-title boss" style="color:#fbbf24;">
-            <span>🤖</span> Nhận Diện Khớp &amp; Búa Tự Động (Meta Animated Drawings Style)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Quét ảnh mô hình Boss qua <b>MediaPipe Pose</b> để tự động định vị <b>Khớp Vai Boss (Shoulder)</b> và <b>Chuôi Búa / Bàn Tay (Wrist/Grip)</b>. Có thể kéo thả các điểm Marker trực tiếp trên màn hình để tinh chỉnh.
-          </div>
-          <button id="btn-boss-auto-pose" class="btn-action-primary" style="background:linear-gradient(135deg, #f59e0b, #ef4444); font-size:12px; font-weight:800;">
-            <span>🤖</span> TỰ ĐỘNG BẮT KHỚP &amp; BÚA BOSS (AUTO-DETECT POSE)
-          </button>
-          <div id="boss-pose-status" style="font-size:11px; font-weight:600; color:#fbbf24; display:none; padding:4px 0;"></div>
-        </div>
-        <!-- Boss Element Switcher -->
-        <div class="section-box">
-          <div class="section-title boss">
-            <span>👾</span> Chọn Trùm Cuối (Boss Element)
-          </div>
-          <div class="brush-tools-row">
-            <button class="tool-btn" data-boss="thunder" id="tab-boss-thunder">⚡ Sét</button>
-            <button class="tool-btn active weapon-orange" data-boss="fire" id="tab-boss-fire">🔥 Lửa</button>
-            <button class="tool-btn" data-boss="frost" id="tab-boss-frost">❄️ Băng</button>
-          </div>
-        </div>
-
-        <!-- Dual Brush Mode -->
-        <div class="section-box">
-          <div class="section-title boss">
-            <span>🖌️</span> Hai Chế Độ Bút Màu (Dual Brush Mode)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Vì mô hình Boss đã cầm sẵn búa/vũ khí, hãy dùng <b>Bút 1</b> tô vùng cánh tay và <b>Bút 2</b> tô vùng vũ khí để hệ thống ghép thành một khối chi xoay đồng nhất.
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <button id="btn-boss-brush-arm" class="tool-btn active arm-cyan" style="justify-content:flex-start;">
-              <span>🟦</span> Bút 1: Tô Cánh Tay (Arm Area)
-            </button>
-            <button id="btn-boss-brush-weapon" class="tool-btn" style="justify-content:flex-start;">
-              <span>🟧</span> Bút 2: Tô Vũ Khí (Weapon/Hammer)
-            </button>
-            <button id="btn-boss-brush-erase" class="tool-btn eraser" style="justify-content:flex-start;">
-              <span>🧹</span> Tẩy Vùng Đã Tô (Eraser)
-            </button>
-          </div>
-
-          <div class="control-row">
-            <div class="control-label">
-              <span>Kích thước cọ (Brush Size):</span>
-              <span class="val-text" id="val-boss-brush-size">0.45</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-boss-brush-size" min="0.10" max="1.50" step="0.05" value="0.45">
-            </div>
-          </div>
-
-          <div style="display:flex; gap:6px;">
-            <button id="btn-boss-quick-fill" class="tool-btn" style="flex:1;">
-              <span>🎯</span> Tô Nhanh Tay &amp; Búa
-            </button>
-            <button id="btn-boss-clear-points" class="tool-btn" style="flex:1;">
-              <span>🗑️</span> Xóa Vùng Tô
-            </button>
-          </div>
-        </div>
-
-        <!-- Test Slam & Save -->
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <button id="btn-boss-test-slam" class="btn-test-swing" style="background:linear-gradient(135deg, #ef4444, #f59e0b);">
-            <span>🔨</span> ĐẬP BÚA THỬ (TEST SLAM)
-          </button>
-          <div id="toast-boss" class="status-toast"></div>
-          <button id="btn-boss-save" class="btn-save-all">
-            <span>💾</span> LƯU CẤU HÌNH BOSS
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=28.0"></script>
+  <script type="module" src="js/admin.js?v=29.0"></script>
   <script type="module">
-    import { initBrushCalibrator } from './js/admin.js?v=28.0';
+    import { initBrushCalibrator } from './js/admin.js?v=29.0';
     window.addEventListener('DOMContentLoaded', () => {
       initBrushCalibrator();
     });

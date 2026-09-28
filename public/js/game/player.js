@@ -984,33 +984,55 @@ export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
     onComplete = arg2;
   }
 
+  let hitCalled = false;
+  let completeCalled = false;
+  const safeOnHit = () => {
+    if (!hitCalled) {
+      hitCalled = true;
+      if (onHit) onHit();
+    }
+  };
+  const safeOnComplete = () => {
+    if (!completeCalled) {
+      completeCalled = true;
+      safeOnHit();
+      if (onComplete) onComplete();
+    }
+  };
+
   if (!pivot) {
-    if (onHit) onHit();
-    if (onComplete) onComplete();
+    safeOnComplete();
     return;
   }
 
-  const arcCfg = _socketsConfig?.player?.slashArc || {};
+  // Safety fallback timer to prevent combat turn from ever locking
+  const safetyTimer = setTimeout(() => {
+    console.warn('[player] Slash animation safety timeout triggered');
+    safeOnComplete();
+  }, 600);
+
   const poses = _socketsConfig?.player?.slashPoses || _socketsConfig?.player?.slashKeyframes || {};
 
-  const p1 = poses.pose1 || {};
-  const p2 = poses.pose2 || {};
-  const p3 = poses.pose3 || {};
+  // Built-in fallback swing values in radians if custom poses do not exist
+  const FALLBACK_POSES = {
+    pose1: { x: -0.5, y: 0, z: 0.8 },
+    pose2: { x: 0.6, y: 0, z: -1.0 },
+    pose3: { x: 0, y: 0, z: -0.3 },
+  };
 
-  const getPoseRot = (p, defaultDegZ = 0) => {
-    const rx = p.rotX ?? ((p.degX ?? 0) * Math.PI / 180);
-    const ry = p.rotY ?? ((p.degY ?? 0) * Math.PI / 180);
-    const rz = p.rotZ ?? ((p.degZ ?? (p.z ?? defaultDegZ)) * Math.PI / 180);
+  const getPoseRot = (p, fallback) => {
+    if (!p || (p.x === undefined && p.rotX === undefined && p.degX === undefined && p.z === undefined && p.rotZ === undefined && p.degZ === undefined)) {
+      return { ...fallback };
+    }
+    const rx = p.rotX ?? (p.x !== undefined ? p.x : ((p.degX ?? 0) * Math.PI / 180));
+    const ry = p.rotY ?? (p.y !== undefined ? p.y : ((p.degY ?? 0) * Math.PI / 180));
+    const rz = p.rotZ ?? (p.z !== undefined ? p.z : ((p.degZ ?? 0) * Math.PI / 180));
     return { x: rx, y: ry, z: rz };
   };
 
-  const defaultWindup = arcCfg.windupAngle ?? (arcCfg.arc ? (arcCfg.idleAngle ?? 0) + arcCfg.arc * 0.45 : 60);
-  const defaultStrike = arcCfg.slashAngle ?? (arcCfg.arc ? (arcCfg.idleAngle ?? 0) - arcCfg.arc * 0.55 : -75);
-  const defaultIdle = arcCfg.idleAngle ?? 0;
-
-  const rotPose1 = getPoseRot(p1, defaultWindup);
-  const rotPose2 = getPoseRot(p2, defaultStrike);
-  const rotPose3 = getPoseRot(p3, defaultIdle);
+  const rotPose1 = getPoseRot(poses.pose1, FALLBACK_POSES.pose1);
+  const rotPose2 = getPoseRot(poses.pose2, FALLBACK_POSES.pose2);
+  const rotPose3 = getPoseRot(poses.pose3, FALLBACK_POSES.pose3);
 
   // Phase 1: Wind-up (Giương kiếm) - 80ms
   new TWEEN.Tween(pivot.rotation)
@@ -1022,14 +1044,15 @@ export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
         .to(rotPose2, 120)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
-          if (onHit) onHit();
+          safeOnHit();
 
           // Phase 3: Recover / Idle Guard (Thu kiếm về thế thủ) - 100ms
           new TWEEN.Tween(pivot.rotation)
             .to(rotPose3, 100)
             .easing(TWEEN.Easing.Quadratic.Out)
             .onComplete(() => {
-              if (onComplete) onComplete();
+              clearTimeout(safetyTimer);
+              safeOnComplete();
             })
             .start();
         })
@@ -1416,19 +1439,27 @@ function _animFrost(prog, dt) {
 
 // ═════════════════════════════════════════════════════════════════════════════
 // ④ FIRE — Hỏa Luân Trảm (Full Set Lửa)
-//   1. Đứng tại chỗ: chém uy lực về phía trước (250ms)
-//   2. Phóng kiếm khí hỏa diễm về phía Boss
-//   3. Hồi phục về thế thủ (300ms)
+//   1. Lướt tới Boss: Dash forward to Boss (ATTACK_X = BOSS_X - 1.2)
+//   2. Chém kiếm 3-pose slash strike
+//   3. Lùi về vị trí ban đầu
 // ═════════════════════════════════════════════════════════════════════════════
 function _animFire(prog, dt) {
+  const ATTACK_X = BOSS_X - 1.2;
   const pivot = getWeaponHandNode();
 
-  if (prog < 0.45) {
-    // 1. Đứng tại chỗ: chém uy lực về phía trước, phóng kiếm khí hỏa diễm (250ms)
-    playerGroup.position.x = HOME_X + Math.sin(prog / 0.45 * Math.PI) * 0.3;
+  if (prog < 0.35) {
+    // 1. Dash to Boss (ATTACK_X = BOSS_X - 1.2)
+    const t = prog / 0.35;
+    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X, ATTACK_X, t);
     playerGroup.position.y = HOME_Y;
     playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
-    if (!anim._slashTriggered && prog >= 0.10) {
+    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 14);
+  } else if (prog < 0.65) {
+    // 2. Play 3-pose slash strike at Boss
+    playerGroup.position.x = ATTACK_X;
+    playerGroup.position.y = HOME_Y;
+    playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
+    if (!anim._slashTriggered) {
       anim._slashTriggered = true;
       _spawnFlameWave();
       playArmSwingSlash(pivot, () => {
@@ -1438,15 +1469,16 @@ function _animFire(prog, dt) {
         }
       });
     }
-    const b = 1 + Math.sin(prog / 0.45 * Math.PI) * 0.08;
+    const b = 1 + Math.sin((prog - 0.35) / 0.30 * Math.PI) * 0.12;
     playerGroup.scale.set(b, 1 / b, 1);
   } else {
-    // 2. Hồi phục về thế thủ (300ms)
-    const t = (prog - 0.45) / 0.55;
-    playerGroup.position.x = THREE.MathUtils.lerp(HOME_X + 0.3, HOME_X, t);
+    // 3. Dash back to origin
+    const t = (prog - 0.65) / 0.35;
+    playerGroup.position.x = THREE.MathUtils.lerp(ATTACK_X, HOME_X, t);
     playerGroup.position.y = HOME_Y;
     playerGroup.rotation.y = (is3DModelMode || is2DMode) ? 0 : FACE_Y;
     playerGroup.scale.set(1, 1, 1);
+    if (!is3DModelMode && !is2DMode) _runLimbs(dt, 12);
   }
 }
 
@@ -1460,7 +1492,7 @@ function _spawnFlameWave() {
     waveGroup.add(seg);
   }
   waveGroup.add(makeBox(0.18,0.18,0.18, 0xffff00));
-  waveGroup.position.set(HOME_X+3.5, HOME_Y+0.6, 0);
+  waveGroup.position.set(BOSS_X - 0.7, HOME_Y+0.6, 0);
   // Add to scene (player's parent)
   const sceneRef = playerGroup.parent;
   if (sceneRef) sceneRef.add(waveGroup);

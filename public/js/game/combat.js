@@ -117,6 +117,7 @@ export function executePlayerCounterAttack(selectedElement, isFullSet, onCounter
           setTimeout(() => {
             try { Audio.playFire?.(); } catch (e) {}
             if (applyHit2Damage) applyHit2Damage(); // decreases HP bar by another (50 / totalQuestions)%
+            Effects.spawnFireVortexAroundBoss(BOSS_VFX_POS);
             Effects.triggerFireBurst(BOSS_VFX_POS, hit2Label);
             setTimeout(doneCallback, 500);
           }, 100);
@@ -150,6 +151,20 @@ export function executePlayerCounterAttack(selectedElement, isFullSet, onCounter
 export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, context = {}) {
   const bossElement = context.bossElement || Boss.getBossElement() || 'thunder';
 
+  let finished = false;
+  const finishOnce = () => {
+    if (!finished) {
+      finished = true;
+      if (onTurnFinished) onTurnFinished();
+    }
+  };
+
+  // Safety fallback timer to prevent combat turn freeze under any circumstance
+  const safetyTimeout = setTimeout(() => {
+    console.warn('[combat] handleCorrectAnswer safety timeout triggered');
+    finishOnce();
+  }, 5000);
+
   // Step 1: Boss executes attack motion
   Boss.playBossAttack(bossElement, () => {
     // Step 2: Player dodges
@@ -157,7 +172,8 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
       // Step 3: CRITICAL - Trigger player counter-attack immediately after dodge completes
       executePlayerCounterAttack(selectedElement, isFullSet, () => {
         // Step 4: Complete turn and load next question
-        if (onTurnFinished) onTurnFinished();
+        clearTimeout(safetyTimeout);
+        finishOnce();
       }, context);
     });
   }, () => {
@@ -172,6 +188,24 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
  * @param {Function} onDone - Callback to release combat turn lock
  */
 export function executeCombatTurn(ev, onDone) {
+  let doneHandled = false;
+  const safeOnDone = () => {
+    if (!doneHandled) {
+      doneHandled = true;
+      if (onDone) onDone();
+    }
+  };
+
+  const turnSafetyTimer = setTimeout(() => {
+    console.warn('[combat] executeCombatTurn safety timeout triggered');
+    safeOnDone();
+  }, 7000);
+
+  const doneWrapper = () => {
+    clearTimeout(turnSafetyTimer);
+    safeOnDone();
+  };
+
   const isCorrect = ev.isCorrect !== false && ev.type === 'attack';
   const rawElement = ev.equippedSet || Player.getActiveElement() || window.gameState?.equippedSet || null;
   const isFullSet = Boolean(
@@ -243,7 +277,7 @@ export function executeCombatTurn(ev, onDone) {
     // ═════════════════════════════════════════════════════════════════════════
     // BRANCH A: Player answered CORRECTLY
     // ═════════════════════════════════════════════════════════════════════════
-    handleCorrectAnswer(selectedElement, isFullSet, onDone, context);
+    handleCorrectAnswer(selectedElement, isFullSet, doneWrapper, context);
 
   } else {
     // ═════════════════════════════════════════════════════════════════════════
@@ -274,7 +308,7 @@ export function executeCombatTurn(ev, onDone) {
       });
     }, () => {
       setTimeout(() => {
-        if (onDone) onDone();
+        doneWrapper();
       }, 150);
     });
   }

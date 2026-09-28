@@ -1316,15 +1316,77 @@ export function playBossAttack(element, onPeak, onComplete) {
     return;
   }
   const el = element || currentBossData?.element || 'thunder';
+
+  let peakFired = false;
+  let completeFired = false;
+
+  const safePeak = () => {
+    if (!peakFired) {
+      peakFired = true;
+      anim.peakFired = true;
+      if (onPeak) onPeak();
+    }
+  };
+
+  const safeComplete = () => {
+    if (!completeFired) {
+      completeFired = true;
+      safePeak();
+      anim.active = false;
+      if (onComplete) onComplete();
+    }
+  };
+
+  // Safety fallback timer to prevent combat turn freeze under any circumstance
+  clearTimeout(anim._safetyTimer);
+  anim._safetyTimer = setTimeout(() => {
+    console.warn('[boss] playBossAttack safety timeout triggered');
+    safeComplete();
+  }, 1200);
+
   anim.active = true;
   anim.type = 'attack';
   anim.attackElement = el;
   anim.t = 0;
   anim.duration = (el === 'frost') ? 0.95 : (el === 'fire') ? 0.95 : 0.90;
-  anim.onPeak = onPeak || null;
-  anim.onComplete = onComplete || null;
+  anim.onPeak = safePeak;
+  anim.onComplete = () => {
+    clearTimeout(anim._safetyTimer);
+    safeComplete();
+  };
   anim.peakFired = false;
-  anim.vfxFired = false;
+  anim.vfxFired = true;
+
+  // Instantly trigger elemental spell VFX
+  if (el === 'fire') {
+    try { Audio.playFire?.(); } catch(e) {}
+    Effects.spawnBossMeteorShower(
+      new THREE.Vector3(-3.0, 0.5, 0),
+      () => {
+        safePeak();
+      }
+    );
+  } else if (el === 'frost') {
+    try { Audio.playFrost?.(); } catch(e) {}
+    Effects.spawnBossFrostTrailAndSpikes(
+      new THREE.Vector3(BOSS_HOME.x - 0.5, 0.05, 0),
+      new THREE.Vector3(-3.0, 0, 0),
+      () => {
+        safePeak();
+      }
+    );
+  } else {
+    // thunder
+    try { Audio.playThunder?.(); } catch(e) {}
+    Effects.spawnBossLightningBeam(
+      new THREE.Vector3(BOSS_HOME.x - 0.5, 3.8, 0),
+      new THREE.Vector3(-3.0, 1.5, 0),
+      380,
+      () => {
+        safePeak();
+      }
+    );
+  }
 }
 
 let currentHpPercent = 100;

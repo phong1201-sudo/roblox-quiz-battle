@@ -262,14 +262,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
             window.gameState.bossElement = BOSS_ELEMENTS[data.bossIndex] || 'thunder';
 
-            if (data.equippedSet !== undefined) {
-                window.gameState.equippedSet = data.equippedSet;
-                if (data.testGear === 'full') {
-                    if (!window.gameState.inventory) window.gameState.inventory = {};
-                    window.gameState.inventory[data.equippedSet] = ['weapon', 'outfit'];
+            window.gameState.testGear = data.testGear;
+            const isFull = data.testGear === 'full' || ['thunder', 'fire', 'frost'].includes(data.testGear);
+            const activeSet = data.equippedSet || (['thunder', 'fire', 'frost'].includes(data.testGear) ? data.testGear : null);
+
+            if (activeSet || data.equippedSet !== undefined || isFull) {
+                window.gameState.equippedSet = activeSet;
+                if (!window.gameState.inventory) window.gameState.inventory = {};
+                if (isFull && activeSet) {
+                    window.gameState.inventory[activeSet] = ['weapon', 'outfit'];
+                    window.gameState.hasFullSet = true;
+                    window.gameState.damagePerHit = 2;
                 } else if (data.testGear === 'normal') {
-                    if (!window.gameState.inventory) window.gameState.inventory = {};
-                    window.gameState.inventory[data.equippedSet] = [];
+                    if (activeSet) window.gameState.inventory[activeSet] = [];
+                    window.gameState.hasFullSet = false;
+                    window.gameState.damagePerHit = 1;
                 }
             }
         }
