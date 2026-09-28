@@ -223,6 +223,28 @@ export function initBrushCalibrator() {
     }
   }).catch(() => {});
 
+  // Navigation Tab switching between 3D Rigging and 2D Skeleton Rigging
+  const btnTabPlayer   = document.getElementById('btn-tab-player');
+  const btnTabSkeleton = document.getElementById('btn-tab-skeleton');
+  const panePlayer     = document.getElementById('pane-player');
+  const paneSkeleton   = document.getElementById('pane-skeleton');
+
+  btnTabPlayer?.addEventListener('click', () => {
+    btnTabPlayer.classList.add('active');
+    btnTabSkeleton?.classList.remove('active');
+    panePlayer?.classList.remove('hidden');
+    paneSkeleton?.classList.add('hidden');
+    vpPlayer.onResize();
+  });
+
+  btnTabSkeleton?.addEventListener('click', () => {
+    btnTabSkeleton.classList.add('active');
+    btnTabPlayer?.classList.remove('active');
+    paneSkeleton?.classList.remove('hidden');
+    panePlayer?.classList.add('hidden');
+    window.dispatchEvent(new CustomEvent('skeleton-tab-activated'));
+  });
+
   // Helper: Setup a 3D Scene Viewport with OrbitControls
   function setupScene(container, camPos, lookAt) {
     const scene = new THREE.Scene();
@@ -1342,4 +1364,508 @@ export function initVisualSocketCalibrator(opts = {}) {
 
 export function initStandaloneCalibrator() {
   return initBrushCalibrator();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2D SKELETAL RIGGING UI (Meta Animated Drawings style)
+// ─────────────────────────────────────────────────────────────────────────────
+export function initSkeletonCalibrator() {
+  const canvas = document.getElementById('skeleton-canvas');
+  const img = document.getElementById('skeleton-target-img');
+  if (!canvas || !img) return null;
+
+  const ctx = canvas.getContext('2d');
+
+  let skeletonData = {
+    nodes: {
+      head: { x: 0.5, y: 0.1 },
+      neck: { x: 0.5, y: 0.2 },
+      torso: { x: 0.5, y: 0.5 },
+      l_shoulder: { x: 0.3, y: 0.25 },
+      l_elbow: { x: 0.2, y: 0.4 },
+      l_hand: { x: 0.1, y: 0.5 },
+      r_shoulder: { x: 0.7, y: 0.25 },
+      r_elbow: { x: 0.8, y: 0.4 },
+      r_hand: { x: 0.9, y: 0.5 },
+      hip: { x: 0.5, y: 0.7 },
+      l_knee: { x: 0.4, y: 0.85 },
+      l_foot: { x: 0.4, y: 1.0 },
+      r_knee: { x: 0.6, y: 0.85 },
+      r_foot: { x: 0.6, y: 1.0 }
+    },
+    links: [
+      ['head', 'neck'],
+      ['neck', 'torso'],
+      ['torso', 'hip'],
+      ['neck', 'l_shoulder'],
+      ['l_shoulder', 'l_elbow'],
+      ['l_elbow', 'l_hand'],
+      ['neck', 'r_shoulder'],
+      ['r_shoulder', 'r_elbow'],
+      ['r_elbow', 'r_hand'],
+      ['hip', 'l_knee'],
+      ['l_knee', 'l_foot'],
+      ['hip', 'r_knee'],
+      ['r_knee', 'r_foot']
+    ]
+  };
+
+  const DEFAULT_SKELETON = JSON.parse(JSON.stringify(skeletonData));
+
+  let activeDragNode = null;
+  let hoveredNode = null;
+  let isTestingSlash = false;
+  let testAnimOffset = { r_shoulder: { x: 0, y: 0 }, r_elbow: { x: 0, y: 0 }, r_hand: { x: 0, y: 0 } };
+
+  const hudSelected = document.getElementById('hud-skel-selected');
+  const hudRHand    = document.getElementById('hud-skel-rhand');
+  const nodeListEl  = document.getElementById('skel-node-list');
+  const btnSave     = document.getElementById('btn-skel-save');
+  const btnReset    = document.getElementById('btn-skel-reset-default');
+  const btnTestSlash= document.getElementById('btn-skel-test-slash');
+  const btnAutoPose = document.getElementById('btn-skel-auto-pose');
+  const poseStatus  = document.getElementById('skel-pose-status');
+  const toastEl     = document.getElementById('toast-skeleton');
+  const fileInput   = document.getElementById('input-skel-upload');
+
+  // Load saved skeleton from server
+  fetch('/api/admin/skeleton')
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.nodes) {
+        skeletonData.nodes = { ...skeletonData.nodes, ...data.nodes };
+        if (data.links) skeletonData.links = data.links;
+        syncUI();
+        redraw();
+      }
+    })
+    .catch(() => {});
+
+  function resizeCanvasToImage() {
+    const rect = img.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      canvas.width = Math.round(rect.width);
+      canvas.height = Math.round(rect.height);
+      redraw();
+    }
+  }
+
+  img.addEventListener('load', resizeCanvasToImage);
+  window.addEventListener('resize', resizeCanvasToImage);
+  window.addEventListener('skeleton-tab-activated', () => {
+    setTimeout(resizeCanvasToImage, 60);
+  });
+  if (img.complete) setTimeout(resizeCanvasToImage, 50);
+
+  function getNodeColor(name) {
+    if (name === 'r_hand') return '#ff4500';
+    if (name.startsWith('r_')) return '#f97316';
+    if (name.startsWith('l_')) return '#a855f7';
+    if (name === 'head' || name === 'neck') return '#fbbf24';
+    return '#00e5ff';
+  }
+
+  function redraw() {
+    if (!canvas.width || !canvas.height) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Draw link bones
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (const [from, to] of skeletonData.links) {
+      const n1 = skeletonData.nodes[from];
+      const n2 = skeletonData.nodes[to];
+      if (!n1 || !n2) continue;
+
+      let p1x = n1.x * w;
+      let p1y = n1.y * h;
+      let p2x = n2.x * w;
+      let p2y = n2.y * h;
+
+      if (isTestingSlash) {
+        if (testAnimOffset[from]) { p1x += testAnimOffset[from].x * w; p1y += testAnimOffset[from].y * h; }
+        if (testAnimOffset[to])   { p2x += testAnimOffset[to].x * w;   p2y += testAnimOffset[to].y * h; }
+      }
+
+      // Outer bone glow
+      ctx.beginPath();
+      ctx.moveTo(p1x, p1y);
+      ctx.lineTo(p2x, p2y);
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      // Inner bone line
+      ctx.beginPath();
+      ctx.moveTo(p1x, p1y);
+      ctx.lineTo(p2x, p2y);
+      ctx.strokeStyle = '#e0f2fe';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    // Draw nodes
+    for (const [name, node] of Object.entries(skeletonData.nodes)) {
+      let nx = node.x * w;
+      let ny = node.y * h;
+
+      if (isTestingSlash && testAnimOffset[name]) {
+        nx += testAnimOffset[name].x * w;
+        ny += testAnimOffset[name].y * h;
+      }
+
+      const isHovered = (name === hoveredNode);
+      const isDragged = (name === activeDragNode);
+      const isWeaponHand = (name === 'r_hand');
+      const baseColor = getNodeColor(name);
+      const r = isWeaponHand ? (isDragged ? 12 : 9) : (isDragged ? 10 : (isHovered ? 8 : 6.5));
+
+      // Outer ring for active or weapon hand
+      if (isWeaponHand || isHovered || isDragged) {
+        ctx.beginPath();
+        ctx.arc(nx, ny, r + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = isWeaponHand ? '#ff8c00' : '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Main node circle
+      ctx.beginPath();
+      ctx.arc(nx, ny, r, 0, Math.PI * 2);
+      ctx.fillStyle = baseColor;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Node label
+      ctx.font = 'bold 9px sans-serif';
+      const label = isWeaponHand ? '⚔️ r_hand (Kiếm)' : name;
+      const textMetrics = ctx.measureText(label);
+      const bgW = textMetrics.width + 6;
+      const bgH = 13;
+      const textX = nx + r + 5;
+      const textY = ny - 2;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(textX - 2, textY - 9, bgW, bgH, 3);
+      else ctx.rect(textX - 2, textY - 9, bgW, bgH);
+      ctx.fill();
+
+      ctx.fillStyle = isHovered || isDragged ? '#38bdf8' : '#e2e8f0';
+      ctx.fillText(label, textX + 1, textY + 1);
+    }
+  }
+
+  function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left),
+      y: (e.clientY - rect.top)
+    };
+  }
+
+  function findNodeUnder(x, y) {
+    const w = canvas.width;
+    const h = canvas.height;
+    let closestName = null;
+    let minDist = 18;
+
+    for (const [name, node] of Object.entries(skeletonData.nodes)) {
+      const nx = node.x * w;
+      const ny = node.y * h;
+      const d = Math.hypot(x - nx, y - ny);
+      if (d < minDist) {
+        minDist = d;
+        closestName = name;
+      }
+    }
+    return closestName;
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const { x, y } = getCanvasCoords(e);
+    const hit = findNodeUnder(x, y);
+    if (hit) {
+      activeDragNode = hit;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.style.cursor = 'grabbing';
+      if (hudSelected) hudSelected.textContent = hit;
+      redraw();
+    }
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    const { x, y } = getCanvasCoords(e);
+    if (activeDragNode) {
+      const normX = Math.max(0.01, Math.min(0.99, x / canvas.width));
+      const normY = Math.max(0.01, Math.min(0.99, y / canvas.height));
+      skeletonData.nodes[activeDragNode] = {
+        x: Math.round(normX * 1000) / 1000,
+        y: Math.round(normY * 1000) / 1000
+      };
+      if (activeDragNode === 'r_hand' && hudRHand) {
+        hudRHand.textContent = `(${skeletonData.nodes.r_hand.x.toFixed(2)}, ${skeletonData.nodes.r_hand.y.toFixed(2)})`;
+      }
+      syncNodeItem(activeDragNode);
+      redraw();
+    } else {
+      const hit = findNodeUnder(x, y);
+      if (hit !== hoveredNode) {
+        hoveredNode = hit;
+        canvas.style.cursor = hit ? 'grab' : 'crosshair';
+        redraw();
+      }
+    }
+  });
+
+  const onPointerUp = (e) => {
+    if (activeDragNode) {
+      try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+      activeDragNode = null;
+      canvas.style.cursor = hoveredNode ? 'grab' : 'crosshair';
+      redraw();
+    }
+  };
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointercancel', onPointerUp);
+
+  function syncUI() {
+    if (!nodeListEl) return;
+    nodeListEl.innerHTML = '';
+    for (const [name, node] of Object.entries(skeletonData.nodes)) {
+      const item = document.createElement('div');
+      item.id = `skel-node-item-${name}`;
+      item.style.cssText = 'background:#1e293b; padding:4px 6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border:1px solid #334155;';
+      item.innerHTML = `
+        <span style="font-weight:700; color:${getNodeColor(name)};">${name}</span>
+        <span style="font-family:monospace; color:#94a3b8;">(${node.x.toFixed(2)}, ${node.y.toFixed(2)})</span>
+      `;
+      item.addEventListener('mouseenter', () => { hoveredNode = name; redraw(); });
+      item.addEventListener('mouseleave', () => { hoveredNode = null; redraw(); });
+      item.addEventListener('click', () => {
+        hoveredNode = name;
+        if (hudSelected) hudSelected.textContent = name;
+        redraw();
+      });
+      nodeListEl.appendChild(item);
+    }
+    if (hudRHand && skeletonData.nodes.r_hand) {
+      hudRHand.textContent = `(${skeletonData.nodes.r_hand.x.toFixed(2)}, ${skeletonData.nodes.r_hand.y.toFixed(2)})`;
+    }
+  }
+
+  function syncNodeItem(name) {
+    const item = document.getElementById(`skel-node-item-${name}`);
+    if (item && skeletonData.nodes[name]) {
+      const n = skeletonData.nodes[name];
+      item.querySelector('span:last-child').textContent = `(${n.x.toFixed(2)}, ${n.y.toFixed(2)})`;
+    }
+  }
+
+  // Preset Buttons
+  const presets = {
+    fire: '/assets/characters/fireblade(cho%20game)_0.jpg',
+    thunder: '/assets/characters/thunder_body.png',
+    frost: '/assets/characters/frost_body.png'
+  };
+
+  ['fire', 'thunder', 'frost'].forEach(el => {
+    const btn = document.getElementById(`btn-skel-preset-${el}`);
+    btn?.addEventListener('click', () => {
+      ['fire', 'thunder', 'frost'].forEach(k => document.getElementById(`btn-skel-preset-${k}`)?.classList.remove('active'));
+      btn.classList.add('active');
+      img.src = presets[el];
+    });
+  });
+
+  // Custom Image Upload
+  fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Reset to default
+  btnReset?.addEventListener('click', () => {
+    skeletonData.nodes = JSON.parse(JSON.stringify(DEFAULT_SKELETON.nodes));
+    syncUI();
+    redraw();
+  });
+
+  // Test Slash Animation in 2D
+  btnTestSlash?.addEventListener('click', () => {
+    if (isTestingSlash) return;
+    isTestingSlash = true;
+
+    let startTime = performance.now();
+    const duration = 650;
+
+    function animateSlash(now) {
+      const elapsed = now - startTime;
+      const prog = Math.min(1.0, elapsed / duration);
+
+      if (prog < 0.3) {
+        // Wind-up: shoulder back, elbow bent
+        const t = prog / 0.3;
+        testAnimOffset.r_shoulder = { x: -0.04 * t, y: -0.05 * t };
+        testAnimOffset.r_elbow    = { x: -0.08 * t, y: -0.09 * t };
+        testAnimOffset.r_hand     = { x: -0.14 * t, y: -0.15 * t };
+      } else if (prog < 0.6) {
+        // Strike: forward slash motion
+        const t = (prog - 0.3) / 0.3;
+        testAnimOffset.r_shoulder = { x: -0.04 + 0.10 * t, y: -0.05 + 0.08 * t };
+        testAnimOffset.r_elbow    = { x: -0.08 + 0.18 * t, y: -0.09 + 0.14 * t };
+        testAnimOffset.r_hand     = { x: -0.14 + 0.28 * t, y: -0.15 + 0.22 * t };
+      } else {
+        // Recover to rest position
+        const t = (prog - 0.6) / 0.4;
+        testAnimOffset.r_shoulder = { x: 0.06 * (1 - t), y: 0.03 * (1 - t) };
+        testAnimOffset.r_elbow    = { x: 0.10 * (1 - t), y: 0.05 * (1 - t) };
+        testAnimOffset.r_hand     = { x: 0.14 * (1 - t), y: 0.07 * (1 - t) };
+      }
+
+      redraw();
+
+      if (prog < 1.0) {
+        requestAnimationFrame(animateSlash);
+      } else {
+        isTestingSlash = false;
+        testAnimOffset.r_shoulder = { x: 0, y: 0 };
+        testAnimOffset.r_elbow    = { x: 0, y: 0 };
+        testAnimOffset.r_hand     = { x: 0, y: 0 };
+        redraw();
+      }
+    }
+    requestAnimationFrame(animateSlash);
+  });
+
+  // Auto-Detect with MediaPipe Pose
+  btnAutoPose?.addEventListener('click', async () => {
+    if (poseStatus) {
+      poseStatus.style.display = 'block';
+      poseStatus.textContent = '⏳ Đang quét MediaPipe Pose từ ảnh nhân vật...';
+    }
+    btnAutoPose.disabled = true;
+
+    try {
+      if (typeof window !== 'undefined' && window.Pose) {
+        const pose = new window.Pose({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+        });
+        pose.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          smoothSegmentation: false,
+          minDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4,
+        });
+        await pose.initialize();
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = img.naturalWidth || img.width || 512;
+        tempCanvas.height = img.naturalHeight || img.height || 512;
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        let detectedLandmarks = null;
+        await new Promise((resolve) => {
+          const onResults = (results) => {
+            if (results.poseLandmarks) detectedLandmarks = results.poseLandmarks;
+            resolve();
+          };
+          pose.onResults(onResults);
+          pose.send({ image: tempCanvas }).catch(resolve);
+          setTimeout(resolve, 3500);
+        });
+
+        if (detectedLandmarks && detectedLandmarks.length >= 29) {
+          const lm = detectedLandmarks;
+          const clamp = (v) => Math.max(0.02, Math.min(0.98, Math.round(v * 1000) / 1000));
+
+          skeletonData.nodes.head = { x: clamp(lm[0].x), y: clamp(lm[0].y) };
+          skeletonData.nodes.neck = { x: clamp((lm[11].x + lm[12].x) / 2), y: clamp((lm[11].y + lm[12].y) / 2 - 0.03) };
+          skeletonData.nodes.torso = { x: clamp((lm[11].x + lm[12].x + lm[23].x + lm[24].x) / 4), y: clamp((lm[11].y + lm[12].y + lm[23].y + lm[24].y) / 4) };
+          skeletonData.nodes.hip = { x: clamp((lm[23].x + lm[24].x) / 2), y: clamp((lm[23].y + lm[24].y) / 2) };
+
+          skeletonData.nodes.l_shoulder = { x: clamp(lm[11].x), y: clamp(lm[11].y) };
+          skeletonData.nodes.l_elbow    = { x: clamp(lm[13].x), y: clamp(lm[13].y) };
+          skeletonData.nodes.l_hand     = { x: clamp(lm[15].x), y: clamp(lm[15].y) };
+
+          skeletonData.nodes.r_shoulder = { x: clamp(lm[12].x), y: clamp(lm[12].y) };
+          skeletonData.nodes.r_elbow    = { x: clamp(lm[14].x), y: clamp(lm[14].y) };
+          skeletonData.nodes.r_hand     = { x: clamp(lm[16].x), y: clamp(lm[16].y) };
+
+          skeletonData.nodes.l_knee     = { x: clamp(lm[25].x), y: clamp(lm[25].y) };
+          skeletonData.nodes.l_foot     = { x: clamp(lm[27].x), y: clamp(lm[27].y) };
+
+          skeletonData.nodes.r_knee     = { x: clamp(lm[26].x), y: clamp(lm[26].y) };
+          skeletonData.nodes.r_foot     = { x: clamp(lm[28].x), y: clamp(lm[28].y) };
+
+          if (poseStatus) {
+            poseStatus.style.color = '#06d6a0';
+            poseStatus.textContent = '✓ Nhận diện 14 khớp xương thành công! Kéo các điểm để tinh chỉnh.';
+          }
+          syncUI();
+          redraw();
+        } else {
+          throw new Error('Không nhận diện đủ các khớp trên ảnh');
+        }
+      } else {
+        throw new Error('MediaPipe thư viện chưa sẵn sàng');
+      }
+    } catch (e) {
+      if (poseStatus) {
+        poseStatus.style.color = '#ef4444';
+        poseStatus.textContent = 'Lỗi phát hiện dáng: ' + e.message;
+      }
+    } finally {
+      btnAutoPose.disabled = false;
+    }
+  });
+
+  // Save Rigging
+  btnSave?.addEventListener('click', async () => {
+    btnSave.disabled = true;
+    toastEl.className = 'status-toast';
+    toastEl.style.display = 'block';
+    toastEl.textContent = '⏳ Đang lưu khung xương...';
+
+    try {
+      const res = await fetch('/api/admin/skeleton', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(skeletonData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi server');
+
+      toastEl.className = 'status-toast success';
+      toastEl.textContent = '✓ Đã lưu khung xương 2D vào data/skeleton.json!';
+      setTimeout(() => { toastEl.style.display = 'none'; }, 4000);
+    } catch (e) {
+      toastEl.className = 'status-toast error';
+      toastEl.textContent = '❌ Lỗi: ' + e.message;
+    } finally {
+      btnSave.disabled = false;
+    }
+  });
+
+  syncUI();
+  return {
+    redraw,
+    resize: resizeCanvasToImage
+  };
 }

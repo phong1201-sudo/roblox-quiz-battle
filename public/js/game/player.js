@@ -140,11 +140,79 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// 2.5D Sprite Mesh state
+// 2.5D Sprite Mesh state & Skeletal Rigging state (Meta Animated Drawings style)
 let is2DMode = false;
-let bodyMesh = null;                 // THREE.Mesh (PlaneGeometry 2.2 x 3.0)
-let weaponMesh = null;               // THREE.Mesh (PlaneGeometry 0.8 x 2.2)
-let weaponArmPivot = null;           // THREE.Group attached at opposite hand (-0.6, 0.9, 0.1)
+let isSkinned2DMode = false;
+let skinnedCharacterMesh = null;     // THREE.SkinnedMesh
+let skinnedSkeleton = null;          // THREE.Skeleton
+let skinnedBones = null;             // Bone map { hip, torso, neck, head, l_shoulder, l_elbow, l_hand, r_shoulder, r_elbow, r_hand, l_knee, l_foot, r_knee, r_foot }
+let bodyMesh = null;                 // THREE.Mesh / THREE.SkinnedMesh (PlaneGeometry 2.4 x 3.2)
+let weaponMesh = null;               // THREE.Mesh (PlaneGeometry 0.85 x 2.2)
+let weaponArmPivot = null;           // THREE.Group attached at hand / r_hand
+let _skeletonConfig = null;
+
+const DEFAULT_SKELETON_CONFIG = {
+  nodes: {
+    head: { x: 0.5, y: 0.1 },
+    neck: { x: 0.5, y: 0.2 },
+    torso: { x: 0.5, y: 0.5 },
+    l_shoulder: { x: 0.3, y: 0.25 },
+    l_elbow: { x: 0.2, y: 0.4 },
+    l_hand: { x: 0.1, y: 0.5 },
+    r_shoulder: { x: 0.7, y: 0.25 },
+    r_elbow: { x: 0.8, y: 0.4 },
+    r_hand: { x: 0.9, y: 0.5 },
+    hip: { x: 0.5, y: 0.7 },
+    l_knee: { x: 0.4, y: 0.85 },
+    l_foot: { x: 0.4, y: 1.0 },
+    r_knee: { x: 0.6, y: 0.85 },
+    r_foot: { x: 0.6, y: 1.0 }
+  },
+  links: [
+    ['head', 'neck'],
+    ['neck', 'torso'],
+    ['torso', 'hip'],
+    ['neck', 'l_shoulder'],
+    ['l_shoulder', 'l_elbow'],
+    ['l_elbow', 'l_hand'],
+    ['neck', 'r_shoulder'],
+    ['r_shoulder', 'r_elbow'],
+    ['r_elbow', 'r_hand'],
+    ['hip', 'l_knee'],
+    ['l_knee', 'l_foot'],
+    ['hip', 'r_knee'],
+    ['r_knee', 'r_foot']
+  ]
+};
+
+export async function _getSkeletonConfig() {
+  if (_skeletonConfig) return _skeletonConfig;
+  try {
+    const res = await fetch('/api/skeleton');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.nodes) {
+        _skeletonConfig = data;
+        return _skeletonConfig;
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  _skeletonConfig = DEFAULT_SKELETON_CONFIG;
+  return _skeletonConfig;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('skeleton-updated', (ev) => {
+    if (ev.detail) {
+      _skeletonConfig = ev.detail;
+      if (playerGroup && activeElement !== undefined) {
+        createPlayerMesh(activeElement, window.gameState?.equipment);
+      }
+    }
+  });
+}
 
 const WEAPON_HAND_POS = { x: -0.6, y: 0.9, z: 0.1 };
 const WEAPON_READY_ROT_Z = Math.PI / 6; // blade pointing forward/upward in ready combat stance
@@ -322,7 +390,7 @@ function _cleanWhiteBackground(img) {
  */
 function _loadArtTexture(element, type) {
   return new Promise((resolve) => {
-    if (!element || !['thunder', 'fire', 'frost'].includes(element)) return resolve(null);
+    if (!element || !['thunder', 'fire', 'frost', 'default'].includes(element)) return resolve(null);
     if (!['body', 'weapon'].includes(type)) return resolve(null);
 
     if (_artCache[element]?.[type]) return resolve(_artCache[element][type]);
@@ -338,6 +406,7 @@ function _loadArtTexture(element, type) {
         urls.push('/assets/characters/fireblade(cho%20game)_0.jpg');
       }
     } else {
+      urls.push(`/assets/characters/${element}_weapon.png`);
       urls.push(`/assets/characters/${element}_weapon.jpg`);
     }
 
@@ -561,9 +630,197 @@ async function _tryLoad3DCharacterAndWeapon(elementKey) {
 }
 
 /**
+ * 2D Skeletal SkinnedMesh Builder (Meta Animated Drawings style)
+ * Creates a dense PlaneGeometry (16x16 segments) deformed by a 14-bone skeleton hierarchy.
+ * Uses Linear Blend Skinning (LBS) assigning skinIndex and skinWeight based on inverse distance.
+ */
+export async function build2DSkinnedMesh(bodyTexture, weaponTexture, targetEl) {
+  const skel = await _getSkeletonConfig();
+  const nodes = { ...DEFAULT_SKELETON_CONFIG.nodes, ...(skel?.nodes || {}) };
+
+  const width = 2.4;
+  const height = 3.2;
+
+  // 1. Create dense plane geometry (16x16 segments for smooth bone bending)
+  const geometry = new THREE.PlaneGeometry(width, height, 16, 16);
+
+  // 2. Bone hierarchy keys
+  const BONE_KEYS = [
+    'hip',
+    'torso',
+    'neck',
+    'head',
+    'l_shoulder',
+    'l_elbow',
+    'l_hand',
+    'r_shoulder',
+    'r_elbow',
+    'r_hand',
+    'l_knee',
+    'l_foot',
+    'r_knee',
+    'r_foot'
+  ];
+
+  // Map 2D normalized coordinates (0..1) to local 3D Plane coordinates (-width/2..width/2, height/2..-height/2)
+  const boneLocs = {};
+  for (const k of BONE_KEYS) {
+    const n = nodes[k] || DEFAULT_SKELETON_CONFIG.nodes[k] || { x: 0.5, y: 0.5 };
+    boneLocs[k] = {
+      x: (n.x - 0.5) * width,
+      y: (0.5 - n.y) * height,
+      z: 0
+    };
+  }
+
+  // Create THREE.Bone instances
+  const boneMap = {};
+  const bonesArray = [];
+  for (const k of BONE_KEYS) {
+    const bone = new THREE.Bone();
+    bone.name = 'Bone_' + k;
+    boneMap[k] = bone;
+    bonesArray.push(bone);
+  }
+
+  // Assemble hierarchy rooted at hip:
+  boneMap.hip.position.set(boneLocs.hip.x, boneLocs.hip.y, 0);
+
+  function attachChild(parentKey, childKey) {
+    const pBone = boneMap[parentKey];
+    const cBone = boneMap[childKey];
+    cBone.position.set(
+      boneLocs[childKey].x - boneLocs[parentKey].x,
+      boneLocs[childKey].y - boneLocs[parentKey].y,
+      0
+    );
+    pBone.add(cBone);
+  }
+
+  // Spine & Head
+  attachChild('hip', 'torso');
+  attachChild('torso', 'neck');
+  attachChild('neck', 'head');
+
+  // Left Arm
+  attachChild('neck', 'l_shoulder');
+  attachChild('l_shoulder', 'l_elbow');
+  attachChild('l_elbow', 'l_hand');
+
+  // Right Arm (Weapon Arm facing Boss)
+  attachChild('neck', 'r_shoulder');
+  attachChild('r_shoulder', 'r_elbow');
+  attachChild('r_elbow', 'r_hand');
+
+  // Left Leg
+  attachChild('hip', 'l_knee');
+  attachChild('l_knee', 'l_foot');
+
+  // Right Leg
+  attachChild('hip', 'r_knee');
+  attachChild('r_knee', 'r_foot');
+
+  // 3. Compute Linear Blend Skinning (LBS) for all vertices using 4 closest bones
+  const posAttr = geometry.attributes.position;
+  const skinIndices = [];
+  const skinWeights = [];
+
+  for (let i = 0; i < posAttr.count; i++) {
+    const vx = posAttr.getX(i);
+    const vy = posAttr.getY(i);
+
+    // Compute distance to each bone rest position in plane space
+    const distList = [];
+    for (let b = 0; b < BONE_KEYS.length; b++) {
+      const k = BONE_KEYS[b];
+      const loc = boneLocs[k];
+      const d = Math.hypot(vx - loc.x, vy - loc.y);
+      distList.push({ index: b, dist: d });
+    }
+
+    // Sort ascending by distance
+    distList.sort((a, b) => a.dist - b.dist);
+
+    // Top 4 bones
+    const top4 = distList.slice(0, 4);
+    let totalWeight = 0;
+    const rawWeights = [];
+    for (let j = 0; j < 4; j++) {
+      const clampedDist = Math.max(top4[j].dist, 0.08);
+      const w = 1.0 / Math.pow(clampedDist, 2.2);
+      rawWeights.push(w);
+      totalWeight += w;
+    }
+
+    if (totalWeight <= 0) totalWeight = 1.0;
+    for (let j = 0; j < 4; j++) {
+      skinIndices.push(top4[j].index);
+      skinWeights.push(rawWeights[j] / totalWeight);
+    }
+  }
+
+  geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+  geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+
+  // 4. Skinned Material & Mesh binding
+  const material = new THREE.MeshBasicMaterial({
+    map: bodyTexture,
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    alphaTest: 0.05
+  });
+
+  const skinnedMesh = new THREE.SkinnedMesh(geometry, material);
+  skinnedMesh.add(boneMap.hip);
+  skinnedMesh.updateMatrixWorld(true);
+
+  const skeleton = new THREE.Skeleton(bonesArray);
+  skeleton.calculateInverses();
+  skinnedMesh.bind(skeleton);
+
+  // 5. Attach Weapon directly to r_hand bone so it naturally follows arm movement
+  const weaponMount = new THREE.Group();
+  weaponMount.name = 'SkinnedWeaponMount';
+
+  if (weaponTexture) {
+    const wGeo = new THREE.PlaneGeometry(0.85, 2.2);
+    wGeo.translate(0, 0.95, 0); // blade extends from hand hilt
+    const wMat = new THREE.MeshBasicMaterial({
+      map: weaponTexture,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      alphaTest: 0.05
+    });
+    const wMesh = new THREE.Mesh(wGeo, wMat);
+    // Orient weapon blade forward toward Boss (+X)
+    wMesh.position.set(0.05, 0, 0.05);
+    wMesh.rotation.set(0, 0, -Math.PI / 4);
+    weaponMount.add(wMesh);
+  } else {
+    // Procedural fallback blade
+    const bladeColor = targetEl === 'fire' ? 0xff4400 : targetEl === 'frost' ? 0x88ddff : targetEl === 'thunder' ? 0x00cfff : 0xddaa33;
+    const blade = makeBox(0.12, 1.6, 0.08, bladeColor);
+    blade.position.set(0.2, 0.6, 0.05);
+    blade.rotation.set(0, 0, -Math.PI / 4);
+    weaponMount.add(blade);
+  }
+
+  boneMap.r_hand.add(weaponMount);
+
+  return {
+    skinnedMesh,
+    skeleton,
+    bones: boneMap,
+    weaponMount
+  };
+}
+
+/**
  * Main Player Mesh Constructor:
  * Priority 1: Native 3D GLTF/GLB models with Bone Socketing ([element]_character.glb & [element]_weapon.glb)
- * Priority 2: 2.5D Sprite Meshes from uploaded art ([element]_body.png & [element]_weapon.png)
+ * Priority 2: 2D Skeletal SkinnedMesh from uploaded art ([element]_body.png & [element]_weapon.png)
  * Priority 3: Admin Default 3D Model (default_character.glb & default_weapon.glb)
  * Priority 4: Procedural 3D Voxel Box Model (fallback if default 3D model not uploaded yet)
  */
@@ -581,6 +838,10 @@ export async function createPlayerMesh(element, equippedGear) {
   characterModel = null; characterRoot = null; weaponModel = null; weaponSocket = null; handNode = null;
   is3DModelMode = false;
   is2DMode = false;
+  isSkinned2DMode = false;
+  skinnedCharacterMesh = null;
+  skinnedSkeleton = null;
+  skinnedBones = null;
 
   // Case A: Specific Elemental Set equipped ('thunder' | 'fire' | 'frost')
   if (targetEl && targetEl !== 'default') {
@@ -588,7 +849,7 @@ export async function createPlayerMesh(element, equippedGear) {
     const loaded3D = await _tryLoad3DCharacterAndWeapon(targetEl);
     if (loaded3D) return;
 
-    // 2. 2.5D Sprite Mesh (if custom 2D art exists)
+    // 2. 2D Skeletal SkinnedMesh (if custom 2D art exists)
     const [bTex, wTex] = await Promise.all([
       _loadArtTexture(targetEl, 'body'),
       _loadArtTexture(targetEl, 'weapon'),
@@ -596,48 +857,29 @@ export async function createPlayerMesh(element, equippedGear) {
 
     if (bTex) {
       is2DMode = true;
-      playerGroup.rotation.y = 0; // Face camera in 2.5D mode
+      isSkinned2DMode = true;
+      playerGroup.rotation.y = 0; // Face camera in 2D mode
       playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
 
-      const bGeo = new THREE.PlaneGeometry(2.2, 3.0);
-      const bMat = new THREE.MeshBasicMaterial({
-        map: bTex,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      bodyMesh = new THREE.Mesh(bGeo, bMat);
-      bodyMesh.position.set(0, 0, 0); // Ground level
-      bodyMesh.rotation.y = Math.PI / 6; // Angled 30° toward the Boss on the right
-      playerGroup.add(bodyMesh);
+      try {
+        const skinnedRig = await build2DSkinnedMesh(bTex, wTex, targetEl);
+        skinnedCharacterMesh = skinnedRig.skinnedMesh;
+        skinnedSkeleton = skinnedRig.skeleton;
+        skinnedBones = skinnedRig.bones;
+        bodyMesh = skinnedCharacterMesh;
+        weaponArmPivot = skinnedRig.weaponMount;
+        playerArmPivot = skinnedBones.r_shoulder;
 
-      weaponArmPivot = new THREE.Group();
-      weaponArmPivot.position.set(WEAPON_HAND_POS.x, WEAPON_HAND_POS.y, WEAPON_HAND_POS.z);
-      weaponArmPivot.rotation.set(0, Math.PI / 6, WEAPON_READY_ROT_Z);
-      playerArmPivot = weaponArmPivot;
+        skinnedCharacterMesh.position.set(0, 0, 0);
+        skinnedCharacterMesh.rotation.y = Math.PI / 6; // Angled 30° toward the Boss on the right
+        playerGroup.add(skinnedCharacterMesh);
 
-      if (wTex) {
-        const wGeo = new THREE.PlaneGeometry(0.8, 2.2);
-        wGeo.translate(0, 1.1, 0);
-        const wMat = new THREE.MeshBasicMaterial({
-          map: wTex,
-          transparent: true,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        });
-        weaponMesh = new THREE.Mesh(wGeo, wMat);
-        weaponArmPivot.add(weaponMesh);
-      } else {
-        const blade = makeBox(0.12, 1.6, 0.08, 0x00cfff);
-        blade.position.set(0, 0.8, 0);
-        weaponArmPivot.add(blade);
+        if (activeElement) _buildElementalAura(activeElement);
+        console.log(`[player] 2D SkinnedMesh constructed with 14 bones for ${targetEl}`);
+        return;
+      } catch (err) {
+        console.warn(`[player] Failed to build 2D SkinnedMesh for ${targetEl}, falling back:`, err);
       }
-
-      playerGroup.add(weaponArmPivot);
-
-      if (activeElement) _buildElementalAura(activeElement);
-      console.log(`[player] 2.5D sprite mesh constructed for ${targetEl}`);
-      return;
     }
   }
 
@@ -645,8 +887,40 @@ export async function createPlayerMesh(element, equippedGear) {
   const loadedDefault3D = await _tryLoad3DCharacterAndWeapon('default');
   if (loadedDefault3D) return;
 
+  // Check if 2D default art exists
+  const [defBTex, defWTex] = await Promise.all([
+    _loadArtTexture('default', 'body'),
+    _loadArtTexture('default', 'weapon'),
+  ]);
+  if (defBTex) {
+    is2DMode = true;
+    isSkinned2DMode = true;
+    playerGroup.rotation.y = 0;
+    playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+
+    try {
+      const skinnedRig = await build2DSkinnedMesh(defBTex, defWTex, 'default');
+      skinnedCharacterMesh = skinnedRig.skinnedMesh;
+      skinnedSkeleton = skinnedRig.skeleton;
+      skinnedBones = skinnedRig.bones;
+      bodyMesh = skinnedCharacterMesh;
+      weaponArmPivot = skinnedRig.weaponMount;
+      playerArmPivot = skinnedBones.r_shoulder;
+
+      skinnedCharacterMesh.position.set(0, 0, 0);
+      skinnedCharacterMesh.rotation.y = Math.PI / 6;
+      playerGroup.add(skinnedCharacterMesh);
+
+      console.log(`[player] 2D SkinnedMesh constructed with 14 bones for default`);
+      return;
+    } catch (err) {
+      console.warn('[player] Failed to build default 2D SkinnedMesh:', err);
+    }
+  }
+
   // 3. Fallback: Only render basic geometric boxes if default_character.glb has not been uploaded yet
   is2DMode = false;
+  isSkinned2DMode = false;
   playerGroup.rotation.y = FACE_Y;
   _build3DBoxCharacter();
   playerArmPivot = leftShoulderPivot || rightShoulderPivot;
@@ -949,6 +1223,9 @@ export const TWEEN = {
 if (typeof window !== 'undefined') window.TWEEN = TWEEN;
 
 export function getWeaponHandNode() {
+  if (isSkinned2DMode && skinnedBones?.r_shoulder) {
+    return skinnedBones.r_shoulder;
+  }
   if (combatArmCompound) {
     return combatArmCompound;
   }
@@ -965,10 +1242,89 @@ export function getWeaponHandNode() {
 }
 
 /**
+ * 2D Skeletal Slash Animation (Meta Animated Drawings style)
+ * Animates r_shoulder and r_elbow bones with forward slashing arc.
+ * Weapon mounted to r_hand naturally traces the full swinging path.
+ */
+export function slashAnimation(onHit, onComplete) {
+  let hitCalled = false;
+  let completeCalled = false;
+  const safeOnHit = () => {
+    if (!hitCalled) {
+      hitCalled = true;
+      if (onHit) onHit();
+    }
+  };
+  const safeOnComplete = () => {
+    if (!completeCalled) {
+      completeCalled = true;
+      safeOnHit();
+      if (onComplete) onComplete();
+    }
+  };
+
+  const rShoulder = skinnedBones?.r_shoulder;
+  const rElbow = skinnedBones?.r_elbow;
+
+  if (!rShoulder || !rElbow) {
+    safeOnComplete();
+    return;
+  }
+
+  const safetyTimer = setTimeout(() => {
+    console.warn('[player] Skeletal slash animation safety timeout');
+    safeOnComplete();
+  }, 600);
+
+  // Phase 1: Wind-up (Giương kiếm) - 90ms: shoulder swings back/up, elbow flexes
+  new TWEEN.Tween(rShoulder.rotation)
+    .to({ z: 0.95 }, 90)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .start();
+
+  new TWEEN.Tween(rElbow.rotation)
+    .to({ z: 0.65 }, 90)
+    .easing(TWEEN.Easing.Quadratic.Out)
+    .onComplete(() => {
+      // Phase 2: Slash Strike (Chém bổ cực mạnh) - 120ms: shoulder whips forward/down, elbow extends
+      new TWEEN.Tween(rShoulder.rotation)
+        .to({ z: -1.25 }, 120)
+        .easing(TWEEN.Easing.Quadratic.In)
+        .start();
+
+      new TWEEN.Tween(rElbow.rotation)
+        .to({ z: -0.25 }, 120)
+        .easing(TWEEN.Easing.Quadratic.In)
+        .onComplete(() => {
+          safeOnHit();
+
+          // Phase 3: Recover (Thu kiếm về thế thủ) - 100ms: return to base rotation
+          new TWEEN.Tween(rShoulder.rotation)
+            .to({ z: 0 }, 100)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start();
+
+          new TWEEN.Tween(rElbow.rotation)
+            .to({ z: 0 }, 100)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .onComplete(() => {
+              clearTimeout(safetyTimer);
+              safeOnComplete();
+            })
+            .start();
+        })
+        .start();
+    })
+    .start();
+}
+
+/**
  * Bulletproof 3-Pose Slash Motion (playGuaranteedPlayerSlash):
- * - Pose 1: Wind-up (Giương kiếm) -> 80ms (Quadratic.Out)
- * - Pose 2: Strike Impact (Chém trúng) -> 120ms (Quadratic.In) -> triggers onHit()
- * - Pose 3: Idle Guard (Thu kiếm về thế thủ) -> 100ms (Quadratic.Out) -> triggers onComplete()
+ * - If 2D Skeletal Rig is active -> delegates to slashAnimation()
+ * - Otherwise:
+ *   - Pose 1: Wind-up (Giương kiếm) -> 80ms (Quadratic.Out)
+ *   - Pose 2: Strike Impact (Chém trúng) -> 120ms (Quadratic.In) -> triggers onHit()
+ *   - Pose 3: Idle Guard (Thu kiếm về thế thủ) -> 100ms (Quadratic.Out) -> triggers onComplete()
  */
 export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
   let pivot = combatArmCompound || playerArmPivot || getWeaponHandNode();
@@ -999,6 +1355,11 @@ export function playGuaranteedPlayerSlash(arg1, arg2, arg3) {
       if (onComplete) onComplete();
     }
   };
+
+  // If 2D skeletal skinned mesh is active, execute skeletal slash animation directly!
+  if (isSkinned2DMode && skinnedBones?.r_shoulder) {
+    return slashAnimation(safeOnHit, safeOnComplete);
+  }
 
   if (!pivot) {
     safeOnComplete();
@@ -1590,6 +1951,10 @@ function _resetAll() {
     if (weaponArmPivot) {
       weaponArmPivot.position.set(WEAPON_HAND_POS.x, WEAPON_HAND_POS.y, WEAPON_HAND_POS.z);
       weaponArmPivot.rotation.set(0, Math.PI / 6, WEAPON_READY_ROT_Z);
+    }
+    if (skinnedBones) {
+      if (skinnedBones.r_shoulder) skinnedBones.r_shoulder.rotation.set(0, 0, 0);
+      if (skinnedBones.r_elbow) skinnedBones.r_elbow.rotation.set(0, 0, 0);
     }
   } else {
     if (leftLeg)            leftLeg.rotation.x            = 0;

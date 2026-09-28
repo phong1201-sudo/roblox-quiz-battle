@@ -5,7 +5,7 @@ import * as Effects from './effects.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
 
-export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, getPlayerArmPivot, combatArmCompound, getCombatArmCompound } from './player.js';
+export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, slashAnimation, getPlayerArmPivot, combatArmCompound, getCombatArmCompound } from './player.js';
 export { playGuaranteedBossHammerSlam, getBossArmPivot, bossCombatArmCompound, getBossCombatArmCompound } from './boss.js';
 
 const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);

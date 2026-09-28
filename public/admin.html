@@ -396,7 +396,10 @@
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
       <button id="btn-tab-player" class="nav-tab-btn active">
-        <span>👤</span> CÂN CHỈNH NHÂN VẬT (PLAYER CALIBRATION)
+        <span>👤</span> CÂN CHỈNH 3D (3D RIGGING)
+      </button>
+      <button id="btn-tab-skeleton" class="nav-tab-btn" style="border-color:#38bdf8;">
+        <span>🦴</span> GẮN XƯƠNG 2D (META ANIMATED DRAWINGS SKELETON)
       </button>
     </div>
 
@@ -609,13 +612,92 @@
         </div>
       </div>
     </div>
+
+    <!-- ───────────────────────────────────────────────────────────────────────── -->
+    <!-- TAB 2: GẮN XƯƠNG 2D (META ANIMATED DRAWINGS SKELETAL RIGGING) -->
+    <!-- ───────────────────────────────────────────────────────────────────────── -->
+    <div id="pane-skeleton" class="tab-pane hidden">
+      <div class="canvas-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#070a13; position:relative; min-height:600px; padding:12px;">
+        <div id="skeleton-stage-wrap" style="position:relative; max-width:100%; max-height:560px; display:inline-block; border-radius:8px; overflow:hidden; border:2px solid #334155; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+          <img id="skeleton-target-img" src="/assets/characters/fireblade(cho%20game)_0.jpg" alt="Character Art" style="display:block; max-height:540px; max-width:100%; object-fit:contain; user-select:none; -webkit-user-drag:none;">
+          <canvas id="skeleton-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; cursor:grab;"></canvas>
+        </div>
+        <div class="canvas-hud-overlay">
+          <div>💡 <b>Chuột trái:</b> Kéo thả 14 điểm khớp xương (Head, Shoulders, Elbows, Hands, Hips, Knees, Feet)</div>
+          <div>🦴 Khớp đang chọn: <span id="hud-skel-selected" class="hud-badge" style="color:#00e5ff;">Chưa chọn</span></div>
+          <div>⚔️ Điểm cầm kiếm (r_hand): <span id="hud-skel-rhand" class="hud-badge" style="color:#f97316;">(0.90, 0.50)</span></div>
+        </div>
+      </div>
+
+      <div class="controls-panel">
+        <!-- Section 1: Character Art Selection & Upload -->
+        <div class="section-box" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
+          <div class="section-title" style="color:#38bdf8;">
+            <span>🖼️</span> 1. Chọn Ảnh Nhân Vật 2D
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Chọn ảnh nguyên mẫu có sẵn hoặc tải ảnh vẽ nhân vật (PNG/JPG) lên để tiến hành gắn khung xương:
+          </div>
+
+          <div class="brush-tools-row" style="margin-top:6px;">
+            <button class="tool-btn active" data-img-el="fire" id="btn-skel-preset-fire">🔥 Set Lửa</button>
+            <button class="tool-btn" data-img-el="thunder" id="btn-skel-preset-thunder">⚡ Set Sét</button>
+            <button class="tool-btn" data-img-el="frost" id="btn-skel-preset-frost">❄️ Set Băng</button>
+          </div>
+
+          <div style="margin-top:8px;">
+            <label style="font-size:10px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Hoặc tải ảnh vẽ nhân vật mới (.PNG / .JPG):</label>
+            <input type="file" id="input-skel-upload" accept="image/*" style="font-size:11px; color:#94a3b8; width:100%;">
+          </div>
+        </div>
+
+        <!-- Section 2: Rigging Controls & Auto Detect -->
+        <div class="section-box" style="border-color:#a855f7; background:rgba(168, 85, 247, 0.08);">
+          <div class="section-title" style="color:#a855f7;">
+            <span>🤖</span> 2. Tự Động Định Vị Khung Xương (AI Pose)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Quét ảnh qua <b>MediaPipe Pose</b> để tự động định vị toàn bộ 14 khớp xương theo phong cách <i>Meta Animated Drawings</i>.
+          </div>
+          <button id="btn-skel-auto-pose" class="btn-action-primary" style="background:linear-gradient(135deg, #a855f7, #6366f1); font-size:12px; font-weight:800;">
+            <span>🤖</span> TỰ ĐỘNG BẮT 14 KHỚP XƯƠNG (AUTO-RIG)
+          </button>
+          <div id="skel-pose-status" style="font-size:11px; font-weight:600; color:#c084fc; display:none; padding:4px 0;"></div>
+        </div>
+
+        <!-- Section 3: Node List & Reset -->
+        <div class="section-box">
+          <div class="section-title">
+            <span>🦴</span> 3. Danh Sách 14 Điểm Khớp (14 Skeletal Nodes)
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px; max-height:150px; overflow-y:auto; padding-right:4px;" id="skel-node-list">
+            <!-- Populated dynamically via JS -->
+          </div>
+          <button id="btn-skel-reset-default" class="tool-btn" style="margin-top:8px; width:100%;">
+            <span>🔄</span> Khôi Phục Vị Trí Xương Mặc Định
+          </button>
+        </div>
+
+        <!-- Section 4: Test Slash & Save Rig -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button id="btn-skel-test-slash" class="btn-test-swing" style="background:linear-gradient(135deg, #f97316, #ef4444); font-size:12px; font-weight:800; padding:12px;">
+            <span>⚔️</span> THỬ NGHIỆM CHÉM (TEST SKELETON SLASH)
+          </button>
+          <div id="toast-skeleton" class="status-toast"></div>
+          <button id="btn-skel-save" class="btn-save-all" style="background:linear-gradient(135deg, #059669, #10b981);">
+            <span>💾</span> LƯU KHUNG XƯƠNG (SAVE RIG)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=29.0"></script>
+  <script type="module" src="js/admin.js?v=30.0"></script>
   <script type="module">
-    import { initBrushCalibrator } from './js/admin.js?v=29.0';
+    import { initBrushCalibrator, initSkeletonCalibrator } from './js/admin.js?v=30.0';
     window.addEventListener('DOMContentLoaded', () => {
       initBrushCalibrator();
+      initSkeletonCalibrator();
     });
   </script>
 </body>

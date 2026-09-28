@@ -619,6 +619,86 @@ app.get(['/api/admin/rigging', '/api/rigging'], (req, res) => {
   res.json({ success: true, sockets: config, rigging: config });
 });
 
+// ── Admin: 2D Skeletal Rigging (Meta Animated Drawings style) ───────────────
+const skeletonFilePath = path.join(__dirname, '../data/skeleton.json');
+
+const DEFAULT_SKELETON = {
+  nodes: {
+    head: { x: 0.5, y: 0.1 },
+    neck: { x: 0.5, y: 0.2 },
+    torso: { x: 0.5, y: 0.5 },
+    l_shoulder: { x: 0.3, y: 0.25 },
+    l_elbow: { x: 0.2, y: 0.4 },
+    l_hand: { x: 0.1, y: 0.5 },
+    r_shoulder: { x: 0.7, y: 0.25 },
+    r_elbow: { x: 0.8, y: 0.4 },
+    r_hand: { x: 0.9, y: 0.5 },
+    hip: { x: 0.5, y: 0.7 },
+    l_knee: { x: 0.4, y: 0.85 },
+    l_foot: { x: 0.4, y: 1.0 },
+    r_knee: { x: 0.6, y: 0.85 },
+    r_foot: { x: 0.6, y: 1.0 }
+  },
+  links: [
+    ['head', 'neck'],
+    ['neck', 'torso'],
+    ['torso', 'hip'],
+    ['neck', 'l_shoulder'],
+    ['l_shoulder', 'l_elbow'],
+    ['l_elbow', 'l_hand'],
+    ['neck', 'r_shoulder'],
+    ['r_shoulder', 'r_elbow'],
+    ['r_elbow', 'r_hand'],
+    ['hip', 'l_knee'],
+    ['l_knee', 'l_foot'],
+    ['hip', 'r_knee'],
+    ['r_knee', 'r_foot']
+  ]
+};
+
+function readSkeletonConfig() {
+  try {
+    if (fs.existsSync(skeletonFilePath)) {
+      const raw = fs.readFileSync(skeletonFilePath, 'utf8');
+      const parsed = JSON.parse(raw);
+      return {
+        nodes: { ...DEFAULT_SKELETON.nodes, ...(parsed.nodes || {}) },
+        links: parsed.links || DEFAULT_SKELETON.links
+      };
+    }
+  } catch (e) {
+    console.error('[skeleton] Error reading skeleton.json:', e);
+  }
+  return DEFAULT_SKELETON;
+}
+
+app.get(['/api/admin/skeleton', '/api/skeleton', '/data/skeleton.json'], (req, res) => {
+  const skel = readSkeletonConfig();
+  res.json(skel);
+});
+
+app.post(['/api/admin/skeleton', '/api/skeleton'], (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload || !payload.nodes) {
+      return res.status(400).json({ success: false, error: 'Nodes are required' });
+    }
+    const current = readSkeletonConfig();
+    const updated = {
+      nodes: { ...current.nodes, ...payload.nodes },
+      links: payload.links || current.links
+    };
+    const dataDir = path.dirname(skeletonFilePath);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(skeletonFilePath, JSON.stringify(updated, null, 2), 'utf8');
+    console.log('[skeleton] Saved 2D skeleton rig coordinates to data/skeleton.json');
+    res.json({ success: true, message: 'Lưu khung xương 2D thành công!', skeleton: updated });
+  } catch (e) {
+    console.error('[skeleton] Error saving skeleton:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ── Ensure runtime directories exist (important for Render ephemeral FS) ─────
 const uploadDir     = path.join(__dirname, 'uploads');
 const skinsDir      = path.join(__dirname, '../public/skins');
