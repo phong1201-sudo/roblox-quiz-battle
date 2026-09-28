@@ -235,161 +235,10 @@ function addToBoss(mesh) {
   else if (bossGroup) bossGroup.add(mesh);
 }
 
-// ─── Procedural Warhammer Builder & Arm Pivot Mounting ────────────────────────
-function _createBossHammerMesh(element) {
-  const hammer = new THREE.Group();
-  hammer.name = element === 'frost' ? 'FrostWarhammer' : 'FireWarhammer';
-
-  if (element === 'frost') {
-    const dark = makeMat(0x223344);
-    const ice = makeMat(0x4488aa, 0x000818);
-    const shard = makeMat(0xbbeeFF, 0x003366);
-    const fHandle = box(0.25, 4.4, 0.25, dark);
-    fHandle.position.set(0, 0, 0);
-    hammer.add(fHandle);
-
-    const fHead = box(1.6, 2.0, 1.6, ice);
-    fHead.position.set(0, 1.8, 0);
-    hammer.add(fHead);
-
-    const fCore = box(1.66, 0.9, 1.66, shard);
-    fCore.position.set(0, 1.8, 0);
-    hammer.add(fCore);
-
-    for (let j = 0; j < 4; j++) {
-      const angle = (j / 4) * Math.PI * 2;
-      const spk = box(0.3, 0.8, 0.3, shard);
-      spk.position.set(Math.cos(angle) * 0.95, 1.8, Math.sin(angle) * 0.95);
-      spk.rotation.z = Math.cos(angle) * 0.4;
-      hammer.add(spk);
-    }
-  } else {
-    // Fire warhammer
-    const dark = makeMat(0x1a0a00);
-    const magma = makeMat(0x2a0a00, 0x220500);
-    const lava = makeMat(0xff5500, 0x331000);
-    const eye = makeMat(0xffee00, 0x332200);
-
-    const handle = box(0.24, 4.4, 0.24, dark);
-    handle.position.set(0, 0, 0);
-    hammer.add(handle);
-
-    const hHead = box(1.6, 1.8, 1.6, magma);
-    hHead.position.set(0, 1.8, 0);
-    hammer.add(hHead);
-
-    const coreBand = box(1.66, 0.8, 1.66, lava);
-    coreBand.position.set(0, 1.8, 0);
-    hammer.add(coreBand);
-
-    for (const s of [-1, 1]) {
-      const spk = box(0.4, 0.7, 0.4, eye);
-      spk.position.set(s * 0.95, 1.8, 0);
-      spk.rotation.z = -s * Math.PI / 2;
-      hammer.add(spk);
-    }
-  }
-
-  hammer.rotation.z = Math.PI / 6;
-  return hammer;
-}
-
-function _setupBossArmPivot(element) {
-  if (bossArmPivot && bossArmPivot.parent) {
-    bossArmPivot.parent.remove(bossArmPivot);
-  }
-  bossArmPivot = null;
-  bossCombatArmCompound = null;
-
-  if (element !== 'fire' && element !== 'frost') return;
-  if (!bossGroup) return;
-
-  const savedPivot = _bossSocketsConfig?.boss || {};
-  const sPivot = savedPivot.shoulderPivot || {};
-  let shoulderX = sPivot.x ?? savedPivot.shoulderX ?? -1.8;
-  let shoulderY = sPivot.y ?? savedPivot.shoulderY ?? 2.2;
-  let shoulderZ = sPivot.z ?? savedPivot.shoulderZ ?? 0.2;
-
-  // If using procedural boss (height ~6.0 vs custom GLB 4.0), scale if in normalized 4.0 units
-  if (!isCustomBoss && shoulderY < 2.0) {
-    shoulderX = shoulderX * 2.0;
-    shoulderY = shoulderY * 2.46;
-    shoulderZ = shoulderZ * 2.0;
-  }
-
-  const savedWeapon = savedPivot.weaponOffset || savedPivot.weapon || {};
-  const wOffsetX = savedWeapon.offsetX ?? 0.0;
-  const wOffsetY = savedWeapon.offsetY ?? -0.6;
-  const wOffsetZ = savedWeapon.offsetZ ?? 0.5;
-  const wAngle = savedWeapon.angle ?? 30;
-  const wRotX = savedWeapon.rotX ?? 0.0;
-  const wRotY = savedWeapon.rotY ?? (-Math.PI / 2);
-  const wRotZ = savedWeapon.rotZ ?? ((wAngle * Math.PI) / 180);
-
-  // Compound arm container
-  bossCombatArmCompound = new THREE.Group();
-  bossCombatArmCompound.name = 'BossCombatArmCompound';
-  bossCombatArmCompound.position.set(shoulderX, shoulderY, shoulderZ);
-  const initialIdleAngle = ((savedPivot.slashArc?.idleAngle ?? 0) * Math.PI) / 180;
-  bossCombatArmCompound.rotation.set(0, 0, initialIdleAngle);
-  bossArmPivot = bossCombatArmCompound;
-
-  const hammer = _createBossHammerMesh(element);
-  hammer.position.set(wOffsetX, wOffsetY, wOffsetZ);
-  hammer.rotation.set(wRotX, wRotY, wRotZ);
-
-  bossCombatArmCompound.add(hammer);
-  bossGroup.add(bossCombatArmCompound);
-  console.log(`[boss] Unified bossCombatArmCompound mounted for ${element} boss at (${shoulderX.toFixed(2)}, ${shoulderY.toFixed(2)}, ${shoulderZ.toFixed(2)}) with hammer offset (${wOffsetX}, ${wOffsetY}, ${wOffsetZ}) at ${wAngle}°`);
-}
-
-/**
- * Bulletproof Single-Rotation Boss Hammer Slam:
- * - Giơ búa: Rotate compound arm backward/overhead theo windupAngle trong 160ms (Quadratic.Out)
- * - Đập búa: Rotate compound arm đập mạnh xuống sàn theo slashAngle trong 130ms (Quadratic.In) -> Screen shake + lửa/băng phun trào
- * - Hồi thế: Reset về idleAngle trong 150ms (Quadratic.Out)
- */
+// ─── Clean Boss Interface & No Accessory Meshes ──────────────────────────────
 export function playGuaranteedBossHammerSlam(element, onImpact, onComplete) {
-  const pivot = bossCombatArmCompound || bossArmPivot || getBossArmPivot();
-  if (!pivot) {
-    if (onImpact) onImpact();
-    if (onComplete) onComplete();
-    return;
-  }
-
-  const arcCfg = _bossSocketsConfig?.boss?.slashArc || {};
-  const idleDeg = arcCfg.idleAngle ?? 0;
-  const raiseDeg = arcCfg.windupAngle ?? (idleDeg + (arcCfg.arc ? arcCfg.arc * 0.5 : 80));
-  const smashDeg = arcCfg.slashAngle ?? (idleDeg - (arcCfg.arc ? arcCfg.arc * 0.5 : 80));
-
-  const idleAngle = (idleDeg * Math.PI) / 180;
-  const raiseAngle = (raiseDeg * Math.PI) / 180;  // backward/overhead
-  const smashAngle = (smashDeg * Math.PI) / 180; // slam into floor
-
-  // Phase 1 (Giơ búa overhead trong 160ms)
-  new TWEEN.Tween(pivot.rotation)
-    .to({ z: raiseAngle }, 160)
-    .easing(TWEEN.Easing.Quadratic.Out)
-    .onComplete(() => {
-      // Phase 2 (Đập búa slam xuống sàn trong 130ms) -> Screen shake + lửa/băng phun trào
-      new TWEEN.Tween(pivot.rotation)
-        .to({ z: smashAngle }, 130)
-        .easing(TWEEN.Easing.Quadratic.In)
-        .onComplete(() => {
-          if (onImpact) onImpact();
-
-          // Phase 3 (Hồi thế về idleAngle trong 150ms)
-          new TWEEN.Tween(pivot.rotation)
-            .to({ z: idleAngle }, 150)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .onComplete(() => {
-              if (onComplete) onComplete();
-            })
-            .start();
-        })
-        .start();
-    })
-    .start();
+  if (onImpact) onImpact();
+  if (onComplete) onComplete();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -798,9 +647,19 @@ function _checkImageExists(el) {
 async function _loadCustomBoss(el) {
   if (!el || !bossGroup) return;
 
-  // 1. Attempt Native 3D GLB/GLTF Boss
-  let gltf = await _loadGLTF(`/assets/models/boss_${el}.glb`);
-  if (!gltf) gltf = await _loadGLTF(`/assets/models/boss_${el}.gltf`);
+  // 1. Attempt Native 3D GLB/GLTF Boss permanently uploaded to /assets/character/
+  const candidateUrls = [
+    `/assets/character/boss_${el}.glb?t=${Date.now()}`,
+    `/assets/character/boss_${el}.gltf?t=${Date.now()}`,
+    `/assets/models/boss_${el}.glb?t=${Date.now()}`,
+    `/assets/models/boss_${el}.gltf?t=${Date.now()}`
+  ];
+
+  let gltf = null;
+  for (const url of candidateUrls) {
+    gltf = await _loadGLTF(url);
+    if (gltf) break;
+  }
 
   if (gltf && gltf.scene && bossGroup) {
     if (proceduralRoot) proceduralRoot.visible = false;
@@ -857,10 +716,7 @@ async function _loadCustomBoss(el) {
     customBossRoot.add(customBossModel);
     bossGroup.add(customBossRoot);
 
-    // Mount universal procedural bossArmPivot for Fire/Frost hammer
-    _setupBossArmPivot(el);
-
-    console.log(`[boss] Successfully mounted custom 3D model for Boss ${el}`);
+    console.log(`[boss] Successfully mounted pristine custom 3D model for Boss ${el} without accessory meshes`);
     return;
   }
 
@@ -887,7 +743,6 @@ async function _loadCustomBoss(el) {
       customBossRoot = new THREE.Group();
       customBossRoot.add(planeMesh);
       bossGroup.add(customBossRoot);
-      _setupBossArmPivot(el);
       console.log(`[boss] Successfully mounted 2.5D billboard sprite for Boss ${el}`);
     });
   }
@@ -925,9 +780,6 @@ export function createBoss(scene, bossIdentifier = 0) {
   else if (el==='fire')    buildInfernoDemon(currentBossData);
   else if (el==='frost')   buildFrostTitan(currentBossData);
   else                     buildShadowKing(currentBossData);
-
-  // Mount universal procedural bossArmPivot for Fire and Frost bosses
-  _setupBossArmPivot(el);
 
   // Elemental ambient light on boss
   if (elementalLightRef) scene.remove(elementalLightRef);

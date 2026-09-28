@@ -122,8 +122,34 @@ export function loadPlayerModel(targetScene, outfitElement = 'fire', onLoaded) {
             scene.add(model);
           }
 
+          // Proven Static Weapon Attachment: find or create right-hand anchor point
+          let handAnchor = model.getObjectByName('RightHand') ||
+                           model.getObjectByName('hand_r') ||
+                           model.getObjectByName('mixamorigRightHand') ||
+                           model.getObjectByName('RightArm') ||
+                           model.getObjectByName('arm_r');
+
+          if (!handAnchor) {
+            handAnchor = new THREE.Group();
+            handAnchor.name = 'RightHandAnchor';
+            handAnchor.position.set(0.55, 1.05, 0.15); // Coordinates previously validated
+            model.add(handAnchor);
+          }
+
+          // Attach the sword mesh as a child of this hand anchor
+          if (currentWeaponMesh && currentWeaponMesh.parent) {
+            currentWeaponMesh.parent.remove(currentWeaponMesh);
+          }
+          currentWeaponMesh = createProceduralSword(outfitElement);
+          // Orient blade forward pointing at Boss (+X axis)
+          currentWeaponMesh.rotation.set(0, 0, -Math.PI / 4);
+          handAnchor.add(currentWeaponMesh);
+
+          combatArmCompound = handAnchor;
+          playerArmPivot = handAnchor;
+
           currentCharacterMesh = model;
-          console.log(`[player] 3D GLB successfully instantiated from ${currentUrl}`);
+          console.log(`[player] 3D GLB successfully loaded with static weapon mount from ${currentUrl}`);
           if (onLoaded) onLoaded(model);
         } catch (err) {
           console.error('[player] Error processing GLB mesh:', err);
@@ -152,6 +178,21 @@ function createEmergencyPlaceholder(scene, onLoaded) {
       roughness: 0.5
     })
   );
+
+  const handAnchor = new THREE.Group();
+  handAnchor.name = 'RightHandAnchor';
+  handAnchor.position.set(0.55, 1.05, 0.15);
+  placeholder.add(handAnchor);
+
+  if (currentWeaponMesh && currentWeaponMesh.parent) {
+    currentWeaponMesh.parent.remove(currentWeaponMesh);
+  }
+  currentWeaponMesh = createProceduralSword(activeElement);
+  currentWeaponMesh.rotation.set(0, 0, -Math.PI / 4);
+  handAnchor.add(currentWeaponMesh);
+
+  combatArmCompound = handAnchor;
+  playerArmPivot = handAnchor;
 
   if (characterRoot) {
     while (characterRoot.children.length > 0) {
@@ -282,9 +323,6 @@ export function createPlayer(color = '#ff6b35', element = 'fire', equippedGear =
 
   // Create immediate visual placeholder so the scene NEVER starts black
   createEmergencyPlaceholder(characterRoot);
-
-  // Attach arm compound with sword
-  buildArmAndWeapon(activeElement);
 
   // Asynchronously attempt to load 3D GLB model
   loadPlayerModel(characterRoot, activeElement, (loadedModel) => {

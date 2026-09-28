@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin 3D Model Viewer & Rigging | Quiz Battle 3D</title>
+  <title>Admin Dashboard & Asset Manager | Quiz Battle 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=40.0">
+  <link rel="stylesheet" href="css/style.css?v=43.0">
   <!-- Core Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- GLTF Loader for r128 -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <!-- OrbitControls (if used) -->
+  <!-- OrbitControls -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <!-- Tween.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
   <style>
     body {
       background: #080c16;
@@ -32,7 +30,7 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
     }
     .admin-header {
       display: flex;
@@ -45,7 +43,7 @@
       box-shadow: 0 4px 20px rgba(0, 180, 216, 0.2);
     }
     .admin-title {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 800;
       color: #00b4d8;
       display: flex;
@@ -66,20 +64,19 @@
       background: rgba(255, 107, 53, 0.15);
       transform: translateY(-1px);
     }
-    /* Tab Content Layout */
-    .tab-pane {
+    .main-grid {
       display: grid;
-      grid-template-columns: 1fr 420px;
+      grid-template-columns: 1fr 520px;
       gap: 16px;
-      min-height: 600px;
+      min-height: 640px;
     }
-    @media (max-width: 1080px) {
-      .tab-pane {
+    @media (max-width: 1100px) {
+      .main-grid {
         grid-template-columns: 1fr;
       }
     }
-    /* 3D Canvas Box */
-    .canvas-card {
+    /* 3D Preview Card */
+    .preview-card {
       background: #070a13;
       border: 2px solid rgba(255, 255, 255, 0.12);
       border-radius: 12px;
@@ -87,16 +84,47 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      min-height: 580px;
+      min-height: 600px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
-    .canvas-viewport {
+    .preview-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      align-items: center;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+    .model-tab-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .model-tab-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+    .model-tab-btn.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+    }
+    .viewport-container {
       flex: 1;
       width: 100%;
       height: 100%;
-      cursor: crosshair;
+      position: relative;
     }
-    .canvas-hud-overlay {
+    .viewport-hud {
       position: absolute;
       top: 12px;
       left: 12px;
@@ -129,138 +157,57 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      max-height: 85vh;
+      max-height: 88vh;
       overflow-y: auto;
     }
     .section-box {
       background: rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 12px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
     .section-title {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 800;
       color: #f1f5f9;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 6px;
-    }
-    .brush-tools-row {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .tool-btn {
-      background: #1e293b;
-      color: #cbd5e1;
-      border: 1.5px solid rgba(255, 255, 255, 0.12);
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.15s;
-    }
-    .tool-btn:hover {
-      background: #334155;
-      color: #fff;
-    }
-    .tool-btn.active.arm-cyan {
-      background: rgba(0, 229, 255, 0.2);
-      border-color: #00e5ff;
-      color: #00e5ff;
-    }
-    .tool-btn.active.weapon-orange {
-      background: rgba(249, 115, 22, 0.2);
-      border-color: #f97316;
-      color: #f97316;
-    }
-    .tool-btn.eraser.active {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: #ef4444;
-      color: #ef4444;
-    }
-    .control-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .control-label {
-      font-size: 11px;
-      color: #94a3b8;
-      display: flex;
-      justify-content: space-between;
-    }
-    .val-text {
-      color: #00e5ff;
-      font-weight: 700;
-    }
-    .slider-row {
-      display: flex;
-      align-items: center;
       gap: 8px;
     }
-    .slider-row input[type=range] {
-      flex: 1;
-      accent-color: #00e5ff;
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
-    .btn-action-primary {
+    .form-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .form-select, .form-input {
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      color: #f8fafc;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+    }
+    .form-select:focus, .form-input:focus {
+      outline: none;
+      border-color: #00b4d8;
+    }
+    .btn-submit {
       background: linear-gradient(135deg, #00b4d8, #0077b6);
       color: #fff;
       border: none;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn-action-primary:hover {
-      filter: brightness(1.15);
-      transform: translateY(-1px);
-    }
-    .nudge-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 4px;
-    }
-    .nudge-btn {
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #94a3b8;
-      padding: 6px;
-      font-size: 10px;
-      font-weight: 700;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-    }
-    .nudge-btn:hover {
-      background: #334155;
-      color: #fff;
-    }
-    .btn-test-swing {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #fff;
-      border: none;
       padding: 11px;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -269,31 +216,62 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
-    .btn-test-swing:hover {
+    .btn-submit:hover {
       filter: brightness(1.15);
+      transform: translateY(-1px);
     }
-    .btn-save-all {
-      background: linear-gradient(135deg, #10b981, #059669);
+    .btn-danger-action {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1.5px solid #ef4444;
+      color: #ef4444;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .btn-danger-action:hover {
+      background: #ef4444;
       color: #fff;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 800;
+    }
+    .dev-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-dev {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      padding: 10px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-      transition: all 0.2s;
+      gap: 6px;
+      transition: all 0.15s;
     }
-    .btn-save-all:hover {
-      filter: brightness(1.15);
+    .btn-dev:hover {
+      background: #334155;
+      color: #fff;
       transform: translateY(-1px);
+    }
+    .btn-dev-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      grid-column: span 2;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 12px;
     }
     .status-toast {
       padding: 8px 12px;
@@ -306,225 +284,201 @@
       border: 1px solid #10b981;
       color: #10b981;
     }
+    .status-toast.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    .bank-stats-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .bank-badge {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 6px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 10px;
+    }
+    .bank-badge b {
+      color: #00e5ff;
+      font-size: 12px;
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="admin-container">
     <header class="admin-header">
       <div class="admin-title">
-        <span style="font-size:24px;">⚔️</span>
+        <span style="font-size:24px;">⚙️</span>
         <div>
-          <div>HỆ THỐNG CÂN CHỈNH MÔ HÌNH 3D GLB & VŨ KHÍ</div>
-          <div style="font-size:11px; color:#64748b; font-weight:normal;">Không gian 3D chuẩn xác cho nhân vật GLB, căn chỉnh khớp xoay vai (Shoulder Pivot) và khóa vũ khí chém</div>
+          <div>ADMIN DASHBOARD & ASSET MANAGER</div>
+          <div style="font-size:11px; color:#64748b; font-weight:normal;">Quản lý Mô hình 3D, Boss GLB vĩnh viễn, Ngân hàng câu hỏi & Dev Match Test</div>
         </div>
       </div>
       <a href="/" class="back-btn">⬅️ Quay lại trò chơi</a>
     </header>
 
-    <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <!-- CÂN CHỈNH NHÂN VẬT 3D (3D PLAYER CALIBRATION) -->
-    <!-- ───────────────────────────────────────────────────────────────────────── -->
-    <div id="pane-player" class="tab-pane">
-      <div class="canvas-card">
-        <div class="canvas-viewport" id="canvas-player"></div>
-        <div class="canvas-hud-overlay">
-          <div>💡 <b>Chuột trái:</b> Nhấp chọn bộ phận nhân vật | <b>Kéo chuột:</b> Xoay camera 3D</div>
-          <div>📍 Khớp Vai (Shoulder Pivot): <span id="hud-player-shoulder" class="hud-badge">(0.65, 1.10, 0.00)</span></div>
-          <div>✋ Cổ Tay/Chuôi Kiếm (Grip): <span id="hud-player-wrist" class="hud-badge">(0.65, 0.85, 0.10)</span></div>
-          <div>🗡️ Mô hình hiện tại: <span id="hud-player-model" class="hud-badge">3D GLB Pipeline</span></div>
+    <div class="main-grid">
+      <!-- 3D Model Visualizer Box -->
+      <div class="preview-card">
+        <div class="preview-toolbar">
+          <span style="font-size:11px; color:#94a3b8; font-weight:700;">Xem Mô Hình 3D:</span>
+          <button class="model-tab-btn active" id="tab-prev-player" data-target="player">👤 Player (GLB)</button>
+          <button class="model-tab-btn" id="tab-prev-boss-thunder" data-target="boss_thunder">⚡ Boss Sét</button>
+          <button class="model-tab-btn" id="tab-prev-boss-fire" data-target="boss_fire">🔥 Boss Lửa</button>
+          <button class="model-tab-btn" id="tab-prev-boss-frost" data-target="boss_frost">❄️ Boss Băng</button>
+        </div>
+
+        <div class="viewport-container" id="admin-viewport">
+          <div class="viewport-hud">
+            <div>💡 <b>Kéo chuột:</b> Xoay camera | <b>Lăn chuột:</b> Phóng to/Thu nhỏ</div>
+            <div>📍 Đang hiển thị: <span id="hud-model-name" class="hud-badge">Player 3D Model</span></div>
+            <div>📊 Trạng thái: <span id="hud-model-status" class="hud-badge" style="color:#10b981; border-color:#10b981;">Sẵn sàng</span></div>
+          </div>
         </div>
       </div>
 
+      <!-- Controls Panel (Strictly 4 Essential Features) -->
       <div class="controls-panel">
-        <!-- Section 1: 3D Model Preset & Upload -->
-        <div class="section-box" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
+
+        <!-- 1. Upload Player Model -->
+        <div class="section-box" style="border-color:#38bdf8;">
           <div class="section-title" style="color:#38bdf8;">
-            <span>🧊</span> 1. Chọn Bộ Trang Phục 3D (Outfit Set)
+            <span>👤</span> 1. Tải Lên Mô Hình Nhân Vật (Player)
           </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Chọn set trang bị để tải mô hình 3D GLB tương ứng:
+          <div class="form-group">
+            <label class="form-label">Chọn Set / Hệ Trang Phục:</label>
+            <select id="player-upload-element" class="form-select">
+              <option value="fire">🔥 Set Hỏa (player_fire.glb / png)</option>
+              <option value="thunder">⚡ Set Lôi (player_thunder.glb / png)</option>
+              <option value="frost">❄️ Set Băng (player_frost.glb / png)</option>
+              <option value="default">👤 Mặc Định (player_default.glb / png)</option>
+            </select>
           </div>
-
-          <div class="brush-tools-row" style="margin-top:6px;">
-            <button class="tool-btn active" data-element="fire" id="btn-player-set-fire">🔥 Set Lửa</button>
-            <button class="tool-btn" data-element="thunder" id="btn-player-set-thunder">⚡ Set Sét</button>
-            <button class="tool-btn" data-element="frost" id="btn-player-set-frost">❄️ Set Băng</button>
-            <button class="tool-btn" data-element="default" id="btn-player-set-default">👤 Mặc Định</button>
+          <div class="form-group">
+            <label class="form-label">File Mô hình 3D (.glb, .gltf) hoặc Ảnh (.png):</label>
+            <input type="file" id="player-upload-file" class="form-input" accept=".glb,.gltf,.png,.jpg,.jpeg">
           </div>
-
-          <div style="margin-top:8px;">
-            <label style="font-size:10px; color:#cbd5e1; font-weight:600; display:block; margin-bottom:4px;">Tải lên mô hình nhân vật 3D (.glb / .gltf):</label>
-            <input type="file" id="input-player-model-upload" accept=".glb,.gltf" style="font-size:11px; color:#94a3b8; width:100%;">
-          </div>
-        </div>
-
-        <!-- Section 2: Raycast Click-to-Select Body Parts & Rigid Weapon Locking -->
-        <div class="section-box" style="border-color:#00e5ff; background:rgba(0, 229, 255, 0.06);">
-          <div class="section-title" style="color:#00e5ff;">
-            <span>🎯</span> 2. Chọn Khớp Trên Mô Hình (Click-to-Select Raycaster)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Nhấp chuột trực tiếp vào bộ phận nhân vật trên màn hình 3D để gán khớp:
-          </div>
-
-          <div style="margin-top:8px; padding:10px; background:#0f172a; border:1px solid #1e293b; border-radius:6px; display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
-              <span style="color:#94a3b8;">Khớp đang chọn:</span>
-              <span id="badge-selected-mesh" class="hud-badge" style="background:#0284c7; color:#fff; font-weight:700;">Nhấp chuột vào mô hình 3D</span>
-            </div>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px;">
-              <button id="btn-assign-right-arm" class="tool-btn active" style="font-size:10px; padding:6px 2px; background:#0284c7; border-color:#38bdf8;">
-                💪 Cánh Tay Phải
-              </button>
-              <button id="btn-assign-torso" class="tool-btn" style="font-size:10px; padding:6px 2px;">
-                🥋 Thân (Torso)
-              </button>
-              <button id="btn-assign-head" class="tool-btn" style="font-size:10px; padding:6px 2px;">
-                👤 Đầu (Head)
-              </button>
-            </div>
-          </div>
-
-          <div style="margin-top:8px; display:flex; flex-direction:column; gap:4px; font-size:11px; color:#cbd5e1;">
-            <div>📍 <b>Khớp Vai (Shoulder Pivot):</b> <span id="val-computed-shoulder" style="color:#38bdf8; font-family:monospace;">(0.65, 1.10, 0.00)</span></div>
-            <div>🗡️ <b>Khóa Vũ Khí:</b> <span id="val-arm-lock-status" style="color:#10b981; font-weight:600;">Khóa trực tiếp vào Cánh Tay Phải</span></div>
-          </div>
-
-          <div style="display:flex; gap:6px; margin-top:8px;">
-            <button id="btn-auto-detect-arm" class="tool-btn" style="flex:1; font-size:10px; background:rgba(56,189,248,0.15); color:#38bdf8; border-color:#38bdf8;">
-              🔍 Tự Động Tìm Tay Phải
-            </button>
-            <button id="btn-player-snap-weapon" class="tool-btn" style="flex:1; font-size:10px; background:rgba(16,185,129,0.15); color:#10b981; border-color:#10b981;">
-              🎯 Hút Kiếm Vào Tay
-            </button>
-          </div>
-        </div>
-
-        <!-- Section 3: Weapon Attachment & Offset -->
-        <div class="section-box">
-          <div class="section-title">
-            <span>⚔️</span> 3. Khóa Vũ Khí Vào Tay (Weapon Attachment)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Dịch chuyển và xoay thanh kiếm 3D hướng thẳng về phía Boss (+X axis):
-          </div>
-
-          <button id="btn-player-reset-weapon" class="btn-action-primary">
-            <span>🎯</span> Căn Lại Kiếm Chuẩn Trên Tay (Reset Hilt)
+          <button id="btn-upload-player" class="btn-submit">
+            <span>📤</span> Tải Lên Mô Hình Player
           </button>
-
-          <div class="nudge-grid">
-            <button id="btn-nudge-x-neg" class="nudge-btn">◀ X- Trái</button>
-            <button id="btn-nudge-y-pos" class="nudge-btn">▲ Y+ Lên</button>
-            <button id="btn-nudge-x-pos" class="nudge-btn">X+ Phải ▶</button>
-            <button id="btn-nudge-z-neg" class="nudge-btn">▲ Z- Lui</button>
-            <button id="btn-nudge-y-neg" class="nudge-btn">▼ Y- Xuống</button>
-            <button id="btn-nudge-z-pos" class="nudge-btn">Z+ Tới ▼</button>
-          </div>
-
-          <div class="control-row">
-            <div class="control-label">
-              <span>Góc nghiêng kiếm (Blade Angle):</span>
-              <span class="val-text" id="val-player-sword-angle">-45°</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-player-sword-angle" min="-180" max="180" step="1" value="-45">
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 4: 3-Pose Visual Slash Keyframe Recorder -->
-        <div class="section-box" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
-          <div class="section-title" style="color:#38bdf8;">
-            <span>🎬</span> 4. Bộ Ghi Nhận 3 Tư Thế Chém (3-Pose Visual Slash Recorder)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Ghi nhận 3 góc xoay của cánh tay 3D theo chu trình chém chuẩn:
-          </div>
-
-          <!-- Rotation Sliders for Posing Arm -->
-          <div class="control-row">
-            <div class="control-label">
-              <span>Góc xoay Z (Nghiêng Chém - Angle Z):</span>
-              <span class="val-text" id="val-player-pose-z">0°</span>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="slider-player-pose-z" min="-180" max="180" step="1" value="0">
-            </div>
-          </div>
-
-          <!-- Pose 1 Record & Preview -->
-          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:#38bdf8;">Pose 1: Giương Kiếm (Wind-up)</span>
-              <span id="badge-player-pose1" class="hud-badge" style="font-size:10px;">Z: 60° (100ms)</span>
-            </div>
-            <div style="display:flex; gap:6px;">
-              <button id="btn-record-pose1" class="tool-btn active arm-cyan" style="flex:1; font-size:10px;">
-                <span>🔴</span> Ghi Nhận Pose 1
-              </button>
-              <button id="btn-view-pose1" class="tool-btn" style="flex:1; font-size:10px;">
-                <span>👁️</span> Xem Pose 1
-              </button>
-            </div>
-          </div>
-
-          <!-- Pose 2 Record & Preview -->
-          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:#f43f5e;">Pose 2: Chém Trúng (Strike Impact)</span>
-              <span id="badge-player-pose2" class="hud-badge" style="font-size:10px; color:#f43f5e;">Z: -72° (120ms)</span>
-            </div>
-            <div style="display:flex; gap:6px;">
-              <button id="btn-record-pose2" class="tool-btn active weapon-orange" style="flex:1; font-size:10px;">
-                <span>🔴</span> Ghi Nhận Pose 2
-              </button>
-              <button id="btn-view-pose2" class="tool-btn" style="flex:1; font-size:10px;">
-                <span>👁️</span> Xem Pose 2
-              </button>
-            </div>
-          </div>
-
-          <!-- Pose 3 Record & Preview -->
-          <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.25); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:#10b981;">Pose 3: Thu Kiếm (Idle Guard)</span>
-              <span id="badge-player-pose3" class="hud-badge" style="font-size:10px; color:#10b981;">Z: 0° (100ms)</span>
-            </div>
-            <div style="display:flex; gap:6px;">
-              <button id="btn-record-pose3" class="tool-btn active" style="flex:1; font-size:10px; background:rgba(16,185,129,0.2); color:#10b981; border-color:#10b981;">
-                <span>🔴</span> Ghi Nhận Pose 3
-              </button>
-              <button id="btn-view-pose3" class="tool-btn" style="flex:1; font-size:10px;">
-                <span>👁️</span> Xem Pose 3
-              </button>
-            </div>
-          </div>
-
-          <!-- Test 3-Pose Playback -->
-          <button id="btn-player-test-3pose" class="btn-test-swing" style="background:linear-gradient(135deg, #0284c7, #06b6d4); font-size:12px; font-weight:800; padding:12px;">
-            <span>▶️</span> CHẠY THỬ QUỸ ĐẠO CHÉM (TEST 3-POSE TWEEN)
-          </button>
-        </div>
-
-        <!-- Section 5: Save -->
-        <div style="display:flex; flex-direction:column; gap:8px;">
           <div id="toast-player" class="status-toast"></div>
-          <button id="btn-player-save" class="btn-save-all">
-            <span>💾</span> LƯU CẤU HÌNH NHÂN VẬT 3D
-          </button>
         </div>
+
+        <!-- 2. Upload Boss Models (Permanent GLB Upload) -->
+        <div class="section-box" style="border-color:#f43f5e;">
+          <div class="section-title" style="color:#f43f5e;">
+            <span>👾</span> 2. Tải Lên Mô Hình Boss (Permanent GLB)
+          </div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
+            Lưu trực tiếp vào <code>public/assets/character/</code> vĩnh viễn và nạp nguyên bản không phụ kiện:
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chọn Hệ Boss:</label>
+            <select id="boss-upload-element" class="form-select">
+              <option value="thunder">⚡ Boss Sét (boss_thunder.glb)</option>
+              <option value="fire">🔥 Boss Lửa (boss_fire.glb)</option>
+              <option value="frost">❄️ Boss Băng (boss_frost.glb)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">File Mô hình 3D (.glb, .gltf):</label>
+            <input type="file" id="boss-upload-file" class="form-input" accept=".glb,.gltf">
+          </div>
+          <button id="btn-upload-boss" class="btn-submit" style="background:linear-gradient(135deg, #f43f5e, #be123c);">
+            <span>💾</span> Lưu Vĩnh Viễn Mô Hình Boss
+          </button>
+          <div id="toast-boss" class="status-toast"></div>
+        </div>
+
+        <!-- 3. Upload & Manage Question Sets -->
+        <div class="section-box" style="border-color:#10b981;">
+          <div class="section-title" style="color:#10b981;">
+            <span>📚</span> 3. Ngân Hàng Câu Hỏi (Excel / Docx / JSON)
+          </div>
+
+          <div class="bank-stats-row">
+            <div class="bank-badge">
+              ⚡ Sét
+              <b id="stat-thunder">0 câu</b>
+            </div>
+            <div class="bank-badge">
+              🔥 Lửa
+              <b id="stat-fire">0 câu</b>
+            </div>
+            <div class="bank-badge">
+              ❄️ Băng
+              <b id="stat-frost">0 câu</b>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nạp Cho Hệ:</label>
+            <select id="q-upload-element" class="form-select">
+              <option value="thunder">⚡ Hệ Sét (Stage 1)</option>
+              <option value="fire">🔥 Hệ Lửa (Stage 2)</option>
+              <option value="frost">❄️ Hệ Băng (Stage 3)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Chế Độ Nạp:</label>
+            <select id="q-upload-mode" class="form-select">
+              <option value="replace">Ghi đè hoàn toàn (Replace)</option>
+              <option value="append">Nối tiếp thêm (Append)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">File Câu Hỏi (.docx, .xlsx, .json):</label>
+            <input type="file" id="q-upload-file" class="form-input" accept=".docx,.xlsx,.json">
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            <button id="btn-upload-questions" class="btn-submit" style="flex:2; background:linear-gradient(135deg, #10b981, #059669);">
+              <span>📥</span> Nạp Vào Ngân Hàng
+            </button>
+            <button id="btn-clear-questions" class="btn-danger-action" style="flex:1;">
+              <span>🗑️</span> Xóa Hệ Này
+            </button>
+          </div>
+          <div id="toast-questions" class="status-toast"></div>
+        </div>
+
+        <!-- 4. Quick Launch / Dev Test buttons -->
+        <div class="section-box" style="border-color:#f59e0b;">
+          <div class="section-title" style="color:#f59e0b;">
+            <span>🚀</span> 4. Quick Launch &amp; Dev Test
+          </div>
+
+          <div class="dev-grid">
+            <button id="btn-dev-test-match" class="btn-dev btn-dev-primary">
+              <span>🧪</span> Nạp 5 Câu Test &amp; Vào Trận Ngay
+            </button>
+            <button id="btn-launch-thunder" class="btn-dev">
+              <span>⚡</span> Chơi Boss Sét
+            </button>
+            <button id="btn-launch-fire" class="btn-dev">
+              <span>🔥</span> Chơi Boss Lửa
+            </button>
+            <button id="btn-launch-frost" class="btn-dev">
+              <span>❄️</span> Chơi Boss Băng
+            </button>
+            <button id="btn-launch-lobby" class="btn-dev">
+              <span>🏠</span> Về Sảnh Chính (Lobby)
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=40.0"></script>
-  <script type="module">
-    import { initModelCalibrator } from './js/admin.js?v=40.0';
-    window.addEventListener('DOMContentLoaded', () => {
-      initModelCalibrator();
-    });
-  </script>
+  <script type="module" src="js/admin.js?v=43.0"></script>
 </body>
 </html>

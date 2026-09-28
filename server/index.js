@@ -239,22 +239,28 @@ app.post('/api/admin/boss/upload', (req, res) => {
       if (!['thunder', 'fire', 'frost'].includes(element))
         return res.status(400).json({ success: false, error: 'Hệ không hợp lệ (phải là thunder, fire hoặc frost)' });
 
+      const charDir = path.join(__dirname, '../public/assets/character');
+      if (!fs.existsSync(charDir)) fs.mkdirSync(charDir, { recursive: true });
+
       const modelsDir = path.join(__dirname, '../public/assets/models');
       if (!fs.existsSync(modelsDir)) fs.mkdirSync(modelsDir, { recursive: true });
 
       const ext = path.extname(file.originalname).toLowerCase() || '.glb';
       const targetFilename = `boss_${element}${ext}`;
-      const targetPath = path.join(modelsDir, targetFilename);
+      const charPath = path.join(charDir, targetFilename);
+      const modelPath = path.join(modelsDir, targetFilename);
 
-      // Overwrite file
-      fs.writeFileSync(targetPath, file.buffer);
+      // Overwrite file permanently in public/assets/character/
+      fs.writeFileSync(charPath, file.buffer);
+      // Mirror to modelsDir for fallback
+      fs.writeFileSync(modelPath, file.buffer);
 
-      const url = `/assets/models/${targetFilename}?t=${Date.now()}`;
-      console.log(`[boss-model] Saved Boss asset: ${targetPath}`);
+      const url = `/assets/character/${targetFilename}?t=${Date.now()}`;
+      console.log(`[boss-model] Saved Boss asset permanently to: ${charPath}`);
       res.json({
         success: true,
         message: `Đã cập nhật mô hình Boss ${element}`,
-        filePath: targetPath,
+        filePath: charPath,
         url,
         element,
         filename: targetFilename
@@ -266,15 +272,20 @@ app.post('/api/admin/boss/upload', (req, res) => {
 });
 
 app.get('/api/admin/boss/status', (req, res) => {
-  const dir = path.join(__dirname, '../public/assets/models');
+  const charDir = path.join(__dirname, '../public/assets/character');
+  const modelsDir = path.join(__dirname, '../public/assets/models');
   const result = {};
   for (const el of ['thunder', 'fire', 'frost']) {
-    const glbExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(dir, `boss_${el}${ext}`)));
-    const imgExt = ['.png', '.jpg', '.jpeg', '.webp'].find(ext => fs.existsSync(path.join(dir, `boss_${el}${ext}`)));
-    if (glbExt) {
-      result[el] = { exists: true, type: '3d', ext: glbExt, url: `/assets/models/boss_${el}${glbExt}` };
-    } else if (imgExt) {
-      result[el] = { exists: true, type: 'image', ext: imgExt, url: `/assets/models/boss_${el}${imgExt}` };
+    const glbCharExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(charDir, `boss_${el}${ext}`)));
+    const glbModelExt = ['.glb', '.gltf'].find(ext => fs.existsSync(path.join(modelsDir, `boss_${el}${ext}`)));
+    const imgCharExt = ['.png', '.jpg', '.jpeg', '.webp'].find(ext => fs.existsSync(path.join(charDir, `boss_${el}${ext}`)));
+
+    if (glbCharExt) {
+      result[el] = { exists: true, type: '3d', ext: glbCharExt, url: `/assets/character/boss_${el}${glbCharExt}` };
+    } else if (glbModelExt) {
+      result[el] = { exists: true, type: '3d', ext: glbModelExt, url: `/assets/models/boss_${el}${glbModelExt}` };
+    } else if (imgCharExt) {
+      result[el] = { exists: true, type: 'image', ext: imgCharExt, url: `/assets/character/boss_${el}${imgCharExt}` };
     } else {
       result[el] = { exists: false, type: null, ext: null, url: null };
     }
@@ -760,9 +771,35 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
     return res.status(400).json({ ok: false, error: 'Không có file được tải lên' });
 
   try {
-    // parseDocx now returns { questions, dropped } instead of bare array
-    const { questions: parsed, dropped } = await questionParser.parseDocx(req.file.path);
-    fs.unlinkSync(req.file.path);
+    let parsed = [];
+    let dropped = [];
+    const isJson = req.file.originalname.toLowerCase().endsWith('.json');
+    if (isJson) {
+      const content = fs.readFileSync(req.file.path, 'utf8');
+      fs.unlinkSync(req.file.path);
+      const rawData = JSON.parse(content);
+      const arr = Array.isArray(rawData) ? rawData : (rawData.questions || []);
+      parsed = arr.map(item => {
+        const qText = item.question || item.text || '';
+        let opts = item.options || {};
+        let cIdx = item.correctIndex;
+        if (cIdx === undefined && item.answer) {
+          const ansKey = String(item.answer).trim().toUpperCase();
+          cIdx = ['A','B','C','D'].indexOf(ansKey);
+          if (cIdx === -1) cIdx = 0;
+        }
+        return {
+          question: qText,
+          options: opts,
+          correctIndex: cIdx !== undefined ? cIdx : 0
+        };
+      });
+    } else {
+      const resDocx = await questionParser.parseDocx(req.file.path);
+      parsed = resDocx.questions;
+      dropped = resDocx.dropped;
+      fs.unlinkSync(req.file.path);
+    }
 
     // Convert to bank format { id, text, options[], correctIndex }
     const incoming = parsed.map((q, i) => ({
