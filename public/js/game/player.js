@@ -160,13 +160,441 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
   tryLoadIndex(0);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PERSISTENT ELEMENTAL WEAPON AURA PARTICLE VFX (FIRE, FROST, THUNDER)
+// ─────────────────────────────────────────────────────────────────────────────
+let currentWeaponAura = null;
+
+function getOrCreateParticleTexture(type = 'glow') {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+
+  if (type === 'spark') {
+    // Sharp diamond sparkle for electric sparks & frost crystals
+    const grad = ctx.createRadialGradient(32, 32, 1, 32, 32, 30);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.3, 'rgba(200, 245, 255, 0.85)');
+    grad.addColorStop(1, 'rgba(0, 180, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    // Cross rays
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(32, 2); ctx.lineTo(32, 62);
+    ctx.moveTo(2, 32); ctx.lineTo(62, 32);
+    ctx.stroke();
+  } else {
+    // Soft radial glow for fire embers and cold mist
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.7)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+}
+
+export function disposeWeaponAura() {
+  if (!currentWeaponAura) return;
+  try {
+    if (currentWeaponAura.parent) {
+      currentWeaponAura.parent.remove(currentWeaponAura);
+    }
+    if (currentWeaponAura.light && currentWeaponAura.light.parent) {
+      currentWeaponAura.light.parent.remove(currentWeaponAura.light);
+    }
+    if (currentWeaponAura.particles && currentWeaponAura.particles.geometry) {
+      currentWeaponAura.particles.geometry.dispose();
+    }
+    if (currentWeaponAura.particles && currentWeaponAura.particles.material) {
+      currentWeaponAura.particles.material.dispose();
+    }
+    if (currentWeaponAura.lightningLines) {
+      currentWeaponAura.lightningLines.geometry.dispose();
+      currentWeaponAura.lightningLines.material.dispose();
+    }
+  } catch (e) {
+    console.warn('[player] Error disposing weapon aura:', e);
+  }
+  currentWeaponAura = null;
+}
+
+export function attachElementalAura(swordMesh, element = activeElement) {
+  disposeWeaponAura();
+  if (!swordMesh || !THREE) return;
+
+  const normElem = (element || '').toLowerCase();
+  if (!['fire', 'frost', 'thunder'].includes(normElem)) {
+    // Default outfit: Clean metallic sheen without elemental particle glow
+    return;
+  }
+
+  const auraGroup = new THREE.Group();
+  auraGroup.name = 'ElementalWeaponAura';
+
+  let auraLight = null;
+  let particleMesh = null;
+  let particleData = [];
+  let lightningMesh = null;
+  let lightningTimer = 0;
+  let auraClock = 0;
+
+  const BLADE_MIN_Y = 0.25;
+  const BLADE_MAX_Y = 1.95;
+
+  if (normElem === 'fire') {
+    // 🔥 Kiếm Lửa (Fire Sword):
+    // Subdued pulsating orange point light (color: 0xff5500, intensity: 1.5, distance: 3.0) mounted at center of blade
+    auraLight = new THREE.PointLight(0xff5500, 1.5, 3.0);
+    auraLight.position.set(0, 1.0, 0);
+    auraGroup.add(auraLight);
+
+    // Continuous rising flame particles and glowing orange/red embers floating upwards from blade length
+    const count = 40;
+    const geom = new THREE.BufferGeometry();
+    const posArray = new Float32Array(count * 3);
+    const colArray = new Float32Array(count * 3);
+
+    const baseCols = [
+      new THREE.Color(0xff4400),
+      new THREE.Color(0xff7700),
+      new THREE.Color(0xffbb00),
+      new THREE.Color(0xff2200),
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const y = BLADE_MIN_Y + Math.random() * (BLADE_MAX_Y - BLADE_MIN_Y);
+      const x = (Math.random() - 0.5) * 0.12;
+      const z = (Math.random() - 0.5) * 0.08;
+      posArray[i * 3]     = x;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = z;
+
+      const c = baseCols[Math.floor(Math.random() * baseCols.length)];
+      colArray[i * 3]     = c.r;
+      colArray[i * 3 + 1] = c.g;
+      colArray[i * 3 + 2] = c.b;
+
+      particleData.push({
+        baseX: x,
+        baseZ: z,
+        y: y,
+        vy: 0.9 + Math.random() * 1.4, // Rising speed
+        jitterPhase: Math.random() * Math.PI * 2,
+        jitterSpeed: 6.0 + Math.random() * 8.0,
+        life: Math.random() * 1.0,
+        maxLife: 0.6 + Math.random() * 0.6,
+      });
+    }
+
+    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.18,
+      vertexColors: true,
+      map: getOrCreateParticleTexture('glow'),
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    particleMesh = new THREE.Points(geom, mat);
+    auraGroup.add(particleMesh);
+
+  } else if (normElem === 'frost') {
+    // ❄️ Kiếm Băng (Frost Sword):
+    // Cool cyan point light (color: 0x88eeff, intensity: 1.2, distance: 3.0)
+    auraLight = new THREE.PointLight(0x88eeff, 1.2, 3.0);
+    auraLight.position.set(0, 1.0, 0);
+    auraGroup.add(auraLight);
+
+    // Shimmering ice crystals and cold cyan/white mist particles slowly radiating outwards from blade
+    const count = 36;
+    const geom = new THREE.BufferGeometry();
+    const posArray = new Float32Array(count * 3);
+    const colArray = new Float32Array(count * 3);
+
+    const baseCols = [
+      new THREE.Color(0x88eeff),
+      new THREE.Color(0x00d4ff),
+      new THREE.Color(0xffffff),
+      new THREE.Color(0xccf5ff),
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const y = BLADE_MIN_Y + Math.random() * (BLADE_MAX_Y - BLADE_MIN_Y);
+      const x = (Math.random() - 0.5) * 0.08;
+      const z = (Math.random() - 0.5) * 0.06;
+      posArray[i * 3]     = x;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = z;
+
+      const c = baseCols[Math.floor(Math.random() * baseCols.length)];
+      colArray[i * 3]     = c.r;
+      colArray[i * 3 + 1] = c.g;
+      colArray[i * 3 + 2] = c.b;
+
+      const radAngle = Math.random() * Math.PI * 2;
+      particleData.push({
+        baseY: y,
+        x: x,
+        y: y,
+        z: z,
+        vx: Math.cos(radAngle) * (0.08 + Math.random() * 0.14),
+        vz: Math.sin(radAngle) * (0.08 + Math.random() * 0.14),
+        vy: 0.05 + Math.random() * 0.2, // Gentle cold mist drift
+        life: Math.random() * 1.2,
+        maxLife: 0.9 + Math.random() * 0.8,
+        twinklePhase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.14,
+      vertexColors: true,
+      map: getOrCreateParticleTexture('spark'),
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    particleMesh = new THREE.Points(geom, mat);
+    auraGroup.add(particleMesh);
+
+  } else if (normElem === 'thunder') {
+    // ⚡ Kiếm Sét (Thunder Sword):
+    // Vibrant blue/electric-violet point light (color: 0x00d4ff, intensity: 1.6, distance: 3.5) flashing randomly
+    auraLight = new THREE.PointLight(0x00d4ff, 1.6, 3.5);
+    auraLight.position.set(0, 1.0, 0);
+    auraGroup.add(auraLight);
+
+    // Crackling electric sparks dancing along blade ridge
+    const count = 30;
+    const geom = new THREE.BufferGeometry();
+    const posArray = new Float32Array(count * 3);
+    const colArray = new Float32Array(count * 3);
+
+    const baseCols = [
+      new THREE.Color(0x00ffff),
+      new THREE.Color(0x88eeff),
+      new THREE.Color(0xffffff),
+      new THREE.Color(0x3399ff),
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const y = BLADE_MIN_Y + Math.random() * (BLADE_MAX_Y - BLADE_MIN_Y);
+      const x = (Math.random() - 0.5) * 0.14;
+      const z = (Math.random() - 0.5) * 0.08;
+      posArray[i * 3]     = x;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = z;
+
+      const c = baseCols[Math.floor(Math.random() * baseCols.length)];
+      colArray[i * 3]     = c.r;
+      colArray[i * 3 + 1] = c.g;
+      colArray[i * 3 + 2] = c.b;
+
+      particleData.push({
+        y: y,
+        life: Math.random() * 0.4,
+        maxLife: 0.15 + Math.random() * 0.25,
+      });
+    }
+
+    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.20,
+      vertexColors: true,
+      map: getOrCreateParticleTexture('spark'),
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    particleMesh = new THREE.Points(geom, mat);
+    auraGroup.add(particleMesh);
+
+    // Jittery lightning arcs (THREE.LineSegments) dancing along the blade ridge
+    const lineSegCount = 8;
+    const lineGeom = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(lineSegCount * 2 * 3);
+    lineGeom.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0x88eeff,
+      linewidth: 2,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    lightningMesh = new THREE.LineSegments(lineGeom, lineMat);
+    auraGroup.add(lightningMesh);
+  }
+
+  // Update routine executed every frame in updatePlayer
+  auraGroup.update = (dt) => {
+    auraClock += dt;
+
+    if (normElem === 'fire') {
+      // Subdued pulsating orange point light
+      if (auraLight) {
+        auraLight.intensity = 1.5 + Math.sin(auraClock * 8.0) * 0.45;
+      }
+
+      // Rising flame particles & edge jitter
+      if (particleMesh) {
+        const positions = particleMesh.geometry.attributes.position.array;
+        for (let i = 0; i < particleData.length; i++) {
+          const p = particleData[i];
+          p.life += dt;
+          p.y += p.vy * dt;
+
+          if (p.life >= p.maxLife || p.y > BLADE_MAX_Y + 0.3) {
+            // Respawn along blade edge
+            p.y = BLADE_MIN_Y + Math.random() * 0.4;
+            p.life = 0;
+            p.baseX = (Math.random() - 0.5) * 0.12;
+            p.baseZ = (Math.random() - 0.5) * 0.08;
+            p.vy = 0.9 + Math.random() * 1.4;
+          }
+
+          // Edge jitter
+          const jitterX = Math.sin(auraClock * p.jitterSpeed + p.jitterPhase) * 0.04;
+          const jitterZ = Math.cos(auraClock * p.jitterSpeed + p.jitterPhase) * 0.03;
+
+          positions[i * 3]     = p.baseX + jitterX;
+          positions[i * 3 + 1] = p.y;
+          positions[i * 3 + 2] = p.baseZ + jitterZ;
+        }
+        particleMesh.geometry.attributes.position.needsUpdate = true;
+      }
+
+    } else if (normElem === 'frost') {
+      // Cool cyan point light
+      if (auraLight) {
+        auraLight.intensity = 1.2 + Math.sin(auraClock * 4.0) * 0.25;
+      }
+
+      // Shimmering ice crystals radiating outwards & sparkle twinkle
+      if (particleMesh) {
+        const positions = particleMesh.geometry.attributes.position.array;
+        for (let i = 0; i < particleData.length; i++) {
+          const p = particleData[i];
+          p.life += dt;
+          p.x += p.vx * dt;
+          p.z += p.vz * dt;
+          p.y += p.vy * dt;
+
+          if (p.life >= p.maxLife || Math.abs(p.x) > 0.35 || Math.abs(p.z) > 0.35) {
+            // Respawn near blade center
+            p.y = BLADE_MIN_Y + Math.random() * (BLADE_MAX_Y - BLADE_MIN_Y);
+            p.x = (Math.random() - 0.5) * 0.08;
+            p.z = (Math.random() - 0.5) * 0.06;
+            p.life = 0;
+            const radAngle = Math.random() * Math.PI * 2;
+            p.vx = Math.cos(radAngle) * (0.08 + Math.random() * 0.14);
+            p.vz = Math.sin(radAngle) * (0.08 + Math.random() * 0.14);
+          }
+
+          positions[i * 3]     = p.x;
+          positions[i * 3 + 1] = p.y;
+          positions[i * 3 + 2] = p.z;
+        }
+        particleMesh.geometry.attributes.position.needsUpdate = true;
+        // Subtle frost sparkle twinkle effect
+        particleMesh.material.opacity = 0.65 + Math.sin(auraClock * 6.0) * 0.25;
+      }
+
+    } else if (normElem === 'thunder') {
+      // Vibrant blue/electric-violet point light flashing randomly to mimic electric current
+      if (auraLight) {
+        auraLight.intensity = (Math.random() > 0.3) ? (1.5 + Math.random() * 0.8) : 0.5;
+        if (Math.random() < 0.15) {
+          auraLight.color.setHex(0xa855f7); // Flash electric-violet
+        } else {
+          auraLight.color.setHex(0x00d4ff); // Vibrant electric blue
+        }
+      }
+
+      // Crackling electric sparks dancing along the blade ridge
+      if (particleMesh) {
+        const positions = particleMesh.geometry.attributes.position.array;
+        for (let i = 0; i < particleData.length; i++) {
+          const p = particleData[i];
+          p.life += dt;
+          if (p.life >= p.maxLife) {
+            p.life = 0;
+            p.y = BLADE_MIN_Y + Math.random() * (BLADE_MAX_Y - BLADE_MIN_Y);
+            positions[i * 3]     = (Math.random() - 0.5) * 0.14;
+            positions[i * 3 + 1] = p.y;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 0.08;
+          }
+        }
+        particleMesh.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Jittery lightning arcs (THREE.LineSegments) dancing along the blade ridge
+      if (lightningMesh) {
+        lightningTimer += dt;
+        if (lightningTimer > 0.05) { // Retrigger jagged arcs every ~50ms
+          lightningTimer = 0;
+          const linePos = lightningMesh.geometry.attributes.position.array;
+          for (let s = 0; s < 8; s++) {
+            const y1 = BLADE_MIN_Y + Math.random() * (BLADE_MAX_Y - BLADE_MIN_Y);
+            const y2 = y1 + (Math.random() - 0.3) * 0.4;
+            const x1 = (Math.random() - 0.5) * 0.08;
+            const x2 = (Math.random() - 0.5) * 0.14;
+            const z1 = (Math.random() - 0.5) * 0.06;
+            const z2 = (Math.random() - 0.5) * 0.10;
+
+            const idx = s * 6;
+            linePos[idx]     = x1;
+            linePos[idx + 1] = y1;
+            linePos[idx + 2] = z1;
+            linePos[idx + 3] = x2;
+            linePos[idx + 4] = y2;
+            linePos[idx + 5] = z2;
+          }
+          lightningMesh.geometry.attributes.position.needsUpdate = true;
+          lightningMesh.visible = (Math.random() > 0.15);
+        }
+      }
+    }
+  };
+
+  currentWeaponAura = auraGroup;
+  currentWeaponAura.light = auraLight;
+  currentWeaponAura.particles = particleMesh;
+  currentWeaponAura.lightningLines = lightningMesh;
+  swordMesh.add(auraGroup);
+}
+
 /**
  * Standardized Hand Grip & Blade Direction across all 4 outfits
  * @param {THREE.Object3D} targetModel 
  * @param {THREE.Object3D} swordMesh 
+ * @param {string} [outfitElement]
  * @returns {THREE.Group}
  */
-export function mountWeaponUniformly(targetModel, swordMesh) {
+export function mountWeaponUniformly(targetModel, swordMesh, outfitElement = activeElement) {
   if (!targetModel || !swordMesh) return null;
 
   // Clean up any existing anchor
@@ -177,14 +605,14 @@ export function mountWeaponUniformly(targetModel, swordMesh) {
 
   const handAnchor = new THREE.Group();
   handAnchor.name = 'RightHandAnchor';
-  // Position at the base/wrist of the character's right hand block
-  handAnchor.position.set(0.60, 0.75, 0.20);
+  // Target wrist/hand base coordinates
+  handAnchor.position.set(0.65, 0.85, 0.25);
 
   // Position sword so hilt sits firmly inside handAnchor
   swordMesh.position.set(0, 0, 0);
 
-  // Blade tilts forward toward the boss (+X axis) at a 60-degree ready angle
-  swordMesh.rotation.set(0, 0, -Math.PI / 3);
+  // Orient sword blade pointing forward towards Boss (+X axis) at a ready 45-60 degree tilt
+  swordMesh.rotation.set(0, 0, -Math.PI / 3.2);
 
   handAnchor.add(swordMesh);
   targetModel.add(handAnchor);
@@ -192,6 +620,9 @@ export function mountWeaponUniformly(targetModel, swordMesh) {
   combatArmCompound = handAnchor;
   playerArmPivot = handAnchor;
   currentWeaponMesh = swordMesh;
+
+  // Attach persistent elemental aura to the sword blade
+  attachElementalAura(swordMesh, outfitElement);
 
   return handAnchor;
 }
@@ -202,7 +633,7 @@ export function mountWeaponUniformly(targetModel, swordMesh) {
 function loadAndMountWeapon(targetModel, outfitElement) {
   // Mount procedural sword immediately so model is NEVER weaponless
   const procSword = createProceduralSword(outfitElement);
-  const anchor = mountWeaponUniformly(targetModel, procSword);
+  const anchor = mountWeaponUniformly(targetModel, procSword, outfitElement);
 
   const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
     ? THREE.GLTFLoader
@@ -237,7 +668,7 @@ function loadAndMountWeapon(targetModel, outfitElement) {
         const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (1.9 / maxDim) : 1.0;
         sword.scale.set(scale, scale, scale);
 
-        mountWeaponUniformly(targetModel, sword);
+        mountWeaponUniformly(targetModel, sword, outfitElement);
         console.log(`[GLTF Success] Weapon model mounted uniformly from ${swordPath} at scale ${scale}`);
       } catch (e) {
         console.warn('[player] Error scaling GLB sword:', e);
@@ -432,18 +863,16 @@ export function createPlayer(color = '#ff6b35', element = 'default', equippedGea
 
 export function createPlayerMesh(element, equippedGear) {
   activeElement = element || 'default';
-  if (playerGroup) {
+  if (playerGroup && characterRoot) {
     loadPlayerModel(characterRoot, activeElement);
-    buildArmAndWeapon(activeElement);
   }
 }
 
 export function applyElementalSet(element) {
   if (!element) return;
   activeElement = element;
-  if (playerGroup) {
+  if (playerGroup && characterRoot) {
     loadPlayerModel(characterRoot, activeElement);
-    buildArmAndWeapon(activeElement);
   }
 }
 
@@ -478,7 +907,13 @@ export function resetPlayerState() {
 }
 
 export function updatePlayer(deltaTime) {
-  // Safe tick
+  if (currentWeaponAura && typeof currentWeaponAura.update === 'function') {
+    try {
+      currentWeaponAura.update(deltaTime || 0.016);
+    } catch (e) {
+      console.warn('[player] Error updating weapon aura:', e);
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
