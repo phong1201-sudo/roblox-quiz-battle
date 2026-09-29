@@ -167,7 +167,7 @@ const TWEEN = {
 };
 
 let anim = { active:false, type:null, t:0, duration:0, dodgeDir:1 };
-const BOSS_HOME = { x:3.0, y:0, z:0 };   // face-to-face with player at x:-3
+const BOSS_HOME = { x:4.5, y:0.0, z:0.0 };   // face-to-face with player at x:-4.5
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function makeMat(color, emissive) {
@@ -557,17 +557,22 @@ function _loadGLTF(url) {
         console.warn('[boss] GLTFLoader not available');
         return resolve(null);
       }
+      console.log(`[GLTF Load Attempt] Requesting model: ${url}`);
       const loader = new GLTFLoaderClass();
       loader.load(
         url,
         (gltf) => {
-          console.log('[boss] Loaded GLTF model:', url);
+          console.log(`[GLTF Success] Loaded GLTF model: ${url}`);
           resolve(gltf);
         },
         undefined,
-        () => resolve(null)
+        (err) => {
+          console.error(`[GLTF Error] Failed to load model at ${url}:`, err);
+          resolve(null);
+        }
       );
     } catch (e) {
+      console.error(`[GLTF Error] Exception in _loadGLTF for ${url}:`, e);
       resolve(null);
     }
   });
@@ -601,10 +606,10 @@ async function _loadCustomBoss(el) {
 
   // 1. Attempt Native 3D GLB/GLTF Boss permanently uploaded to /assets/character/
   const candidateUrls = [
-    `/assets/character/boss_${el}.glb?t=${Date.now()}`,
-    `/assets/character/boss_${el}.gltf?t=${Date.now()}`,
-    `/assets/models/boss_${el}.glb?t=${Date.now()}`,
-    `/assets/models/boss_${el}.gltf?t=${Date.now()}`
+    `/assets/character/boss_${el}.glb`,
+    `/assets/characters/boss_${el}.glb`,
+    `/assets/character/${el === 'fire' ? 'Fire' : el === 'frost' ? 'Ice' : 'Lightning'}%20boss.glb`,
+    `/assets/models/boss_${el}.glb`
   ];
 
   let gltf = null;
@@ -629,9 +634,13 @@ async function _loadCustomBoss(el) {
     customBossBone = null;
     customBossModel.traverse((child) => {
       if (child.isMesh) {
+        child.visible = true;
         child.castShadow = true;
         child.receiveShadow = true;
         if (child.material) {
+          child.material.transparent = false;
+          child.material.opacity = 1.0;
+          child.material.depthWrite = true;
           customBossMaterials.push(child.material);
           if (child.material.color) customBossOrigColors.push(child.material.color.getHex());
           if (child.material.emissive) customBossOrigEmissives.push(child.material.emissive.getHex());
@@ -647,28 +656,31 @@ async function _loadCustomBoss(el) {
       }
     });
 
-    // Scale appropriately (1.3x to 1.6x player size to look imposing, e.g. ~4.0 units height)
-    const bBox = new THREE.Box3().setFromObject(customBossModel);
-    const bSize = new THREE.Vector3();
-    bBox.getSize(bSize);
-    if (bSize.y > 0.01) {
-      const targetHeight = 4.0;
-      const scaleFactor = targetHeight / bSize.y;
-      customBossModel.scale.setScalar(scaleFactor);
-    }
+    // Calculate safe bounding box
+    const box = new THREE.Box3().setFromObject(customBossModel);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    // Safeguard against 0 or NaN scale
+    const targetHeight = 4.2;
+    const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
+    customBossModel.scale.set(scale, scale, scale);
 
     // Center horizontally and align base at y = 0
     const scaledBox = new THREE.Box3().setFromObject(customBossModel);
-    customBossModel.position.x = - (scaledBox.min.x + scaledBox.max.x) / 2;
-    customBossModel.position.z = - (scaledBox.min.z + scaledBox.max.z) / 2;
-    customBossModel.position.y = - scaledBox.min.y;
+    const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+    const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+    const minY = scaledBox.min.y;
+
+    customBossModel.position.set(-centerX, -minY, -centerZ);
 
     // Face the player on the left (-X):
     customBossRoot.rotation.y = -Math.PI / 2;
     customBossRoot.add(customBossModel);
     bossGroup.add(customBossRoot);
+    window.bossModel = bossGroup;
 
-    console.log(`[boss] Successfully mounted pristine custom 3D model for Boss ${el} without accessory meshes`);
+    console.log(`[GLTF Success] Boss model added to scene at scale ${scale} for element ${el}`);
     return;
   }
 
@@ -695,9 +707,27 @@ async function _loadCustomBoss(el) {
       customBossRoot = new THREE.Group();
       customBossRoot.add(planeMesh);
       bossGroup.add(customBossRoot);
+      window.bossModel = bossGroup;
       console.log(`[boss] Successfully mounted 2.5D billboard sprite for Boss ${el}`);
     });
+    return;
   }
+
+  // 3. Fallback: stylized colored block puppet is already built in proceduralRoot
+  if (proceduralRoot) {
+    proceduralRoot.visible = true;
+    proceduralRoot.traverse((child) => {
+      if (child.isMesh) {
+        child.visible = true;
+        if (child.material) {
+          child.material.transparent = false;
+          child.material.opacity = 1.0;
+        }
+      }
+    });
+  }
+  window.bossModel = bossGroup;
+  console.log(`[boss] Using stylized procedural puppet fallback for Boss ${el}`);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────

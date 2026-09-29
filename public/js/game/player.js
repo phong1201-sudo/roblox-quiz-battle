@@ -78,47 +78,62 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
 
   function tryLoadIndex(idx) {
     if (idx >= candidateUrls.length) {
-      console.warn(`[player] Failed to load GLB at ${modelPath}, using emergency placeholder`);
+      console.warn(`[player] Failed to load GLB across candidates for ${outfitElement}, using emergency placeholder`);
       createEmergencyPlaceholder(scene, onLoaded);
       return;
     }
 
     const currentUrl = candidateUrls[idx];
+    console.log(`[GLTF Load Attempt] Requesting model: ${currentUrl}`);
+
     loader.load(
       currentUrl,
       (gltf) => {
         try {
           const model = gltf.scene;
 
-          // Safe bounding box calculation
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z) || 1;
-          const scale = 3.5 / maxDim;
-          model.scale.set(scale, scale, scale);
-
-          // Positioning on arena floor
-          model.position.set(-4.5, 0, 0);
-          model.rotation.y = Math.PI / 2; // Face towards Boss (+X)
-
-          // Enable shadows
+          // Ensure all child meshes are visible and receive shadows/light
           model.traverse((child) => {
             if (child.isMesh) {
+              child.visible = true;
               child.castShadow = true;
               child.receiveShadow = true;
+              if (child.material) {
+                child.material.transparent = false;
+                child.material.opacity = 1.0;
+                child.material.depthWrite = true;
+              }
             }
           });
 
-          // Replace placeholder if characterRoot exists
+          // Calculate safe bounding box
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+
+          // Safeguard against 0 or NaN scale
+          const targetHeight = 3.6;
+          const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
+          model.scale.set(scale, scale, scale);
+
+          // Normalize base to arena floor (y = 0)
+          const scaledBox = new THREE.Box3().setFromObject(model);
+          const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+          const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+          const minY = scaledBox.min.y;
+
           if (characterRoot) {
             while (characterRoot.children.length > 0) {
               characterRoot.remove(characterRoot.children[0]);
             }
-            // If mounted inside playerGroup, offset relative to group
-            model.position.set(0, 0, 0);
-            model.rotation.y = 0;
+            // Relative offset inside characterRoot
+            model.position.set(-centerX, -minY, -centerZ);
+            model.rotation.set(0, 0, 0);
             characterRoot.add(model);
           } else if (scene) {
+            // Position Player firmly above arena floor (Arena floor is at y = 0)
+            model.position.set(-4.5, 0.0, 0.0);
+            model.rotation.y = Math.PI / 2; // Face towards Boss (+X)
             scene.add(model);
           }
 
@@ -126,16 +141,17 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
           loadAndMountWeapon(model, outfitElement);
 
           currentCharacterMesh = model;
-          console.log(`[player] 3D GLB successfully loaded with uniform weapon mount from ${currentUrl}`);
+          window.playerModel = playerGroup || model;
+          console.log(`[GLTF Success] Player model added to scene at scale ${scale}`);
           if (onLoaded) onLoaded(model);
         } catch (err) {
-          console.error('[player] Error processing GLB mesh:', err);
+          console.error(`[GLTF Error] Error processing GLB mesh at ${currentUrl}:`, err);
           createEmergencyPlaceholder(scene, onLoaded);
         }
       },
       undefined,
-      (error) => {
-        // Try next candidate or fallback
+      (err) => {
+        console.error(`[GLTF Error] Failed to load model at ${currentUrl}:`, err);
         tryLoadIndex(idx + 1);
       }
     );
@@ -186,78 +202,110 @@ export function mountWeaponUniformly(targetModel, swordMesh) {
 function loadAndMountWeapon(targetModel, outfitElement) {
   // Mount procedural sword immediately so model is NEVER weaponless
   const procSword = createProceduralSword(outfitElement);
-  mountWeaponUniformly(targetModel, procSword);
+  const anchor = mountWeaponUniformly(targetModel, procSword);
 
   const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
     ? THREE.GLTFLoader
     : (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
 
-  if (!GLTFLoaderClass) return;
+  if (!GLTFLoaderClass) return anchor;
 
   const swordPath = `/assets/character/sword_${outfitElement}.glb`;
+  console.log(`[GLTF Load Attempt] Requesting model: ${swordPath}`);
   const loader = new GLTFLoaderClass();
   loader.load(
     swordPath,
     (gltf) => {
       try {
         const sword = gltf.scene;
-        const box = new THREE.Box3().setFromObject(sword);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const scale = 1.9 / maxDim;
-        sword.scale.set(scale, scale, scale);
-
         sword.traverse((child) => {
           if (child.isMesh) {
+            child.visible = true;
             child.castShadow = true;
             child.receiveShadow = true;
+            if (child.material) {
+              child.material.transparent = false;
+              child.material.opacity = 1.0;
+              child.material.depthWrite = true;
+            }
           }
         });
 
+        const box = new THREE.Box3().setFromObject(sword);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (1.9 / maxDim) : 1.0;
+        sword.scale.set(scale, scale, scale);
+
         mountWeaponUniformly(targetModel, sword);
-        console.log(`[player] 3D GLB sword mounted uniformly from ${swordPath}`);
+        console.log(`[GLTF Success] Weapon model mounted uniformly from ${swordPath} at scale ${scale}`);
       } catch (e) {
         console.warn('[player] Error scaling GLB sword:', e);
       }
     },
     undefined,
-    () => {
-      // Procedural sword already mounted, safe fallback
+    (err) => {
+      console.error(`[GLTF Error] Failed to load model at ${swordPath}:`, err);
     }
   );
+  return anchor;
 }
 
-function createEmergencyPlaceholder(scene, onLoaded) {
-  if (!THREE) return;
-  // Emergency Fallback: Blocky placeholder so the screen NEVER goes black
-  const placeholder = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 3.5, 1.2),
-    new THREE.MeshStandardMaterial({
-      color: activeElement === 'fire' ? 0xff4400 : activeElement === 'thunder' ? 0x00cfff : activeElement === 'frost' ? 0x00b4d8 : 0x2255cc,
-      metalness: 0.2,
-      roughness: 0.5
-    })
+function createEmergencyPlaceholder(targetParent, onLoaded) {
+  if (!THREE) return null;
+  // Emergency Fallback: Obvious stylized colored block puppet so model is NEVER invisible
+  const placeholder = new THREE.Group();
+  placeholder.name = 'PlayerEmergencyPlaceholder';
+
+  const torsoColor = activeElement === 'fire' ? 0xef233c : activeElement === 'thunder' ? 0x00b4d8 : activeElement === 'frost' ? 0x48cae4 : 0x2b6cb0;
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 1.6, 0.7),
+    new THREE.MeshStandardMaterial({ color: torsoColor, roughness: 0.5, metalness: 0.2 })
   );
+  torso.position.y = 1.8;
+  torso.castShadow = true;
+  torso.receiveShadow = true;
+  placeholder.add(torso);
 
-  loadAndMountWeapon(placeholder, activeElement);
+  const head = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 0.8, 0.8),
+    new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.7 })
+  );
+  head.position.y = 3.0;
+  head.castShadow = true;
+  head.receiveShadow = true;
+  placeholder.add(head);
 
-  combatArmCompound = handAnchor;
-  playerArmPivot = handAnchor;
+  for (const s of [-0.3, 0.3]) {
+    const leg = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 1.0, 0.45),
+      new THREE.MeshStandardMaterial({ color: 0x1a202c, roughness: 0.7 })
+    );
+    leg.position.set(s, 0.5, 0);
+    leg.castShadow = true;
+    leg.receiveShadow = true;
+    placeholder.add(leg);
+  }
+
+  const anchor = loadAndMountWeapon(placeholder, activeElement);
+  combatArmCompound = anchor;
+  playerArmPivot = anchor;
 
   if (characterRoot) {
     while (characterRoot.children.length > 0) {
       characterRoot.remove(characterRoot.children[0]);
     }
-    placeholder.position.set(0, 1.75, 0);
     characterRoot.add(placeholder);
-  } else if (scene) {
-    placeholder.position.set(-4.5, 1.75, 0);
+  } else if (targetParent) {
+    placeholder.position.set(-4.5, 0.0, 0.0);
     placeholder.rotation.y = Math.PI / 2;
-    scene.add(placeholder);
+    targetParent.add(placeholder);
   }
 
   currentCharacterMesh = placeholder;
+  window.playerModel = playerGroup || placeholder;
   if (onLoaded) onLoaded(placeholder);
+  return placeholder;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -456,7 +504,7 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
 
   const arm = combatArmCompound;
   const startX = HOME_X;
-  const targetX = 0.5; // Forward near Boss
+  const targetX = 2.0; // Forward near Boss (at x = 4.5)
   let hitTriggered = false;
 
   const DASH_FWD_MS  = 160;

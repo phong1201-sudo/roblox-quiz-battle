@@ -25,14 +25,14 @@ let pendingEvents = [];
 //   Player on left (x = -3), Boss on right (x = +3)
 //   Camera sits slightly off-centre on the Z axis to show a nice 3/4 view
 const PLAYER_HOME = new THREE.Vector3(-4.5, 0.0, 0);
-const BOSS_HOME   = new THREE.Vector3( 3.0, 0,   0);
+const BOSS_HOME   = new THREE.Vector3( 4.5, 0.0, 0);
 
 // ── Camera — pulled back to show full fighters head-to-feet on platform ───────
 const CAM_POS    = new THREE.Vector3(0, 4.8, 11.5);
 const CAM_TARGET = new THREE.Vector3(0, 1.8, 0);
 
 // ── Boss hit position for VFX ─────────────────────────────────────────────────
-const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
+const BOSS_VFX_POS = new THREE.Vector3(4.5, 4.0, 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT SCENE

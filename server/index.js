@@ -16,8 +16,18 @@ const io     = new Server(server);
 const PORT   = process.env.PORT || 3000;
 
 // ── Static / middleware ───────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, '../public')));
-app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character')));
+const staticOptions = {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.glb')) {
+      res.setHeader('Content-Type', 'model/gltf-binary');
+    } else if (filePath.endsWith('.gltf')) {
+      res.setHeader('Content-Type', 'model/gltf+json');
+    }
+  }
+};
+app.use(express.static(path.join(__dirname, '../public'), staticOptions));
+app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
+app.use('/assets/characters', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

@@ -9,7 +9,7 @@ import { triggerCinematicShot, resetCameraToDefault, triggerCombatSlowMo, setCom
 export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, slashAnimation, getPlayerArmPivot, combatArmCompound, getCombatArmCompound } from './player.js';
 export { playGuaranteedBossHammerSlam, getBossArmPivot, bossCombatArmCompound, getBossCombatArmCompound } from './boss.js';
 
-const BOSS_VFX_POS = new THREE.Vector3(3.0, 4.0, 0);
+const BOSS_VFX_POS = new THREE.Vector3(4.5, 4.0, 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
