@@ -4,7 +4,7 @@ import * as Boss    from './boss.js';
 import * as Effects from './effects.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
-import { triggerCinematicShot, resetCameraToDefault, triggerCombatSlowMo } from './scene.js';
+import { triggerCinematicShot, resetCameraToDefault, triggerCombatSlowMo, setCombatTimeScale } from './scene.js';
 
 export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, slashAnimation, getPlayerArmPivot, combatArmCompound, getCombatArmCompound } from './player.js';
 export { playGuaranteedBossHammerSlam, getBossArmPivot, bossCombatArmCompound, getBossCombatArmCompound } from './boss.js';
@@ -448,6 +448,10 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
   Boss.playBossAttack(bossElement, () => {
     // Step 2: Player dodges
     Player.playDodge(() => {
+      // Milestone: Player lands -> snap to normal speed (timeScale = 1.0) so counter-attack projectile and impact run at full speed
+      if (context.isMilestone) {
+        setCombatTimeScale(1.0);
+      }
       // Step 3: CRITICAL - Trigger player counter-attack immediately after dodge completes
       executePlayerCounterAttack(selectedElement, isFullSet, () => {
         // Step 4: Complete turn and load next question
@@ -554,35 +558,42 @@ export function executeCombatTurn(ev, onDone) {
   const isBossMilestone = !isCorrect && (qNum % 10 === 5);
 
   const executeCorrectBranch = () => {
-    // Slow-Motion effect during attack release
-    triggerCombatSlowMo(0.4, 800);
-
     if (isPlayerMilestone) {
+      // Deep slow-motion during boss attack cast and player dodge
+      setCombatTimeScale(0.18);
       // Shot 2: Hero Low-Angle locked near floor looking up toward boss (3.0s sweep)
       triggerCinematicShot(2, 3000, true);
     } else {
+      // Slow-Motion effect during attack release
+      triggerCombatSlowMo(0.4, 800);
       // Dynamic camera cycling 1-5 (3.0s sweep)
       triggerCinematicShot(null, 3000, true);
     }
 
     handleCorrectAnswer(selectedElement, isFullSet, () => {
+      setCombatTimeScale(1.0);
       resetCameraToDefault(600, doneWrapper);
     }, { ...context, isMilestone: isPlayerMilestone });
   };
 
   const executeBossBranch = () => {
-    // Slow-Motion effect during attack release
-    triggerCombatSlowMo(0.4, 800);
-
     if (isBossMilestone) {
+      // Deep slow-motion during boss charge and projectile creep
+      setCombatTimeScale(0.18);
       // Shot 3: Over-the-Shoulder Boss View looking down at player (3.0s sweep)
       triggerCinematicShot(3, 3000, false);
     } else {
+      // Slow-Motion effect during attack release
+      triggerCombatSlowMo(0.4, 800);
       // Dynamic camera cycling 1-5 (3.0s sweep)
       triggerCinematicShot(null, 3000, false);
     }
 
     Boss.playBossAttack(bossElement, () => {
+      // Contact point: Snap to normal speed (timeScale = 1.0) so explosion & damage recoil run at full speed
+      if (isBossMilestone) {
+        setCombatTimeScale(1.0);
+      }
       try { Audio.playHit?.(); } catch (e) {}
       const shakeAmt = isBossMilestone ? 0.55 : 0.35;
       Effects.triggerShake(shakeAmt, shakeAmt);
@@ -607,6 +618,7 @@ export function executeCombatTurn(ev, onDone) {
       });
     }, () => {
       setTimeout(() => {
+        setCombatTimeScale(1.0);
         resetCameraToDefault(500, doneWrapper);
       }, 150);
     });

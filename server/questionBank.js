@@ -6,6 +6,7 @@ const path = require('path');
 const fs   = require('fs');
 
 const BANK_DIR = path.join(__dirname, '../data/questions');
+const UNIFIED_BANK_FILE = path.join(__dirname, '../data/question_bank.json');
 
 // ── Difficulty configuration ───────────────────────────────────────────────────
 const DIFFICULTY_CONFIG = {
@@ -15,8 +16,32 @@ const DIFFICULTY_CONFIG = {
   dev:    { count:  5, bossHpMultiplier: 1 },  // God Father quick test: 5 questions
 };
 
+// ── Internal: sync unified question_bank.json on disk ──────────────────────────
+function _syncUnifiedBankFile(element, questionsArray) {
+  try {
+    let current = {};
+    if (fs.existsSync(UNIFIED_BANK_FILE)) {
+      try { current = JSON.parse(fs.readFileSync(UNIFIED_BANK_FILE, 'utf8')); } catch(e) {}
+    }
+    current[element] = questionsArray;
+    const tmp = UNIFIED_BANK_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(current, null, 2), 'utf8');
+    fs.renameSync(tmp, UNIFIED_BANK_FILE);
+  } catch (err) {
+    console.error('[questionBank] Failed to sync unified bank file:', err.message);
+  }
+}
+
 // ── Internal: load raw bank from disk ────────────────────────────────────────
 function _loadBank(element) {
+  if (fs.existsSync(UNIFIED_BANK_FILE)) {
+    try {
+      const all = JSON.parse(fs.readFileSync(UNIFIED_BANK_FILE, 'utf8'));
+      if (Array.isArray(all[element]) && all[element].length > 0) {
+        return all[element];
+      }
+    } catch(e) {}
+  }
   const file = path.join(BANK_DIR, `${element}.json`);
   if (!fs.existsSync(file)) return [];
   try   { return JSON.parse(fs.readFileSync(file, 'utf8')); }
@@ -84,6 +109,7 @@ function replaceBank(element, questionsArray) {
   const numbered = questionsArray.map((q, i) => ({ ...q, id: i + 1 }));
   fs.writeFileSync(tmp, JSON.stringify(numbered, null, 2), 'utf8');
   fs.renameSync(tmp, file);
+  _syncUnifiedBankFile(element, numbered);
   return numbered.length;
 }
 
@@ -99,6 +125,7 @@ function appendBank(element, newQuestions) {
   const tmp  = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(merged, null, 2), 'utf8');
   fs.renameSync(tmp, file);
+  _syncUnifiedBankFile(element, merged);
   return { total: merged.length, added: toAdd.length, skipped: newQuestions.length - toAdd.length };
 }
 
@@ -107,6 +134,17 @@ function clearBank(element) {
   if (!fs.existsSync(BANK_DIR)) fs.mkdirSync(BANK_DIR, { recursive: true });
   const file = path.join(BANK_DIR, `${element}.json`);
   fs.writeFileSync(file, '[]', 'utf8');
+  _syncUnifiedBankFile(element, []);
+}
+
+// ── Public: get active questions directly from permanent bank ────────────────
+function getActiveQuestionBank(element) {
+  if (element) return _loadBank(element);
+  return {
+    thunder: _loadBank('thunder'),
+    fire: _loadBank('fire'),
+    frost: _loadBank('frost'),
+  };
 }
 
 // ── Internal: normalise text for dedup comparison ─────────────────────────────
@@ -114,4 +152,12 @@ function _norm(str) {
   return str.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-module.exports = { sampleQuestions, getBankSize, replaceBank, appendBank, clearBank, DIFFICULTY_CONFIG };
+module.exports = {
+  sampleQuestions,
+  getBankSize,
+  replaceBank,
+  appendBank,
+  clearBank,
+  getActiveQuestionBank,
+  DIFFICULTY_CONFIG
+};

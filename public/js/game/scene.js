@@ -235,13 +235,21 @@ export function onWindowResize() {
 let combatTimeScale = 1.0;
 let slowMoTimer = null;
 
-export function triggerCombatSlowMo(scale = 0.4, durationMs = 800) {
+export function triggerCombatSlowMo(scale = 0.18, durationMs = 800) {
   combatTimeScale = scale;
   if (slowMoTimer) clearTimeout(slowMoTimer);
   slowMoTimer = setTimeout(() => {
     combatTimeScale = 1.0;
     slowMoTimer = null;
   }, durationMs);
+}
+
+export function setCombatTimeScale(scale = 1.0) {
+  combatTimeScale = scale;
+  if (slowMoTimer) {
+    clearTimeout(slowMoTimer);
+    slowMoTimer = null;
+  }
 }
 
 export function getCombatTimeScale() {

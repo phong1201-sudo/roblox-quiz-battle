@@ -122,36 +122,11 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
             scene.add(model);
           }
 
-          // Proven Static Weapon Attachment: find or create right-hand anchor point
-          let handAnchor = model.getObjectByName('RightHand') ||
-                           model.getObjectByName('hand_r') ||
-                           model.getObjectByName('mixamorigRightHand') ||
-                           model.getObjectByName('RightArm') ||
-                           model.getObjectByName('arm_r');
-
-          if (!handAnchor) {
-            handAnchor = new THREE.Group();
-            handAnchor.name = 'RightHandAnchor';
-            handAnchor.position.set(0.6, 0.75, 0.2); // Lowered Y from 1.05 to ~0.75
-            model.add(handAnchor);
-          } else {
-            handAnchor.position.set(0.6, 0.75, 0.2);
-          }
-
-          // Attach the sword mesh as a child of this hand anchor
-          if (currentWeaponMesh && currentWeaponMesh.parent) {
-            currentWeaponMesh.parent.remove(currentWeaponMesh);
-          }
-          currentWeaponMesh = createProceduralSword(outfitElement);
-          // Rotate sword mesh so blade aims diagonally forward toward Boss (+X axis) tilted ~60° forward-downward
-          currentWeaponMesh.rotation.set(0, 0, -Math.PI / 2.8);
-          handAnchor.add(currentWeaponMesh);
-
-          combatArmCompound = handAnchor;
-          playerArmPivot = handAnchor;
+          // Standardized Hand Grip & Blade Direction uniformly across all 4 outfits
+          loadAndMountWeapon(model, outfitElement);
 
           currentCharacterMesh = model;
-          console.log(`[player] 3D GLB successfully loaded with static weapon mount from ${currentUrl}`);
+          console.log(`[player] 3D GLB successfully loaded with uniform weapon mount from ${currentUrl}`);
           if (onLoaded) onLoaded(model);
         } catch (err) {
           console.error('[player] Error processing GLB mesh:', err);
@@ -169,6 +144,89 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
   tryLoadIndex(0);
 }
 
+/**
+ * Standardized Hand Grip & Blade Direction across all 4 outfits
+ * @param {THREE.Object3D} targetModel 
+ * @param {THREE.Object3D} swordMesh 
+ * @returns {THREE.Group}
+ */
+export function mountWeaponUniformly(targetModel, swordMesh) {
+  if (!targetModel || !swordMesh) return null;
+
+  // Clean up any existing anchor
+  const existingAnchor = targetModel.getObjectByName('RightHandAnchor');
+  if (existingAnchor && existingAnchor.parent) {
+    existingAnchor.parent.remove(existingAnchor);
+  }
+
+  const handAnchor = new THREE.Group();
+  handAnchor.name = 'RightHandAnchor';
+  // Position at the base/wrist of the character's right hand block
+  handAnchor.position.set(0.60, 0.75, 0.20);
+
+  // Position sword so hilt sits firmly inside handAnchor
+  swordMesh.position.set(0, 0, 0);
+
+  // Blade tilts forward toward the boss (+X axis) at a 60-degree ready angle
+  swordMesh.rotation.set(0, 0, -Math.PI / 3);
+
+  handAnchor.add(swordMesh);
+  targetModel.add(handAnchor);
+
+  combatArmCompound = handAnchor;
+  playerArmPivot = handAnchor;
+  currentWeaponMesh = swordMesh;
+
+  return handAnchor;
+}
+
+/**
+ * Loads the 3D GLB sword or falls back cleanly to procedural sword
+ */
+function loadAndMountWeapon(targetModel, outfitElement) {
+  // Mount procedural sword immediately so model is NEVER weaponless
+  const procSword = createProceduralSword(outfitElement);
+  mountWeaponUniformly(targetModel, procSword);
+
+  const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
+    ? THREE.GLTFLoader
+    : (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+
+  if (!GLTFLoaderClass) return;
+
+  const swordPath = `/assets/character/sword_${outfitElement}.glb`;
+  const loader = new GLTFLoaderClass();
+  loader.load(
+    swordPath,
+    (gltf) => {
+      try {
+        const sword = gltf.scene;
+        const box = new THREE.Box3().setFromObject(sword);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const scale = 1.9 / maxDim;
+        sword.scale.set(scale, scale, scale);
+
+        sword.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
+        mountWeaponUniformly(targetModel, sword);
+        console.log(`[player] 3D GLB sword mounted uniformly from ${swordPath}`);
+      } catch (e) {
+        console.warn('[player] Error scaling GLB sword:', e);
+      }
+    },
+    undefined,
+    () => {
+      // Procedural sword already mounted, safe fallback
+    }
+  );
+}
+
 function createEmergencyPlaceholder(scene, onLoaded) {
   if (!THREE) return;
   // Emergency Fallback: Blocky placeholder so the screen NEVER goes black
@@ -181,17 +239,7 @@ function createEmergencyPlaceholder(scene, onLoaded) {
     })
   );
 
-  const handAnchor = new THREE.Group();
-  handAnchor.name = 'RightHandAnchor';
-  handAnchor.position.set(0.6, 0.75, 0.2);
-  placeholder.add(handAnchor);
-
-  if (currentWeaponMesh && currentWeaponMesh.parent) {
-    currentWeaponMesh.parent.remove(currentWeaponMesh);
-  }
-  currentWeaponMesh = createProceduralSword(activeElement);
-  currentWeaponMesh.rotation.set(0, 0, -Math.PI / 2.8);
-  handAnchor.add(currentWeaponMesh);
+  loadAndMountWeapon(placeholder, activeElement);
 
   combatArmCompound = handAnchor;
   playerArmPivot = handAnchor;

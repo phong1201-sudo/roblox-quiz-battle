@@ -745,6 +745,44 @@ app.get('/api/admin/questions/stats', (req, res) => {
   });
 });
 
+/**
+ * GET /api/questions/active
+ * Reads directly from data/question_bank.json (categorized by skill/element: Thunder, Fire, Frost)
+ * Optional query: ?element=thunder|fire|frost
+ */
+app.get('/api/questions/active', (req, res) => {
+  const { element } = req.query;
+  const bankFile = path.join(__dirname, '../data/question_bank.json');
+  try {
+    if (fs.existsSync(bankFile)) {
+      const data = JSON.parse(fs.readFileSync(bankFile, 'utf8'));
+      if (element && data[element]) {
+        return res.json({
+          ok: true,
+          element,
+          total: data[element].length,
+          questions: data[element],
+        });
+      }
+      return res.json({
+        ok: true,
+        categories: {
+          thunder: data.thunder?.length || 0,
+          fire:    data.fire?.length || 0,
+          frost:   data.frost?.length || 0,
+        },
+        data,
+      });
+    }
+    // Fallback to questionBank module if file missing
+    const active = questionBank.getActiveQuestionBank(element);
+    res.json({ ok: true, data: active });
+  } catch (err) {
+    console.error('[questions/active]', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 /** Legacy alias kept for existing client code */
 app.get('/api/bank-info', (req, res) => {
   res.json({
@@ -1159,7 +1197,15 @@ io.on('connection', (socket) => {
       }
 
       if (!room.questions || room.questions.length === 0) {
-        room.questions = questionParser.getDemoQuestions();
+        const defaultEl = room.bossElement || 'thunder';
+        const bankQuestions = questionBank.sampleQuestions(defaultEl, room.difficulty || 'medium');
+        if (bankQuestions && bankQuestions.length > 0) {
+          room.questions = bankQuestions;
+          if (!room.bossElement) room.bossElement = defaultEl;
+          console.log(`[game] Room ${code} automatically loaded ${bankQuestions.length} questions from permanent question bank for element: ${defaultEl}`);
+        } else {
+          room.questions = questionParser.getDemoQuestions();
+        }
       }
 
       // ── Dev gear override: specific element full-set or normal ────────────

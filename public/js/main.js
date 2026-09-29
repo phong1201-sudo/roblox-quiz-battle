@@ -76,6 +76,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 350);
     }
 
+    // ── Sync active question bank from server ────────────────────────────────
+    function syncActiveQuestions() {
+        fetch('/api/questions/active')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    window.activeQuestionBank = data.bank;
+                    console.log(`[QuestionBank] Active questions synced: ${data.total} questions loaded across ${Object.keys(data.bank || {}).length} elements`);
+                }
+            })
+            .catch(err => console.warn('[QuestionBank] Could not fetch active questions:', err));
+    }
+    syncActiveQuestions();
+
     // ── Auth gate — show login modal unless session is restored ───────────────
     const alreadyLoggedIn = Auth.init();
     if (!alreadyLoggedIn) {
@@ -94,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showScreen('menu');
         // Start lobby music now that we have a user interaction (login click)
         try { Audio.playBGM('lobby'); } catch(e) {}
+        // Sync questions on login
+        syncActiveQuestions();
     });
 
     // ── Menu buttons ──────────────────────────────────────────────────────────
