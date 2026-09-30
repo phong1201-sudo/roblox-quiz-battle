@@ -744,12 +744,22 @@ export async function loadBossPoses(scene, element = 'thunder') {
       try {
         console.log(`[Boss Loader] Trying to fetch: ${path}`);
         const gltf = await new Promise((resolve, reject) => {
-          loader.load(path, resolve, undefined, reject);
+          loader.load(
+            path,
+            (res) => {
+              console.log(`[GLTF Loaded Successfully] ${path}`);
+              resolve(res);
+            },
+            undefined,
+            (err) => {
+              console.error(`[GLTF Load FAILED] ${path}`, err);
+              reject(err);
+            }
+          );
         });
-        console.log(`[Boss Loader] Successfully loaded: ${path}`);
         return gltf.scene;
       } catch (e) {
-        console.warn(`[Boss Loader] Path failed: ${path}`);
+        // Fallback to next candidate
       }
     }
     return null;
@@ -823,9 +833,15 @@ export async function loadBossPoses(scene, element = 'thunder') {
   isCustomBoss = true;
   is2DBoss = false;
   window.bossModel = bossGroup;
-  setBossPose('idle');
 
-  bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
+  // Set explicit initial visibility
+  if (bossPoses['idle']) bossPoses['idle'].visible = true;
+  if (bossPoses['angry']) bossPoses['angry'].visible = false;
+  if (bossPoses['attack']) bossPoses['attack'].visible = false;
+  if (bossPoses['hit']) bossPoses['hit'].visible = false;
+  currentBossPose = 'idle';
+
+  bossGroup.position.set(4.5, 0.0, 0.0);
   bossGroup.rotation.y = -Math.PI / 2; // Face towards Player (-X)
 
   const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);

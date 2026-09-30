@@ -146,12 +146,22 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
       try {
         console.log(`[Player Loader] Trying to fetch: ${path}`);
         const gltf = await new Promise((resolve, reject) => {
-          loader.load(path, resolve, undefined, reject);
+          loader.load(
+            path,
+            (res) => {
+              console.log(`[GLTF Loaded Successfully] ${path}`);
+              resolve(res);
+            },
+            undefined,
+            (err) => {
+              console.error(`[GLTF Load FAILED] ${path}`, err);
+              reject(err);
+            }
+          );
         });
-        console.log(`[Player Loader] Successfully loaded: ${path}`);
         return gltf.scene;
       } catch (e) {
-        console.warn(`[Player Loader] Path failed: ${path}`);
+        // Fallback to next candidate
       }
     }
     return null;
@@ -208,8 +218,14 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
     playerGroup.add(mesh);
   }
 
-  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  playerGroup.rotation.y = FACE_ROT_Y; // Facing Boss (+X)
+  // Set explicit initial visibility
+  if (playerPoses['idle']) playerPoses['idle'].visible = true;
+  if (playerPoses['dodge']) playerPoses['dodge'].visible = false;
+  if (playerPoses['slash']) playerPoses['slash'].visible = false;
+  if (playerPoses['hit']) playerPoses['hit'].visible = false;
+
+  playerGroup.position.set(-4.5, 0.0, 0.0);
+  playerGroup.rotation.y = Math.PI / 2; // Facing Boss (+X)
 
   const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);
   if (targetScene && !targetScene.children.includes(playerGroup)) {

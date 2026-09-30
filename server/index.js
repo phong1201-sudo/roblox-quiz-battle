@@ -64,8 +64,8 @@ app.use(['/assets', '/public/assets'], (req, res, next) => {
 app.use(express.static(path.join(__dirname, '../public'), staticOptions));
 app.use('/assets', express.static(path.join(__dirname, '../public/assets'), staticOptions));
 app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
-app.use('/assets/characters', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
-app.use(['/assets/boss', '/assets/Boss'], express.static(path.join(__dirname, '../public/assets/Boss'), staticOptions));
+app.use('/assets/boss', express.static(path.join(__dirname, '../public/assets/boss'), staticOptions));
+app.use('/assets/Boss', express.static(path.join(__dirname, '../public/assets/boss'), staticOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
