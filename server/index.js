@@ -26,6 +26,7 @@ const staticOptions = {
   }
 };
 app.use(express.static(path.join(__dirname, '../public'), staticOptions));
+app.use('/assets', express.static(path.join(__dirname, '../public/assets'), staticOptions));
 app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
 app.use('/assets/characters', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
 app.use(['/assets/boss', '/assets/Boss'], express.static(path.join(__dirname, '../public/assets/Boss'), staticOptions));

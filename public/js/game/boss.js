@@ -695,11 +695,11 @@ export async function loadBossPoses(scene, element = 'thunder') {
         }
       });
 
-      // Target height 4.2 for imposing boss scale
+      // Target height 4.5 for imposing boss scale
       const box = new currentTHREE.Box3().setFromObject(model);
       const size = box.getSize(new currentTHREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const targetHeight = 4.2;
+      const targetHeight = 4.5;
       const scale = targetHeight / maxDim;
       model.scale.set(scale, scale, scale);
 

@@ -114,11 +114,11 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
           }
         });
 
-        // Normalize bounding box & scale (~3.6 height)
+        // Normalize bounding box & scale (~3.5 height)
         const box = new currentTHREE.Box3().setFromObject(mesh);
         const size = box.getSize(new currentTHREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const scale = 3.6 / maxDim;
+        const scale = 3.5 / maxDim;
         mesh.scale.set(scale, scale, scale);
 
         // Center horizontally & base at y = 0
