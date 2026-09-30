@@ -533,8 +533,11 @@ export function executeCombatTurn(ev, onDone) {
     safeOnDone();
   };
 
-  const isCorrect = ev.isCorrect !== false && ev.type === 'attack';
-  const playerOutfit = ev.equippedSet || window.gameState?.equipped?.outfit || Player.getActiveElement() || 'default';
+  const playerOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || ev.equippedSet
+    || window.gameState?.equipped?.outfit
+    || Player.getActiveElement()
+    || 'fire';
   const isFireSet = (playerOutfit === 'fire');
   const isFullSet = (playerOutfit !== 'default' && ['thunder', 'fire', 'frost'].includes(playerOutfit));
   const selectedElement = isFullSet ? playerOutfit : null;

@@ -223,12 +223,13 @@ function setupQuestionManager() {
 function setupDevLaunch() {
   const getSelectedOutfit = () => {
     const el = document.getElementById('dev-player-outfit');
-    return el ? el.value : 'default';
+    return (el && el.value) ? el.value : (sessionStorage.getItem('selectedOutfit') || 'fire');
   };
 
   const applyOutfitToStorage = (outfit) => {
     try {
       localStorage.setItem('player_equipped', JSON.stringify({ outfit, weapon: outfit }));
+      sessionStorage.setItem('selectedOutfit', outfit);
     } catch (e) {}
   };
 

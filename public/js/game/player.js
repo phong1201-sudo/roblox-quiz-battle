@@ -120,7 +120,7 @@ export function createFallbackBlockCharacter(outfit = 'default') {
  * idle, dodge, slash, hit with robust multi-step fallback chain
  */
 export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
-  activeElement = outfit || 'default';
+  activeElement = outfit || 'fire';
   const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
   if (!currentTHREE) {
     console.error('[Player Loader] THREE not available');
@@ -138,84 +138,73 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
 
   const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
   const loader = GLTFLoaderClass ? new GLTFLoaderClass() : null;
-  const poses = ['idle', 'dodge', 'slash', 'hit'];
-
-  async function loadFirstAvailable(candidatePaths) {
-    if (!loader) return null;
-    for (const path of candidatePaths) {
-      try {
-        console.log(`[Player Loader] Trying to fetch: ${path}`);
-        const gltf = await new Promise((resolve, reject) => {
-          loader.load(
-            path,
-            (res) => {
-              console.log(`[GLTF Loaded Successfully] ${path}`);
-              resolve(res);
-            },
-            undefined,
-            (err) => {
-              console.error(`[GLTF Load FAILED] ${path}`, err);
-              reject(err);
-            }
-          );
-        });
-        return gltf.scene;
-      } catch (e) {
-        // Fallback to next candidate
-      }
-    }
-    return null;
+  if (loader && !loader.loadAsync) {
+    loader.loadAsync = function(url) {
+      return new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+    };
   }
 
-  for (const pose of poses) {
-    const candidatePaths = [
-      `/assets/character/player_${activeElement}_${pose}.glb`,
-      `/assets/character/player_${activeElement}_idle.glb`,
-      `/assets/character/player_${activeElement}.glb`,
-      `/assets/character/${activeElement}player.glb`,
-      `/assets/character/player_default_${pose}.glb`,
-      `/assets/character/player_default_idle.glb`,
-      `/assets/character/player_default.glb`,
-      `/assets/character/default_character.glb`
-    ];
+  const poseKeys = ['idle', 'dodge', 'slash', 'hit'];
 
-    let mesh = await loadFirstAvailable(candidatePaths);
+  for (const pose of poseKeys) {
+    // Primary path: specific pose file
+    const primaryUrl = `/assets/character/player_${activeElement}_${pose}.glb`;
+    // Fallback: idle pose file of the same outfit
+    const fallbackUrl = `/assets/character/player_${activeElement}_idle.glb`;
 
+    let gltf;
+    if (loader) {
+      try {
+        gltf = await loader.loadAsync(primaryUrl);
+        console.log(`[Player] Loaded ${primaryUrl}`);
+      } catch (e) {
+        console.warn(`[Player] Failed ${primaryUrl}, trying fallback ${fallbackUrl}`);
+        try {
+          gltf = await loader.loadAsync(fallbackUrl);
+          console.log(`[Player] Loaded fallback ${fallbackUrl}`);
+        } catch (err2) {
+          console.error(`[Player] Fallback failed for ${pose}`, err2);
+        }
+      }
+    }
+
+    let mesh = gltf?.scene;
     // If still null, create stylized emergency fallback avatar so player is NEVER invisible
     if (!mesh) {
-      console.error(`[Player Loader] Critical: No file found for ${activeElement} ${pose}. Creating visible block avatar.`);
+      console.warn(`[Player] Using emergency fallback block for ${activeElement} ${pose}`);
       mesh = createFallbackBlockCharacter(activeElement);
     }
 
-    // Auto-normalize bounding box to standard height = 3.6
-    const box = new currentTHREE.Box3().setFromObject(mesh);
-    const size = box.getSize(new currentTHREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    const scale = 3.6 / maxDim;
-    mesh.scale.set(scale, scale, scale);
-
-    // Center horizontally & base at y = 0
-    const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
-    const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-    const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-    const minY = scaledBox.min.y;
-    mesh.position.set(-centerX, -minY, -centerZ);
-
-    // Ensure all materials are visible
-    mesh.traverse((c) => {
-      if (c.isMesh) {
-        c.castShadow = true;
-        c.receiveShadow = true;
-        if (c.material) {
-          c.material.transparent = false;
-          c.material.opacity = 1.0;
+    if (mesh) {
+      mesh.traverse((c) => {
+        if (c.isMesh) {
+          c.castShadow = true;
+          c.receiveShadow = true;
+          if (c.material) {
+            c.material.transparent = false;
+            c.material.opacity = 1.0;
+          }
         }
-      }
-    });
+      });
 
-    mesh.visible = (pose === 'idle');
-    playerPoses[pose] = mesh;
-    playerGroup.add(mesh);
+      // Auto-normalize bounding box to standard height = 3.6
+      const box = new currentTHREE.Box3().setFromObject(mesh);
+      const size = box.getSize(new currentTHREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const scale = 3.6 / maxDim;
+      mesh.scale.set(scale, scale, scale);
+
+      // Center horizontally & base at y = 0
+      const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
+      const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+      const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+      const minY = scaledBox.min.y;
+      mesh.position.set(-centerX, -minY, -centerZ);
+
+      mesh.visible = (pose === 'idle');
+      playerPoses[pose] = mesh;
+      playerGroup.add(mesh);
+    }
   }
 
   // Set explicit initial visibility
@@ -224,7 +213,7 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
   if (playerPoses['slash']) playerPoses['slash'].visible = false;
   if (playerPoses['hit']) playerPoses['hit'].visible = false;
 
-  playerGroup.position.set(-4.5, 0.0, 0.0);
+  playerGroup.position.set(-4.5, 0, 0);
   playerGroup.rotation.y = Math.PI / 2; // Facing Boss (+X)
 
   const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);

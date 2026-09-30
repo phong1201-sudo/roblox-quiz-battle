@@ -109,8 +109,11 @@ export function startGame(gameState) {
   Arena.setArenaTheme(activeElement);
 
   // Apply player's equipped elemental set
-  const playerOutfit = gameState.equipped?.outfit || gameState.equippedSet || 'default';
-  if (playerOutfit && playerOutfit !== 'default') {
+  const playerOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || gameState.equipped?.outfit
+    || gameState.equippedSet
+    || 'fire';
+  if (playerOutfit) {
     Player.applyElementalSet(playerOutfit);
   }
 
