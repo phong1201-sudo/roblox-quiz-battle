@@ -736,7 +736,17 @@ export async function loadBossPoses(scene, element = 'thunder') {
   customBossOrigEmissives = [];
 
   const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+  const DracoLoaderClass = currentTHREE.DRACOLoader || (typeof window !== 'undefined' ? window.THREE?.DRACOLoader : null);
   const loader = GLTFLoaderClass ? new GLTFLoaderClass() : null;
+  if (loader && DracoLoaderClass) {
+    try {
+      const dracoLoader = new DracoLoaderClass();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+      loader.setDRACOLoader(dracoLoader);
+    } catch (e) {
+      console.warn('[Boss] DRACOLoader init warning:', e);
+    }
+  }
   if (loader && !loader.loadAsync) {
     loader.loadAsync = function(url) {
       return new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
@@ -748,31 +758,32 @@ export async function loadBossPoses(scene, element = 'thunder') {
   for (const pose of poseKeys) {
     const primaryUrl = `/assets/boss/boss_${el}_${pose}.glb`;
     const fallbackUrl = `/assets/boss/boss_${el}_idle.glb`;
+    const emergencyUrl = `/assets/boss/boss_thunder_idle.glb`;
 
-    let gltf;
+    let gltf = null;
     if (loader) {
       try {
         gltf = await loader.loadAsync(primaryUrl);
-        console.log(`[Boss] Loaded ${primaryUrl}`);
-      } catch (e) {
-        console.warn(`[Boss] Failed ${primaryUrl}, trying fallback ${fallbackUrl}`);
+        console.log(`[Asset Success] Loaded model: ${primaryUrl}`);
+      } catch (err) {
+        console.error(`[Asset Error] FAILED loading ${primaryUrl}:`, err.message || err);
         try {
           gltf = await loader.loadAsync(fallbackUrl);
-          console.log(`[Boss] Loaded fallback ${fallbackUrl}`);
+          console.log(`[Asset Success] Loaded fallback model: ${fallbackUrl}`);
         } catch (err2) {
-          console.error(`[Boss] Fallback failed for ${pose}`, err2);
+          console.error(`[Asset Error] FAILED loading fallback ${fallbackUrl}:`, err2.message || err2);
+          try {
+            gltf = await loader.loadAsync(emergencyUrl);
+            console.log(`[Asset Success] Loaded emergency model: ${emergencyUrl}`);
+          } catch (err3) {
+            console.error(`[Asset Error] FAILED loading emergency ${emergencyUrl}:`, err3.message || err3);
+          }
         }
       }
     }
 
-    let mesh = gltf?.scene;
-    // If still null, generate stylized emergency fallback boss
-    if (!mesh) {
-      console.warn(`[Boss] Using emergency fallback block for ${el} ${pose}`);
-      mesh = createFallbackBlockBoss(el);
-    }
-
-    if (mesh) {
+    if (gltf && gltf.scene) {
+      const mesh = gltf.scene;
       mesh.traverse((c) => {
         if (c.isMesh) {
           c.castShadow = true;
@@ -809,7 +820,7 @@ export async function loadBossPoses(scene, element = 'thunder') {
     }
   }
 
-  // Fallbacks: if any pose is missing, fallback to idle
+  // Fallbacks: if any pose is missing, fallback to idle GLB mesh
   if (bossPoses.idle) {
     for (const p of BOSS_POSE_NAMES) {
       if (!bossPoses[p]) {

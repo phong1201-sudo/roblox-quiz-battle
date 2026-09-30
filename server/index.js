@@ -16,6 +16,7 @@ const io     = new Server(server);
 const PORT   = process.env.PORT || 3000;
 
 // ── Static / middleware ───────────────────────────────────────────────────────
+const publicDir = path.resolve(__dirname, '../public');
 const staticOptions = {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.glb')) {
@@ -25,47 +26,23 @@ const staticOptions = {
     }
   }
 };
-// Case-insensitive asset serving middleware to prevent Linux/Render 404s on folder case
-app.use(['/assets', '/public/assets'], (req, res, next) => {
-  const reqSubPath = decodeURIComponent(req.path).replace(/^\//, '');
-  const basePath = path.join(__dirname, '../public/assets');
-  const directPath = path.join(basePath, reqSubPath);
 
-  if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
-    return res.sendFile(directPath, staticOptions);
-  }
+app.use('/assets', express.static(path.join(publicDir, 'assets'), staticOptions));
+app.use('/assets/character', express.static(path.join(publicDir, 'assets/character'), staticOptions));
+app.use('/assets/boss', express.static(path.join(publicDir, 'assets/boss'), staticOptions));
+app.use('/assets/Boss', express.static(path.join(publicDir, 'assets/boss'), staticOptions));
+app.use(express.static(publicDir, staticOptions));
 
-  // Traverse and resolve case-insensitively across nested subdirectories
-  const segments = reqSubPath.split(/[/\\]/);
-  let cur = basePath;
-  let ok = true;
-  for (const seg of segments) {
-    if (!seg) continue;
-    if (!fs.existsSync(cur) || !fs.statSync(cur).isDirectory()) {
-      ok = false;
-      break;
-    }
-    const children = fs.readdirSync(cur);
-    const match = children.find(c => c.toLowerCase() === seg.toLowerCase());
-    if (match) {
-      cur = path.join(cur, match);
-    } else {
-      ok = false;
-      break;
-    }
-  }
-
-  if (ok && fs.existsSync(cur) && fs.statSync(cur).isFile()) {
-    return res.sendFile(cur, staticOptions);
-  }
-  next();
+// Direct diagnostic route to verify disk contents on Render / server
+app.get('/api/debug-assets', (req, res) => {
+  const charDir = path.join(publicDir, 'assets/character');
+  const bossDir = path.join(publicDir, 'assets/boss');
+  res.json({
+    publicDir,
+    characterFiles: fs.existsSync(charDir) ? fs.readdirSync(charDir) : 'DIR_NOT_FOUND',
+    bossFiles: fs.existsSync(bossDir) ? fs.readdirSync(bossDir) : 'DIR_NOT_FOUND'
+  });
 });
-
-app.use(express.static(path.join(__dirname, '../public'), staticOptions));
-app.use('/assets', express.static(path.join(__dirname, '../public/assets'), staticOptions));
-app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
-app.use('/assets/boss', express.static(path.join(__dirname, '../public/assets/boss'), staticOptions));
-app.use('/assets/Boss', express.static(path.join(__dirname, '../public/assets/boss'), staticOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

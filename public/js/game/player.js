@@ -137,7 +137,17 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
   }
 
   const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+  const DracoLoaderClass = currentTHREE.DRACOLoader || (typeof window !== 'undefined' ? window.THREE?.DRACOLoader : null);
   const loader = GLTFLoaderClass ? new GLTFLoaderClass() : null;
+  if (loader && DracoLoaderClass) {
+    try {
+      const dracoLoader = new DracoLoaderClass();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+      loader.setDRACOLoader(dracoLoader);
+    } catch (e) {
+      console.warn('[Player] DRACOLoader init warning:', e);
+    }
+  }
   if (loader && !loader.loadAsync) {
     loader.loadAsync = function(url) {
       return new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
@@ -151,31 +161,32 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
     const primaryUrl = `/assets/character/player_${activeElement}_${pose}.glb`;
     // Fallback: idle pose file of the same outfit
     const fallbackUrl = `/assets/character/player_${activeElement}_idle.glb`;
+    const emergencyUrl = `/assets/character/player_fire_idle.glb`;
 
-    let gltf;
+    let gltf = null;
     if (loader) {
       try {
         gltf = await loader.loadAsync(primaryUrl);
-        console.log(`[Player] Loaded ${primaryUrl}`);
-      } catch (e) {
-        console.warn(`[Player] Failed ${primaryUrl}, trying fallback ${fallbackUrl}`);
+        console.log(`[Asset Success] Loaded model: ${primaryUrl}`);
+      } catch (err) {
+        console.error(`[Asset Error] FAILED loading ${primaryUrl}:`, err.message || err);
         try {
           gltf = await loader.loadAsync(fallbackUrl);
-          console.log(`[Player] Loaded fallback ${fallbackUrl}`);
+          console.log(`[Asset Success] Loaded fallback model: ${fallbackUrl}`);
         } catch (err2) {
-          console.error(`[Player] Fallback failed for ${pose}`, err2);
+          console.error(`[Asset Error] FAILED loading fallback ${fallbackUrl}:`, err2.message || err2);
+          try {
+            gltf = await loader.loadAsync(emergencyUrl);
+            console.log(`[Asset Success] Loaded emergency model: ${emergencyUrl}`);
+          } catch (err3) {
+            console.error(`[Asset Error] FAILED loading emergency ${emergencyUrl}:`, err3.message || err3);
+          }
         }
       }
     }
 
-    let mesh = gltf?.scene;
-    // If still null, create stylized emergency fallback avatar so player is NEVER invisible
-    if (!mesh) {
-      console.warn(`[Player] Using emergency fallback block for ${activeElement} ${pose}`);
-      mesh = createFallbackBlockCharacter(activeElement);
-    }
-
-    if (mesh) {
+    if (gltf && gltf.scene) {
+      const mesh = gltf.scene;
       mesh.traverse((c) => {
         if (c.isMesh) {
           c.castShadow = true;
@@ -204,6 +215,15 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
       mesh.visible = (pose === 'idle');
       playerPoses[pose] = mesh;
       playerGroup.add(mesh);
+    }
+  }
+
+  // Fallbacks: if any pose is missing, fallback to idle GLB mesh
+  if (playerPoses.idle) {
+    for (const p of poseKeys) {
+      if (!playerPoses[p]) {
+        playerPoses[p] = playerPoses.idle;
+      }
     }
   }
 
