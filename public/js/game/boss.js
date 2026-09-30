@@ -94,6 +94,25 @@ export function getBossPose() {
   return currentBossPose;
 }
 
+let bossAngryAura = null;
+
+export function startBossSuperSaiyanAura() {
+  if (bossAngryAura) {
+    bossAngryAura.dispose();
+    bossAngryAura = null;
+  }
+  if (bossGroup && Effects.createBossSuperSaiyanAura) {
+    bossAngryAura = Effects.createBossSuperSaiyanAura(bossGroup, currentBossData?.element || 'thunder');
+  }
+}
+
+export function stopBossSuperSaiyanAura() {
+  if (bossAngryAura) {
+    bossAngryAura.dispose();
+    bossAngryAura = null;
+  }
+}
+
 export function setBossPose(poseName = 'idle') {
   currentBossPose = poseName;
   const targetMesh = bossPoses[poseName] || bossPoses.idle;
@@ -102,6 +121,14 @@ export function setBossPose(poseName = 'idle') {
     if (mesh) {
       mesh.visible = (mesh === targetMesh);
     }
+  }
+
+  // The aura flares up instantly when setBossPose('angry') is triggered
+  // and smoothly dissipates when transitioning to attack or idle.
+  if (poseName === 'angry') {
+    startBossSuperSaiyanAura();
+  } else {
+    stopBossSuperSaiyanAura();
   }
 }
 
@@ -795,7 +822,8 @@ export async function loadBossPoses(scene, element = 'thunder') {
         }
       });
 
-      // Target height 4.5 for imposing boss scale
+      // Compute precise bounding box
+      mesh.updateMatrixWorld(true);
       const box = new currentTHREE.Box3().setFromObject(mesh);
       const size = box.getSize(new currentTHREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
@@ -803,15 +831,16 @@ export async function loadBossPoses(scene, element = 'thunder') {
       const scale = targetHeight / maxDim;
       mesh.scale.set(scale, scale, scale);
 
-      // Center horizontally and align base at y = 0
+      // Recalculate bounding box after scaling to clamp bottom vertex exactly to floor
+      mesh.updateMatrixWorld(true);
       const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
-      const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-      const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-      const minY = scaledBox.min.y;
+      // Shift mesh downward so the lowest point rests exactly at y = 0
+      mesh.position.y = -scaledBox.min.y;
+      mesh.position.x = 0;
+      mesh.position.z = 0;
 
       const poseGroup = new currentTHREE.Group();
       poseGroup.name = `BossPose_${pose}`;
-      mesh.position.set(-centerX, -minY, -centerZ);
       poseGroup.add(mesh);
 
       poseGroup.visible = (pose === 'idle');
@@ -914,6 +943,10 @@ export function updateBoss(deltaTime) {
   if (!bossGroup) return;
   TWEEN.update();
   idleTime += deltaTime;
+
+  if (bossAngryAura && typeof bossAngryAura.update === 'function') {
+    bossAngryAura.update(deltaTime);
+  }
 
   // Elemental idle: accent parts pulse with emissive (procedural)
   if (!isCustomBoss && currentBossData.element && Math.floor(idleTime*10)%2===0) {
@@ -1429,6 +1462,7 @@ export function resetBossState() {
   currentHpPercent = 100;
   defeatCompleteCallbacks = [];
   isBossPositionOverridden = false;
+  stopBossSuperSaiyanAura();
   if (bossArmPivot) bossArmPivot.rotation.set(0, 0, 0);
   if (bossArmRightPivot) bossArmRightPivot.rotation.set(-Math.PI / 4, 0, 0);
   if (bossArmLeftPivot) bossArmLeftPivot.rotation.set(0, 0, 0);
@@ -1450,6 +1484,7 @@ export function resetBossState() {
 }
 
 export function removeBoss(scene) {
+  stopBossSuperSaiyanAura();
   if (bossGroup&&scene) scene.remove(bossGroup);
   if (elementalLightRef&&scene) scene.remove(elementalLightRef);
   bossGroup=null; bossScene=null; elementalLightRef=null;

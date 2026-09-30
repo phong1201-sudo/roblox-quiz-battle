@@ -119,8 +119,8 @@ export function createFallbackBlockCharacter(outfit = 'default') {
  * Loads the 4 distinct pose meshes directly for the active outfit:
  * idle, dodge, slash, hit with robust multi-step fallback chain
  */
-export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
-  activeElement = outfit || 'fire';
+export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
+  activeElement = outfit || 'default';
   const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
   if (!currentTHREE) {
     console.error('[Player Loader] THREE not available');
@@ -198,19 +198,22 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
         }
       });
 
-      // Auto-normalize bounding box to standard height = 3.6
+      // Compute precise bounding box
+      mesh.updateMatrixWorld(true);
       const box = new currentTHREE.Box3().setFromObject(mesh);
       const size = box.getSize(new currentTHREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const scale = 3.6 / maxDim;
+      const targetHeight = 3.6;
+      const scale = targetHeight / maxDim;
       mesh.scale.set(scale, scale, scale);
 
-      // Center horizontally & base at y = 0
+      // Recalculate bounding box after scaling to clamp bottom vertex exactly to floor
+      mesh.updateMatrixWorld(true);
       const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
-      const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-      const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-      const minY = scaledBox.min.y;
-      mesh.position.set(-centerX, -minY, -centerZ);
+      // Shift mesh downward so the lowest point rests exactly at y = 0
+      mesh.position.y = -scaledBox.min.y;
+      mesh.position.x = 0;
+      mesh.position.z = 0;
 
       mesh.visible = (pose === 'idle');
       playerPoses[pose] = mesh;

@@ -483,7 +483,10 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
           Effects.triggerShake(0.25, 0.25);
           Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-2 HP', '#ffee44', context.isMilestone ? 36 : 28);
 
-          // 4. Boss takes hit: setBossPose('hit') -> hold 300ms -> setBossPose('angry') -> setBossPose('idle')
+          // Map the status text and floating damage particles strictly to the active stage/boss element
+          Effects.triggerElementalStatus(BOSS_VFX_POS, bossElement, context.hit1Label);
+
+          // 4. Boss takes hit: setBossPose('hit') -> hold 300ms -> setBossPose('angry') -> hold 1100ms -> setBossPose('idle')
           Boss.setBossPose('hit');
           Boss.playBossHurt();
 
@@ -510,7 +513,7 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
             Boss.setBossPose('angry');
             setTimeout(() => {
               Boss.setBossPose('idle');
-            }, 300);
+            }, 1100);
           }, 300);
 
           // 5. Leap back: Tween playerGroup.position back to (-4.5, 0, 0) in 400ms -> setPlayerPose('idle')
@@ -558,7 +561,7 @@ export function executeCombatTurn(ev, onDone) {
     || ev.equippedSet
     || window.gameState?.equipped?.outfit
     || Player.getActiveElement()
-    || 'fire';
+    || 'default';
   const isFireSet = (playerOutfit === 'fire');
   const isFullSet = (playerOutfit !== 'default' && ['thunder', 'fire', 'frost'].includes(playerOutfit));
   const selectedElement = isFullSet ? playerOutfit : null;
@@ -668,17 +671,21 @@ export function executeCombatTurn(ev, onDone) {
     const playerObj = Player.getPlayerObject();
     Boss.setBossPositionOverride(true);
 
-    // 1. Boss: setBossPose('attack'), lunges forward slightly to (3.0, 0, 0) in 300ms while casting projectile
-    Boss.setBossPose('attack');
+    // 1. Boss: setBossPose('angry') Super Saiyan roar for 1100ms
+    Boss.setBossPose('angry');
 
-    if (bossObj && typeof TWEEN !== 'undefined') {
-      new TWEEN.Tween(bossObj.position)
-        .to({ x: 3.0, y: 0.0, z: 0.0 }, 300)
-        .easing(TWEEN.Easing.Quadratic.Out)
-        .start();
-    }
+    setTimeout(() => {
+      // 2. Boss: setBossPose('attack'), lunges forward slightly to (3.0, 0, 0) in 300ms while casting projectile
+      Boss.setBossPose('attack');
 
-    Boss.playBossAttack(bossElement, () => {
+      if (bossObj && typeof TWEEN !== 'undefined') {
+        new TWEEN.Tween(bossObj.position)
+          .to({ x: 3.0, y: 0.0, z: 0.0 }, 300)
+          .easing(TWEEN.Easing.Quadratic.Out)
+          .start();
+      }
+
+      Boss.playBossAttack(bossElement, () => {
       // 2. As spell hits player:
       if (isBossMilestone) {
         setCombatTimeScale(1.0);
@@ -744,7 +751,8 @@ export function executeCombatTurn(ev, onDone) {
         }
       }, 500);
     }, () => {});
-  };
+  }, 1100);
+};
 
   if (isCorrect) {
     // ═════════════════════════════════════════════════════════════════════════

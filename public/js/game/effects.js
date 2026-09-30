@@ -62,12 +62,451 @@ export function screenFlash(color, opacity) {
 }
 
 // ── Popup text banner ─────────────────────────────────────────────────────────
-function showBanner(text, color, bg) {
+export function showBanner(text, color, bg) {
+  const existing = document.getElementById('elemental-status-banner');
+  if (existing) existing.remove();
+
   const b = document.createElement('div');
+  b.id = 'elemental-status-banner';
   b.textContent = text;
-  b.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-family:'Press Start 2P',monospace;font-size:28px;color:${color};background:${bg};padding:10px 22px;border-radius:8px;pointer-events:none;z-index:9100;text-shadow:0 0 12px ${color};animation:damageFloat 1.6s ease-out forwards;`;
+  b.style.cssText = `position:fixed;top:28%;left:50%;transform:translate(-50%,-50%);font-family:'Press Start 2P',monospace;font-size:22px;color:${color};background:${bg};padding:12px 26px;border:3px solid ${color};border-radius:6px;pointer-events:none;z-index:9100;text-shadow:0 0 16px ${color}, 2px 2px 0 #000;box-shadow:0 0 25px ${color};animation:damageFloat 1.4s ease-out forwards;letter-spacing:2px;`;
   document.body.appendChild(b);
-  setTimeout(()=>b.remove(),1700);
+  setTimeout(()=>b.remove(),1500);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🌟 ELEMENTAL STATUS EFFECT (MATCHING ACTIVE STAGE/BOSS ELEMENT)
+// ─────────────────────────────────────────────────────────────────────────────
+export function triggerElementalStatus(bossPosition, stageElement = 'thunder', damageLabel = null) {
+  if (!sceneRef) return;
+  const norm = (stageElement || 'thunder').toLowerCase();
+
+  if (norm === 'fire') {
+    // Fire Stage: Banner BURNING! with blazing fire embers and orange explosion
+    showBanner('🔥 BURNING!', '#ff6600', 'rgba(80,10,0,0.88)');
+    screenFlash('rgba(255,80,0,0.35)', 0.35);
+    triggerShake(0.35, 0.35);
+
+    // Blazing fire embers & orange explosion burst
+    const fireCols = [0xff2200, 0xff5500, 0xffaa00, 0xffdd00];
+    for (let i = 0; i < 35; i++) {
+      const s = 0.15 + Math.random() * 0.3;
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(s, s * 1.8, s),
+        new THREE.MeshBasicMaterial({ color: fireCols[Math.floor(Math.random() * fireCols.length)] })
+      );
+      m.position.copy(bossPosition);
+      m.position.x += (Math.random() - 0.5) * 2.2;
+      m.position.y += Math.random() * 2.0;
+      m.position.z += (Math.random() - 0.5) * 1.5;
+      sceneRef.add(m);
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 7.0;
+      const vy = 3.5 + Math.random() * 8.0;
+      particles.push({
+        mesh: m,
+        velocity: new THREE.Vector3(Math.cos(angle) * speed, vy, Math.sin(angle) * speed * 0.5),
+        life: 0.75,
+        maxLife: 0.75,
+      });
+    }
+
+  } else if (norm === 'frost' || norm === 'ice') {
+    // Frost Stage: Banner FROSTBITE! with freezing ice shards and cyan smoke
+    showBanner('❄️ FROSTBITE!', '#00e5ff', 'rgba(0,30,60,0.9)');
+    screenFlash('rgba(180,240,255,0.4)', 0.4);
+    triggerShake(0.35, 0.35);
+
+    // Freezing ice shards & cyan cold mist
+    const frostCols = [0x00e5ff, 0x88ddff, 0xcceeFF, 0xffffff];
+    for (let i = 0; i < 30; i++) {
+      const isShard = Math.random() > 0.4;
+      const geo = isShard
+        ? new THREE.ConeGeometry(0.12 + Math.random() * 0.18, 0.6 + Math.random() * 0.8, 4)
+        : new THREE.BoxGeometry(0.2, 0.2, 0.2);
+      const m = new THREE.Mesh(
+        geo,
+        new THREE.MeshBasicMaterial({
+          color: frostCols[Math.floor(Math.random() * frostCols.length)],
+          transparent: true,
+          opacity: 0.85,
+        })
+      );
+      m.position.copy(bossPosition);
+      m.position.x += (Math.random() - 0.5) * 2.0;
+      m.position.y += Math.random() * 2.2;
+      m.position.z += (Math.random() - 0.5) * 1.2;
+      sceneRef.add(m);
+
+      const angle = Math.random() * Math.PI * 2;
+      const sp = 2.0 + Math.random() * 8.0;
+      particles.push({
+        mesh: m,
+        velocity: new THREE.Vector3(Math.cos(angle) * sp, (Math.random() - 0.2) * 5.0, Math.sin(angle) * sp * 0.5),
+        life: 0.7,
+        maxLife: 0.7,
+      });
+    }
+
+  } else if (norm === 'thunder' || norm === 'lightning') {
+    // Thunder Stage: Banner SHOCKED! with electric spark bursts and neon blue arcs
+    showBanner('⚡ SHOCKED!', '#00ffff', 'rgba(10,20,60,0.9)');
+    screenFlash('rgba(200,245,255,0.45)', 0.45);
+    triggerShake(0.4, 0.4);
+
+    // Electric spark bursts & neon blue lightning lines
+    const thunderCols = [0x00ffff, 0xffff00, 0x88ffff, 0xffffff];
+    for (let i = 0; i < 35; i++) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16, 0.16, 0.16),
+        new THREE.MeshBasicMaterial({ color: thunderCols[Math.floor(Math.random() * thunderCols.length)] })
+      );
+      m.position.copy(bossPosition);
+      m.position.x += (Math.random() - 0.5) * 2.0;
+      m.position.y += Math.random() * 2.5;
+      m.position.z += (Math.random() - 0.5) * 1.2;
+      sceneRef.add(m);
+
+      const angle = Math.random() * Math.PI * 2;
+      const sp = 4.0 + Math.random() * 10.0;
+      particles.push({
+        mesh: m,
+        velocity: new THREE.Vector3(Math.cos(angle) * sp, Math.random() * 7.0 + 1.0, Math.sin(angle) * sp * 0.4),
+        life: 0.65,
+        maxLife: 0.65,
+      });
+    }
+
+  } else {
+    // Default / Normal: Standard CRITICAL HIT! with neutral impact stars
+    showBanner('💥 CRITICAL HIT!', '#ffd700', 'rgba(30,30,40,0.88)');
+    triggerShake(0.25, 0.25);
+
+    const neutralCols = [0xffd700, 0xffffff, 0xffaa00];
+    for (let i = 0; i < 25; i++) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.18, 0.18),
+        new THREE.MeshBasicMaterial({ color: neutralCols[Math.floor(Math.random() * neutralCols.length)] })
+      );
+      m.position.copy(bossPosition);
+      m.position.x += (Math.random() - 0.5) * 1.8;
+      m.position.y += Math.random() * 1.8;
+      m.position.z += (Math.random() - 0.5) * 1.0;
+      sceneRef.add(m);
+
+      const angle = Math.random() * Math.PI * 2;
+      const sp = 3.0 + Math.random() * 6.0;
+      particles.push({
+        mesh: m,
+        velocity: new THREE.Vector3(Math.cos(angle) * sp, Math.random() * 5.0 + 1.0, Math.sin(angle) * sp * 0.5),
+        life: 0.55,
+        maxLife: 0.55,
+      });
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚡ BOSS "SUPER SAIYAN" ANGRY AURA & ROAR
+// ─────────────────────────────────────────────────────────────────────────────
+export function createBossSuperSaiyanAura(bossGroup, element = 'thunder') {
+  if (!sceneRef || !bossGroup) return null;
+  const norm = (element || 'thunder').toLowerCase();
+
+  const auraGroup = new THREE.Group();
+  auraGroup.name = 'BossSuperSaiyanAura';
+
+  // Subtle sustained rumble during roar (1.1s)
+  triggerShake(0.18, 1.1);
+
+  let auraLight = null;
+  let particleMesh = null;
+  let particleData = [];
+  let lightningMesh = null;
+  let pillarMeshes = [];
+  let clock = 0;
+
+  if (norm === 'fire') {
+    // 🔥 Fire Boss: Fiery pillars and rising combustion flame particles swirling up around body
+    auraLight = new THREE.PointLight(0xff3300, 2.8, 12);
+    auraLight.position.set(0, 2.5, 0);
+    auraGroup.add(auraLight);
+
+    // 4 fiery pillars around boss
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const radius = 2.2;
+      const geo = new THREE.CylinderGeometry(0.22, 0.4, 5.0, 8, 1, true);
+      const mat = new THREE.MeshBasicMaterial({
+        color: (i % 2 === 0) ? 0xff3300 : 0xff7700,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const pillar = new THREE.Mesh(geo, mat);
+      pillar.position.set(Math.cos(angle) * radius, 2.5, Math.sin(angle) * radius);
+      auraGroup.add(pillar);
+      pillarMeshes.push({ mesh: pillar, baseAngle: angle, radius });
+    }
+
+    // Swirling combustion flame particles
+    const count = 45;
+    const geom = new THREE.BufferGeometry();
+    const posArray = new Float32Array(count * 3);
+    const colArray = new Float32Array(count * 3);
+    const fireCols = [new THREE.Color(0xff2200), new THREE.Color(0xff6600), new THREE.Color(0xffaa00)];
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 1.0 + Math.random() * 1.8;
+      const y = Math.random() * 4.5;
+      posArray[i * 3]     = Math.cos(angle) * r;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = Math.sin(angle) * r;
+
+      const c = fireCols[Math.floor(Math.random() * fireCols.length)];
+      colArray[i * 3]     = c.r;
+      colArray[i * 3 + 1] = c.g;
+      colArray[i * 3 + 2] = c.b;
+
+      particleData.push({
+        angle,
+        r,
+        y,
+        vy: 3.0 + Math.random() * 3.5,
+        rotSpeed: 3.5 + Math.random() * 2.5,
+      });
+    }
+
+    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.35,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    particleMesh = new THREE.Points(geom, pMat);
+    auraGroup.add(particleMesh);
+
+  } else if (norm === 'frost' || norm === 'ice') {
+    // ❄️ Frost Boss: Violent swirling blizzard vortex with cold white/cyan mist & radiating sharp icicles
+    auraLight = new THREE.PointLight(0x00e5ff, 2.8, 12);
+    auraLight.position.set(0, 2.5, 0);
+    auraGroup.add(auraLight);
+
+    // Radiating sharp icicles
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const radius = 2.0;
+      const geo = new THREE.ConeGeometry(0.18, 1.8, 4);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0x88eeff,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const icicle = new THREE.Mesh(geo, mat);
+      icicle.position.set(Math.cos(angle) * radius, 1.2 + (i % 2) * 1.5, Math.sin(angle) * radius);
+      icicle.rotation.z = Math.cos(angle) * 0.5;
+      icicle.rotation.x = Math.sin(angle) * 0.5;
+      auraGroup.add(icicle);
+      pillarMeshes.push({ mesh: icicle, baseAngle: angle, radius });
+    }
+
+    // Swirling blizzard vortex
+    const count = 45;
+    const geom = new THREE.BufferGeometry();
+    const posArray = new Float32Array(count * 3);
+    const colArray = new Float32Array(count * 3);
+    const frostCols = [new THREE.Color(0x00e5ff), new THREE.Color(0x88ddff), new THREE.Color(0xffffff)];
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.8 + Math.random() * 2.2;
+      const y = Math.random() * 4.5;
+      posArray[i * 3]     = Math.cos(angle) * r;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = Math.sin(angle) * r;
+
+      const c = frostCols[Math.floor(Math.random() * frostCols.length)];
+      colArray[i * 3]     = c.r;
+      colArray[i * 3 + 1] = c.g;
+      colArray[i * 3 + 2] = c.b;
+
+      particleData.push({
+        angle,
+        r,
+        y,
+        vy: 2.2 + Math.random() * 3.0,
+        rotSpeed: 5.0 + Math.random() * 3.0,
+      });
+    }
+
+    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.32,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    particleMesh = new THREE.Points(geom, pMat);
+    auraGroup.add(particleMesh);
+
+  } else {
+    // ⚡ Thunder Boss: Chaotic electric bolts crackling around entire body with rapid flashing point lights (intensity 3.0)
+    auraLight = new THREE.PointLight(0x00ffff, 3.0, 14);
+    auraLight.position.set(0, 2.5, 0);
+    auraGroup.add(auraLight);
+
+    // Chaotic electric bolt line segments
+    const segCount = 16;
+    const lineGeom = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(segCount * 2 * 3);
+    lineGeom.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0x88ffff,
+      linewidth: 2,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    lightningMesh = new THREE.LineSegments(lineGeom, lineMat);
+    auraGroup.add(lightningMesh);
+
+    // Crackling sparks
+    const count = 40;
+    const geom = new THREE.BufferGeometry();
+    const posArray = new Float32Array(count * 3);
+    const colArray = new Float32Array(count * 3);
+    const thunderCols = [new THREE.Color(0x00ffff), new THREE.Color(0xffffaa), new THREE.Color(0x00e5ff)];
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.6 + Math.random() * 1.8;
+      const y = Math.random() * 4.5;
+      posArray[i * 3]     = Math.cos(angle) * r;
+      posArray[i * 3 + 1] = y;
+      posArray[i * 3 + 2] = Math.sin(angle) * r;
+
+      const c = thunderCols[Math.floor(Math.random() * thunderCols.length)];
+      colArray[i * 3]     = c.r;
+      colArray[i * 3 + 1] = c.g;
+      colArray[i * 3 + 2] = c.b;
+
+      particleData.push({
+        angle,
+        r,
+        y,
+        vy: 3.5 + Math.random() * 4.0,
+        rotSpeed: 6.0 + Math.random() * 4.0,
+      });
+    }
+
+    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.28,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    particleMesh = new THREE.Points(geom, pMat);
+    auraGroup.add(particleMesh);
+  }
+
+  bossGroup.add(auraGroup);
+
+  return {
+    group: auraGroup,
+    update: (dt) => {
+      clock += dt;
+      // Pulse light
+      if (auraLight) {
+        if (norm === 'thunder') {
+          // Rapid strobe
+          auraLight.intensity = (Math.random() > 0.3) ? 3.0 : 1.2;
+        } else {
+          auraLight.intensity = 2.4 + Math.sin(clock * 10) * 0.6;
+        }
+      }
+
+      // Rotate & wobble pillars
+      pillarMeshes.forEach((p, idx) => {
+        p.baseAngle += dt * 1.8;
+        p.mesh.position.x = Math.cos(p.baseAngle) * p.radius;
+        p.mesh.position.z = Math.sin(p.baseAngle) * p.radius;
+        p.mesh.rotation.y += dt * 2.5;
+      });
+
+      // Update swirling particles
+      if (particleMesh) {
+        const pos = particleMesh.geometry.attributes.position.array;
+        for (let i = 0; i < particleData.length; i++) {
+          const d = particleData[i];
+          d.angle += d.rotSpeed * dt;
+          d.y += d.vy * dt;
+          if (d.y > 4.8) {
+            d.y = 0.2 + Math.random() * 0.4;
+          }
+          pos[i * 3]     = Math.cos(d.angle) * d.r;
+          pos[i * 3 + 1] = d.y;
+          pos[i * 3 + 2] = Math.sin(d.angle) * d.r;
+        }
+        particleMesh.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Chaotic lightning lines for thunder
+      if (lightningMesh) {
+        const lpos = lightningMesh.geometry.attributes.position.array;
+        const segCount = lpos.length / 6;
+        for (let i = 0; i < segCount; i++) {
+          const startR = 0.8 + Math.random() * 1.0;
+          const a1 = Math.random() * Math.PI * 2;
+          const y1 = Math.random() * 4.2;
+          const a2 = a1 + (Math.random() - 0.5) * 1.2;
+          const y2 = y1 + (Math.random() - 0.5) * 1.5;
+          const endR = 0.8 + Math.random() * 1.2;
+
+          lpos[i * 6]     = Math.cos(a1) * startR;
+          lpos[i * 6 + 1] = y1;
+          lpos[i * 6 + 2] = Math.sin(a1) * startR;
+
+          lpos[i * 6 + 3] = Math.cos(a2) * endR;
+          lpos[i * 6 + 4] = y2;
+          lpos[i * 6 + 5] = Math.sin(a2) * endR;
+        }
+        lightningMesh.geometry.attributes.position.needsUpdate = true;
+      }
+    },
+    dispose: () => {
+      if (auraGroup.parent) {
+        auraGroup.parent.remove(auraGroup);
+      }
+      auraGroup.traverse((c) => {
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) {
+          if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+          else c.material.dispose();
+        }
+      });
+    }
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,6 +561,7 @@ export function triggerLightningSlash(bossPosition, damageText) {
   });
 
   triggerShake(0.65, 0.55);
+  showBanner('⚡ SHOCKED!', '#00ffff', 'rgba(10,20,60,0.9)');
   const dp=bossPosition.clone(); dp.y+=4;
   spawnDamageNumber(dp, damageText||'⚡ -2','#00ffff',32);
 }
@@ -156,7 +596,7 @@ export function triggerFireBurst(bossPosition, damageText) {
   particles.push({mesh:ring, life:0.6, maxLife:0.6, isRing:true});
 
   triggerShake(0.45, 0.45);
-  showBanner('🔥 BURNING!', '#ff8800', 'rgba(80,10,0,0.85)');
+  showBanner('🔥 BURNING!', '#ff6600', 'rgba(80,10,0,0.88)');
   const dp = bossPosition.clone(); dp.y += 5;
   spawnDamageNumber(dp, damageText||'🔥 -2', '#ff6600', 30);
 }
@@ -205,9 +645,9 @@ export function triggerFrostShatter(bossPosition, damageText) {
   particles.push({mesh:ring, life:0.7, maxLife:0.7, isRing:true});
 
   triggerShake(0.35, 0.4);
-  showBanner('❄️ FROZEN!', '#88ddff', 'rgba(0,20,50,0.9)');
+  showBanner('❄️ FROSTBITE!', '#00e5ff', 'rgba(0,30,60,0.9)');
   const dp = bossPosition.clone(); dp.y += 5;
-  spawnDamageNumber(dp, damageText||'❄️ -2', '#88ddff', 30);
+  spawnDamageNumber(dp, damageText||'❄️ -2', '#00e5ff', 30);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
