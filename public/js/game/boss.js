@@ -79,6 +79,31 @@ let bossArmRightPivot = null;
 let customBossBone = null;
 let defeatCompleteCallbacks = [];
 
+// Multi-Mesh Pose Switching State for Boss
+const BOSS_POSE_NAMES = ['idle', 'angry', 'attack', 'hit'];
+let currentBossPose = 'idle';
+const bossPoseMeshes = {
+  idle: null,
+  angry: null,
+  attack: null,
+  hit: null
+};
+
+export function getBossPose() {
+  return currentBossPose;
+}
+
+export function setBossPose(poseName = 'idle') {
+  currentBossPose = poseName;
+  const targetMesh = bossPoseMeshes[poseName] || bossPoseMeshes.idle;
+  for (const name of BOSS_POSE_NAMES) {
+    const mesh = bossPoseMeshes[name];
+    if (mesh) {
+      mesh.visible = (mesh === targetMesh);
+    }
+  }
+}
+
 // Universal Procedural Boss Arm Pivot & Compound Limb Hierarchy
 export let bossCombatArmCompound = null;
 export let bossArmPivot = null;
@@ -604,87 +629,101 @@ function _checkImageExists(el) {
 async function _loadCustomBoss(el) {
   if (!el || !bossGroup) return;
 
-  // 1. Attempt Native 3D GLB/GLTF Boss permanently uploaded to /assets/character/
-  const candidateUrls = [
-    `/assets/character/boss_${el}.glb`,
-    `/assets/characters/boss_${el}.glb`,
-    `/assets/character/${el === 'fire' ? 'Fire' : el === 'frost' ? 'Ice' : 'Lightning'}%20boss.glb`,
-    `/assets/models/boss_${el}.glb`
-  ];
-
-  let gltf = null;
-  for (const url of candidateUrls) {
-    gltf = await _loadGLTF(url);
-    if (gltf) break;
+  // Reset boss pose meshes
+  for (const p of BOSS_POSE_NAMES) {
+    bossPoseMeshes[p] = null;
   }
 
-  if (gltf && gltf.scene && bossGroup) {
+  customBossRoot = new THREE.Group();
+  customBossRoot.name = 'CustomBossRoot';
+  customBossMaterials = [];
+  customBossOrigColors = [];
+  customBossOrigEmissives = [];
+
+  let loadedCount = 0;
+
+  for (const pose of BOSS_POSE_NAMES) {
+    const candidateUrls = [
+      `/assets/boss/boss_${el}_${pose}.glb`,
+      `/assets/Boss/boss_${el}_${pose}.glb`,
+      `/assets/boss/boss_${el}_idle.glb`,
+      `/assets/Boss/boss_${el}_idle.glb`,
+      `/assets/character/boss_${el}.glb`
+    ];
+
+    let gltf = null;
+    for (const url of candidateUrls) {
+      gltf = await _loadGLTF(url);
+      if (gltf) break;
+    }
+
+    if (gltf && gltf.scene) {
+      const model = gltf.scene.clone(true);
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.visible = true;
+          child.castShadow = true;
+          child.receiveShadow = true;
+          if (child.material) {
+            child.material.transparent = false;
+            child.material.opacity = 1.0;
+            child.material.depthWrite = true;
+            customBossMaterials.push(child.material);
+            if (child.material.color) customBossOrigColors.push(child.material.color.getHex());
+            if (child.material.emissive) customBossOrigEmissives.push(child.material.emissive.getHex());
+          }
+        }
+      });
+
+      // Calculate safe bounding box
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+
+      // Target height 4.2 for imposing boss scale
+      const targetHeight = 4.2;
+      const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
+      model.scale.set(scale, scale, scale);
+
+      // Center horizontally and align base at y = 0
+      const scaledBox = new THREE.Box3().setFromObject(model);
+      const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+      const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+      const minY = scaledBox.min.y;
+
+      const poseGroup = new THREE.Group();
+      poseGroup.name = `BossPose_${pose}`;
+      model.position.set(-centerX, -minY, -centerZ);
+      poseGroup.add(model);
+
+      // Face player on left (-X):
+      poseGroup.rotation.y = -Math.PI / 2;
+      poseGroup.visible = (pose === 'idle');
+
+      customBossRoot.add(poseGroup);
+      bossPoseMeshes[pose] = poseGroup;
+      loadedCount++;
+    }
+  }
+
+  // Fallbacks: if any pose is missing, fallback to idle
+  if (bossPoseMeshes.idle) {
+    for (const p of BOSS_POSE_NAMES) {
+      if (!bossPoseMeshes[p]) {
+        bossPoseMeshes[p] = bossPoseMeshes.idle;
+      }
+    }
     if (proceduralRoot) proceduralRoot.visible = false;
     isCustomBoss = true;
     is2DBoss = false;
-
-    customBossRoot = new THREE.Group();
-    customBossRoot.name = 'CustomBossRoot';
-
-    customBossModel = gltf.scene.clone(true);
-    customBossMaterials = [];
-    customBossOrigColors = [];
-    customBossOrigEmissives = [];
-
-    customBossBone = null;
-    customBossModel.traverse((child) => {
-      if (child.isMesh) {
-        child.visible = true;
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if (child.material) {
-          child.material.transparent = false;
-          child.material.opacity = 1.0;
-          child.material.depthWrite = true;
-          customBossMaterials.push(child.material);
-          if (child.material.color) customBossOrigColors.push(child.material.color.getHex());
-          if (child.material.emissive) customBossOrigEmissives.push(child.material.emissive.getHex());
-        }
-      }
-      if (!customBossBone && (child.isBone || child.type === 'Bone')) {
-        const name = (child.name || '').toLowerCase();
-        if (name.includes('righthand') || name.includes('hand_r') || name.includes('rightarm') || name.includes('arm_r')) {
-          customBossBone = child;
-          customBossBone._baseRotX = child.rotation.x;
-          customBossBone._baseRotZ = child.rotation.z;
-        }
-      }
-    });
-
-    // Calculate safe bounding box
-    const box = new THREE.Box3().setFromObject(customBossModel);
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-
-    // Safeguard against 0 or NaN scale
-    const targetHeight = 4.2;
-    const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
-    customBossModel.scale.set(scale, scale, scale);
-
-    // Center horizontally and align base at y = 0
-    const scaledBox = new THREE.Box3().setFromObject(customBossModel);
-    const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-    const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-    const minY = scaledBox.min.y;
-
-    customBossModel.position.set(-centerX, -minY, -centerZ);
-
-    // Face the player on the left (-X):
-    customBossRoot.rotation.y = -Math.PI / 2;
-    customBossRoot.add(customBossModel);
     bossGroup.add(customBossRoot);
     window.bossModel = bossGroup;
-
-    console.log(`[GLTF Success] Boss model added to scene at scale ${scale} for element ${el}`);
+    setBossPose('idle');
+    console.log(`[GLTF Success] Boss multi-mesh poses ready (${loadedCount}/4 loaded) for ${el}`);
     return;
   }
 
-  // 2. Attempt 2.5D Billboard Sprite Boss (boss_${el}.png, .jpg, .webp)
+  // 2. Attempt 2.5D Billboard Sprite Boss (fallback)
   const imgUrl = await _checkImageExists(el);
   if (imgUrl && bossGroup) {
     if (proceduralRoot) proceduralRoot.visible = false;
@@ -713,7 +752,7 @@ async function _loadCustomBoss(el) {
     return;
   }
 
-  // 3. Fallback: stylized colored block puppet is already built in proceduralRoot
+  // 3. Fallback: stylized colored block puppet
   if (proceduralRoot) {
     proceduralRoot.visible = true;
     proceduralRoot.traverse((child) => {
@@ -814,6 +853,12 @@ export function updateBoss(deltaTime) {
         anim.active = false;
         bossGroup.rotation.z = 0;
         restoreColors();
+        setBossPose('angry');
+        setTimeout(() => {
+          if (!anim.active && !isDefeated) {
+            setBossPose('idle');
+          }
+        }, 350);
       }
     } else if (anim.type === 'defeat') {
       const el = anim.defeatElement || currentBossData?.element || 'thunder';
@@ -1120,6 +1165,7 @@ function turnBossCharred() {
 
 export function playBossHurt() {
   if (!bossGroup) return;
+  setBossPose('hit');
   if (isCustomBoss && customBossMaterials.length > 0) {
     customBossMaterials.forEach(m => {
       if (m.emissive) {
@@ -1150,6 +1196,9 @@ export function playBossAttack(element, onPeak, onComplete) {
   }
   const el = element || currentBossData?.element || 'thunder';
 
+  // Step 1: Switch to 'angry' pose (~300ms)
+  setBossPose('angry');
+
   let peakFired = false;
   let completeFired = false;
 
@@ -1166,6 +1215,7 @@ export function playBossAttack(element, onPeak, onComplete) {
       completeFired = true;
       safePeak();
       anim.active = false;
+      setBossPose('idle');
       if (onComplete) onComplete();
     }
   };
@@ -1175,51 +1225,56 @@ export function playBossAttack(element, onPeak, onComplete) {
   anim._safetyTimer = setTimeout(() => {
     console.warn('[boss] playBossAttack safety timeout triggered');
     safeComplete();
-  }, 1200);
+  }, 1600);
 
-  anim.active = true;
-  anim.type = 'attack';
-  anim.attackElement = el;
-  anim.t = 0;
-  anim.duration = (el === 'frost') ? 0.95 : (el === 'fire') ? 0.95 : 0.90;
-  anim.onPeak = safePeak;
-  anim.onComplete = () => {
-    clearTimeout(anim._safetyTimer);
-    safeComplete();
-  };
-  anim.peakFired = false;
-  anim.vfxFired = true;
+  setTimeout(() => {
+    // Step 2: Switch to 'attack' pose
+    setBossPose('attack');
 
-  // Instantly trigger elemental spell VFX
-  if (el === 'fire') {
-    try { Audio.playFire?.(); } catch(e) {}
-    Effects.spawnBossMeteorShower(
-      new THREE.Vector3(-3.0, 0.5, 0),
-      () => {
-        safePeak();
-      }
-    );
-  } else if (el === 'frost') {
-    try { Audio.playFrost?.(); } catch(e) {}
-    Effects.spawnBossFrostTrailAndSpikes(
-      new THREE.Vector3(BOSS_HOME.x - 0.5, 0.05, 0),
-      new THREE.Vector3(-3.0, 0, 0),
-      () => {
-        safePeak();
-      }
-    );
-  } else {
-    // thunder
-    try { Audio.playThunder?.(); } catch(e) {}
-    Effects.spawnBossLightningBeam(
-      new THREE.Vector3(BOSS_HOME.x - 0.5, 3.8, 0),
-      new THREE.Vector3(-3.0, 1.5, 0),
-      380,
-      () => {
-        safePeak();
-      }
-    );
-  }
+    anim.active = true;
+    anim.type = 'attack';
+    anim.attackElement = el;
+    anim.t = 0;
+    anim.duration = (el === 'frost') ? 0.95 : (el === 'fire') ? 0.95 : 0.90;
+    anim.onPeak = safePeak;
+    anim.onComplete = () => {
+      clearTimeout(anim._safetyTimer);
+      safeComplete();
+    };
+    anim.peakFired = false;
+    anim.vfxFired = true;
+
+    // Instantly trigger elemental spell VFX
+    if (el === 'fire') {
+      try { Audio.playFire?.(); } catch(e) {}
+      Effects.spawnBossMeteorShower(
+        new THREE.Vector3(-3.0, 0.5, 0),
+        () => {
+          safePeak();
+        }
+      );
+    } else if (el === 'frost') {
+      try { Audio.playFrost?.(); } catch(e) {}
+      Effects.spawnBossFrostTrailAndSpikes(
+        new THREE.Vector3(BOSS_HOME.x - 0.5, 0.05, 0),
+        new THREE.Vector3(-3.0, 0, 0),
+        () => {
+          safePeak();
+        }
+      );
+    } else {
+      // thunder
+      try { Audio.playThunder?.(); } catch(e) {}
+      Effects.spawnBossLightningBeam(
+        new THREE.Vector3(BOSS_HOME.x - 0.5, 3.8, 0),
+        new THREE.Vector3(-3.0, 1.5, 0),
+        380,
+        () => {
+          safePeak();
+        }
+      );
+    }
+  }, 300);
 }
 
 let currentHpPercent = 100;

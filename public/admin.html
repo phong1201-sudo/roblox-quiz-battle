@@ -3,34 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard & Asset Manager | Quiz Battle 3D</title>
+  <title>Admin Question Bank Manager | Quiz Battle 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=48.0">
-  <!-- Core Three.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- GLTF Loader for r128 -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <!-- OrbitControls -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <link rel="stylesheet" href="css/style.css?v=53.0">
   <style>
     body {
       background: #080c16;
       color: #e2e8f0;
       font-family: 'Be Vietnam Pro', sans-serif;
       margin: 0;
-      padding: 16px;
+      padding: 20px;
       overflow-y: auto;
       min-height: 100vh;
       box-sizing: border-box;
     }
     .admin-container {
-      max-width: 1440px;
+      max-width: 1200px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
     }
     .admin-header {
       display: flex;
@@ -39,11 +33,11 @@
       background: rgba(15, 23, 42, 0.95);
       border: 2px solid #00b4d8;
       border-radius: 12px;
-      padding: 14px 22px;
-      box-shadow: 0 4px 20px rgba(0, 180, 216, 0.2);
+      padding: 16px 24px;
+      box-shadow: 0 4px 24px rgba(0, 180, 216, 0.2);
     }
     .admin-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 800;
       color: #00b4d8;
       display: flex;
@@ -56,7 +50,7 @@
       font-size: 13px;
       font-weight: 700;
       border: 1.5px solid #ff6b35;
-      padding: 8px 16px;
+      padding: 10px 18px;
       border-radius: 8px;
       transition: all 0.2s;
     }
@@ -64,137 +58,83 @@
       background: rgba(255, 107, 53, 0.15);
       transform: translateY(-1px);
     }
-    .main-grid {
+    .grid-layout {
       display: grid;
-      grid-template-columns: 1fr 520px;
-      gap: 16px;
-      min-height: 640px;
+      grid-template-columns: 460px 1fr;
+      gap: 20px;
     }
-    @media (max-width: 1100px) {
-      .main-grid {
+    @media (max-width: 900px) {
+      .grid-layout {
         grid-template-columns: 1fr;
       }
     }
-    /* 3D Preview Card */
-    .preview-card {
-      background: #070a13;
-      border: 2px solid rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 600px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
-    .preview-toolbar {
-      display: flex;
-      gap: 8px;
-      padding: 10px 14px;
-      background: rgba(15, 23, 42, 0.85);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      align-items: center;
-      flex-wrap: wrap;
-      z-index: 10;
-    }
-    .model-tab-btn {
-      background: #1e293b;
-      color: #94a3b8;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .model-tab-btn:hover {
-      background: #334155;
-      color: #fff;
-    }
-    .model-tab-btn.active {
-      background: #0284c7;
-      color: #fff;
-      border-color: #38bdf8;
-    }
-    .viewport-container {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-    .viewport-hud {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      pointer-events: none;
-      background: rgba(0, 0, 0, 0.78);
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 11px;
-      line-height: 1.6;
-      color: #cbd5e1;
-      z-index: 10;
-    }
-    .hud-badge {
-      display: inline-block;
-      background: rgba(0, 180, 216, 0.2);
-      color: #00e5ff;
-      border: 1px solid #00e5ff;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-    }
-    /* Controls Panel */
-    .controls-panel {
+    .admin-card {
       background: rgba(15, 23, 42, 0.95);
       border: 2px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
-      padding: 16px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      max-height: 88vh;
-      overflow-y: auto;
+      gap: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
-    .section-box {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .section-title {
-      font-size: 13px;
+    .card-title {
+      font-size: 14px;
       font-weight: 800;
-      color: #f1f5f9;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .bank-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .stat-badge {
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 8px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .stat-badge:hover, .stat-badge.active {
+      border-color: #00b4d8;
+      background: rgba(0, 180, 216, 0.1);
+    }
+    .stat-badge .stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .stat-badge .stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #38bdf8;
     }
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
     .form-label {
       font-size: 11px;
       color: #94a3b8;
-      font-weight: 600;
+      font-weight: 700;
     }
     .form-select, .form-input {
       background: #0f172a;
       border: 1.5px solid #334155;
       color: #f8fafc;
-      padding: 8px 10px;
-      border-radius: 6px;
+      padding: 10px 12px;
+      border-radius: 8px;
       font-family: inherit;
       font-size: 12px;
     }
@@ -203,11 +143,11 @@
       border-color: #00b4d8;
     }
     .btn-submit {
-      background: linear-gradient(135deg, #00b4d8, #0077b6);
+      background: linear-gradient(135deg, #10b981, #059669);
       color: #fff;
       border: none;
-      padding: 11px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: 8px;
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -226,9 +166,9 @@
       background: rgba(239, 68, 68, 0.2);
       border: 1.5px solid #ef4444;
       color: #ef4444;
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 11px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
@@ -238,6 +178,89 @@
       background: #ef4444;
       color: #fff;
     }
+    .status-toast {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+      display: none;
+      line-height: 1.4;
+    }
+    .status-toast.success {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #10b981;
+    }
+    .status-toast.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    /* Explorer List */
+    .explorer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .search-input {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      flex: 1;
+      max-width: 240px;
+    }
+    .question-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 520px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+    .q-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .q-header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .q-num {
+      color: #00b4d8;
+      font-size: 11px;
+    }
+    .q-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .q-opt {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+    }
+    .q-opt.correct {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      color: #34d399;
+      font-weight: 700;
+    }
+    /* Dev Buttons */
     .dev-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -247,8 +270,8 @@
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #e2e8f0;
-      padding: 10px 8px;
-      border-radius: 6px;
+      padding: 10px;
+      border-radius: 8px;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
@@ -265,7 +288,7 @@
       transform: translateY(-1px);
     }
     .btn-dev-primary {
-      background: linear-gradient(135deg, #10b981, #059669);
+      background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #fff;
       border: none;
       grid-column: span 2;
@@ -273,156 +296,52 @@
       font-weight: 800;
       padding: 12px;
     }
-    .status-toast {
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      display: none;
-    }
-    .status-toast.success {
-      background: rgba(16, 185, 129, 0.2);
-      border: 1px solid #10b981;
-      color: #10b981;
-    }
-    .status-toast.error {
-      background: rgba(239, 68, 68, 0.2);
-      border: 1px solid #ef4444;
-      color: #ef4444;
-    }
-    .bank-stats-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .bank-badge {
-      flex: 1;
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 6px;
-      border-radius: 6px;
-      text-align: center;
-      font-size: 10px;
-    }
-    .bank-badge b {
-      color: #00e5ff;
-      font-size: 12px;
-      display: block;
-    }
   </style>
 </head>
 <body>
   <div class="admin-container">
     <header class="admin-header">
       <div class="admin-title">
-        <span style="font-size:24px;">⚙️</span>
+        <span style="font-size:24px;">📚</span>
         <div>
-          <div>ADMIN DASHBOARD & ASSET MANAGER</div>
-          <div style="font-size:11px; color:#64748b; font-weight:normal;">Quản lý Mô hình 3D, Boss GLB vĩnh viễn, Ngân hàng câu hỏi & Dev Match Test</div>
+          <div>NGÂN HÀNG CÂU HỎI & QUẢN TRỊ VIÊN</div>
+          <div style="font-size:11px; color:#64748b; font-weight:normal;">Chuẩn hóa dữ liệu theo <code>data/question/*.json</code> & Chơi thử trận đấu</div>
         </div>
       </div>
       <a href="/" class="back-btn">⬅️ Quay lại trò chơi</a>
     </header>
 
-    <div class="main-grid">
-      <!-- 3D Model Visualizer Box -->
-      <div class="preview-card">
-        <div class="preview-toolbar">
-          <span style="font-size:11px; color:#94a3b8; font-weight:700;">Xem Mô Hình 3D:</span>
-          <button class="model-tab-btn active" id="tab-prev-player" data-target="player">👤 Player (GLB)</button>
-          <button class="model-tab-btn" id="tab-prev-boss-thunder" data-target="boss_thunder">⚡ Boss Sét</button>
-          <button class="model-tab-btn" id="tab-prev-boss-fire" data-target="boss_fire">🔥 Boss Lửa</button>
-          <button class="model-tab-btn" id="tab-prev-boss-frost" data-target="boss_frost">❄️ Boss Băng</button>
-        </div>
-
-        <div class="viewport-container" id="admin-viewport">
-          <div class="viewport-hud">
-            <div>💡 <b>Kéo chuột:</b> Xoay camera | <b>Lăn chuột:</b> Phóng to/Thu nhỏ</div>
-            <div>📍 Đang hiển thị: <span id="hud-model-name" class="hud-badge">Player 3D Model</span></div>
-            <div>📊 Trạng thái: <span id="hud-model-status" class="hud-badge" style="color:#10b981; border-color:#10b981;">Sẵn sàng</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Controls Panel (Strictly 4 Essential Features) -->
-      <div class="controls-panel">
-
-        <!-- 1. Upload Player Model -->
-        <div class="section-box" style="border-color:#38bdf8;">
-          <div class="section-title" style="color:#38bdf8;">
-            <span>👤</span> 1. Tải Lên Mô Hình Nhân Vật (Player)
-          </div>
-          <div class="form-group">
-            <label class="form-label">Chọn Set / Hệ Trang Phục:</label>
-            <select id="player-upload-element" class="form-select">
-              <option value="fire">🔥 Set Hỏa (player_fire.glb / png)</option>
-              <option value="thunder">⚡ Set Lôi (player_thunder.glb / png)</option>
-              <option value="frost">❄️ Set Băng (player_frost.glb / png)</option>
-              <option value="default">👤 Mặc Định (player_default.glb / png)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">File Mô hình 3D (.glb, .gltf) hoặc Ảnh (.png):</label>
-            <input type="file" id="player-upload-file" class="form-input" accept=".glb,.gltf,.png,.jpg,.jpeg">
-          </div>
-          <button id="btn-upload-player" class="btn-submit">
-            <span>📤</span> Tải Lên Mô Hình Player
-          </button>
-          <div id="toast-player" class="status-toast"></div>
-        </div>
-
-        <!-- 2. Upload Boss Models (Permanent GLB Upload) -->
-        <div class="section-box" style="border-color:#f43f5e;">
-          <div class="section-title" style="color:#f43f5e;">
-            <span>👾</span> 2. Tải Lên Mô Hình Boss (Permanent GLB)
-          </div>
-          <div style="font-size:11px; color:#94a3b8; line-height:1.5;">
-            Lưu trực tiếp vào <code>public/assets/character/</code> vĩnh viễn và nạp nguyên bản không phụ kiện:
-          </div>
-          <div class="form-group">
-            <label class="form-label">Chọn Hệ Boss:</label>
-            <select id="boss-upload-element" class="form-select">
-              <option value="thunder">⚡ Boss Sét (boss_thunder.glb)</option>
-              <option value="fire">🔥 Boss Lửa (boss_fire.glb)</option>
-              <option value="frost">❄️ Boss Băng (boss_frost.glb)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">File Mô hình 3D (.glb, .gltf):</label>
-            <input type="file" id="boss-upload-file" class="form-input" accept=".glb,.gltf">
-          </div>
-          <button id="btn-upload-boss" class="btn-submit" style="background:linear-gradient(135deg, #f43f5e, #be123c);">
-            <span>💾</span> Lưu Vĩnh Viễn Mô Hình Boss
-          </button>
-          <div id="toast-boss" class="status-toast"></div>
-        </div>
-
-        <!-- 3. Upload & Manage Question Sets -->
-        <div class="section-box" style="border-color:#10b981;">
-          <div class="section-title" style="color:#10b981;">
-            <span>📚</span> 3. Ngân Hàng Câu Hỏi (Excel / Docx / JSON)
+    <div class="grid-layout">
+      <!-- Left Column: Upload & Quick Match -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <!-- Card 1: Question Bank Upload -->
+        <div class="admin-card" style="border-color:#10b981;">
+          <div class="card-title" style="color:#10b981;">
+            <span>📥</span> Nạp &amp; Quản Lý Câu Hỏi
           </div>
 
-          <div class="bank-stats-row">
-            <div class="bank-badge">
-              ⚡ Sét
-              <b id="stat-thunder">0 câu</b>
+          <!-- Stats Badges -->
+          <div class="bank-stats-grid">
+            <div class="stat-badge active" id="badge-thunder" data-el="thunder">
+              <span class="stat-label">⚡ Hệ Sét</span>
+              <span class="stat-val" id="stat-thunder">0 câu</span>
             </div>
-            <div class="bank-badge">
-              🔥 Lửa
-              <b id="stat-fire">0 câu</b>
+            <div class="stat-badge" id="badge-fire" data-el="fire">
+              <span class="stat-label">🔥 Hệ Lửa</span>
+              <span class="stat-val" id="stat-fire">0 câu</span>
             </div>
-            <div class="bank-badge">
-              ❄️ Băng
-              <b id="stat-frost">0 câu</b>
+            <div class="stat-badge" id="badge-frost" data-el="frost">
+              <span class="stat-label">❄️ Hệ Băng</span>
+              <span class="stat-val" id="stat-frost">0 câu</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Nạp Cho Hệ:</label>
+            <label class="form-label">Chọn Hệ Nạp:</label>
             <select id="q-upload-element" class="form-select">
-              <option value="thunder">⚡ Hệ Sét (Stage 1)</option>
-              <option value="fire">🔥 Hệ Lửa (Stage 2)</option>
-              <option value="frost">❄️ Hệ Băng (Stage 3)</option>
+              <option value="thunder">⚡ Hệ Sét (data/question/thunder.json)</option>
+              <option value="fire">🔥 Hệ Lửa (data/question/Fire.json)</option>
+              <option value="frost">❄️ Hệ Băng (data/question/Frost.json)</option>
             </select>
           </div>
 
@@ -439,9 +358,9 @@
             <input type="file" id="q-upload-file" class="form-input" accept=".docx,.xlsx,.json">
           </div>
 
-          <div style="display:flex; gap:8px;">
-            <button id="btn-upload-questions" class="btn-submit" style="flex:2; background:linear-gradient(135deg, #10b981, #059669);">
-              <span>📥</span> Nạp Vào Ngân Hàng
+          <div style="display:flex; gap:10px;">
+            <button id="btn-upload-questions" class="btn-submit" style="flex:2;">
+              <span>📤</span> Nạp Vào Ngân Hàng
             </button>
             <button id="btn-clear-questions" class="btn-danger-action" style="flex:1;">
               <span>🗑️</span> Xóa Hệ Này
@@ -450,18 +369,19 @@
           <div id="toast-questions" class="status-toast"></div>
         </div>
 
-        <!-- 4. Quick Launch / Dev Test buttons -->
-        <div class="section-box" style="border-color:#f59e0b;">
-          <div class="section-title" style="color:#f59e0b;">
-            <span>🚀</span> 4. Quick Launch &amp; Dev Test
+        <!-- Card 2: Quick Launch & Dev Test -->
+        <div class="admin-card" style="border-color:#f59e0b;">
+          <div class="card-title" style="color:#f59e0b;">
+            <span>🚀</span> Chơi Thử Nhanh (Dev Match Test)
           </div>
-          <div class="form-group" style="margin-bottom: 8px;">
+
+          <div class="form-group">
             <label class="form-label">Trang Phục Nhân Vật (Player Outfit):</label>
             <select id="dev-player-outfit" class="form-select">
-              <option value="default">👤 Mặc Định (1 Normal Hit, player_default.glb)</option>
-              <option value="thunder">⚡ Set Lôi (Thunder 2-hit)</option>
-              <option value="fire">🔥 Set Hỏa (Fire 2-hit)</option>
-              <option value="frost">❄️ Set Băng (Frost 2-hit)</option>
+              <option value="default">👤 Mặc Định (Normal 1-Hit)</option>
+              <option value="thunder">⚡ Set Lôi (Thunder 2-Hit)</option>
+              <option value="fire">🔥 Set Hỏa (Fire 2-Hit)</option>
+              <option value="frost">❄️ Set Băng (Frost 2-Hit)</option>
             </select>
           </div>
 
@@ -470,24 +390,37 @@
               <span>🧪</span> Nạp 5 Câu Test &amp; Vào Trận Ngay
             </button>
             <button id="btn-launch-thunder" class="btn-dev">
-              <span>⚡</span> Chơi Boss Sét
+              <span>⚡</span> Đấu Boss Sét
             </button>
             <button id="btn-launch-fire" class="btn-dev">
-              <span>🔥</span> Chơi Boss Lửa
+              <span>🔥</span> Đấu Boss Lửa
             </button>
             <button id="btn-launch-frost" class="btn-dev">
-              <span>❄️</span> Chơi Boss Băng
+              <span>❄️</span> Đấu Boss Băng
             </button>
             <button id="btn-launch-lobby" class="btn-dev">
-              <span>🏠</span> Về Sảnh Chính (Lobby)
+              <span>🏠</span> Về Sảnh Chính
             </button>
           </div>
         </div>
+      </div>
 
+      <!-- Right Column: Interactive Question Bank Explorer -->
+      <div class="admin-card" style="border-color:#00b4d8;">
+        <div class="explorer-header">
+          <div class="card-title" style="color:#00b4d8; border:none; padding:0;">
+            <span>📖</span> Danh Sách Câu Hỏi (<span id="explorer-elem-title">HỆ SÉT</span>: <span id="explorer-count">0</span> câu)
+          </div>
+          <input type="text" id="explorer-search" class="search-input" placeholder="🔍 Tìm kiếm câu hỏi...">
+        </div>
+
+        <div id="explorer-list" class="question-list">
+          <div style="text-align:center; color:#64748b; padding:40px;">Đang tải danh sách câu hỏi...</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=48.0"></script>
+  <script type="module" src="js/admin.js?v=53.0"></script>
 </body>
 </html>

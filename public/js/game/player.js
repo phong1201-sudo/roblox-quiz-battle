@@ -40,33 +40,45 @@ let isSlashing = false;
 let isDodging = false;
 let isHurt = false;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FAIL-SAFE 3D CHARACTER LOADING (EXACT SPECIFICATION)
-// ─────────────────────────────────────────────────────────────────────────────
+// Multi-Mesh Pose Switching State
+const POSE_NAMES = ['idle', 'dodge', 'slash', 'hit'];
+let currentPose = 'idle';
+const poseMeshes = {
+  idle: null,
+  dodge: null,
+  slash: null,
+  hit: null
+};
+
+export function getPlayerPose() {
+  return currentPose;
+}
+
+export function setPlayerPose(poseName = 'idle') {
+  currentPose = poseName;
+  const targetMesh = poseMeshes[poseName] || poseMeshes.idle;
+  for (const name of POSE_NAMES) {
+    const mesh = poseMeshes[name];
+    if (mesh) {
+      mesh.visible = (mesh === targetMesh);
+    }
+  }
+}
 
 /**
- * Loads a 3D player GLB model with automatic bounding-box scaling and emergency fallback.
+ * Loads the 4 action pose 3D GLB models with automatic bounding-box scaling and emergency fallback.
+ * Preloads 'idle', 'dodge', 'slash', 'hit' for multi-mesh pose-swapping combat.
  * @param {THREE.Scene|THREE.Group} targetScene 
  * @param {string} outfitElement 
  * @param {Function} [onLoaded] 
  */
 export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded) {
   const scene = targetScene || playerGroup;
+  activeElement = outfitElement;
+
   const GLTFLoaderClass = (typeof THREE !== 'undefined' && THREE.GLTFLoader)
     ? THREE.GLTFLoader
     : (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
-
-  const modelPath = `/assets/character/player_${outfitElement}.glb`;
-
-  // Candidate URLs in priority order
-  const candidateUrls = [
-    modelPath,
-    `/assets/character/${outfitElement === 'fire' ? 'Fire%20player' : outfitElement === 'thunder' ? 'Lightning%20player' : outfitElement === 'frost' ? 'Ice%20player' : 'Player'}.glb`,
-    `/assets/character/${outfitElement}_character.glb`,
-    `/assets/character/Player.glb`,
-    `/assets/models/${outfitElement}_character.glb`,
-    `/assets/models/default_character.glb`
-  ];
 
   if (!GLTFLoaderClass) {
     console.warn('[player] THREE.GLTFLoader not available, using emergency placeholder');
@@ -76,88 +88,134 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
 
   const loader = new GLTFLoaderClass();
 
-  function tryLoadIndex(idx) {
-    if (idx >= candidateUrls.length) {
-      console.warn(`[player] Failed to load GLB across candidates for ${outfitElement}, using emergency placeholder`);
-      createEmergencyPlaceholder(scene, onLoaded);
-      return;
+  // Reset existing poses
+  for (const p of POSE_NAMES) {
+    if (poseMeshes[p] && characterRoot) {
+      try { characterRoot.remove(poseMeshes[p]); } catch (e) {}
     }
-
-    const currentUrl = candidateUrls[idx];
-    console.log(`[GLTF Load Attempt] Requesting model: ${currentUrl}`);
-
-    loader.load(
-      currentUrl,
-      (gltf) => {
-        try {
-          const model = gltf.scene;
-
-          // Ensure all child meshes are visible and receive shadows/light
-          model.traverse((child) => {
-            if (child.isMesh) {
-              child.visible = true;
-              child.castShadow = true;
-              child.receiveShadow = true;
-              if (child.material) {
-                child.material.transparent = false;
-                child.material.opacity = 1.0;
-                child.material.depthWrite = true;
-              }
-            }
-          });
-
-          // Calculate safe bounding box
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-
-          // Safeguard against 0 or NaN scale
-          const targetHeight = 3.6;
-          const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
-          model.scale.set(scale, scale, scale);
-
-          // Normalize base to arena floor (y = 0)
-          const scaledBox = new THREE.Box3().setFromObject(model);
-          const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-          const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-          const minY = scaledBox.min.y;
-
-          if (characterRoot) {
-            while (characterRoot.children.length > 0) {
-              characterRoot.remove(characterRoot.children[0]);
-            }
-            // Relative offset inside characterRoot
-            model.position.set(-centerX, -minY, -centerZ);
-            model.rotation.set(0, 0, 0);
-            characterRoot.add(model);
-          } else if (scene) {
-            // Position Player firmly above arena floor (Arena floor is at y = 0)
-            model.position.set(-4.5, 0.0, 0.0);
-            model.rotation.y = Math.PI / 2; // Face towards Boss (+X)
-            scene.add(model);
-          }
-
-          // Standardized Hand Grip & Blade Direction uniformly across all 4 outfits
-          loadAndMountWeapon(model, outfitElement);
-
-          currentCharacterMesh = model;
-          window.playerModel = playerGroup || model;
-          console.log(`[GLTF Success] Player model added to scene at scale ${scale}`);
-          if (onLoaded) onLoaded(model);
-        } catch (err) {
-          console.error(`[GLTF Error] Error processing GLB mesh at ${currentUrl}:`, err);
-          createEmergencyPlaceholder(scene, onLoaded);
-        }
-      },
-      undefined,
-      (err) => {
-        console.error(`[GLTF Error] Failed to load model at ${currentUrl}:`, err);
-        tryLoadIndex(idx + 1);
-      }
-    );
+    poseMeshes[p] = null;
   }
 
-  tryLoadIndex(0);
+  if (characterRoot) {
+    while (characterRoot.children.length > 0) {
+      characterRoot.remove(characterRoot.children[0]);
+    }
+  }
+
+  let idleLoaded = false;
+
+  function loadSinglePose(poseName) {
+    const primaryUrl = `/assets/character/player_${outfitElement}_${poseName}.glb`;
+    const candidateUrls = [
+      primaryUrl,
+      `/assets/character/player_${outfitElement}_idle.glb`,
+      `/assets/character/player_default_${poseName}.glb`,
+      `/assets/character/player_default_idle.glb`
+    ];
+
+    function tryLoad(idx) {
+      if (idx >= candidateUrls.length) {
+        console.warn(`[player] Pose ${poseName} could not be loaded across fallbacks, using idle`);
+        if (poseName !== 'idle' && poseMeshes.idle) {
+          poseMeshes[poseName] = poseMeshes.idle;
+        }
+        return;
+      }
+
+      const currentUrl = candidateUrls[idx];
+      console.log(`[GLTF Load Attempt] Pose '${poseName}' requesting: ${currentUrl}`);
+
+      loader.load(
+        currentUrl,
+        (gltf) => {
+          try {
+            const model = gltf.scene;
+
+            // Ensure all child meshes are visible and receive shadows/light
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.visible = true;
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                  child.material.transparent = false;
+                  child.material.opacity = 1.0;
+                  child.material.depthWrite = true;
+                }
+              }
+            });
+
+            // Calculate safe bounding box
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+
+            // Safeguard against 0 or NaN scale
+            const targetHeight = 3.6;
+            const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
+            model.scale.set(scale, scale, scale);
+
+            // Normalize base to arena floor (y = 0)
+            const scaledBox = new THREE.Box3().setFromObject(model);
+            const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+            const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+            const minY = scaledBox.min.y;
+
+            const poseGroup = new THREE.Group();
+            poseGroup.name = `Pose_${poseName}`;
+            model.position.set(-centerX, -minY, -centerZ);
+            model.rotation.set(0, 0, 0);
+            poseGroup.add(model);
+
+            // Standardized Hand Grip & Blade Direction uniformly across all 4 outfits
+            loadAndMountWeapon(model, outfitElement);
+
+            // Hide non-idle poses initially
+            poseGroup.visible = (poseName === 'idle');
+
+            if (characterRoot) {
+              characterRoot.add(poseGroup);
+            } else if (scene) {
+              poseGroup.position.set(-4.5, 0.0, 0.0);
+              poseGroup.rotation.y = Math.PI / 2; // Face towards Boss (+X)
+              scene.add(poseGroup);
+            }
+
+            poseMeshes[poseName] = poseGroup;
+            console.log(`[GLTF Success] Player pose '${poseName}' added to scene at scale ${scale}`);
+
+            if (poseName === 'idle') {
+              idleLoaded = true;
+              currentCharacterMesh = poseGroup;
+              window.playerModel = playerGroup || poseGroup;
+              setPlayerPose('idle');
+              if (onLoaded) onLoaded(poseGroup);
+            }
+
+            // Fill fallbacks for poses that finished after or before idle
+            for (const p of POSE_NAMES) {
+              if (!poseMeshes[p] && poseMeshes.idle) {
+                poseMeshes[p] = poseMeshes.idle;
+              }
+            }
+          } catch (err) {
+            console.error(`[GLTF Error] Error processing GLB mesh at ${currentUrl}:`, err);
+            tryLoad(idx + 1);
+          }
+        },
+        undefined,
+        (err) => {
+          console.warn(`[GLTF Warning] Failed to load pose model at ${currentUrl}:`, err);
+          tryLoad(idx + 1);
+        }
+      );
+    }
+
+    tryLoad(0);
+  }
+
+  // Pre-load all 4 action poses in parallel
+  POSE_NAMES.forEach(pose => loadSinglePose(pose));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -957,6 +1015,7 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
 
   const startTime = performance.now();
   isSlashing = true;
+  setPlayerPose('dodge'); // Leap forward into combat
 
   function stepCombat(now) {
     const elapsed = now - startTime;
@@ -967,14 +1026,16 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
       const ease = p * (2 - p); // QuadOut
       playerGroup.position.x = THREE.MathUtils.lerp(startX, targetX, ease);
     }
-    // 2. Wind-up Arm
+    // 2. Wind-up Arm -> Swap to Slash Pose
     else if (elapsed < t2) {
+      setPlayerPose('slash');
       playerGroup.position.x = targetX;
       const p = (elapsed - t1) / WINDUP_MS;
       if (arm) arm.rotation.z = THREE.MathUtils.lerp(0, Math.PI / 3, p);
     }
     // 3. Slash Down Across -> Trigger Hit
     else if (elapsed < t3) {
+      setPlayerPose('slash');
       playerGroup.position.x = targetX;
       const p = (elapsed - t2) / SLASH_MS;
       const ease = p * p; // QuadIn
@@ -997,6 +1058,7 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
     // 5. Dash Back to Home
     else if (elapsed < tTotal) {
       if (arm) arm.rotation.z = 0;
+      setPlayerPose('idle');
       const p = (elapsed - t4) / DASH_BACK_MS;
       const ease = p * (2 - p);
       playerGroup.position.x = THREE.MathUtils.lerp(targetX, startX, ease);
@@ -1005,6 +1067,7 @@ export function playCombatAnimation(animType, { onHit, onDone } = {}) {
     else {
       playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
       if (arm) arm.rotation.z = 0;
+      setPlayerPose('idle');
       isSlashing = false;
       if (onDone) onDone();
       return;
@@ -1032,6 +1095,7 @@ export function playArmSwingSlash(onHit, onDone) {
  * Executes the sword slashing motion for player
  */
 export function playSwordSlashAnimation(onHit, onComplete) {
+  setPlayerPose('slash');
   if (typeof playGuaranteedPlayerSlash === 'function') {
     return playGuaranteedPlayerSlash(onHit, onComplete);
   }
@@ -1060,6 +1124,7 @@ export function playSwordSlashAnimation(onHit, onComplete) {
           new TWEEN.Tween(arm.rotation)
             .to({ z: 0, x: 0 }, 100)
             .onComplete(() => {
+              setPlayerPose('idle');
               if (onComplete) onComplete();
             })
             .start();
@@ -1080,6 +1145,7 @@ export function playDodge(onDone) {
   }
 
   isDodging = true;
+  setPlayerPose('dodge');
   const startTime = performance.now();
   const DURATION = 320; // ms
 
@@ -1098,6 +1164,7 @@ export function playDodge(onDone) {
     } else {
       playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
       isDodging = false;
+      // Do not force idle if the caller immediately chains into slash
       if (onDone) onDone();
     }
   }
@@ -1112,6 +1179,7 @@ export function playHurt(onDone) {
   }
 
   isHurt = true;
+  setPlayerPose('hit');
   const startTime = performance.now();
   const DURATION = 300;
 
@@ -1150,6 +1218,7 @@ export function playHurt(onDone) {
         }
       });
       playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+      setPlayerPose('idle');
       isHurt = false;
       if (onDone) onDone();
     }

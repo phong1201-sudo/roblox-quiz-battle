@@ -444,18 +444,22 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
     finishOnce();
   }, 5000);
 
-  // Step 1: Boss executes attack motion
+  // Step 1: Boss executes attack motion (Boss switches angry -> attack)
   Boss.playBossAttack(bossElement, () => {
-    // Step 2: Player dodges
+    // Step 2: Player dodges in dodge pose
+    Player.setPlayerPose('dodge');
     Player.playDodge(() => {
-      // Milestone: Player lands -> snap to normal speed (timeScale = 1.0) so counter-attack projectile and impact run at full speed
+      // Milestone: Player lands -> snap to normal speed (timeScale = 1.0)
       if (context.isMilestone) {
         setCombatTimeScale(1.0);
       }
-      // Step 3: CRITICAL - Trigger player counter-attack immediately after dodge completes
+      // Step 3: Player snaps to slash pose and performs counter-attack
+      Player.setPlayerPose('slash');
       executePlayerCounterAttack(selectedElement, isFullSet, () => {
-        // Step 4: Complete turn and load next question
+        // Step 4: Return both fighters to idle
         clearTimeout(safetyTimeout);
+        Player.setPlayerPose('idle');
+        Boss.setBossPose('idle');
         finishOnce();
       }, context);
     });
@@ -559,8 +563,8 @@ export function executeCombatTurn(ev, onDone) {
 
   const executeCorrectBranch = () => {
     if (isPlayerMilestone) {
-      // Deep slow-motion during boss attack cast and player dodge
-      setCombatTimeScale(0.18);
+      // Deep ultra-slow-motion (0.08) during boss attack cast and player dodge
+      setCombatTimeScale(0.08);
       // Shot 2: Hero Low-Angle locked near floor looking up toward boss (3.0s sweep)
       triggerCinematicShot(2, 3000, true);
     } else {
@@ -578,8 +582,8 @@ export function executeCombatTurn(ev, onDone) {
 
   const executeBossBranch = () => {
     if (isBossMilestone) {
-      // Deep slow-motion during boss charge and projectile creep
-      setCombatTimeScale(0.18);
+      // Deep ultra-slow-motion (0.08) during boss charge and projectile creep
+      setCombatTimeScale(0.08);
       // Shot 3: Over-the-Shoulder Boss View looking down at player (3.0s sweep)
       triggerCinematicShot(3, 3000, false);
     } else {
@@ -606,8 +610,10 @@ export function executeCombatTurn(ev, onDone) {
       const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
       Effects.spawnDamageNumber(textPos, dmgLabel, dmgColor, isBossMilestone ? 38 : 32);
 
-      // Player staggers and flashes red
+      // Player staggers and flashes red in 'hit' pose
+      Player.setPlayerPose('hit');
       Player.playHurt(() => {
+        Player.setPlayerPose('idle');
         if (ev.remainingPlayerHp !== undefined) {
           if (hud.updateHpBars) {
             const hpMap = {};
@@ -619,6 +625,8 @@ export function executeCombatTurn(ev, onDone) {
     }, () => {
       setTimeout(() => {
         setCombatTimeScale(1.0);
+        Boss.setBossPose('idle');
+        Player.setPlayerPose('idle');
         resetCameraToDefault(500, doneWrapper);
       }, 150);
     });

@@ -5,7 +5,10 @@
 const path = require('path');
 const fs   = require('fs');
 
-const BANK_DIR = path.join(__dirname, '../data/questions');
+const BANK_DIRS = [
+  path.join(__dirname, '../data/question'),
+  path.join(__dirname, '../data/questions')
+];
 const UNIFIED_BANK_FILE = path.join(__dirname, '../data/question_bank.json');
 
 // ── Difficulty configuration ───────────────────────────────────────────────────
@@ -32,20 +35,40 @@ function _syncUnifiedBankFile(element, questionsArray) {
   }
 }
 
+// ── Internal: find element file in directory case-insensitively ───────────────
+function _findElementFile(dir, element) {
+  if (!fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir);
+  const target = `${element.toLowerCase()}.json`;
+  const match = files.find(f => f.toLowerCase() === target);
+  return match ? path.join(dir, match) : null;
+}
+
 // ── Internal: load raw bank from disk ────────────────────────────────────────
 function _loadBank(element) {
+  const el = (element || '').toLowerCase();
+  // 1. Check data/question/ directory first
+  for (const dir of BANK_DIRS) {
+    const file = _findElementFile(dir, el);
+    if (file && fs.existsSync(file)) {
+      try {
+        const content = JSON.parse(fs.readFileSync(file, 'utf8'));
+        if (Array.isArray(content) && content.length > 0) return content;
+      } catch (e) {}
+    }
+  }
+
+  // 2. Check unified bank file
   if (fs.existsSync(UNIFIED_BANK_FILE)) {
     try {
       const all = JSON.parse(fs.readFileSync(UNIFIED_BANK_FILE, 'utf8'));
-      if (Array.isArray(all[element]) && all[element].length > 0) {
-        return all[element];
+      if (Array.isArray(all[el]) && all[el].length > 0) {
+        return all[el];
       }
     } catch(e) {}
   }
-  const file = path.join(BANK_DIR, `${element}.json`);
-  if (!fs.existsSync(file)) return [];
-  try   { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-  catch { return []; }
+
+  return [];
 }
 
 // ── Internal: Fisher-Yates shuffle (returns new array) ───────────────────────
@@ -100,40 +123,49 @@ function sampleQuestions(element, difficulty) {
   });
 }
 
+// ── Internal: save to all bank directories ──────────────────────────────────
+function _saveToDirs(element, questionsArray) {
+  const el = (element || '').toLowerCase();
+  for (const dir of BANK_DIRS) {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const existingFile = _findElementFile(dir, el);
+    const targetFile = existingFile || path.join(dir, `${el}.json`);
+    const tmp = targetFile + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(questionsArray, null, 2), 'utf8');
+    fs.renameSync(tmp, targetFile);
+    // Also ensure Capitalized file exists in data/question/ if applicable (e.g. Fire.json, Frost.json)
+    if (dir.endsWith('question') || dir.includes('question\\') || dir.includes('question/')) {
+      const capName = el.charAt(0).toUpperCase() + el.slice(1) + '.json';
+      const capPath = path.join(dir, capName);
+      if (capPath !== targetFile) {
+        try { fs.writeFileSync(capPath, JSON.stringify(questionsArray, null, 2), 'utf8'); } catch (e) {}
+      }
+    }
+  }
+}
+
 // ── Public: replace a bank atomically ────────────────────────────────────────
 function replaceBank(element, questionsArray) {
-  if (!fs.existsSync(BANK_DIR)) fs.mkdirSync(BANK_DIR, { recursive: true });
-  const file = path.join(BANK_DIR, `${element}.json`);
-  const tmp  = file + '.tmp';
-  // Re-number IDs sequentially
   const numbered = questionsArray.map((q, i) => ({ ...q, id: i + 1 }));
-  fs.writeFileSync(tmp, JSON.stringify(numbered, null, 2), 'utf8');
-  fs.renameSync(tmp, file);
+  _saveToDirs(element, numbered);
   _syncUnifiedBankFile(element, numbered);
   return numbered.length;
 }
 
 // ── Public: append questions (skip duplicates by normalised text) ─────────────
 function appendBank(element, newQuestions) {
-  if (!fs.existsSync(BANK_DIR)) fs.mkdirSync(BANK_DIR, { recursive: true });
   const existing = _loadBank(element);
-  // Build a set of normalised existing texts for O(1) lookup
   const seen = new Set(existing.map(q => _norm(q.text || q.question || '')));
   const toAdd = newQuestions.filter(q => !seen.has(_norm(q.text || q.question || '')));
   const merged = [...existing, ...toAdd].map((q, i) => ({ ...q, id: i + 1 }));
-  const file = path.join(BANK_DIR, `${element}.json`);
-  const tmp  = file + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(merged, null, 2), 'utf8');
-  fs.renameSync(tmp, file);
+  _saveToDirs(element, merged);
   _syncUnifiedBankFile(element, merged);
   return { total: merged.length, added: toAdd.length, skipped: newQuestions.length - toAdd.length };
 }
 
 // ── Public: clear a bank completely ──────────────────────────────────────────
 function clearBank(element) {
-  if (!fs.existsSync(BANK_DIR)) fs.mkdirSync(BANK_DIR, { recursive: true });
-  const file = path.join(BANK_DIR, `${element}.json`);
-  fs.writeFileSync(file, '[]', 'utf8');
+  _saveToDirs(element, []);
   _syncUnifiedBankFile(element, []);
 }
 

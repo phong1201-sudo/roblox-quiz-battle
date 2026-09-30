@@ -28,6 +28,7 @@ const staticOptions = {
 app.use(express.static(path.join(__dirname, '../public'), staticOptions));
 app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
 app.use('/assets/characters', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));
+app.use(['/assets/boss', '/assets/Boss'], express.static(path.join(__dirname, '../public/assets/Boss'), staticOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -752,6 +753,24 @@ app.get('/api/admin/questions/stats', (req, res) => {
     thunder: questionBank.getBankSize('thunder'),
     fire:    questionBank.getBankSize('fire'),
     frost:   questionBank.getBankSize('frost'),
+  });
+});
+
+/**
+ * GET /api/questions/:element
+ * Returns the array of questions for the specified element (case-insensitive)
+ */
+app.get('/api/questions/:element', (req, res) => {
+  const element = (req.params.element || '').toLowerCase();
+  if (!VALID_ELEMENTS.includes(element)) {
+    return res.status(400).json({ ok: false, error: 'element must be thunder | fire | frost' });
+  }
+  const questions = questionBank.getActiveQuestionBank(element);
+  res.json({
+    ok: true,
+    element,
+    total: questions.length,
+    questions,
   });
 });
 
