@@ -215,6 +215,45 @@ function setupQuestionManager() {
       showToast('toast-questions', `Lỗi: ${e.message}`, false);
     }
   });
+
+  const btnPermanent = document.getElementById('btn-upload-permanent');
+  btnPermanent?.addEventListener('click', async () => {
+    const element = selElement?.value || 'thunder';
+    const file = fileInput?.files?.[0];
+
+    btnPermanent.disabled = true;
+    btnPermanent.textContent = 'Đang khóa vĩnh viễn...';
+
+    try {
+      let res, data;
+      if (file) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('element', element);
+        res = await fetch('/api/admin/questions/upload-permanent', { method: 'POST', body: fd });
+      } else if (loadedQuestions && loadedQuestions.length > 0) {
+        res = await fetch('/api/admin/questions/upload-permanent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ element, questions: loadedQuestions })
+        });
+      } else {
+        throw new Error('Vui lòng chọn file hoặc đảm bảo hệ đã có câu hỏi');
+      }
+
+      data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Khóa vĩnh viễn thất bại');
+
+      showToast('toast-questions', `✓ ${data.message || `Đã khóa vĩnh viễn ${data.total} câu hỏi!`}`, true);
+      refreshQuestionStats();
+      loadQuestionExplorer(element);
+    } catch (e) {
+      showToast('toast-questions', `Lỗi: ${e.message}`, false);
+    } finally {
+      btnPermanent.disabled = false;
+      btnPermanent.innerHTML = '<span>🔒</span> Khóa Vĩnh Viễn Thành Mặc Định (data/question/*.json)';
+    }
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

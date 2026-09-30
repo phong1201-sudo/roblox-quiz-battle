@@ -52,11 +52,12 @@ export function getPlayerPose() {
 
 export function setPlayerPose(poseName = 'idle') {
   // poseName: 'idle' | 'dodge' | 'slash' | 'hit'
-  Object.keys(playerPoses).forEach((key) => {
-    if (playerPoses[key]) {
-      playerPoses[key].visible = (key === poseName);
+  const targetMesh = playerPoses[poseName] || playerPoses.idle;
+  for (const k of ['idle', 'dodge', 'slash', 'hit']) {
+    if (playerPoses[k]) {
+      playerPoses[k].visible = (playerPoses[k] === targetMesh);
     }
-  });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,12 +155,8 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
     };
   }
 
-  const poseKeys = ['idle', 'dodge', 'slash', 'hit'];
-
-  for (const pose of poseKeys) {
-    // Primary path: specific pose file
+  const loadSinglePose = async (pose) => {
     const primaryUrl = `/assets/character/player_${activeElement}_${pose}.glb`;
-    // Fallback: idle pose file of the same outfit
     const fallbackUrl = `/assets/character/player_${activeElement}_idle.glb`;
     const emergencyUrl = `/assets/character/player_fire_idle.glb`;
 
@@ -167,19 +164,18 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
     if (loader) {
       try {
         gltf = await loader.loadAsync(primaryUrl);
-        console.log(`[Asset Success] Loaded model: ${primaryUrl}`);
+        console.log(`[Asset Success] Loaded player model: ${primaryUrl}`);
       } catch (err) {
-        console.error(`[Asset Error] FAILED loading ${primaryUrl}:`, err.message || err);
+        console.warn(`[Asset Warning] Missing ${primaryUrl}, trying fallback...`);
         try {
           gltf = await loader.loadAsync(fallbackUrl);
-          console.log(`[Asset Success] Loaded fallback model: ${fallbackUrl}`);
+          console.log(`[Asset Success] Loaded player fallback: ${fallbackUrl}`);
         } catch (err2) {
-          console.error(`[Asset Error] FAILED loading fallback ${fallbackUrl}:`, err2.message || err2);
           try {
             gltf = await loader.loadAsync(emergencyUrl);
-            console.log(`[Asset Success] Loaded emergency model: ${emergencyUrl}`);
+            console.log(`[Asset Success] Loaded player emergency: ${emergencyUrl}`);
           } catch (err3) {
-            console.error(`[Asset Error] FAILED loading emergency ${emergencyUrl}:`, err3.message || err3);
+            console.error(`[Asset Error] FAILED loading player pose ${pose}:`, err3);
           }
         }
       }
@@ -210,7 +206,6 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
       // Recalculate bounding box after scaling to clamp bottom vertex exactly to floor
       mesh.updateMatrixWorld(true);
       const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
-      // Shift mesh downward so the lowest point rests exactly at y = 0
       mesh.position.y = -scaledBox.min.y;
       mesh.position.x = 0;
       mesh.position.z = 0;
@@ -218,23 +213,22 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
       mesh.visible = (pose === 'idle');
       playerPoses[pose] = mesh;
       playerGroup.add(mesh);
+      return mesh;
     }
-  }
+    return null;
+  };
 
-  // Fallbacks: if any pose is missing, fallback to idle GLB mesh
-  if (playerPoses.idle) {
-    for (const p of poseKeys) {
-      if (!playerPoses[p]) {
-        playerPoses[p] = playerPoses.idle;
-      }
-    }
+  // 1. PRIMARY IDLE MODEL: Only wait for idle model (< 1s) to resolve Question 1 immediately
+  await loadSinglePose('idle');
+
+  if (!playerPoses.idle) {
+    const fallback = createFallbackBlockCharacter(activeElement);
+    playerPoses.idle = fallback;
+    playerGroup.add(fallback);
   }
 
   // Set explicit initial visibility
   if (playerPoses['idle']) playerPoses['idle'].visible = true;
-  if (playerPoses['dodge']) playerPoses['dodge'].visible = false;
-  if (playerPoses['slash']) playerPoses['slash'].visible = false;
-  if (playerPoses['hit']) playerPoses['hit'].visible = false;
 
   playerGroup.position.set(-4.5, 0, 0);
   playerGroup.rotation.y = Math.PI / 2; // Facing Boss (+X)
@@ -245,7 +239,26 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
   }
 
   window.playerModel = playerGroup;
-  console.log(`[Player Loader] Outfit poses successfully loaded for ${activeElement}:`, playerPoses);
+
+  // 2. Silently fetch the remaining action poses in the background asynchronously
+  const remainingPoses = ['dodge', 'slash', 'hit'];
+  (async () => {
+    for (const pose of remainingPoses) {
+      try {
+        await loadSinglePose(pose);
+      } catch (e) {
+        console.warn(`[Player] Background load error for ${pose}:`, e);
+      }
+    }
+    // Update any missing poses with idle fallback
+    for (const pose of remainingPoses) {
+      if (!playerPoses[pose] && playerPoses.idle) {
+        playerPoses[pose] = playerPoses.idle;
+      }
+    }
+    console.log(`[Player Loader] All poses ready in background for ${activeElement}`);
+  })();
+
   return playerGroup;
 }
 

@@ -96,26 +96,31 @@ const FULL_SET_PIECES = ['weapon', 'outfit'];
 function register(username, password) {
   username = (username || '').trim();
   if (username.length < 2)
-    return { ok: false, error: 'Ten nguoi dung phai co it nhat 2 ky tu.' };
+    return { ok: false, error: 'Tên người dùng phải có ít nhất 2 ký tự.' };
   if ((password || '').length < 3)
-    return { ok: false, error: 'Mat khau phai co it nhat 3 ky tu.' };
+    return { ok: false, error: 'Mật khẩu phải có ít nhất 3 ký tự.' };
   if (username.toLowerCase() === 'god father')
-    return { ok: false, error: 'Ten nay da duoc su dung.' };
+    return { ok: false, error: 'Tên tài khoản này đã có người đăng ký, vui lòng chọn tên khác!' };
 
   const data = _load();
   const taken = Object.values(data.users).some(
-    u => u.username.toLowerCase() === username.toLowerCase()
+    u => u.username && u.username.toLowerCase() === username.toLowerCase()
   );
-  if (taken) return { ok: false, error: 'Ten nguoi dung da ton tai.' };
+  if (taken) return { ok: false, error: 'Tên tài khoản này đã có người đăng ký, vui lòng chọn tên khác!' };
 
   const id   = data.nextId++;
   const user = {
-    id, username,
-    passwordHash: _hash(password),
-    role:         'player',
-    unlockedSets: [],
-    inventory:    { thunder: [], fire: [], frost: [] },
-    highestStage: 1,
+    id,
+    username,
+    passwordHash:    _hash(password),
+    password:        password,
+    role:            'player',
+    scores:          {},
+    unlockedOutfits: ['default'],
+    unlockedSets:    [],
+    inventory:       { thunder: [], fire: [], frost: [] },
+    highestStage:    1,
+    createdAt:       new Date().toISOString(),
   };
   data.users[id] = user;
   _save(data);
@@ -126,12 +131,12 @@ function login(username, password) {
   username = (username || '').trim();
   const data = _load();
   const user = Object.values(data.users).find(
-    u => u.username.toLowerCase() === username.toLowerCase()
+    u => u.username && u.username.toLowerCase() === username.toLowerCase()
   );
   if (!user)
-    return { ok: false, error: 'Ten nguoi dung khong ton tai.' };
-  if (user.passwordHash !== _hash(password))
-    return { ok: false, error: 'Mat khau khong dung.' };
+    return { ok: false, error: 'Tên người dùng không tồn tại.' };
+  if (user.passwordHash !== _hash(password) && user.password !== password)
+    return { ok: false, error: 'Mật khẩu không đúng.' };
   return { ok: true, user: _public(user) };
 }
 
@@ -199,12 +204,15 @@ function updateStage(userId, stage) {
 
 function _public(u) {
   return {
-    id:           u.id,
-    username:     u.username,
-    role:         u.role,
-    unlockedSets: Array.isArray(u.unlockedSets) ? [...u.unlockedSets] : [],
-    inventory:    u.inventory || { thunder: [], fire: [], frost: [] },
-    highestStage: u.highestStage || 1,
+    id:              u.id,
+    username:        u.username,
+    role:            u.role,
+    scores:          u.scores || {},
+    unlockedOutfits: u.unlockedOutfits || ['default'],
+    unlockedSets:    Array.isArray(u.unlockedSets) ? [...u.unlockedSets] : [],
+    inventory:       u.inventory || { thunder: [], fire: [], frost: [] },
+    highestStage:    u.highestStage || 1,
+    createdAt:       u.createdAt || null,
   };
 }
 

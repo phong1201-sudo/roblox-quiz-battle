@@ -780,9 +780,7 @@ export async function loadBossPoses(scene, element = 'thunder') {
     };
   }
 
-  const poseKeys = ['idle', 'angry', 'attack', 'hit'];
-
-  for (const pose of poseKeys) {
+  const loadSingleBossPose = async (pose) => {
     const primaryUrl = `/assets/boss/boss_${el}_${pose}.glb`;
     const fallbackUrl = `/assets/boss/boss_${el}_idle.glb`;
     const emergencyUrl = `/assets/boss/boss_thunder_idle.glb`;
@@ -791,19 +789,18 @@ export async function loadBossPoses(scene, element = 'thunder') {
     if (loader) {
       try {
         gltf = await loader.loadAsync(primaryUrl);
-        console.log(`[Asset Success] Loaded model: ${primaryUrl}`);
+        console.log(`[Asset Success] Loaded boss model: ${primaryUrl}`);
       } catch (err) {
-        console.error(`[Asset Error] FAILED loading ${primaryUrl}:`, err.message || err);
+        console.warn(`[Asset Warning] Missing ${primaryUrl}, trying fallback...`);
         try {
           gltf = await loader.loadAsync(fallbackUrl);
-          console.log(`[Asset Success] Loaded fallback model: ${fallbackUrl}`);
+          console.log(`[Asset Success] Loaded boss fallback: ${fallbackUrl}`);
         } catch (err2) {
-          console.error(`[Asset Error] FAILED loading fallback ${fallbackUrl}:`, err2.message || err2);
           try {
             gltf = await loader.loadAsync(emergencyUrl);
-            console.log(`[Asset Success] Loaded emergency model: ${emergencyUrl}`);
+            console.log(`[Asset Success] Loaded boss emergency: ${emergencyUrl}`);
           } catch (err3) {
-            console.error(`[Asset Error] FAILED loading emergency ${emergencyUrl}:`, err3.message || err3);
+            console.error(`[Asset Error] FAILED loading boss pose ${pose}:`, err3);
           }
         }
       }
@@ -834,7 +831,6 @@ export async function loadBossPoses(scene, element = 'thunder') {
       // Recalculate bounding box after scaling to clamp bottom vertex exactly to floor
       mesh.updateMatrixWorld(true);
       const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
-      // Shift mesh downward so the lowest point rests exactly at y = 0
       mesh.position.y = -scaledBox.min.y;
       mesh.position.x = 0;
       mesh.position.z = 0;
@@ -846,16 +842,18 @@ export async function loadBossPoses(scene, element = 'thunder') {
       poseGroup.visible = (pose === 'idle');
       bossGroup.add(poseGroup);
       bossPoses[pose] = poseGroup;
+      return poseGroup;
     }
-  }
+    return null;
+  };
 
-  // Fallbacks: if any pose is missing, fallback to idle GLB mesh
-  if (bossPoses.idle) {
-    for (const p of BOSS_POSE_NAMES) {
-      if (!bossPoses[p]) {
-        bossPoses[p] = bossPoses.idle;
-      }
-    }
+  // 1. PRIMARY IDLE MODEL: Only wait for idle model (< 1s) to resolve Question 1 immediately
+  await loadSingleBossPose('idle');
+
+  if (!bossPoses.idle) {
+    const fallback = createFallbackBlockBoss(el);
+    bossPoses.idle = fallback;
+    bossGroup.add(fallback);
   }
 
   isCustomBoss = true;
@@ -864,9 +862,6 @@ export async function loadBossPoses(scene, element = 'thunder') {
 
   // Set explicit initial visibility
   if (bossPoses['idle']) bossPoses['idle'].visible = true;
-  if (bossPoses['angry']) bossPoses['angry'].visible = false;
-  if (bossPoses['attack']) bossPoses['attack'].visible = false;
-  if (bossPoses['hit']) bossPoses['hit'].visible = false;
   currentBossPose = 'idle';
 
   bossGroup.position.set(4.5, 0, 0);
@@ -877,7 +872,25 @@ export async function loadBossPoses(scene, element = 'thunder') {
     targetScene.add(bossGroup);
   }
 
-  console.log(`[Boss Loader] Boss poses ready for ${el}:`, bossPoses);
+  // 2. Silently fetch remaining action poses in the background asynchronously
+  const remainingPoses = ['angry', 'attack', 'hit'];
+  (async () => {
+    for (const pose of remainingPoses) {
+      try {
+        await loadSingleBossPose(pose);
+      } catch (e) {
+        console.warn(`[Boss] Background load error for ${pose}:`, e);
+      }
+    }
+    // Update any missing poses with idle fallback
+    for (const pose of remainingPoses) {
+      if (!bossPoses[pose] && bossPoses.idle) {
+        bossPoses[pose] = bossPoses.idle;
+      }
+    }
+    console.log(`[Boss Loader] All poses ready in background for ${el}`);
+  })();
+
   return bossGroup;
 }
 

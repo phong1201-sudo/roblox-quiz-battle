@@ -914,6 +914,95 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
 });
 
 /**
+ * POST /api/admin/questions/upload-permanent
+ * Overwrites and locks questions permanently directly into data/question/<element>.json
+ * Accepts either:
+ * - multipart file (.docx, .json) with field 'file' and 'element'
+ * - JSON body { element, questions: [...] }
+ */
+app.post('/api/admin/questions/upload-permanent', (req, res) => {
+  docxUpload.single('file')(req, res, async (uploadErr) => {
+    if (uploadErr) return res.status(400).json({ ok: false, error: uploadErr.message });
+    try {
+      const element = (req.body?.element || req.query?.element || '').toLowerCase();
+      if (!VALID_ELEMENTS.includes(element)) {
+        return res.status(400).json({ ok: false, error: 'element phải là thunder | fire | frost' });
+      }
+
+      let parsed = [];
+      let dropped = [];
+
+      if (req.file) {
+        const isJson = req.file.originalname.toLowerCase().endsWith('.json');
+        if (isJson) {
+          const content = fs.readFileSync(req.file.path, 'utf8');
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+          const rawData = JSON.parse(content);
+          const arr = Array.isArray(rawData) ? rawData : (rawData.questions || []);
+          parsed = arr.map(item => {
+            const qText = item.question || item.text || '';
+            let opts = item.options || {};
+            let cIdx = item.correctIndex;
+            if (cIdx === undefined && item.answer) {
+              const ansKey = String(item.answer).trim().toUpperCase();
+              cIdx = ['A','B','C','D'].indexOf(ansKey);
+              if (cIdx === -1) cIdx = 0;
+            }
+            return {
+              question: qText,
+              options: opts,
+              correctIndex: cIdx !== undefined ? cIdx : 0
+            };
+          });
+        } else {
+          const resDocx = await questionParser.parseDocx(req.file.path);
+          parsed = resDocx.questions;
+          dropped = resDocx.dropped;
+          try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
+      } else if (req.body && Array.isArray(req.body.questions)) {
+        parsed = req.body.questions;
+      } else {
+        return res.status(400).json({ ok: false, error: 'Không có file hoặc dữ liệu câu hỏi được gửi lên' });
+      }
+
+      if (!parsed || parsed.length === 0) {
+        return res.status(400).json({ ok: false, error: 'Không có câu hỏi hợp lệ để lưu' });
+      }
+
+      // Convert to bank format { id, text, options[], correctIndex }
+      const incoming = parsed.map((q, i) => ({
+        id:           i + 1,
+        text:         q.question || q.text || '',
+        options:      Array.isArray(q.options)
+                        ? q.options
+                        : ['A','B','C','D'].map(k => q.options?.[k] || ''),
+        correctIndex: q.correctIndex !== undefined
+                        ? q.correctIndex
+                        : (q.answer ? ['A','B','C','D'].indexOf(String(q.answer).toUpperCase()) : 0),
+      }));
+
+      // Overwrite and commit directly to data/question/ and data/questions/
+      const total = questionBank.replaceBank(element, incoming);
+
+      console.log(`[admin/permanent] Locked & saved ${total} questions to permanent bank: ${element}`);
+      res.json({
+        ok: true,
+        permanent: true,
+        element,
+        total,
+        added: incoming.length,
+        dropped: dropped || [],
+        message: `Đã khóa vĩnh viễn ${total} câu hỏi vào kho ${element.toUpperCase()}!`
+      });
+    } catch (e) {
+      console.error('[admin/upload-permanent]', e.message);
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+});
+
+/**
  * DELETE /api/admin/questions/clear?element=thunder
  * Wipes all questions from the specified bank.
  */

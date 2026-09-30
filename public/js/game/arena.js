@@ -19,6 +19,7 @@ let emberParticles = [];
 let snowflakeParticles = [];
 let cloudClusters = [];
 let lightningRods = [];
+let circuitLines = [];
 let runeCracks = [];
 let lavaCracks = [];
 
@@ -95,6 +96,7 @@ export function setArenaTheme(element) {
   snowflakeParticles = [];
   cloudClusters = [];
   lightningRods = [];
+  circuitLines = [];
   runeCracks = [];
   lavaCracks = [];
 
@@ -108,75 +110,117 @@ export function setArenaTheme(element) {
 }
 
 /**
- * ⚡ THUNDER BOSS ARENA (BRIGHT DAYTIME CLOUD SANCTUARY)
- * - Skybox: Bright daylight azure sky (0x60a5fa) with light morning cloud haze
- * - Lighting: Warm bright directional sunlight (2.2) + bright daylight ambient (1.5)
- * - Platform: Crisp ancient Greek white marble with polished gold border
- * - Clouds: Dense, rolling puffy white clouds below and around the stage
- * - Decor: Floating ancient Greek/marble cloud pillars with crackling blue lightning rods
+ * ⚡ THUNDER BOSS ARENA (HIGH-CONTRAST TWILIGHT STORM SANCTUARY)
+ * - Skybox: Deep Twilight Storm Violet / Charcoal Slate (0x15182e)
+ * - Fog: Atmospheric slate-violet fog (0x191c33)
+ * - Lighting: Directional moonlight/stormlight (0xe0e7ff, 1.8) + warm electric cyan rim light (0x38bdf8, 2.0)
+ * - Platform: Dark slate stone tiles (0x1e2235, roughness 0.65, metalness 0.35)
+ * - Circuits: Etched conductive energy circuit lines (0x00ffff & 0xfbbf24) with pulsing glow
+ * - Clouds: Rolling dark storm cloud clusters beneath and around platform (0x283046)
  */
 function _applyThunderTheme() {
-  // 1. Sky & Atmosphere: Bright daylight azure blue
-  sceneRef.background = new THREE.Color(0x60a5fa);
-  sceneRef.fog = new THREE.FogExp2(0x93c5fd, 0.008);
+  // 1. Atmosphere: Deep Twilight Storm Violet
+  sceneRef.background = new THREE.Color(0x15182e);
+  sceneRef.fog = new THREE.FogExp2(0x191c33, 0.012);
 
-  // 2. High-contrast daylight illumination
+  // 2. High-contrast storm & rim illumination
   if (lightsRef) {
     if (lightsRef.ambient) {
-      lightsRef.ambient.color.setHex(0xffffff);
-      lightsRef.ambient.intensity = 1.5;
+      lightsRef.ambient.color.setHex(0x1e293b);
+      lightsRef.ambient.intensity = 0.9;
     }
     if (lightsRef.keyLight) {
-      lightsRef.keyLight.color.setHex(0xffffff);
-      lightsRef.keyLight.intensity = 2.2;
+      lightsRef.keyLight.color.setHex(0xe0e7ff);
+      lightsRef.keyLight.intensity = 1.8;
       lightsRef.keyLight.position.set(6, 20, 10);
     }
     if (lightsRef.fillLight) {
-      lightsRef.fillLight.color.setHex(0xe0f2fe);
+      lightsRef.fillLight.color.setHex(0x334155);
       lightsRef.fillLight.intensity = 0.8;
       lightsRef.fillLight.position.set(0, 6, 8);
     }
     if (lightsRef.rimLight) {
-      lightsRef.rimLight.color.setHex(0xbae6fd);
-      lightsRef.rimLight.intensity = 0.6;
+      lightsRef.rimLight.color.setHex(0x38bdf8);
+      lightsRef.rimLight.intensity = 2.0;
       lightsRef.rimLight.position.set(0, 8, -8);
     }
   }
 
-  // 3. Greek white marble platform & gold trim
+  // 3. Dark slate stone floor & electric cyan/gold trim
   floorMesh.visible = true;
   floorMesh.material = new THREE.MeshStandardMaterial({
-    color: 0xf8fafc,
-    roughness: 0.18,
-    metalness: 0.1,
+    color: 0x1e2235,
+    roughness: 0.65,
+    metalness: 0.35,
   });
 
   trimMesh.visible = true;
   trimMesh.material = new THREE.MeshStandardMaterial({
-    color: 0xeab308,
-    roughness: 0.25,
-    metalness: 0.85,
-    emissive: 0x854d0e,
-    emissiveIntensity: 0.2,
+    color: 0x3b82f6,
+    roughness: 0.3,
+    metalness: 0.8,
+    emissive: 0x1d4ed8,
+    emissiveIntensity: 0.4,
   });
 
   backWallMesh.visible = false;
 
-  // 4. Dense, rolling puffy white clouds (pure white & soft ivory)
-  const cloudMat = new THREE.MeshLambertMaterial({
-    color: 0xffffff,
+  // 4. Etched conductive energy circuit lines (pulsing neon cyan & gold)
+  const cyanCircuitMat = new THREE.MeshBasicMaterial({
+    color: 0x00ffff,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.9,
+  });
+  const goldCircuitMat = new THREE.MeshBasicMaterial({
+    color: 0xfbbf24,
+    transparent: true,
+    opacity: 0.85,
+  });
+
+  const circuitSegments = [
+    // Main power lines (cyan)
+    { x: -5.0, z:  0.0, w: 4.5, d: 0.08, mat: cyanCircuitMat, baseOp: 0.9, r: 0 },
+    { x:  5.0, z:  0.0, w: 4.5, d: 0.08, mat: cyanCircuitMat, baseOp: 0.9, r: 0 },
+    { x:  0.0, z: -1.8, w: 8.0, d: 0.08, mat: cyanCircuitMat, baseOp: 0.85, r: 0 },
+    { x:  0.0, z:  1.8, w: 8.0, d: 0.08, mat: cyanCircuitMat, baseOp: 0.85, r: 0 },
+    // Cross-connecting branches
+    { x: -3.2, z: -0.9, w: 0.08, d: 1.8, mat: cyanCircuitMat, baseOp: 0.9, r: 0 },
+    { x:  3.2, z:  0.9, w: 0.08, d: 1.8, mat: cyanCircuitMat, baseOp: 0.9, r: 0 },
+    { x: -1.5, z:  0.9, w: 0.08, d: 1.8, mat: cyanCircuitMat, baseOp: 0.8, r: 0 },
+    { x:  1.5, z: -0.9, w: 0.08, d: 1.8, mat: cyanCircuitMat, baseOp: 0.8, r: 0 },
+    // Golden conduits & power nodes
+    { x: -2.0, z:  0.0, w: 2.2, d: 0.06, mat: goldCircuitMat, baseOp: 0.85, r: 0.4 },
+    { x:  2.0, z:  0.0, w: 2.2, d: 0.06, mat: goldCircuitMat, baseOp: 0.85, r: -0.4 },
+    { x:  0.0, z:  0.0, w: 0.5, d: 0.5,  mat: goldCircuitMat, baseOp: 0.95, r: Math.PI / 4 },
+    { x: -6.0, z: -1.2, w: 1.8, d: 0.06, mat: goldCircuitMat, baseOp: 0.8, r: 0.25 },
+    { x:  6.0, z:  1.2, w: 1.8, d: 0.06, mat: goldCircuitMat, baseOp: 0.8, r: -0.25 },
+  ];
+
+  circuitSegments.forEach(s => {
+    const geo = new THREE.BoxGeometry(s.w, 0.015, s.d);
+    const m = new THREE.Mesh(geo, s.mat.clone());
+    m.position.set(s.x, 0.015, s.z);
+    m.rotation.y = s.r;
+    sceneryGroup.add(m);
+    m.baseOpacity = s.baseOp;
+    circuitLines.push(m);
+  });
+
+  // 5. Rolling dark storm cloud clusters beneath platform (0x283046)
+  const stormCloudMat = new THREE.MeshLambertMaterial({
+    color: 0x283046,
+    transparent: true,
+    opacity: 0.85,
   });
 
   const cloudConfigs = [
-    // Low floating cloud bed below stage
-    { x: -14, y: -2.0, z: -4.0, scale: 1.6, vx: 0.35 },
-    { x:  -7, y: -2.4, z:  2.0, scale: 1.4, vx: 0.45 },
-    { x:   0, y: -2.1, z: -2.0, scale: 1.7, vx: 0.40 },
-    { x:   7, y: -2.5, z:  2.0, scale: 1.5, vx: 0.38 },
-    { x:  14, y: -2.0, z: -4.5, scale: 1.8, vx: 0.42 },
-    // Surrounding horizon clouds
+    // Low floating storm cloud bed below stage
+    { x: -14, y: -2.2, z: -4.0, scale: 1.6, vx: 0.35 },
+    { x:  -7, y: -2.5, z:  2.0, scale: 1.4, vx: 0.45 },
+    { x:   0, y: -2.2, z: -2.0, scale: 1.7, vx: 0.40 },
+    { x:   7, y: -2.6, z:  2.0, scale: 1.5, vx: 0.38 },
+    { x:  14, y: -2.2, z: -4.5, scale: 1.8, vx: 0.42 },
+    // Surrounding horizon storm clouds
     { x: -16, y:  3.5, z: -9.0, scale: 2.2, vx: 0.25 },
     { x:  -5, y:  5.0, z: -10.0, scale: 2.5, vx: 0.28 },
     { x:   8, y:  4.5, z: -9.5, scale: 2.3, vx: 0.30 },
@@ -187,7 +231,6 @@ function _applyThunderTheme() {
 
   cloudConfigs.forEach(cfg => {
     const cluster = new THREE.Group();
-    // Overlapping volumetric puffs
     const puffs = [
       { x: 0,    y: 0,    z: 0,   w: 3.2, h: 1.5, d: 2.4 },
       { x: 1.3,  y: 0.3,  z: 0.2, w: 2.4, h: 1.3, d: 1.9 },
@@ -198,7 +241,7 @@ function _applyThunderTheme() {
 
     puffs.forEach(p => {
       const geo = new THREE.BoxGeometry(p.w * cfg.scale, p.h * cfg.scale, p.d * cfg.scale);
-      const m = new THREE.Mesh(geo, cloudMat);
+      const m = new THREE.Mesh(geo, stormCloudMat);
       m.position.set(p.x * cfg.scale, p.y * cfg.scale, p.z * cfg.scale);
       cluster.add(m);
     });
@@ -586,6 +629,12 @@ export function updateArena(dt) {
       if (c.group.position.x > 22) {
         c.group.position.x = -22;
       }
+    });
+
+    // Pulsing conductive energy circuit lines
+    const circuitPulse = 0.75 + 0.25 * Math.sin(Date.now() * 0.005);
+    circuitLines.forEach(c => {
+      if (c.material) c.material.opacity = circuitPulse * (c.baseOpacity || 0.85);
     });
 
     // Lightning rod crystal pulses and crackling arcs

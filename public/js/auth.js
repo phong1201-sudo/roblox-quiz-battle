@@ -6,12 +6,15 @@ let _currentUser = null;   // { id, username, role, unlockedSets, highestStage }
 
 function _saveSession(user) {
   _currentUser = user;
-  try { sessionStorage.setItem('qb3d_user', JSON.stringify(user)); } catch(e) {}
+  try {
+    sessionStorage.setItem('qb3d_user', JSON.stringify(user));
+    localStorage.setItem('qb3d_user', JSON.stringify(user));
+  } catch(e) {}
   // Keep window.gameState in sync
   if (window.gameState) {
-    window.gameState.userId      = user.id;
-    window.gameState.username    = user.username;
-    window.gameState.role        = user.role;
+    window.gameState.userId       = user.id;
+    window.gameState.username     = user.username;
+    window.gameState.role         = user.role;
     window.gameState.unlockedSets = user.unlockedSets || [];
   }
   window._godFather = (user.role === 'admin');
@@ -19,7 +22,10 @@ function _saveSession(user) {
 
 function _clearSession() {
   _currentUser = null;
-  try { sessionStorage.removeItem('qb3d_user'); } catch(e) {}
+  try {
+    sessionStorage.removeItem('qb3d_user');
+    localStorage.removeItem('qb3d_user');
+  } catch(e) {}
   window._godFather = false;
   if (window.gameState) {
     window.gameState.userId = null;
@@ -292,7 +298,7 @@ function _renderUserBadge(user) {
 // ── Auto-restore session ──────────────────────────────────────────────────────
 export function init() {
   try {
-    const saved = sessionStorage.getItem('qb3d_user');
+    const saved = sessionStorage.getItem('qb3d_user') || localStorage.getItem('qb3d_user');
     if (saved) {
       const user = JSON.parse(saved);
       if (user?.id && user?.username) {
