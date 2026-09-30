@@ -27,9 +27,15 @@ let pendingEvents = [];
 const PLAYER_HOME = new THREE.Vector3(-4.5, 0.0, 0);
 const BOSS_HOME   = new THREE.Vector3( 4.5, 0.0, 0);
 
+// ── Arena Center & Camera Focus Target ────────────────────────────────────────
+export const ARENA_CENTER = new THREE.Vector3(0, 1.5, 0);
+
 // ── Camera — pulled back to show full fighters head-to-feet on platform ───────
 const CAM_POS    = new THREE.Vector3(0, 4.8, 11.5);
-const CAM_TARGET = new THREE.Vector3(0, 1.8, 0);
+const CAM_TARGET = ARENA_CENTER.clone();
+
+// ── Scene Lights Reference ───────────────────────────────────────────────────
+let sceneLights = null;
 
 // ── Boss hit position for VFX ─────────────────────────────────────────────────
 const BOSS_VFX_POS = new THREE.Vector3(4.5, 4.0, 0);
@@ -59,8 +65,8 @@ export function initScene(canvas) {
   scene.fog = new THREE.FogExp2(0x0d0528, 0.022);
 
   camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 500);
-  camera.position.set(0, 4, 12);
-  camera.lookAt(0, 1.5, 0);
+  camera.position.set(CAM_POS.x, CAM_POS.y, CAM_POS.z);
+  camera.lookAt(ARENA_CENTER);
 
   // ── Lighting ──
   const ambient = new THREE.AmbientLight(0xffffff, 0.7);
@@ -81,8 +87,10 @@ export function initScene(canvas) {
   rimLight.position.set(0, 6, -8);
   scene.add(rimLight);
 
+  sceneLights = { ambient, keyLight, fillLight, rimLight };
+
   try {
-    Arena.initArena(scene);
+    Arena.initArena(scene, sceneLights);
   } catch (err) {
     console.warn('[scene] initArena warning:', err);
   }
@@ -359,6 +367,9 @@ function animate(time) {
   }
 
   try {
+    if (camera) {
+      camera.lookAt(ARENA_CENTER);
+    }
     if (renderer && scene && camera) {
       renderer.render(scene, camera);
     }
@@ -382,125 +393,74 @@ export function resetGameMatch() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5-ANGLE SMOOTH CINEMATIC CAMERA SYSTEM (GROUNDED & NON-DIZZY)
+// 5 DISTINCT CINEMATIC CAMERA SHOTS (PERFECT ARENA FOCUS & ZERO DRIFT)
 // ─────────────────────────────────────────────────────────────────────────────
 let activeCamTween = null;
-let activeTargetTween = null;
-const GROUNDED_CENTER = new THREE.Vector3(0, 1.5, 0);
-let currentCamTarget = GROUNDED_CENTER.clone();
-let shotCycleIndex = 0;
+
+export const CINEMATIC_SHOTS = [
+  // Shot 1: Wide Orbit Sweep (210°) from Player to Boss
+  { start: { x: -8, y: 4.0, z: 7 }, end: { x: 7, y: 3.5, z: -6 }, duration: 2500 },
+  // Shot 2: Low-Angle Hero Cam (looking up from behind player towards boss)
+  { start: { x: -6.5, y: 1.2, z: 2.8 }, end: { x: -5.5, y: 1.6, z: 2.0 }, duration: 2200 },
+  // Shot 3: Over-the-Shoulder Boss Cam (looking down at incoming player leap)
+  { start: { x: 6.0, y: 3.5, z: 2.5 }, end: { x: 5.0, y: 3.0, z: 1.5 }, duration: 2200 },
+  // Shot 4: High Oblique Isometric Aerial (epic grand arena view)
+  { start: { x: 0, y: 10.0, z: 9.5 }, end: { x: 2, y: 9.0, z: 8.5 }, duration: 2500 },
+  // Shot 5: Side Action Tracking (gliding horizontally alongside combatants)
+  { start: { x: -3, y: 2.8, z: 8.5 }, end: { x: 3, y: 2.8, z: 8.5 }, duration: 2200 }
+];
+
+let lastShotIndex = -1;
 
 /**
- * Triggers one of 5 choreographed dynamic cinematic camera shots:
- * Transit duration 2.2s - 2.5s with smooth sinusoidal easing.
- * The focus point (lookAt) stays strictly grounded at arena center (0, 1.5, 0)
- * to prevent dizziness and disorientation.
+ * Triggers one of 5 distinct cinematic camera shots.
+ * When called with null, randomly picks one of the 5 shots (guaranteeing variety).
+ * The focus target MUST ALWAYS stay locked to ARENA_CENTER (0, 1.5, 0)
+ * so both Player and Boss NEVER leave the frame!
  *
- * @param {number|null} shotNum - 1 to 5 (or null to cycle sequentially)
- * @param {number} [duration=2400] - Duration in ms (2.2s - 2.5s)
- * @param {boolean} [isPlayerAttack=true] - Direction flag for tracking shots
+ * @param {number|null} [shotNum=null] - 1 to 5 (or null for random)
+ * @param {number|null} [durationOverride=null] - Custom duration in ms
  */
-export function triggerCinematicShot(shotNum = null, duration = 3000, isPlayerAttack = true) {
+export function triggerCinematicShot(shotNum = null, durationOverride = null) {
   if (!camera || typeof TWEEN === 'undefined') return;
 
-  if (activeCamTween) { activeCamTween.stop(); activeCamTween = null; }
-  if (activeTargetTween) { activeTargetTween.stop(); activeTargetTween = null; }
-
-  const shot = shotNum || ((shotCycleIndex % 5) + 1);
-  shotCycleIndex = (shotCycleIndex % 5) + 1;
-
-  const easeFunc = (TWEEN.Easing?.Cubic?.InOut) || (TWEEN.Easing?.Sinusoidal?.InOut) || (TWEEN.Easing?.Quadratic?.InOut);
-
-  // Keep target grounded at arena center
-  currentCamTarget.copy(GROUNDED_CENTER);
-
-  if (shot === 1) {
-    // Shot 1: Gentle Sweeping Arc (~60° sweep) around arena center at height 4.2
-    const radius = 11.0;
-    const startAngle = isPlayerAttack ? -0.45 : 0.45;
-    const endAngle = isPlayerAttack ? 0.45 : -0.45;
-    const orbitObj = { angle: startAngle };
-
-    camera.position.set(Math.sin(startAngle) * radius, 4.2, Math.cos(startAngle) * radius);
-    camera.lookAt(GROUNDED_CENTER);
-
-    activeCamTween = new TWEEN.Tween(orbitObj)
-      .to({ angle: endAngle }, duration)
-      .easing(easeFunc)
-      .onUpdate(() => {
-        const a = orbitObj.angle;
-        camera.position.set(Math.sin(a) * radius, 4.2, Math.cos(a) * radius);
-        camera.lookAt(GROUNDED_CENTER);
-      })
-      .start();
-
-  } else if (shot === 2) {
-    // Shot 2: Hero Low-Angle locked near floor behind player looking toward arena center (smooth 3s dolly)
-    const startPos = camera.position.clone();
-    const targetPos = new THREE.Vector3(-5.5, 1.6, 2.2);
-    const endPos = new THREE.Vector3(-5.0, 1.8, 2.0);
-
-    const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
-
-    activeCamTween = new TWEEN.Tween(posObj)
-      .to({ x: endPos.x, y: endPos.y, z: endPos.z }, duration)
-      .easing(easeFunc)
-      .onUpdate(() => {
-        camera.position.set(posObj.x, posObj.y, posObj.z);
-        camera.lookAt(GROUNDED_CENTER);
-      })
-      .start();
-
-  } else if (shot === 3) {
-    // Shot 3: Over-the-Shoulder Boss View peering toward arena center (smooth 3s dolly)
-    const startPos = camera.position.clone();
-    const endPos = new THREE.Vector3(3.8, 3.4, 2.0);
-
-    const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
-
-    activeCamTween = new TWEEN.Tween(posObj)
-      .to({ x: endPos.x, y: endPos.y, z: endPos.z }, duration)
-      .easing(easeFunc)
-      .onUpdate(() => {
-        camera.position.set(posObj.x, posObj.y, posObj.z);
-        camera.lookAt(GROUNDED_CENTER);
-      })
-      .start();
-
-  } else if (shot === 4) {
-    // Shot 4: High Aerial Dolly looking gently down at arena center (smooth 3s crane)
-    const startPos = camera.position.clone();
-    const endPos = new THREE.Vector3(0.0, 7.8, 8.0);
-
-    const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
-
-    activeCamTween = new TWEEN.Tween(posObj)
-      .to({ x: endPos.x, y: endPos.y, z: endPos.z }, duration)
-      .easing(easeFunc)
-      .onUpdate(() => {
-        camera.position.set(posObj.x, posObj.y, posObj.z);
-        camera.lookAt(GROUNDED_CENTER);
-      })
-      .start();
-
-  } else if (shot === 5) {
-    // Shot 5: Side-Action Tracking gliding horizontally at height 3.0
-    const startX = isPlayerAttack ? -3.0 : 2.5;
-    const endX   = isPlayerAttack ? 2.0 : -2.5;
-
-    const trackObj = { x: startX };
-    camera.position.set(startX, 3.0, 8.5);
-    camera.lookAt(GROUNDED_CENTER);
-
-    activeCamTween = new TWEEN.Tween(trackObj)
-      .to({ x: endX }, duration)
-      .easing(easeFunc)
-      .onUpdate(() => {
-        camera.position.set(trackObj.x, 3.0, 8.5);
-        camera.lookAt(GROUNDED_CENTER);
-      })
-      .start();
+  if (activeCamTween) {
+    activeCamTween.stop();
+    activeCamTween = null;
   }
+
+  let shot;
+  if (shotNum !== null && shotNum >= 1 && shotNum <= CINEMATIC_SHOTS.length) {
+    shot = CINEMATIC_SHOTS[shotNum - 1];
+    lastShotIndex = shotNum - 1;
+  } else {
+    let idx = Math.floor(Math.random() * CINEMATIC_SHOTS.length);
+    if (idx === lastShotIndex && CINEMATIC_SHOTS.length > 1) {
+      idx = (idx + 1) % CINEMATIC_SHOTS.length;
+    }
+    lastShotIndex = idx;
+    shot = CINEMATIC_SHOTS[idx];
+  }
+
+  const duration = durationOverride || shot.duration;
+  const posObj = { x: shot.start.x, y: shot.start.y, z: shot.start.z };
+
+  camera.position.set(posObj.x, posObj.y, posObj.z);
+  camera.lookAt(ARENA_CENTER);
+
+  const easeFunc = (TWEEN.Easing?.Sinusoidal?.InOut) || (TWEEN.Easing?.Quadratic?.InOut) || (TWEEN.Easing?.Linear?.None);
+
+  activeCamTween = new TWEEN.Tween(posObj)
+    .to({ x: shot.end.x, y: shot.end.y, z: shot.end.z }, duration)
+    .easing(easeFunc)
+    .onUpdate(() => {
+      camera.position.set(posObj.x, posObj.y, posObj.z);
+      camera.lookAt(ARENA_CENTER);
+    })
+    .onComplete(() => {
+      activeCamTween = null;
+    })
+    .start();
 }
 
 /**
@@ -514,12 +474,13 @@ export function resetCameraToDefault(duration = 600, onDone = null) {
     return;
   }
 
-  if (activeCamTween) { activeCamTween.stop(); activeCamTween = null; }
-  if (activeTargetTween) { activeTargetTween.stop(); activeTargetTween = null; }
+  if (activeCamTween) {
+    activeCamTween.stop();
+    activeCamTween = null;
+  }
 
   const startPos = camera.position.clone();
   const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
-
   const easeFunc = (TWEEN.Easing?.Sinusoidal?.InOut) || (TWEEN.Easing?.Quadratic?.Out);
 
   activeCamTween = new TWEEN.Tween(posObj)
@@ -527,9 +488,10 @@ export function resetCameraToDefault(duration = 600, onDone = null) {
     .easing(easeFunc)
     .onUpdate(() => {
       camera.position.set(posObj.x, posObj.y, posObj.z);
-      camera.lookAt(GROUNDED_CENTER);
+      camera.lookAt(ARENA_CENTER);
     })
     .onComplete(() => {
+      activeCamTween = null;
       if (onDone) onDone();
     })
     .start();

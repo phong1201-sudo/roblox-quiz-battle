@@ -456,15 +456,15 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
   Boss.setBossPose('angry');
 
   // 2. Tween playerGroup.position in a high leap toward the boss:
-  //    Switch pose: setPlayerPose('dodge')
-  //    Tween playerGroup.position from (-4.5, 0, 0) up to peak (1.5, 3.8, 0) in 450ms (TWEEN.Easing.Quadratic.Out)
+  //    In milestone ultra slow-mo, player drifts upward in dodge pose over a full 2.5s (2500ms)
+  const leapDuration = context.isMilestone ? 2500 : 450;
   Player.setPlayerPose('dodge');
 
   new TWEEN.Tween(playerObj.position)
-    .to({ x: 1.5, y: 3.8, z: 0.0 }, 450)
-    .easing(TWEEN.Easing.Quadratic.Out)
+    .to({ x: 1.5, y: 3.8, z: 0.0 }, leapDuration)
+    .easing(context.isMilestone ? TWEEN.Easing.Sinusoidal.InOut : TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {
-      // 3. At apex over Boss:
+      // 3. Exactly when strike starts at apex: Snap instantly back to timeScale = 1.0!
       if (context.isMilestone) {
         setCombatTimeScale(1.0);
       }
@@ -480,8 +480,12 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
           try { Audio.playSlash?.(); } catch (e) {}
           if (context.applyHit1Damage) context.applyHit1Damage();
           Effects.spawnHitSpark(BOSS_VFX_POS);
-          Effects.triggerShake(0.25, 0.25);
-          Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-2 HP', '#ffee44', context.isMilestone ? 36 : 28);
+          if (context.isMilestone) {
+            Effects.spawnHitSpark(new THREE.Vector3(BOSS_VFX_POS.x + 0.3, BOSS_VFX_POS.y + 0.3, BOSS_VFX_POS.z));
+            Effects.spawnHitSpark(new THREE.Vector3(BOSS_VFX_POS.x - 0.3, BOSS_VFX_POS.y - 0.2, BOSS_VFX_POS.z));
+          }
+          Effects.triggerShake(context.isMilestone ? 0.65 : 0.25, context.isMilestone ? 0.5 : 0.25);
+          Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-2 HP', '#ffee44', context.isMilestone ? 42 : 28);
 
           // Map the status text and floating damage particles strictly to the active stage/boss element
           Effects.triggerElementalStatus(BOSS_VFX_POS, bossElement, context.hit1Label);
@@ -637,15 +641,13 @@ export function executeCombatTurn(ev, onDone) {
 
   const executeCorrectBranch = () => {
     if (isPlayerMilestone) {
-      // Deep ultra-slow-motion (0.08) during boss attack cast and player dodge
+      // True Anime Ultra Slow-Motion Bullet-Time (timeScale = 0.08) for a full 2.5s
       setCombatTimeScale(0.08);
-      // Shot 2: Hero Low-Angle locked near floor looking up toward boss (3.0s sweep)
-      triggerCinematicShot(2, 3000, true);
+      // Shot 2: Low-Angle Hero Cam gliding slowly around the floating player in dodge pose
+      triggerCinematicShot(2, 2500);
     } else {
-      // Slow-Motion effect during attack release
-      triggerCombatSlowMo(0.4, 800);
-      // Dynamic camera cycling 1-5 (3.0s sweep)
-      triggerCinematicShot(null, 3000, true);
+      // Randomly select one of the 5 distinct cinematic camera angles
+      triggerCinematicShot();
     }
 
     handleCorrectAnswer(selectedElement, isFullSet, () => {
@@ -655,104 +657,140 @@ export function executeCombatTurn(ev, onDone) {
   };
 
   const executeBossBranch = () => {
-    if (isBossMilestone) {
-      // Deep ultra-slow-motion (0.08) during boss charge and projectile creep
-      setCombatTimeScale(0.08);
-      // Shot 3: Over-the-Shoulder Boss View looking down at player (3.0s sweep)
-      triggerCinematicShot(3, 3000, false);
-    } else {
-      // Slow-Motion effect during attack release
-      triggerCombatSlowMo(0.4, 800);
-      // Dynamic camera cycling 1-5 (3.0s sweep)
-      triggerCinematicShot(null, 3000, false);
-    }
-
     const bossObj = Boss.getBossObject();
     const playerObj = Player.getPlayerObject();
     Boss.setBossPositionOverride(true);
 
-    // 1. Boss: setBossPose('angry') Super Saiyan roar for 1100ms
-    Boss.setBossPose('angry');
+    if (isBossMilestone) {
+      // 1. True Anime Ultra Slow-Motion Bullet-Time (timeScale = 0.08) for a full 2.5s
+      setCombatTimeScale(0.08);
+      // Shot 3: Over-the-Shoulder Boss Cam looking down at player
+      triggerCinematicShot(3, 2500);
 
-    setTimeout(() => {
-      // 2. Boss: setBossPose('attack'), lunges forward slightly to (3.0, 0, 0) in 300ms while casting projectile
-      Boss.setBossPose('attack');
+      // Player in dodge pose trying to evade
+      Player.setPlayerPose('dodge');
+      Boss.setBossPose('angry');
 
-      if (bossObj && typeof TWEEN !== 'undefined') {
-        new TWEEN.Tween(bossObj.position)
-          .to({ x: 3.0, y: 0.0, z: 0.0 }, 300)
-          .easing(TWEEN.Easing.Quadratic.Out)
-          .start();
-      }
-
-      Boss.playBossAttack(bossElement, () => {
-      // 2. As spell hits player:
-      if (isBossMilestone) {
-        setCombatTimeScale(1.0);
-      }
-      try { Audio.playHit?.(); } catch (e) {}
-      const shakeAmt = isBossMilestone ? 0.55 : 0.35;
-      Effects.triggerShake(shakeAmt, shakeAmt);
-      Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
-
-      const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
-      const dmgLabel = isBossMilestone ? `💥 BARRAGE -${playerDmg} HP` : `-${playerDmg} HP`;
-      const dmgColor = isFullSet ? '#ffd166' : '#ef233c';
-
-      const playerPos = Player.getPosition();
-      const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-      Effects.spawnDamageNumber(textPos, dmgLabel, dmgColor, isBossMilestone ? 38 : 32);
-
-      // Switch setPlayerPose('hit'), jitter player position backward to (-5.2, 0, 0) with red damage flash
-      Player.setPlayerPose('hit');
-      if (playerObj && typeof TWEEN !== 'undefined') {
-        new TWEEN.Tween(playerObj.position)
-          .to({ x: -5.2, y: 0.0, z: 0.0 }, 150)
-          .easing(TWEEN.Easing.Quadratic.Out)
-          .start();
-      }
-
-      // Hold hit pose for 500ms, then recover back to (-4.5, 0, 0) with setPlayerPose('idle')
-      // and Boss returns to (4.5, 0, 0) with setBossPose('idle')
+      // Slow charge & projectile creep for 2500ms
       setTimeout(() => {
+        // Exactly when the strike or projectile hits: snap instantly back to timeScale = 1.0!
+        setCombatTimeScale(1.0);
+        Boss.setBossPose('attack');
+
+        try { Audio.playHit?.(); } catch (e) {}
+        Effects.triggerShake(0.65, 0.55);
+        Effects.screenFlash('rgba(239,35,60,0.5)', 0.35);
+
+        const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
+        const dmgLabel = `💥 BARRAGE -${playerDmg} HP`;
+        const playerPos = Player.getPosition();
+        const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
+        Effects.spawnDamageNumber(textPos, dmgLabel, '#ef233c', 40);
+
+        Player.setPlayerPose('hit');
         if (playerObj && typeof TWEEN !== 'undefined') {
           new TWEEN.Tween(playerObj.position)
-            .to({ x: -4.5, y: 0.0, z: 0.0 }, 250)
+            .to({ x: -5.4, y: 0.0, z: 0.0 }, 150)
             .easing(TWEEN.Easing.Quadratic.Out)
-            .onComplete(() => {
-              Player.setPlayerPose('idle');
-            })
             .start();
-        } else {
-          Player.setPlayerPose('idle');
         }
 
-        if (bossObj && typeof TWEEN !== 'undefined') {
-          new TWEEN.Tween(bossObj.position)
-            .to({ x: 4.5, y: 0.0, z: 0.0 }, 300)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .onComplete(() => {
-              Boss.setBossPositionOverride(false);
-              Boss.setBossPose('idle');
-              if (ev.remainingPlayerHp !== undefined) {
-                if (hud.updateHpBars) {
-                  const hpMap = {};
-                  if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
-                  hud.updateHpBars(hpMap, ev.currentBossHp);
-                }
-              }
-              resetCameraToDefault(500, doneWrapper);
-            })
-            .start();
-        } else {
+        setTimeout(() => {
+          if (playerObj && typeof TWEEN !== 'undefined') {
+            new TWEEN.Tween(playerObj.position)
+              .to({ x: -4.5, y: 0.0, z: 0.0 }, 250)
+              .easing(TWEEN.Easing.Quadratic.Out)
+              .onComplete(() => {
+                Player.setPlayerPose('idle');
+              })
+              .start();
+          } else {
+            Player.setPlayerPose('idle');
+          }
+
           Boss.setBossPositionOverride(false);
           Boss.setBossPose('idle');
+          if (ev.remainingPlayerHp !== undefined && hud.updateHpBars) {
+            const hpMap = {};
+            if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
+            hud.updateHpBars(hpMap, ev.currentBossHp);
+          }
           resetCameraToDefault(500, doneWrapper);
+        }, 500);
+
+      }, 2500);
+
+    } else {
+      // Normal wrong answer:
+      triggerCinematicShot();
+      Boss.setBossPose('angry');
+
+      setTimeout(() => {
+        Boss.setBossPose('attack');
+        if (bossObj && typeof TWEEN !== 'undefined') {
+          new TWEEN.Tween(bossObj.position)
+            .to({ x: 3.0, y: 0.0, z: 0.0 }, 300)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start();
         }
-      }, 500);
-    }, () => {});
-  }, 1100);
-};
+
+        Boss.playBossAttack(bossElement, () => {
+          try { Audio.playHit?.(); } catch (e) {}
+          Effects.triggerShake(0.35, 0.35);
+          Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
+
+          const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
+          const dmgLabel = `-${playerDmg} HP`;
+          const playerPos = Player.getPosition();
+          const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
+          Effects.spawnDamageNumber(textPos, dmgLabel, isFullSet ? '#ffd166' : '#ef233c', 32);
+
+          Player.setPlayerPose('hit');
+          if (playerObj && typeof TWEEN !== 'undefined') {
+            new TWEEN.Tween(playerObj.position)
+              .to({ x: -5.2, y: 0.0, z: 0.0 }, 150)
+              .easing(TWEEN.Easing.Quadratic.Out)
+              .start();
+          }
+
+          setTimeout(() => {
+            if (playerObj && typeof TWEEN !== 'undefined') {
+              new TWEEN.Tween(playerObj.position)
+                .to({ x: -4.5, y: 0.0, z: 0.0 }, 250)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                  Player.setPlayerPose('idle');
+                })
+                .start();
+            } else {
+              Player.setPlayerPose('idle');
+            }
+
+            if (bossObj && typeof TWEEN !== 'undefined') {
+              new TWEEN.Tween(bossObj.position)
+                .to({ x: 4.5, y: 0.0, z: 0.0 }, 300)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                  Boss.setBossPositionOverride(false);
+                  Boss.setBossPose('idle');
+                  if (ev.remainingPlayerHp !== undefined && hud.updateHpBars) {
+                    const hpMap = {};
+                    if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
+                    hud.updateHpBars(hpMap, ev.currentBossHp);
+                  }
+                  resetCameraToDefault(500, doneWrapper);
+                })
+                .start();
+            } else {
+              Boss.setBossPositionOverride(false);
+              Boss.setBossPose('idle');
+              resetCameraToDefault(500, doneWrapper);
+            }
+          }, 500);
+        }, () => {});
+      }, 1100);
+    }
+  };
 
   if (isCorrect) {
     // ═════════════════════════════════════════════════════════════════════════

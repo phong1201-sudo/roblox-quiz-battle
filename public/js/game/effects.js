@@ -49,8 +49,8 @@ export function spawnDamageNumber(worldPos, text, color, size) {
 
 // ── Camera shake ──────────────────────────────────────────────────────────────
 export function triggerShake(magnitude, duration) {
-  shakeTime = duration; shakeMagnitude = magnitude;
-  if (cameraRef) camBasePos = cameraRef.position.clone();
+  shakeTime = duration;
+  shakeMagnitude = magnitude;
 }
 
 // ── Screen flash overlay ──────────────────────────────────────────────────────
@@ -1446,15 +1446,12 @@ export function update(deltaTime) {
     }
   }
 
-  // Camera shake
-  if (shakeTime > 0 && cameraRef && camBasePos) {
+  // Camera shake (relative jitter that decays smoothly without corrupting camera position)
+  if (shakeTime > 0 && cameraRef) {
     shakeTime -= deltaTime;
-    if (shakeTime > 0) {
-      cameraRef.position.x = camBasePos.x+(Math.random()-0.5)*2*shakeMagnitude;
-      cameraRef.position.y = camBasePos.y+(Math.random()-0.5)*2*shakeMagnitude;
-    } else {
-      cameraRef.position.copy(camBasePos);
-    }
+    const factor = Math.max(0, shakeTime);
+    cameraRef.position.x += (Math.random() - 0.5) * 1.2 * shakeMagnitude * factor;
+    cameraRef.position.y += (Math.random() - 0.5) * 1.2 * shakeMagnitude * factor;
   }
 }
 
