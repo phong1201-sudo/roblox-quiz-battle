@@ -215,14 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
     on('game_started', () => {
         showScreen('game');
         Audio.setInBattle(true);
-        // Start elemental battle BGM — wait 200ms for game_mode_set to set bossElement
-        setTimeout(() => {
-            try {
-                const el = window.gameState?.bossElement || window.gameState?.selectedBoss;
-                const track = (el === 'thunder' || el === 'fire' || el === 'frost') ? el : 'thunder';
-                Audio.playBGM(track);
-            } catch(e) {}
-        }, 200);
         requestAnimationFrame(() => {
             ensureSceneInit();
             if (hud.init)        hud.init(window.gameState);
@@ -231,8 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     on('question', (data) => {
-        if (hud.showQuestion)  hud.showQuestion(data);
-        if (scene.onQuestion)  scene.onQuestion(data);
+        if (scene.onQuestion) {
+            scene.onQuestion(data);
+        } else if (hud.showQuestion) {
+            hud.showQuestion(data);
+        }
     });
 
     on('answer_result', (data) => {

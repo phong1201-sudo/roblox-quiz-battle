@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=57.0">
+    <link rel="stylesheet" href="css/style.css?v=58.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -40,6 +40,18 @@
             <div id="loading-bar-fill" style="width:100%; height:100%; background:linear-gradient(90deg, #00b4d8, #06d6a0); animation:loadingPulse 1.2s infinite ease-in-out;"></div>
         </div>
         <div id="loading-error-text" style="display:none; color:#ef4444; font-size:10px; max-width:80%; text-align:center; font-family:'Be Vietnam Pro', sans-serif;"></div>
+    </div>
+
+    <!-- Pre-battle Asset Loading Gate Overlay -->
+    <div id="battle-loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(7,10,19,0.94); z-index:9000; align-items:center; justify-content:center; flex-direction:column; gap:16px; font-family:'Press Start 2P', cursive; backdrop-filter:blur(8px); opacity:1; transition:opacity 0.5s ease; pointer-events:all;">
+        <div style="font-size:36px; animation:pop 1s infinite alternate;">⚔️</div>
+        <div style="color:#00b4d8; font-size:13px; text-shadow:2px 2px 0 #ff6b35; text-align:center; padding:0 20px; line-height:1.8;">
+            Đang triệu hồi Đấu trường &amp; Chiến binh 3D...
+        </div>
+        <div style="width:260px; height:8px; background:#1a1a2e; border:2px solid #00b4d8; border-radius:4px; overflow:hidden;">
+            <div style="width:100%; height:100%; background:linear-gradient(90deg, #00b4d8, #ff6b35, #06d6a0); animation:loadingPulse 1.2s infinite ease-in-out;"></div>
+        </div>
+        <div id="battle-loading-status" style="color:#aaa; font-size:8px; font-family:'Be Vietnam Pro', sans-serif;">Đang nạp mô hình 3D &amp; hoạt ảnh chiến đấu...</div>
     </div>
 
     <div id="ui-root">
@@ -251,6 +263,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=57.0"></script>
+    <script type="module" src="js/main.js?v=58.0"></script>
 </body>
 </html>

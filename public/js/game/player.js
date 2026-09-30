@@ -1174,7 +1174,7 @@ export function playDodge(onDone) {
   isDodging = true;
   setPlayerPose('dodge');
   const startTime = performance.now();
-  const DURATION = 380; // ms
+  const DURATION = 450; // ms: parabolic arc leap over boss spell
   const startX = HOME_X;
   const targetX = 1.8; // Apex near Boss
 

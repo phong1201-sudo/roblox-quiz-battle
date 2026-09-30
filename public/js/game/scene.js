@@ -99,11 +99,31 @@ export function initScene(canvas) {
 // ─────────────────────────────────────────────────────────────────────────────
 // START GAME
 // ─────────────────────────────────────────────────────────────────────────────
-export function startGame(gameState) {
+let battleReady = false;
+let queuedQuestion = null;
+
+export function isBattleReady() {
+  return battleReady;
+}
+
+export function queueFirstQuestion(data) {
+  queuedQuestion = data;
+}
+
+export async function startGame(gameState) {
   window.gameScene = scene;
   currentGameState = gameState;
   gameMode = gameState.mode || 'pve';
   totalHp  = gameState.totalHp || 10;
+  battleReady = false;
+  queuedQuestion = null;
+
+  // Show Pre-battle Loading Gate Overlay
+  const loadingOverlay = document.getElementById('battle-loading-overlay');
+  if (loadingOverlay) {
+    loadingOverlay.style.display = 'flex';
+    loadingOverlay.style.opacity = '1';
+  }
 
   const activeElement = gameState.bossElement || gameState.element || 'thunder';
   Arena.setArenaTheme(activeElement);
@@ -117,34 +137,71 @@ export function startGame(gameState) {
     Player.applyElementalSet(playerOutfit);
   }
 
-  // Create & place player — faces +X toward boss
-  Player.createPlayer(gameState.myColor || '#f59e42', playerOutfit, gameState.equipped);
-  const playerObj = Player.getPlayerObject();
-  if (playerObj) {
-    // Ensure position matches our layout constants
-    playerObj.position.copy(PLAYER_HOME);
-    scene.add(playerObj);
+  // Pre-battle Asset Loading Gate: Block Question 1 until Player and Boss are 100% loaded & mounted
+  const bossTarget = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
+
+  const loadTasks = [
+    Player.loadPlayerOutfitPoses(scene, playerOutfit)
+  ];
+  if (gameMode === 'pve') {
+    loadTasks.push(Boss.loadBossPoses(scene, bossTarget));
+    bossActive = true;
   }
 
-  if (gameMode === 'pve') {
-    const bossTarget = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
-    const bossData = Boss.createBoss(scene, bossTarget);
-    bossActive = true;
+  try {
+    await Promise.all(loadTasks);
+    console.log('[scene] Pre-battle gate: All 3D fighter assets mounted successfully!');
+  } catch (err) {
+    console.error('[scene] Pre-battle gate loading error:', err);
+  }
 
-    // Boss spawns at BOSS_HOME (boss.js handles facing angle for procedural and custom models)
+  // Position player
+  const playerObj = Player.getPlayerObject();
+  if (playerObj) {
+    playerObj.position.copy(PLAYER_HOME);
+    if (!scene.children.includes(playerObj)) scene.add(playerObj);
+  }
+
+  // Position boss & setup boss HUD
+  if (gameMode === 'pve') {
     const bossObj = Boss.getBossObject?.();
     if (bossObj) {
       bossObj.position.copy(BOSS_HOME);
+      if (!scene.children.includes(bossObj)) scene.add(bossObj);
     }
 
+    const bossData = Boss.getCurrentBossData?.() || { name: 'Boss', stage: 1, element: bossTarget };
     const bossInfoEl = document.getElementById('boss-info');
     if (bossInfoEl) {
-      const elemEmoji = { thunder:'⚡', fire:'🔥', frost:'❄️' }[bossData.element] || '👾';
+      const elemEmoji = { thunder:'⚡', fire:'🔥', frost:'❄️' }[bossData.element || activeElement] || '👾';
       bossInfoEl.innerHTML =
-        `<span class="boss-stage">${elemEmoji} Stage ${bossData.stage}</span>` +
+        `<span class="boss-stage">${elemEmoji} Stage ${bossData.stage || 1}</span>` +
         `<span class="boss-name">${bossData.name}</span>`;
       bossInfoEl.style.display = 'flex';
     }
+  }
+
+  // Fade out loading overlay
+  battleReady = true;
+  if (loadingOverlay) {
+    loadingOverlay.style.opacity = '0';
+    setTimeout(() => {
+      loadingOverlay.style.display = 'none';
+    }, 500);
+  }
+
+  // Start combat BGM once models are mounted in memory
+  try {
+    const track = (activeElement === 'thunder' || activeElement === 'fire' || activeElement === 'frost') ? activeElement : 'thunder';
+    Audio.playBGM(track);
+  } catch (e) {}
+
+  // Present Question 1 if queued during model fetch
+  if (queuedQuestion) {
+    const qData = queuedQuestion;
+    queuedQuestion = null;
+    if (hud.showQuestion) hud.showQuestion(qData);
+    internalOnQuestion(qData);
   }
 
   // Elemental set unlock hook
@@ -178,6 +235,16 @@ export function startGame(gameState) {
 }
 
 export function onQuestion(data) {
+  if (!battleReady) {
+    console.log('[scene] Pre-battle gate active: Queuing Question 1 until models are ready');
+    queuedQuestion = data;
+    return;
+  }
+  if (hud.showQuestion) hud.showQuestion(data);
+  internalOnQuestion(data);
+}
+
+function internalOnQuestion(data) {
   // Flush any stale combat events from the previous question cycle
   pendingEvents.length = 0;
   combatBusy = false;

@@ -444,13 +444,13 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
     finishOnce();
   }, 6000);
 
-  // Step 1: Boss angry pose (300ms)
+  // Step 1: Boss angry pose
   Boss.setBossPose('angry');
   setTimeout(() => {
-    // Step 2: Boss attack pose (releases projectile)
+    // Step 2: Boss attack pose (fires boss spell)
     Boss.setBossPose('attack');
     Boss.playBossAttack(bossElement, () => {
-      // Step 3: Player dodges in dodge pose (leaps forward in arc over spell)
+      // Step 3: Player counter-combo: switch 'dodge' pose and leap in parabolic arc (~450ms)
       Player.setPlayerPose('dodge');
       Player.playDodge(() => {
         // Step 4: Apex over boss: snap time scale, switch to slash pose, execute strike & damage
@@ -489,7 +489,7 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
           }, 120);
         }
 
-        // Step 6: Boss recovers to angry
+        // Step 6: Boss recovers to angry (snarls)
         setTimeout(() => {
           Boss.setBossPose('angry');
 
@@ -505,7 +505,7 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
         }, 300);
       });
     }, () => {});
-  }, 300);
+  }, 200);
 }
 
 /**
@@ -600,9 +600,11 @@ export function executeCombatTurn(ev, onDone) {
     applyHit2Damage,
   };
 
-  const qNum = qIdx + 1;
-  const isPlayerMilestone = isCorrect && (qNum % 10 === 0);
-  const isBossMilestone = !isCorrect && (qNum % 10 === 5);
+  const questionNumber = (ev.questionNumber !== undefined)
+    ? ev.questionNumber
+    : (ev.index !== undefined ? ev.index : (qIdx + 1));
+  const isPlayerMilestone = isCorrect && (questionNumber > 0 && questionNumber % 10 === 0);
+  const isBossMilestone = !isCorrect && (questionNumber > 0 && questionNumber % 10 === 5);
 
   const executeCorrectBranch = () => {
     if (isPlayerMilestone) {
@@ -639,7 +641,7 @@ export function executeCombatTurn(ev, onDone) {
     // Step 1: Boss angry pose (300ms)
     Boss.setBossPose('angry');
     setTimeout(() => {
-      // Step 2: Boss attack pose (spell barrage)
+      // Step 2: Boss attack pose (launches heavy spell barrage)
       Boss.setBossPose('attack');
       Boss.playBossAttack(bossElement, () => {
         // Contact point: Snap to normal speed (timeScale = 1.0) so explosion & damage recoil run at full speed
@@ -661,17 +663,19 @@ export function executeCombatTurn(ev, onDone) {
         // Step 3: On impact: Player switches to 'hit' pose (recoil, red damage flash, -1 HP)
         Player.setPlayerPose('hit');
         Player.playHurt(() => {
-          // Step 4: Recover: Player returns to idle, Boss returns to idle
-          Player.setPlayerPose('idle');
-          Boss.setBossPose('idle');
-          if (ev.remainingPlayerHp !== undefined) {
-            if (hud.updateHpBars) {
-              const hpMap = {};
-              if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
-              hud.updateHpBars(hpMap, ev.currentBossHp);
+          // Hold hit pose for 400ms -> recover back to setPlayerPose('idle')
+          setTimeout(() => {
+            Player.setPlayerPose('idle');
+            Boss.setBossPose('idle');
+            if (ev.remainingPlayerHp !== undefined) {
+              if (hud.updateHpBars) {
+                const hpMap = {};
+                if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
+                hud.updateHpBars(hpMap, ev.currentBossHp);
+              }
             }
-          }
-          resetCameraToDefault(500, doneWrapper);
+            resetCameraToDefault(500, doneWrapper);
+          }, 400);
         });
       }, () => {});
     }, 300);
