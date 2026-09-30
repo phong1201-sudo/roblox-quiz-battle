@@ -25,6 +25,42 @@ const staticOptions = {
     }
   }
 };
+// Case-insensitive asset serving middleware to prevent Linux/Render 404s on folder case
+app.use(['/assets', '/public/assets'], (req, res, next) => {
+  const reqSubPath = decodeURIComponent(req.path).replace(/^\//, '');
+  const basePath = path.join(__dirname, '../public/assets');
+  const directPath = path.join(basePath, reqSubPath);
+
+  if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
+    return res.sendFile(directPath, staticOptions);
+  }
+
+  // Traverse and resolve case-insensitively across nested subdirectories
+  const segments = reqSubPath.split(/[/\\]/);
+  let cur = basePath;
+  let ok = true;
+  for (const seg of segments) {
+    if (!seg) continue;
+    if (!fs.existsSync(cur) || !fs.statSync(cur).isDirectory()) {
+      ok = false;
+      break;
+    }
+    const children = fs.readdirSync(cur);
+    const match = children.find(c => c.toLowerCase() === seg.toLowerCase());
+    if (match) {
+      cur = path.join(cur, match);
+    } else {
+      ok = false;
+      break;
+    }
+  }
+
+  if (ok && fs.existsSync(cur) && fs.statSync(cur).isFile()) {
+    return res.sendFile(cur, staticOptions);
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, '../public'), staticOptions));
 app.use('/assets', express.static(path.join(__dirname, '../public/assets'), staticOptions));
 app.use('/assets/character', express.static(path.join(__dirname, '../public/assets/character'), staticOptions));

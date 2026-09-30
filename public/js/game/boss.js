@@ -627,6 +627,82 @@ function _checkImageExists(el) {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY FALLBACK BLOCK BOSS (Guarantees visible boss on stage)
+// ─────────────────────────────────────────────────────────────────────────────
+export function createFallbackBlockBoss(bossType = 'thunder') {
+  const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
+  const group = new currentTHREE.Group();
+
+  const configs = {
+    thunder: { color: 0x1e1e2f, emissive: 0x00ffee, eye: 0xffff00 },
+    fire:    { color: 0x330d00, emissive: 0xff4400, eye: 0xffcc00 },
+    frost:   { color: 0x0a223a, emissive: 0x00b4d8, eye: 0xffffff }
+  };
+  const cfg = configs[bossType] || configs.thunder;
+  const mat = new currentTHREE.MeshLambertMaterial({
+    color: cfg.color,
+    emissive: cfg.emissive,
+    emissiveIntensity: 0.35
+  });
+  const hornMat = new currentTHREE.MeshLambertMaterial({
+    color: cfg.emissive,
+    emissive: cfg.emissive,
+    emissiveIntensity: 0.7
+  });
+  const eyeMat = new currentTHREE.MeshBasicMaterial({ color: cfg.eye });
+
+  // Big Torso
+  const torso = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(2.4, 2.6, 1.4), mat);
+  torso.position.y = 2.4;
+  group.add(torso);
+
+  // Head
+  const head = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(1.6, 1.6, 1.6), mat);
+  head.position.y = 4.4;
+  group.add(head);
+
+  // Glowing Horns
+  const hornL = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.35, 1.0, 0.35), hornMat);
+  hornL.position.set(-0.8, 5.3, 0);
+  hornL.rotation.z = -0.3;
+  group.add(hornL);
+
+  const hornR = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.35, 1.0, 0.35), hornMat);
+  hornR.position.set(0.8, 5.3, 0);
+  hornR.rotation.z = 0.3;
+  group.add(hornR);
+
+  // Glowing Eyes
+  const eyeL = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.35, 0.2, 0.1), eyeMat);
+  eyeL.position.set(-0.4, 4.4, 0.82);
+  group.add(eyeL);
+
+  const eyeR = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.35, 0.2, 0.1), eyeMat);
+  eyeR.position.set(0.4, 4.4, 0.82);
+  group.add(eyeR);
+
+  // Thick Arms
+  const armL = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.8, 2.4, 0.8), mat);
+  armL.position.set(-1.8, 2.4, 0);
+  group.add(armL);
+
+  const armR = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.8, 2.4, 0.8), mat);
+  armR.position.set(1.8, 2.4, 0);
+  group.add(armR);
+
+  // Heavy Legs
+  const legL = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.9, 2.0, 0.9), mat);
+  legL.position.set(-0.7, 1.0, 0);
+  group.add(legL);
+
+  const legR = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.9, 2.0, 0.9), mat);
+  legR.position.set(0.7, 1.0, 0);
+  group.add(legR);
+
+  return group;
+}
+
 export async function loadBossPoses(scene, element = 'thunder') {
   let el = element;
   if (typeof element === 'number') {
@@ -638,7 +714,7 @@ export async function loadBossPoses(scene, element = 'thunder') {
 
   const currentTHREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : THREE;
   if (!currentTHREE) {
-    console.error('[boss] THREE not available');
+    console.error('[Boss Loader] THREE not available');
     return null;
   }
 
@@ -659,66 +735,80 @@ export async function loadBossPoses(scene, element = 'thunder') {
   customBossOrigColors = [];
   customBossOrigEmissives = [];
 
-  let loadedCount = 0;
+  const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+  const loader = GLTFLoaderClass ? new GLTFLoaderClass() : null;
+
+  async function loadFirstAvailable(candidatePaths) {
+    if (!loader) return null;
+    for (const path of candidatePaths) {
+      try {
+        console.log(`[Boss Loader] Trying to fetch: ${path}`);
+        const gltf = await new Promise((resolve, reject) => {
+          loader.load(path, resolve, undefined, reject);
+        });
+        console.log(`[Boss Loader] Successfully loaded: ${path}`);
+        return gltf.scene;
+      } catch (e) {
+        console.warn(`[Boss Loader] Path failed: ${path}`);
+      }
+    }
+    return null;
+  }
 
   for (const pose of BOSS_POSE_NAMES) {
-    const candidateUrls = [
-      `/assets/Boss/boss_${el}_${pose}.glb`,
+    const candidateBossPaths = [
       `/assets/boss/boss_${el}_${pose}.glb`,
-      `/assets/Boss/boss_${el}_idle.glb`,
+      `/assets/Boss/boss_${el}_${pose}.glb`,
       `/assets/boss/boss_${el}_idle.glb`,
-      `/assets/character/boss_${el}.glb`,
-      `/assets/character/boss_thunder.glb`
+      `/assets/Boss/boss_${el}_idle.glb`,
+      `/assets/boss/boss_${el}.glb`,
+      `/assets/Boss/boss_${el}.glb`,
+      `/assets/boss/${el}_boss.glb`,
+      `/assets/character/boss_${el}.glb`
     ];
 
-    let gltf = null;
-    for (const url of candidateUrls) {
-      gltf = await _loadGLTF(url);
-      if (gltf && gltf.scene) break;
+    let mesh = await loadFirstAvailable(candidateBossPaths);
+
+    // If still null, generate stylized emergency fallback boss
+    if (!mesh) {
+      console.error(`[Boss Loader] Critical: No file found for ${el} ${pose}. Creating visible block boss.`);
+      mesh = createFallbackBlockBoss(el);
     }
 
-    if (gltf && gltf.scene) {
-      const model = gltf.scene.clone(true);
-      model.traverse((child) => {
-        if (child.isMesh) {
-          child.visible = true;
-          child.castShadow = true;
-          child.receiveShadow = true;
-          if (child.material) {
-            child.material.transparent = false;
-            child.material.opacity = 1.0;
-            child.material.depthWrite = true;
-            customBossMaterials.push(child.material);
-            if (child.material.color) customBossOrigColors.push(child.material.color.getHex());
-            if (child.material.emissive) customBossOrigEmissives.push(child.material.emissive.getHex());
-          }
+    // Target height 4.5 for imposing boss scale
+    const box = new currentTHREE.Box3().setFromObject(mesh);
+    const size = box.getSize(new currentTHREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const targetHeight = 4.5;
+    const scale = targetHeight / maxDim;
+    mesh.scale.set(scale, scale, scale);
+
+    // Center horizontally and align base at y = 0
+    const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
+    const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+    const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+    const minY = scaledBox.min.y;
+
+    const poseGroup = new currentTHREE.Group();
+    poseGroup.name = `BossPose_${pose}`;
+    mesh.position.set(-centerX, -minY, -centerZ);
+    poseGroup.add(mesh);
+
+    // Ensure all materials are visible
+    mesh.traverse((c) => {
+      if (c.isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+        if (c.material) {
+          c.material.transparent = false;
+          c.material.opacity = 1.0;
         }
-      });
+      }
+    });
 
-      // Target height 4.5 for imposing boss scale
-      const box = new currentTHREE.Box3().setFromObject(model);
-      const size = box.getSize(new currentTHREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const targetHeight = 4.5;
-      const scale = targetHeight / maxDim;
-      model.scale.set(scale, scale, scale);
-
-      // Center horizontally and align base at y = 0
-      const scaledBox = new currentTHREE.Box3().setFromObject(model);
-      const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-      const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-      const minY = scaledBox.min.y;
-
-      const poseGroup = new currentTHREE.Group();
-      poseGroup.name = `BossPose_${pose}`;
-      model.position.set(-centerX, -minY, -centerZ);
-      poseGroup.add(model);
-
-      poseGroup.visible = (pose === 'idle');
-      bossGroup.add(poseGroup);
-      bossPoses[pose] = poseGroup;
-      loadedCount++;
-    }
+    poseGroup.visible = (pose === 'idle');
+    bossGroup.add(poseGroup);
+    bossPoses[pose] = poseGroup;
   }
 
   // Fallbacks: if any pose is missing, fallback to idle
@@ -728,20 +818,22 @@ export async function loadBossPoses(scene, element = 'thunder') {
         bossPoses[p] = bossPoses.idle;
       }
     }
-    isCustomBoss = true;
-    is2DBoss = false;
-    window.bossModel = bossGroup;
-    setBossPose('idle');
-    console.log(`[GLTF Success] Boss multi-mesh poses ready (${loadedCount}/4 loaded) for ${el}`);
   }
+
+  isCustomBoss = true;
+  is2DBoss = false;
+  window.bossModel = bossGroup;
+  setBossPose('idle');
 
   bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
   bossGroup.rotation.y = -Math.PI / 2; // Face towards Player (-X)
 
-  if (scene && !scene.children.includes(bossGroup)) {
-    scene.add(bossGroup);
+  const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);
+  if (targetScene && !targetScene.children.includes(bossGroup)) {
+    targetScene.add(bossGroup);
   }
 
+  console.log(`[Boss Loader] Boss poses ready for ${el}:`, bossPoses);
   return bossGroup;
 }
 

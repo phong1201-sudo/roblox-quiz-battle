@@ -54,6 +54,7 @@ export function initScene(canvas) {
   renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
 
   scene = new THREE.Scene();
+  window.gameScene = scene;
   scene.background = new THREE.Color(0x0d0528);
   scene.fog = new THREE.FogExp2(0x0d0528, 0.022);
 
@@ -99,6 +100,7 @@ export function initScene(canvas) {
 // START GAME
 // ─────────────────────────────────────────────────────────────────────────────
 export function startGame(gameState) {
+  window.gameScene = scene;
   currentGameState = gameState;
   gameMode = gameState.mode || 'pve';
   totalHp  = gameState.totalHp || 10;

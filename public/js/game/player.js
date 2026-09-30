@@ -4,7 +4,7 @@ const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : n
 
 // Multi-Mesh Pose State & Group Exports (Required by Arena Architecture)
 export const playerPoses = { idle: null, dodge: null, slash: null, hit: null };
-export const playerGroup = (typeof THREE !== 'undefined' && THREE) ? new THREE.Group() : null;
+export let playerGroup = (typeof THREE !== 'undefined' && THREE) ? new THREE.Group() : null;
 
 // Backwards-compatible aliases
 export const poseMeshes = playerPoses;
@@ -59,108 +59,166 @@ export function setPlayerPose(poseName = 'idle') {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY FALLBACK BLOCK AVATAR (Guarantees visible character on stage)
+// ─────────────────────────────────────────────────────────────────────────────
+export function createFallbackBlockCharacter(outfit = 'default') {
+  const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
+  const group = new currentTHREE.Group();
+
+  const colors = {
+    fire: 0xff4400,
+    frost: 0x00cfff,
+    thunder: 0xffd700,
+    default: 0xff6b35
+  };
+  const bodyColor = colors[outfit] || colors.default;
+  const mat = new currentTHREE.MeshLambertMaterial({ color: bodyColor });
+  const darkMat = new currentTHREE.MeshLambertMaterial({ color: 0x222233 });
+  const skinMat = new currentTHREE.MeshLambertMaterial({ color: 0xffddbb });
+
+  // Torso
+  const torso = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(1.2, 1.4, 0.6), mat);
+  torso.position.y = 1.9;
+  group.add(torso);
+
+  // Head
+  const head = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.85, 0.85, 0.85), skinMat);
+  head.position.y = 3.0;
+  group.add(head);
+
+  // Hair / Helmet
+  const hair = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.9, 0.35, 0.9), mat);
+  hair.position.y = 3.35;
+  group.add(hair);
+
+  // Left Arm
+  const leftArm = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.38, 1.3, 0.38), mat);
+  leftArm.position.set(-0.85, 1.85, 0);
+  group.add(leftArm);
+
+  // Right Arm
+  const rightArm = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.38, 1.3, 0.38), mat);
+  rightArm.position.set(0.85, 1.85, 0);
+  group.add(rightArm);
+
+  // Left Leg
+  const leftLeg = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.44, 1.2, 0.44), darkMat);
+  leftLeg.position.set(-0.32, 0.6, 0);
+  group.add(leftLeg);
+
+  // Right Leg
+  const rightLeg = new currentTHREE.Mesh(new currentTHREE.BoxGeometry(0.44, 1.2, 0.44), darkMat);
+  rightLeg.position.set(0.32, 0.6, 0);
+  group.add(rightLeg);
+
+  return group;
+}
+
 /**
  * Loads the 4 distinct pose meshes directly for the active outfit:
- * idle, dodge, slash, hit
+ * idle, dodge, slash, hit with robust multi-step fallback chain
  */
 export async function loadPlayerOutfitPoses(scene, outfit = 'fire') {
   activeElement = outfit || 'default';
   const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
   if (!currentTHREE) {
-    console.error('[player] THREE not available');
+    console.error('[Player Loader] THREE not available');
     return null;
   }
 
-  const targetGroup = playerGroup || (new currentTHREE.Group());
+  if (!playerGroup) {
+    playerGroup = new currentTHREE.Group();
+  }
 
-  // Clear previous meshes
-  while (targetGroup.children.length > 0) {
-    targetGroup.remove(targetGroup.children[0]);
+  // Clear any existing models
+  while (playerGroup.children.length > 0) {
+    playerGroup.remove(playerGroup.children[0]);
   }
 
   const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
-  if (!GLTFLoaderClass) {
-    console.warn('[player] GLTFLoader not available');
-    return targetGroup;
-  }
-
-  const loader = new GLTFLoaderClass();
+  const loader = GLTFLoaderClass ? new GLTFLoaderClass() : null;
   const poses = ['idle', 'dodge', 'slash', 'hit'];
+
+  async function loadFirstAvailable(candidatePaths) {
+    if (!loader) return null;
+    for (const path of candidatePaths) {
+      try {
+        console.log(`[Player Loader] Trying to fetch: ${path}`);
+        const gltf = await new Promise((resolve, reject) => {
+          loader.load(path, resolve, undefined, reject);
+        });
+        console.log(`[Player Loader] Successfully loaded: ${path}`);
+        return gltf.scene;
+      } catch (e) {
+        console.warn(`[Player Loader] Path failed: ${path}`);
+      }
+    }
+    return null;
+  }
 
   for (const pose of poses) {
     const candidatePaths = [
       `/assets/character/player_${activeElement}_${pose}.glb`,
       `/assets/character/player_${activeElement}_idle.glb`,
+      `/assets/character/player_${activeElement}.glb`,
+      `/assets/character/${activeElement}player.glb`,
       `/assets/character/player_default_${pose}.glb`,
-      `/assets/character/player_default_idle.glb`
+      `/assets/character/player_default_idle.glb`,
+      `/assets/character/player_default.glb`,
+      `/assets/character/default_character.glb`
     ];
 
-    let mesh = null;
-    for (const path of candidatePaths) {
-      try {
-        const gltf = await new Promise((resolve, reject) => loader.load(path, resolve, undefined, reject));
-        mesh = gltf.scene;
+    let mesh = await loadFirstAvailable(candidatePaths);
 
-        mesh.traverse((child) => {
-          if (child.isMesh) {
-            child.visible = true;
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              child.material.transparent = false;
-              child.material.opacity = 1.0;
-              child.material.depthWrite = true;
-            }
-          }
-        });
-
-        // Normalize bounding box & scale (~3.5 height)
-        const box = new currentTHREE.Box3().setFromObject(mesh);
-        const size = box.getSize(new currentTHREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const scale = 3.5 / maxDim;
-        mesh.scale.set(scale, scale, scale);
-
-        // Center horizontally & base at y = 0
-        const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
-        const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
-        const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
-        const minY = scaledBox.min.y;
-        mesh.position.set(-centerX, -minY, -centerZ);
-
-        mesh.visible = (pose === 'idle'); // Only idle visible at start
-        playerPoses[pose] = mesh;
-        targetGroup.add(mesh);
-        break;
-      } catch (err) {
-        // try next fallback path
-      }
-    }
-
+    // If still null, create stylized emergency fallback avatar so player is NEVER invisible
     if (!mesh) {
-      console.warn(`[player] Could not load pose ${pose} for ${activeElement}, fallback using idle if available`);
+      console.error(`[Player Loader] Critical: No file found for ${activeElement} ${pose}. Creating visible block avatar.`);
+      mesh = createFallbackBlockCharacter(activeElement);
     }
-  }
 
-  // Ensure all poses have fallback to idle if missing
-  if (playerPoses.idle) {
-    for (const p of poses) {
-      if (!playerPoses[p]) {
-        playerPoses[p] = playerPoses.idle;
+    // Auto-normalize bounding box to standard height = 3.6
+    const box = new currentTHREE.Box3().setFromObject(mesh);
+    const size = box.getSize(new currentTHREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const scale = 3.6 / maxDim;
+    mesh.scale.set(scale, scale, scale);
+
+    // Center horizontally & base at y = 0
+    const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
+    const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
+    const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
+    const minY = scaledBox.min.y;
+    mesh.position.set(-centerX, -minY, -centerZ);
+
+    // Ensure all materials are visible
+    mesh.traverse((c) => {
+      if (c.isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+        if (c.material) {
+          c.material.transparent = false;
+          c.material.opacity = 1.0;
+        }
       }
-    }
+    });
+
+    mesh.visible = (pose === 'idle');
+    playerPoses[pose] = mesh;
+    playerGroup.add(mesh);
   }
 
-  targetGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-  targetGroup.rotation.y = FACE_ROT_Y; // Face towards Boss (+X)
+  playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
+  playerGroup.rotation.y = FACE_ROT_Y; // Facing Boss (+X)
 
-  if (scene && !scene.children.includes(targetGroup)) {
-    scene.add(targetGroup);
+  const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);
+  if (targetScene && !targetScene.children.includes(playerGroup)) {
+    targetScene.add(playerGroup);
   }
 
-  window.playerModel = targetGroup;
-  console.log(`[player] Outfit poses successfully loaded for ${activeElement}:`, playerPoses);
-  return targetGroup;
+  window.playerModel = playerGroup;
+  console.log(`[Player Loader] Outfit poses successfully loaded for ${activeElement}:`, playerPoses);
+  return playerGroup;
 }
 
 export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded) {
