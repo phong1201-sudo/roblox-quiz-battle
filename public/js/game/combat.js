@@ -442,30 +442,70 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
   const safetyTimeout = setTimeout(() => {
     console.warn('[combat] handleCorrectAnswer safety timeout triggered');
     finishOnce();
-  }, 5000);
+  }, 6000);
 
-  // Step 1: Boss executes attack motion (Boss switches angry -> attack)
-  Boss.playBossAttack(bossElement, () => {
-    // Step 2: Player dodges in dodge pose
-    Player.setPlayerPose('dodge');
-    Player.playDodge(() => {
-      // Milestone: Player lands -> snap to normal speed (timeScale = 1.0)
-      if (context.isMilestone) {
-        setCombatTimeScale(1.0);
-      }
-      // Step 3: Player snaps to slash pose and performs counter-attack
-      Player.setPlayerPose('slash');
-      executePlayerCounterAttack(selectedElement, isFullSet, () => {
-        // Step 4: Return both fighters to idle
-        clearTimeout(safetyTimeout);
-        Player.setPlayerPose('idle');
-        Boss.setBossPose('idle');
-        finishOnce();
-      }, context);
-    });
-  }, () => {
-    // Boss attack action completed
-  });
+  // Step 1: Boss angry pose (300ms)
+  Boss.setBossPose('angry');
+  setTimeout(() => {
+    // Step 2: Boss attack pose (releases projectile)
+    Boss.setBossPose('attack');
+    Boss.playBossAttack(bossElement, () => {
+      // Step 3: Player dodges in dodge pose (leaps forward in arc over spell)
+      Player.setPlayerPose('dodge');
+      Player.playDodge(() => {
+        // Step 4: Apex over boss: snap time scale, switch to slash pose, execute strike & damage
+        if (context.isMilestone) {
+          setCombatTimeScale(1.0);
+        }
+        Player.setPlayerPose('slash');
+
+        try { Audio.playSlash?.(); } catch (e) {}
+        if (context.applyHit1Damage) context.applyHit1Damage();
+        Effects.spawnHitSpark(BOSS_VFX_POS);
+        Effects.triggerShake(0.25, 0.25);
+        Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-1 HP', '#ffee44', context.isMilestone ? 36 : 28);
+
+        // Step 5: Boss flinches in hit pose
+        Boss.setBossPose('hit');
+        Boss.playBossHurt();
+
+        // Optional full elemental set follow-up
+        if (isFullSet && selectedElement) {
+          setTimeout(() => {
+            if (selectedElement === 'thunder') {
+              try { Audio.playThunder?.(); } catch (e) {}
+              if (context.applyHit2Damage) context.applyHit2Damage();
+              Effects.triggerLightningSlash(BOSS_VFX_POS, context.hit2Label);
+            } else if (selectedElement === 'fire') {
+              try { Audio.playFire?.(); } catch (e) {}
+              if (context.applyHit2Damage) context.applyHit2Damage();
+              Effects.spawnFireVortexAroundBoss(BOSS_VFX_POS);
+              Effects.triggerFireBurst(BOSS_VFX_POS, context.hit2Label);
+            } else if (selectedElement === 'frost') {
+              try { Audio.playFrost?.(); } catch (e) {}
+              if (context.applyHit2Damage) context.applyHit2Damage();
+              Effects.triggerFrostShatter(BOSS_VFX_POS, context.hit2Label);
+            }
+          }, 120);
+        }
+
+        // Step 6: Boss recovers to angry
+        setTimeout(() => {
+          Boss.setBossPose('angry');
+
+          // Step 7: Boss returns to idle while Player leaps back to origin in idle pose
+          setTimeout(() => {
+            Boss.setBossPose('idle');
+            Player.playLeapBack(() => {
+              clearTimeout(safetyTimeout);
+              Player.setPlayerPose('idle');
+              finishOnce();
+            });
+          }, 300);
+        }, 300);
+      });
+    }, () => {});
+  }, 300);
 }
 
 /**
@@ -593,43 +633,45 @@ export function executeCombatTurn(ev, onDone) {
       triggerCinematicShot(null, 3000, false);
     }
 
-    Boss.playBossAttack(bossElement, () => {
-      // Contact point: Snap to normal speed (timeScale = 1.0) so explosion & damage recoil run at full speed
-      if (isBossMilestone) {
-        setCombatTimeScale(1.0);
-      }
-      try { Audio.playHit?.(); } catch (e) {}
-      const shakeAmt = isBossMilestone ? 0.55 : 0.35;
-      Effects.triggerShake(shakeAmt, shakeAmt);
-
-      const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
-      const dmgLabel = isBossMilestone ? `💥 BARRAGE -${playerDmg} HP` : `-${playerDmg} HP`;
-      const dmgColor = isFullSet ? '#ffd166' : '#ef233c';
-
-      const playerPos = Player.getPosition();
-      const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-      Effects.spawnDamageNumber(textPos, dmgLabel, dmgColor, isBossMilestone ? 38 : 32);
-
-      // Player staggers and flashes red in 'hit' pose
-      Player.setPlayerPose('hit');
-      Player.playHurt(() => {
-        Player.setPlayerPose('idle');
-        if (ev.remainingPlayerHp !== undefined) {
-          if (hud.updateHpBars) {
-            const hpMap = {};
-            if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
-            hud.updateHpBars(hpMap, ev.currentBossHp);
-          }
+    // Step 1: Boss angry pose (300ms)
+    Boss.setBossPose('angry');
+    setTimeout(() => {
+      // Step 2: Boss attack pose (spell barrage)
+      Boss.setBossPose('attack');
+      Boss.playBossAttack(bossElement, () => {
+        // Contact point: Snap to normal speed (timeScale = 1.0) so explosion & damage recoil run at full speed
+        if (isBossMilestone) {
+          setCombatTimeScale(1.0);
         }
-      });
-    }, () => {
-      setTimeout(() => {
-        setCombatTimeScale(1.0);
-        Boss.setBossPose('idle');
-        Player.setPlayerPose('idle');
-        resetCameraToDefault(500, doneWrapper);
-      }, 150);
-    });
+        try { Audio.playHit?.(); } catch (e) {}
+        const shakeAmt = isBossMilestone ? 0.55 : 0.35;
+        Effects.triggerShake(shakeAmt, shakeAmt);
+
+        const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
+        const dmgLabel = isBossMilestone ? `💥 BARRAGE -${playerDmg} HP` : `-${playerDmg} HP`;
+        const dmgColor = isFullSet ? '#ffd166' : '#ef233c';
+
+        const playerPos = Player.getPosition();
+        const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
+        Effects.spawnDamageNumber(textPos, dmgLabel, dmgColor, isBossMilestone ? 38 : 32);
+
+        // Step 3: On impact: Player switches to 'hit' pose (recoil, red damage flash, -1 HP)
+        Player.setPlayerPose('hit');
+        Player.playHurt(() => {
+          // Step 4: Recover: Player returns to idle, Boss returns to idle
+          Player.setPlayerPose('idle');
+          Boss.setBossPose('idle');
+          if (ev.remainingPlayerHp !== undefined) {
+            if (hud.updateHpBars) {
+              const hpMap = {};
+              if (window.gameState?.myId) hpMap[window.gameState.myId] = ev.remainingPlayerHp;
+              hud.updateHpBars(hpMap, ev.currentBossHp);
+            }
+          }
+          resetCameraToDefault(500, doneWrapper);
+        });
+      }, () => {});
+    }, 300);
   };
 
   if (isCorrect) {

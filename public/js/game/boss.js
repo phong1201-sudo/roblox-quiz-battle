@@ -57,7 +57,7 @@ const BOSS_ROSTER = [
 ];
 
 // ─── Module state ─────────────────────────────────────────────────────────────
-let bossGroup = null;
+export let bossGroup = null;
 let bossScene = null;
 let proceduralRoot = null;
 let customBossModel = null;
@@ -80,14 +80,15 @@ let customBossBone = null;
 let defeatCompleteCallbacks = [];
 
 // Multi-Mesh Pose Switching State for Boss
-const BOSS_POSE_NAMES = ['idle', 'angry', 'attack', 'hit'];
+export const BOSS_POSE_NAMES = ['idle', 'angry', 'attack', 'hit'];
 let currentBossPose = 'idle';
-const bossPoseMeshes = {
+export const bossPoses = {
   idle: null,
   angry: null,
   attack: null,
   hit: null
 };
+export const bossPoseMeshes = bossPoses;
 
 export function getBossPose() {
   return currentBossPose;
@@ -95,9 +96,9 @@ export function getBossPose() {
 
 export function setBossPose(poseName = 'idle') {
   currentBossPose = poseName;
-  const targetMesh = bossPoseMeshes[poseName] || bossPoseMeshes.idle;
+  const targetMesh = bossPoses[poseName] || bossPoses.idle;
   for (const name of BOSS_POSE_NAMES) {
-    const mesh = bossPoseMeshes[name];
+    const mesh = bossPoses[name];
     if (mesh) {
       mesh.visible = (mesh === targetMesh);
     }
@@ -626,16 +627,34 @@ function _checkImageExists(el) {
   });
 }
 
-async function _loadCustomBoss(el) {
-  if (!el || !bossGroup) return;
+export async function loadBossPoses(scene, element = 'thunder') {
+  let el = element;
+  if (typeof element === 'number') {
+    el = ['thunder', 'fire', 'frost', 'thunder'][element] || 'thunder';
+  } else if (!el) {
+    el = 'thunder';
+  }
+  el = String(el).toLowerCase();
 
-  // Reset boss pose meshes
-  for (const p of BOSS_POSE_NAMES) {
-    bossPoseMeshes[p] = null;
+  const currentTHREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : THREE;
+  if (!currentTHREE) {
+    console.error('[boss] THREE not available');
+    return null;
   }
 
-  customBossRoot = new THREE.Group();
-  customBossRoot.name = 'CustomBossRoot';
+  if (!bossGroup) {
+    bossGroup = new currentTHREE.Group();
+  }
+
+  // Reset boss pose meshes & clear children
+  while (bossGroup.children.length > 0) {
+    bossGroup.remove(bossGroup.children[0]);
+  }
+
+  for (const p of BOSS_POSE_NAMES) {
+    bossPoses[p] = null;
+  }
+
   customBossMaterials = [];
   customBossOrigColors = [];
   customBossOrigEmissives = [];
@@ -644,17 +663,18 @@ async function _loadCustomBoss(el) {
 
   for (const pose of BOSS_POSE_NAMES) {
     const candidateUrls = [
-      `/assets/boss/boss_${el}_${pose}.glb`,
       `/assets/Boss/boss_${el}_${pose}.glb`,
-      `/assets/boss/boss_${el}_idle.glb`,
+      `/assets/boss/boss_${el}_${pose}.glb`,
       `/assets/Boss/boss_${el}_idle.glb`,
-      `/assets/character/boss_${el}.glb`
+      `/assets/boss/boss_${el}_idle.glb`,
+      `/assets/character/boss_${el}.glb`,
+      `/assets/character/boss_thunder.glb`
     ];
 
     let gltf = null;
     for (const url of candidateUrls) {
       gltf = await _loadGLTF(url);
-      if (gltf) break;
+      if (gltf && gltf.scene) break;
     }
 
     if (gltf && gltf.scene) {
@@ -675,99 +695,60 @@ async function _loadCustomBoss(el) {
         }
       });
 
-      // Calculate safe bounding box
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-
       // Target height 4.2 for imposing boss scale
+      const box = new currentTHREE.Box3().setFromObject(model);
+      const size = box.getSize(new currentTHREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
       const targetHeight = 4.2;
-      const scale = (maxDim > 0.01 && !isNaN(maxDim)) ? (targetHeight / maxDim) : 1.0;
+      const scale = targetHeight / maxDim;
       model.scale.set(scale, scale, scale);
 
       // Center horizontally and align base at y = 0
-      const scaledBox = new THREE.Box3().setFromObject(model);
+      const scaledBox = new currentTHREE.Box3().setFromObject(model);
       const centerX = (scaledBox.min.x + scaledBox.max.x) / 2;
       const centerZ = (scaledBox.min.z + scaledBox.max.z) / 2;
       const minY = scaledBox.min.y;
 
-      const poseGroup = new THREE.Group();
+      const poseGroup = new currentTHREE.Group();
       poseGroup.name = `BossPose_${pose}`;
       model.position.set(-centerX, -minY, -centerZ);
       poseGroup.add(model);
 
-      // Face player on left (-X):
-      poseGroup.rotation.y = -Math.PI / 2;
       poseGroup.visible = (pose === 'idle');
-
-      customBossRoot.add(poseGroup);
-      bossPoseMeshes[pose] = poseGroup;
+      bossGroup.add(poseGroup);
+      bossPoses[pose] = poseGroup;
       loadedCount++;
     }
   }
 
   // Fallbacks: if any pose is missing, fallback to idle
-  if (bossPoseMeshes.idle) {
+  if (bossPoses.idle) {
     for (const p of BOSS_POSE_NAMES) {
-      if (!bossPoseMeshes[p]) {
-        bossPoseMeshes[p] = bossPoseMeshes.idle;
+      if (!bossPoses[p]) {
+        bossPoses[p] = bossPoses.idle;
       }
     }
-    if (proceduralRoot) proceduralRoot.visible = false;
     isCustomBoss = true;
     is2DBoss = false;
-    bossGroup.add(customBossRoot);
     window.bossModel = bossGroup;
     setBossPose('idle');
     console.log(`[GLTF Success] Boss multi-mesh poses ready (${loadedCount}/4 loaded) for ${el}`);
-    return;
   }
 
-  // 2. Attempt 2.5D Billboard Sprite Boss (fallback)
-  const imgUrl = await _checkImageExists(el);
-  if (imgUrl && bossGroup) {
-    if (proceduralRoot) proceduralRoot.visible = false;
-    isCustomBoss = true;
-    is2DBoss = true;
+  bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
+  bossGroup.rotation.y = -Math.PI / 2; // Face towards Player (-X)
 
-    new THREE.TextureLoader().load(imgUrl, (tex) => {
-      if (!bossGroup) return;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const planeGeo = new THREE.PlaneGeometry(3.6, 4.8);
-      const planeMat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      const planeMesh = new THREE.Mesh(planeGeo, planeMat);
-      planeMesh.position.set(0, 2.4, 0);
-      planeMesh.rotation.y = -Math.PI / 6; // Angled toward player/camera
-      customBossRoot = new THREE.Group();
-      customBossRoot.add(planeMesh);
-      bossGroup.add(customBossRoot);
-      window.bossModel = bossGroup;
-      console.log(`[boss] Successfully mounted 2.5D billboard sprite for Boss ${el}`);
-    });
-    return;
+  if (scene && !scene.children.includes(bossGroup)) {
+    scene.add(bossGroup);
   }
 
-  // 3. Fallback: stylized colored block puppet
-  if (proceduralRoot) {
-    proceduralRoot.visible = true;
-    proceduralRoot.traverse((child) => {
-      if (child.isMesh) {
-        child.visible = true;
-        if (child.material) {
-          child.material.transparent = false;
-          child.material.opacity = 1.0;
-        }
-      }
-    });
-  }
-  window.bossModel = bossGroup;
-  console.log(`[boss] Using stylized procedural puppet fallback for Boss ${el}`);
+  return bossGroup;
 }
+
+async function _loadCustomBoss(el) {
+  return loadBossPoses(bossScene, el);
+}
+
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 export function createBoss(scene, bossIdentifier = 0) {
@@ -783,24 +764,19 @@ export function createBoss(scene, bossIdentifier = 0) {
   }
 
   bossGroup = new THREE.Group();
-  proceduralRoot = new THREE.Group();
-  proceduralRoot.name = 'ProceduralRoot';
-  proceduralRoot.rotation.y = Math.PI / 2; // Procedural boss front faces -X (toward player)
-  bossGroup.add(proceduralRoot);
+  bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
+  bossGroup.rotation.y = -Math.PI / 2; // Face towards Player (-X)
+  scene.add(bossGroup);
 
   allBodyParts = []; originalColors = []; accentParts = [];
   customBossMaterials = []; customBossOrigColors = []; customBossOrigEmissives = [];
   customBossModel = null; customBossRoot = null;
-  isCustomBoss = false; is2DBoss = false; isDefeated = false;
+  isCustomBoss = true; is2DBoss = false; isDefeated = false;
   bossSkinPlane = null; idleTime = 0; anim.active = false;
   bossGroup.scale.set(1, 1, 1);
   bossGroup.visible = true;
 
-  const el = currentBossData.element;
-  if      (el==='thunder') buildThunderGolem(currentBossData);
-  else if (el==='fire')    buildInfernoDemon(currentBossData);
-  else if (el==='frost')   buildFrostTitan(currentBossData);
-  else                     buildShadowKing(currentBossData);
+  const el = currentBossData.element || 'thunder';
 
   // Elemental ambient light on boss
   if (elementalLightRef) scene.remove(elementalLightRef);
@@ -811,14 +787,8 @@ export function createBoss(scene, bossIdentifier = 0) {
     scene.add(elementalLightRef);
   }
 
-  bossGroup.position.set(BOSS_HOME.x, BOSS_HOME.y, BOSS_HOME.z);
-  bossGroup.rotation.y = 0;
-  scene.add(bossGroup);
-
-  // Attempt to load Admin custom 3D model or 2.5D sprite for this element
-  if (el) {
-    _loadCustomBoss(el);
-  }
+  // Load 4-poses asynchronously directly
+  loadBossPoses(scene, el);
 
   return currentBossData;
 }
