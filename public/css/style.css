@@ -1246,13 +1246,31 @@ button[disabled] {
 }
 
 /* Active States */
-.cutin-overlay.active .cutin-vignette {
-  opacity: 1;
+#cinematic-cutin-banner.cutin-active,
+#cinematic-cutin-banner.active,
+.cutin-overlay.active,
+.cutin-overlay.cutin-active {
+  display: flex !important;
+  opacity: 1 !important;
+  z-index: 10000 !important;
 }
-.cutin-overlay.active .cutin-slash-bar {
-  transform: skewX(-10deg) scaleY(1);
+
+#cinematic-cutin-banner.cutin-active .cutin-vignette,
+#cinematic-cutin-banner.active .cutin-vignette,
+.cutin-overlay.active .cutin-vignette,
+.cutin-overlay.cutin-active .cutin-vignette {
+  opacity: 1 !important;
 }
+
+#cinematic-cutin-banner.cutin-active .cutin-slash-bar,
+#cinematic-cutin-banner.active .cutin-slash-bar,
+.cutin-overlay.active .cutin-slash-bar,
+.cutin-overlay.cutin-active .cutin-slash-bar {
+  transform: skewX(-10deg) scaleY(1) !important;
+}
+
+#cinematic-cutin-banner.flash-active .cutin-flash-white,
 .cutin-overlay.flash-active .cutin-flash-white {
-  opacity: 0.9;
+  opacity: 0.9 !important;
 }
 

@@ -271,6 +271,9 @@ function processNextEvent() {
   if (pendingEvents.length === 0) { combatBusy = false; return; }
   combatBusy = true;
   const ev = pendingEvents.shift();
+  if (ev && ev.questionNumber === undefined) {
+    ev.questionNumber = window.gameState?.currentQuestionIndex !== undefined ? window.gameState.currentQuestionIndex + 1 : 1;
+  }
   Combat.executeCombatTurn(ev, () => {
     combatBusy = false;
     processNextEvent();

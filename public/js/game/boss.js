@@ -905,6 +905,11 @@ export function getBossName()    { return currentBossData?.name||'Boss'; }
 export function getBossStage()   { return currentBossData?.stage||1; }
 export function getBossElement() { return currentBossData?.element||null; }
 
+export let isBossPositionOverridden = false;
+export function setBossPositionOverride(val) {
+  isBossPositionOverridden = !!val;
+}
+
 export function updateBoss(deltaTime) {
   if (!bossGroup) return;
   TWEEN.update();
@@ -1181,7 +1186,9 @@ export function updateBoss(deltaTime) {
       }
     }
   }
-  bossGroup.position.set(posX, baseY, BOSS_HOME.z);
+  if (!isBossPositionOverridden) {
+    bossGroup.position.set(posX, baseY, BOSS_HOME.z);
+  }
 }
 
 function flashRed() {
@@ -1421,6 +1428,7 @@ export function resetBossState() {
   anim.t = 0;
   currentHpPercent = 100;
   defeatCompleteCallbacks = [];
+  isBossPositionOverridden = false;
   if (bossArmPivot) bossArmPivot.rotation.set(0, 0, 0);
   if (bossArmRightPivot) bossArmRightPivot.rotation.set(-Math.PI / 4, 0, 0);
   if (bossArmLeftPivot) bossArmLeftPivot.rotation.set(0, 0, 0);
