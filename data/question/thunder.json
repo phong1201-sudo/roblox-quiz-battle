@@ -1,552 +1,552 @@
 [
   {
     "id": 1,
-    "text": "Biến đổi vật lí là hiện tượng:",
+    "question": "Biến đổi vật lí là hiện tượng trong đó:",
     "options": [
-      "Chất bị biến đổi về trạng thái, hình dáng nhưng giữ nguyên là chất ban đầu",
-      "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác",
-      "Chất bị phân hủy thành các nguyên tố hóa học",
-      "Chất tác dụng với oxygen tạo ra oxide"
+      "Phân tử chất này biến đổi thành phân tử chất khác.",
+      "Chất chỉ biến đổi về trạng thái, hình dạng nhưng vẫn giữ nguyên bản chất là chất ban đầu.",
+      "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác.",
+      "Nguyên tử bị thay đổi cấu trúc hạt nhân."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 2,
-    "text": "Biến đổi hóa học là hiện tượng:",
+    "question": "Biến đổi hoá học khác với biến đổi vật lí ở điểm cốt lõi nào sau đây?",
     "options": [
-      "Chất thay đổi thể từ rắn sang lỏng",
-      "Chất bị hòa tan vào nước",
-      "Chất bị biến đổi tạo thành chất mới",
-      "Chất bị thay đổi kích thước và hình dạng"
+      "Có sự thay đổi về thể tích của chất.",
+      "Có sự tạo thành chất mới có tính chất khác với chất ban đầu.",
+      "Có sự thay đổi về trạng thái tồn tại (rắn, lỏng, khí).",
+      "Có sự thay đổi về nhiệt độ môi trường xung quanh."
     ],
-    "correctIndex": 2
+    "answer": 1
   },
   {
     "id": 3,
-    "text": "Quá trình nào sau đây là quá trình biến đổi vật lí?",
+    "question": "Quá trình nào sau đây mô tả sự biến đổi vật lí?",
     "options": [
-      "Đốt cháy than trong không khí",
-      "Nước đá tan chảy thành nước lỏng",
-      "Sắt bị gỉ trong không khí ẩm",
-      "Thức ăn bị thối vữa"
+      "Đốt than củi sinh ra khí carbon dioxide và tro bếp.",
+      "Sắt để trong không khí ẩm lâu ngày bị gỉ đỏ.",
+      "Nước đá tan chảy thành nước lỏng khi để ở nhiệt độ phòng.",
+      "Cho vôi sống vào nước tạo thành vôi tôi toả nhiều nhiệt."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 4,
-    "text": "Quá trình nào sau đây thể hiện sự biến đổi hóa học?",
+    "question": "Hiện tượng nào dưới đây thể hiện sự biến đổi hoá học?",
     "options": [
-      "Hòa tan muối ăn vào nước",
-      "Cắt nhỏ dây thép thành nhiều đoạn",
-      "Đốt cháy cồn sinh ra khí carbon dioxide và hơi nước",
-      "Quả bóng bay bị bơm căng"
+      "Thức ăn để lâu ngày bị ôi thiu và có mùi hôi.",
+      "Mùi thơm của hoa quả lan toả khắp phòng.",
+      "Cắt nhỏ dây sắt thành các đoạn ngắn.",
+      "Hoà tan muối ăn vào nước thu được nước muối."
     ],
-    "correctIndex": 2
+    "answer": 0
   },
   {
     "id": 5,
-    "text": "Dấu hiệu rõ ràng nhất chứng tỏ có biến đổi hóa học xảy ra là:",
+    "question": "Trong một phản ứng hoá học, bản chất của sự biến đổi là gì?",
     "options": [
-      "Sự thay đổi thể của chất",
-      "Sự thay đổi kích thước hạt",
-      "Sự tạo thành chất mới",
-      "Sự thay đổi vị trí của vật"
+      "Số lượng các nguyên tử trong phân tử bị giảm đi.",
+      "Sự phá vỡ liên kết giữa các nguyên tử cũ và hình thành liên kết mới.",
+      "Sự tăng lên về số lượng nguyên tố hoá học.",
+      "Sự thay đổi khối lượng của các nguyên tử."
     ],
-    "correctIndex": 2
+    "answer": 1
   },
   {
     "id": 6,
-    "text": "Hiện tượng nến chảy lỏng khi bị đốt nóng thuộc loại biến đổi nào?",
+    "question": "Dấu hiệu nào sau đây KHÔNG PHẢI là dấu hiệu nhận biết có biến đổi hoá học xảy ra?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Vừa là biến đổi vật lí vừa tạo ra chất mới",
-      "Không phải biến đổi vật chất"
+      "Chất chuyển từ trạng thái thể lỏng sang thể khí do sôi.",
+      "Có sự thay đổi màu sắc hoặc toả nhiệt, phát sáng.",
+      "Xuất hiện chất khí bốc lên.",
+      "Xuất hiện chất kết tủa không tan."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 7,
-    "text": "Khi đốt cháy hơi nến (paraffin) tạo thành CO2 và H2O, đây là hiện tượng:",
+    "question": "Quá trình nào sau đây KHÔNG tạo ra chất mới?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự ngưng tụ",
-      "Sự hòa tan"
+      "Cô cạn dung dịch đường thu được đường tinh thể.",
+      "Lên men rượu nếp thành giấm.",
+      "Nung nóng đá vôi thu được vôi sống và khí carbon dioxide.",
+      "Đốt cháy khí methane toả nhiệt mạnh."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 8,
-    "text": "Hiện tượng cơm để lâu ngày bị ôi thiu là biến đổi gì?",
+    "question": "Khi cồn ethyl cháy trong không khí sinh ra khí carbon dioxide và hơi nước, quá trình này là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự nóng chảy",
-      "Sự thăng hoa"
+      "Biến đổi hoá học vì cồn phản ứng với oxygen tạo chất mới.",
+      "Quá trình quang hợp.",
+      "Biến đổi vật lí vì cồn bay hơi trước khi cháy.",
+      "Biến đổi sinh học không có phản ứng."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 9,
-    "text": "Quá trình sấy khô quần áo dưới ánh nắng mặt trời là:",
+    "question": "Khi hoà tan đường vào nước ấm rồi khuấy đều, ta thu được nước đường ngọt. Đây là hiện tượng:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng phân hủy",
-      "Phản ứng thế"
+      "Phản ứng phân huỷ.",
+      "Phản ứng toả nhiệt hoá học.",
+      "Biến đổi hoá học.",
+      "Biến đổi vật lí."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 10,
-    "text": "Cho đinh sắt vào dung dịch acid chloride thấy xuất hiện bọt khí và đinh sắt tan dần. Đây là:",
+    "question": "Phát biểu nào sau đây đúng khi nói về sự biến đổi của chất?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình hòa tan cơ học",
-      "Quá trình đông đặc"
+      "Biến đổi hoá học không bao giờ kèm theo sự toả nhiệt hay thu nhiệt.",
+      "Trong biến đổi vật lí, liên kết giữa các phân tử có thể thay đổi nhưng bản chất phân tử giữ nguyên.",
+      "Trong biến đổi hoá học, liên kết giữa các nguyên tử không bị phá vỡ.",
+      "Trong biến đổi vật lí, hạt phân tử bị phá vỡ hoàn toàn."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 11,
-    "text": "Hiện tượng thủy triều lên xuống là hiện tượng:",
+    "question": "Trong các quá trình dưới đây, quá trình nào thuộc loại biến đổi hoá học?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng hóa học",
-      "Biến đổi nhân tạo"
+      "Giặt quần áo phơi khô.",
+      "Nước sôi bay hơi.",
+      "Cột sắt bị gỉ.",
+      "Băng tan ở hai cực Trái Đất."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 12,
-    "text": "Hiện tượng thanh sắt bị gỉ tạo thành vảy gỉ màu nâu đỏ là do:",
+    "question": "Khi đun nóng thuỷ tinh mềm ra rồi thổi thành các bình thuỷ tinh có hình dạng khác nhau, đây là hiện tượng:",
     "options": [
-      "Sắt bị nóng chảy",
-      "Sắt bị va đập biến dạng",
-      "Sắt hóa hợp với oxygen trong không khí ẩm tạo thành chất mới",
-      "Sắt bị hòa tan vào nước mưa"
+      "Phản ứng oxi hoá.",
+      "Biến đổi hoá học.",
+      "Sự phân huỷ thuỷ tinh.",
+      "Biến đổi vật lí."
     ],
-    "correctIndex": 2
+    "answer": 3
   },
   {
     "id": 13,
-    "text": "Hành động nào sau đây chỉ gây ra biến đổi vật lí?",
+    "question": "Đập nhỏ một cục than đá thành các hạt than nhỏ. Quá trình này thể hiện:",
     "options": [
-      "Đốt cháy tờ giấy",
-      "Xé nhỏ tờ giấy",
-      "Nướng chín củ khoai",
-      "Ủ men rượu"
+      "Sự biến đổi vật lí vì chỉ thay đổi kích thước, bản chất chất không đổi.",
+      "Sự đốt cháy than.",
+      "Phản ứng phân huỷ than.",
+      "Sự biến đổi hoá học vì tạo thành các hạt than nhỏ."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 14,
-    "text": "Trong các hiện tượng sau, đâu KHÔNG PHẢI là dấu hiệu nhận biết phản ứng hóa học?",
+    "question": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm mùa đông là ví dụ về:",
     "options": [
-      "Xuất hiện chất kết tủa",
-      "Đổi màu sắc hoặc tỏa nhiệt",
-      "Thoát ra chất khí",
-      "Thay đổi vị trí không gian của vật"
+      "Biến đổi vật lí.",
+      "Sự phân huỷ nước trong khí quyển.",
+      "Phản ứng kết tủa hoá học.",
+      "Biến đổi hoá học của hơi nước thành chất mới."
     ],
-    "correctIndex": 3
+    "answer": 0
   },
   {
     "id": 15,
-    "text": "Quá trình ngưng tụ hơi nước thành hạt sương buổi sáng là biến đổi gì?",
+    "question": "Khi xịt nước hoa trong phòng, sau vài giây cả phòng đều có mùi thơm. Hiện tượng này là do:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự hóa hơi",
-      "Phản ứng tỏa nhiệt"
+      "Nước hoa bị phân huỷ thành chất khí thơm.",
+      "Sự khuếch tán và bay hơi.",
+      "Phản ứng cháy của hương liệu.",
+      "Nước hoa tác dụng hoá học với không khí."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 16,
-    "text": "Lên men nho thành rượu vang là quá trình:",
+    "question": "Thả một viên vitamin C sủi vào ly nước thấy có sủi bọt khí mạnh và ly nước lạnh đi. Đây là hiện tượng:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự cất phân đoạn",
-      "Sự làm lạnh"
+      "Chỉ đơn thuần là biến đổi vật lí.",
+      "Sự đông đặc dung dịch.",
+      "Biến đổi hoá học.",
+      "Sự bay hơi của nước."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 17,
-    "text": "Nung đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí CO2. Đây là:",
+    "question": "Quá trình làm muối ăn từ nước biển bằng phương pháp phơi nắng dựa trên biến đổi nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình hòa tan",
-      "Quá trình kết tinh"
+      "Phản ứng oxi hoá dung dịch muối.",
+      "Biến đổi hoá học làm nước biển biến thành muối.",
+      "Biến đổi vật lí.",
+      "Sự kết tủa do phản ứng hoá học."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 18,
-    "text": "Đun sôi nước đến 100 độ C, nước bốc hơi mãnh liệt. Đây là biến đổi:",
+    "question": "Hành vi nào sau đây chỉ gây ra sự biến đổi vật lí đối với tờ giấy?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng oxy hóa",
-      "Sự phân hủy nước"
+      "Đổ sulfuric acid đặc làm thủng và đen tờ giấy.",
+      "Tẩy màu chữ trên tờ giấy bằng nước Javel.",
+      "Dùng kéo cắt tờ giấy làm đôi.",
+      "Đốt tờ giấy thành tro đen."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 19,
-    "text": "Quá trình quang hợp của cây xanh hấp thụ CO2 và giải phóng O2 là:",
+    "question": "Hiện tượng mỡ heo bị đông lại khi để ở nhiệt độ lạnh mùa đông thuộc loại:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình khuếch tán khí",
-      "Sự ngưng tụ"
+      "Biến đổi hoá học.",
+      "Sự oxi hoá chất béo.",
+      "Sự phân huỷ chất béo.",
+      "Biến đổi vật lí."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 20,
-    "text": "Thả một viên C sủi vào cốc nước thấy sủi bọt khí mạnh. Đây là:",
+    "question": "Khi quấn dây đồng thành cuộn xoắn, đặc điểm nào của đồng không thay đổi?",
     "options": [
-      "Biến đổi vật lí thuần túy",
-      "Biến đổi hóa học",
-      "Quá trình đóng đóng đông",
-      "Sự ngưng tụ"
+      "Độ cong của dây.",
+      "Thành phần hoá học và bản chất kim loại đồng.",
+      "Hình dạng ngoài của dây.",
+      "Khoảng cách giữa hai đầu dây."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 21,
-    "text": "Đập vỡ một quả trứng gà là biến đổi gì?",
+    "question": "Hiện tượng sáp nến chảy lỏng ra khi gặp nhiệt độ cao từ ngọn lửa thuộc loại:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng sinh học",
-      "Sự lên men"
+      "Biến đổi hoá học.",
+      "Sự cháy tạo khí.",
+      "Phản ứng nhiệt phân.",
+      "Biến đổi vật lí."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 22,
-    "text": "Rán (chiên) chín một quả trứng gà là biến đổi gì?",
+    "question": "Nhôm (aluminium) được cán mỏng làm màng bọc thực phẩm là ứng dụng của:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự đông đặc đơn thuần",
-      "Sự bốc hơi nước"
+      "Phản ứng hoá học của nhôm.",
+      "Biến đổi vật lí nhờ tính dẻo của nhôm.",
+      "Sự biến đổi cấu trúc hạt nhân nhôm.",
+      "Tính chất hoá học lưỡng tính."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 23,
-    "text": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm là biến đổi:",
+    "question": "Quá trình nén khí oxygen vào bình thép ở áp suất cao là hiện tượng:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng thủy phân",
-      "Phản ứng oxy hóa"
+      "Biến đổi vật lí.",
+      "Sự phân huỷ khí oxygen.",
+      "Phản ứng tổng hợp oxygen.",
+      "Biến đổi hoá học."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 24,
-    "text": "Làm nước đá trong tủ lạnh thuộc loại biến đổi nào?",
+    "question": "Khi đun chảy bơ thực vật trong chảo nóng để rán bánh, đây là quá trình:",
     "options": [
-      "Biến đổi vật lí (sự đông đặ",
-      "Biến đổi hóa học",
-      "Phản ứng thu nhiệt tạo chất mới",
-      "Phản ứng phân hủy"
+      "Sự phân huỷ bơ.",
+      "Biến đổi vật lí.",
+      "Phản ứng cháy.",
+      "Biến đổi hoá học tạo chất béo mới."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 25,
-    "text": "Lõi dây điện bằng đồng bị gập cong nhiều lần là biến đổi:",
+    "question": "Sự đọng lại của các hạt nước bên ngoài vỏ ly nước đá lạnh là hiện tượng:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự ăn mòn kim loại",
-      "Phản ứng khử"
+      "Hơi nước trong không khí gặp lạnh ngưng tụ.",
+      "Phản ứng hoá học giữa ly và nước.",
+      "Nước thấm qua thành ly.",
+      "Sự phân huỷ thuỷ tinh làm thoát nước."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 26,
-    "text": "Thức ăn sau khi vào dạ dày được enzyme phân giải thành dinh dưỡng là quá trình:",
+    "question": "Trong các hiện tượng sau, hiện tượng nào là biến đổi vật lí?",
     "options": [
-      "Biến đổi vật lí thuần túy",
-      "Biến đổi hóa học",
-      "Quá trình lọc cơ học",
-      "Sự thẩm thấu nước"
+      "Quả trứng bị thối.",
+      "Cơm để lâu bị ôi thiu.",
+      "Đốt cháy than đá.",
+      "Đun sôi nước."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 27,
-    "text": "Mở chai nước nước nước ngọt có gas thấy khí thoát ra là hiện tượng:",
+    "question": "Khi nhỏ vài giọt hydrochloric acid (HCl) vào vỏ trứng (thành phần chính CaCO3), thấy sủi bọt khí mạnh. Hiện tượng này chứng tỏ:",
     "options": [
-      "Biến đổi vật lí (sự giảm độ tan của khí)",
-      "Biến đổi hóa học",
-      "Phản ứng cháy",
-      "Sự ngưng tụ"
+      "Vỏ trứng bị hoà tan vật lí.",
+      "Vỏ trứng bị nóng chảy.",
+      "Acid bị bay hơi do gặp nóng.",
+      "Đã xảy ra biến đổi hoá học tạo ra chất khí mới (CO2)."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 28,
-    "text": "Nung nóng chiếc đinh sắt đỏ rực rồi để nguội trở lại màu cũ. Quá trình này là:",
+    "question": "Đốt cháy một sợi dây magnesium (Mg) trong không khí, sinh ra bột màu trắng magnesium oxide (MgO) và phát ánh sáng chói. Đây là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự oxy hóa hoàn toàn",
-      "Phản ứng phân hủy"
+      "Sự đông đặc kim loại.",
+      "Quá trình ngưng tụ.",
+      "Biến đổi hoá học có sự toả nhiệt và phát sáng mạnh.",
+      "Biến đổi vật lí do Mg hoá hơi."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 29,
-    "text": "Nhỏ vài giọt iodine vào hồ tinh bột thấy xuất hiện màu xanh tím. Đây là:",
+    "question": "Quá trình lên men rượu từ tinh bột gạo bao gồm các biến đổi chính thuộc loại:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (biểu hiện đổi màu đặc trưng)",
-      "Sự hòa tan đơn thuần",
-      "Sự bốc hơi"
+      "Sự bay hơi đơn thuần.",
+      "Biến đổi hoá học do enzyme phân giải và tạo chất mới (ethanol).",
+      "Chỉ là biến đổi vật lí.",
+      "Sự lắng đọng cơ học."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 30,
-    "text": "Đun đường trên chảo đến khi đường chuyển sang màu đen và có mùi khát. Đây là:",
+    "question": "Hiện tượng ngón tay bị đen khi dính phải dung dịch silver nitrate (AgNO3) khi để ngoài ánh sáng là do:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (đường bị phân hủy thành carbon)",
-      "Sự nóng chảy của đường",
-      "Sự cô cạn"
+      "AgNO3 làm bẩn da tay vật lí.",
+      "Ánh sáng làm nóng chảy AgNO3.",
+      "Da tay bị đông đặc.",
+      "AgNO3 bị phân huỷ hoá học tạo bạc kim loại bám vào da."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 31,
-    "text": "Hiện tượng xói mòn đất đai do nước chảy là:",
+    "question": "Khi thả một viên sắt vào dung dịch copper(II) sulfate (CuSO4), sau một thời gian thấy có lớp kim loại màu đỏ bám ngoài viên sắt và màu xanh của dung dịch nhạt dần. Hiện tượng này là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng trao đổi",
-      "Sự rò rỉ chất độc"
+      "Sự ngưng tụ của chất lỏng.",
+      "Biến đổi hoá học (sắt đẩy đồng ra khỏi dung dịch muối).",
+      "Sự hoà tan cơ học.",
+      "Biến đổi vật lí dính bám."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 32,
-    "text": "Đốt gas (mêtan) để nấu ăn sinh ra nhiệt lượng lớn và khí CO2. Đây là biến đổi:",
+    "question": "Nung nóng đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí carbon dioxide (CO2). Phản ứng này thuộc loại:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự chuyển thể gas",
-      "Quá trình nén khí"
+      "Biến đổi vật lí nóng chảy.",
+      "Sự bay hơi đá vôi.",
+      "Sự ngưng tụ khí.",
+      "Biến đổi hoá học."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 33,
-    "text": "Dầu ăn nổi trên mặt nước khi trộn lẫn là hiện tượng thuộc về:",
+    "question": "Dấu hiệu rõ nhất chứng tỏ việc đun nóng đường đến khi chuyển thành chất màu đen (than) và có mùi khét là biến đổi hoá học là gì?",
     "options": [
-      "Tính chất vật lí và biến đổi vật lí",
-      "Phản ứng hóa học",
-      "Sự tạo chất kết tủa",
-      "Phản ứng xà phòng hóa"
+      "Nhiệt độ bếp đun tăng lên.",
+      "Xuất hiện chất mới màu đen (carbon), không còn vị ngọt.",
+      "Thể tích đường thay đổi.",
+      "Đường bị chảy lỏng ra."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 34,
-    "text": "Sữa chua được tạo thành từ sữa tươi nhờ vi khuẩn lactic là biến đổi:",
+    "question": "Cây gỗ đổ lâu năm trong rừng bị vi sinh vật phân huỷ thành gỗ mục là ví dụ về:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (lên men lactic)",
-      "Sự đông đặc vật lí",
-      "Sự bốc hơi nước"
+      "Biến đổi hoá học.",
+      "Sự mài mòn cơ học.",
+      "Biến đổi vật lí do mưa bão.",
+      "Sự ngấm nước của gỗ."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 35,
-    "text": "Hòa tan chút đường vào nước thu được dung dịch đường ngọt. Quá trình này là:",
+    "question": "Khi vôi sống (CaO) tiếp xúc với nước sinh ra vôi tôi (Ca(OH)2) và làm nước sôi ùng ục toả nhiệt rất mạnh. Quá trình này là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng tạo hợp chất mới",
-      "Phản ứng trung hòa"
+      "Sự nóng chảy của CaO.",
+      "Sự hoà tan vật lí toả nhiệt.",
+      "Sự ngưng tụ hơi nước.",
+      "Biến đổi hoá học toả nhiệt mạnh."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 36,
-    "text": "Khí mỏ dầu được nén vào bình chứa ở dạng lỏng là quá trình:",
+    "question": "Tấm sắt để ngoài sân vườn lâu ngày bị phủ một lớp gỉ màu nâu đỏ, xốp và dễ gãy. Hiện tượng này xảy ra do:",
     "options": [
-      "Biến đổi vật lí (sự hoá lỏng do áp suất)",
-      "Biến đổi hóa học",
-      "Phản ứng trùng hợp",
-      "Phản ứng phân hủy"
+      "Sắt bị mài mòn vật lí.",
+      "Sắt bị co giãn vì nhiệt.",
+      "Sắt tác dụng với oxygen và hơi nước trong không khí tạo gỉ sắt.",
+      "Sắt bị dính bụi bẩn từ môi trường."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 37,
-    "text": "Vôi sống (CaO) thả vào nước tỏa nhiệt mạnh và biến thành vôi tôi Ca(OH)2. Đây là:",
+    "question": "Quá trình quang hợp của cây xanh hấp thụ CO2 và nước dưới ánh sáng mặt trời tạo ra glucose và O2 là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự hòa tan cơ học",
-      "Sự ngưng tụ"
+      "Quá trình ngưng tụ.",
+      "Sự khuếch tán khí đơn thuần.",
+      "Biến đổi hoá học.",
+      "Biến đổi vật lí."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 38,
-    "text": "Xăng trong bình xe máy bị cất trữ lâu ngày bốc hơi hao hụt là:",
+    "question": "Nhỏ dung dịch iodine (i-ốt) vào hồ tinh bột thấy xuất hiện màu xanh tím đặc trưng. Đây là hiện tượng:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng cháy chậm",
-      "Sự thủy phân"
+      "Biến đổi vật lí nhuộm màu.",
+      "Biến đổi hoá học.",
+      "Sự bay hơi của i-ốt.",
+      "Sự hoà tan tinh bột."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 39,
-    "text": "Thổi khí thở (chứa CO2) vào nước vôi trong thấy nước vôi vẩn đụ",
+    "question": "Quá trình đốt cháy dải ruy băng nylon toả mùi hôi nồng và để lại giọt nhựa đen cặn là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (tạo kết tủa CaCO3)",
-      "Quá trình bốc hơi",
-      "Quá trình ngưng tụ"
+      "Biến đổi hoá học.",
+      "Sự mài mòn cơ học.",
+      "Biến đổi vật lí chảy dẻo.",
+      "Sự đông đặc nylon."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 40,
-    "text": "Thả mảnh kẽm vào dung dịch acid thấy có khí hydrogen thoát ra. Đây là biến đổi:",
+    "question": "Khi nhỏ dung dịch barium chloride (BaCl2) vào dung dịch sodium sulfate (Na2SO4) thấy xuất hiện kết tủa trắng không tan. Dấu hiệu này chứng tỏ:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình cất lọc",
-      "Quá trình bay hơi"
+      "Chất lỏng bị đông đặc.",
+      "Dung dịch bị sôi.",
+      "Đã xảy ra phản ứng hoá học tạo chất kết tủa mới (BaSO4).",
+      "Sự lắng đọng vật lí của dung dịch."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 41,
-    "text": "Điểm khác nhau căn bản giữa biến đổi vật lí và biến đổi hóa học là:",
+    "question": "Khi đốt một ngọn nến paraffin, giai đoạn nào dưới đây biểu diễn sự biến đổi hoá học?",
     "options": [
-      "Biến đổi vật lí tỏa nhiệt, biến đổi hóa học thu nhiệt",
-      "Biến đổi hóa học có tạo thành chất mới, biến đổi vật lí thì không",
-      "Biến đổi vật lí diễn ra nhanh hơn biến đổi hóa học",
-      "Biến đổi hóa học không làm thay đổi khối lượng chất"
+      "Nến paraffin rắn bị nóng chảy thành paraffin lỏng.",
+      "Paraffin lỏng thấm theo bấc nến và hoá hơi.",
+      "Hơi paraffin phản ứng với oxygen trong không khí tạo thành CO2 và hơi nước.",
+      "Cả giai đoạn nóng chảy và hoá hơi của nến."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 42,
-    "text": "Quá trình nhai nghiền thức ăn ở miệng thuộc loại biến đổi nào?",
+    "question": "Quá trình tiêu hoá thức ăn ở cơ thể người bao gồm cả biến đổi vật lí và hoá học. Quá trình nào dưới đây là biến đổi vật lí?",
     "options": [
-      "Biến đổi vật lí (cơ họ",
-      "Biến đổi hóa học",
-      "Phản ứng thủy phân",
-      "Sự lên men"
+      "Răng nhai nghiền nát thức ăn và dạ dày co bóp đảo trộn thức ăn.",
+      "Enzyme amylase trong nước bọt phân giải tinh bột thành đường maltose.",
+      "Acid HCl trong dạ dày biến đổi tính chất thức ăn.",
+      "Enzyme pepsin trong dạ dày phân giải protein."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 43,
-    "text": "Hiện tượng tạo thành mưa axit do khí SO2, NO2 trong không khí tác dụng với nước mưa là:",
+    "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi hoá học là:",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình bốc hơi",
-      "Quá trình ngưng tụ đơn thuần"
+      "Nước đóng đá, rác thải phân huỷ, cồn bay hơi.",
+      "Hoà tan đường, nướng bánh mì, xé giấy.",
+      "Cháy rừng, làm giấm ăn từ rượu, xích sắt bị gỉ.",
+      "Cắt tóc, luộc trứng chín, đập vỡ cốc thuỷ tinh."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 44,
-    "text": "Quá trình chưng cất rượu để thu lấy cồn nồng độ cao dựa trên biến đổi:",
+    "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi vật lí là:",
     "options": [
-      "Biến đổi vật lí (sự bay hơi và ngưng tụ ở nhiệt độ sôi khác nhau)",
-      "Biến đổi hóa học",
-      "Phản ứng phân hủy cồn",
-      "Phản ứng oxy hóa"
+      "Đốt than, đun nóng đường đến cháy đen, cơm bị thiu.",
+      "Sắt bị gỉ, nung vôi, băng tan.",
+      "Sữa chua lên men, phơi khô quần áo, cháy nến.",
+      "Đun nóng dầu ăn, hoà tan muối vào nước, uốn cong dây thép."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 45,
-    "text": "Cây gỗ bị mục nát theo thời gian trong rừng là do:",
+    "question": "Khi quan sát hiện tượng đun sôi nước đường đến khi cạn khô thu được lớp cặn màu đen, học sinh kết luận:- Giai đoạn 1: Nước bay hơi là biến đổi vật lí.- Giai đoạn 2: Đường bị cháy đen là biến đổi hoá học.Kết luận trên đúng hay sai?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (phân hủy sinh học tạo chất mới)",
-      "Sự đông đông nước",
-      "Sự mài mòn cơ học"
+      "Sai, giai đoạn 1 là hoá học, giai đoạn 2 là vật lí.",
+      "Sai, cả hai giai đoạn đều là biến đổi hoá học.",
+      "Đúng hoàn toàn.",
+      "Sai, cả hai giai đoạn đều là biến đổi vật lí."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 46,
-    "text": "Cây gỗ bị cưa thành từng khúc nhỏ để làm bàn ghế là hiện tượng:",
+    "question": "Vì sao việc dùng nước tẩy Javel làm mất vết mực trên áo được xếp vào biến đổi hoá học?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng trùng hợp",
-      "Sự phân hủy hóa học"
+      "Vì chất trong nước tẩy phản ứng hoá học phá huỷ cấu trúc màu của mực.",
+      "Vì nước tẩy làm hoà tan mực vật lí.",
+      "Vì nước tẩy làm mực bay hơi vào không khí.",
+      "Vì nước tẩy làm mực đông đặc lại."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 47,
-    "text": "Lồ vi sóng làm nóng thức ăn bằng cách làm các phân tử nước dao động mạnh là hiện tượng:",
+    "question": "Trong các hành vi sau, hành vi nào làm biến đổi chất từ hữu ích thành có hại do sự biến đổi hoá học xảy ra?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng nhiệt nhôm",
-      "Phản ứng cháy"
+      "Để thức ăn qua đêm ở nhiệt độ cao làm thức ăn bị thiu sinh độc tố.",
+      "Cắt nhỏ quần áo cũ làm giẻ lau.",
+      "Mài sắc dao làm bếp.",
+      "Làm rơi vỡ chiếc lọ hoa bằng sứ."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 48,
-    "text": "Tấm sắt để ngoài trời mưa lâu ngày xuất hiện lớp gỉ xốp bở. Lớp gỉ này:",
+    "question": "Để phân biệt biến đổi vật lí và biến đổi hoá học trong phòng thí nghiệm một cách chính xác nhất, người ta căn cứ vào:",
     "options": [
-      "khác hẳn sắt ban đầu",
-      "Là chất mới (oxide sắt hydrat hó",
-      "Là hỗn hợp nước và sắt chưa liên kết",
-      "Là chất bùn bẩn bám vào"
+      "Khối lượng của toàn bộ hệ thí nghiệm.",
+      "Sự xuất hiện của chất mới.",
+      "Thể tích và nhiệt độ của hệ phản ứng.",
+      "Màu sắc của các chất trước và sau thí nghiệm."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 49,
-    "text": "Để phân biệt biến đổi vật lí và biến đổi hóa học, người ta dựa vào:",
+    "question": "Trong quá trình sản xuất gang thép, quặng sắt được nung trong lò cao với than cốc ở nhiệt độ cao thu được sắt tự do. Quá trình này thuộc loại:",
     "options": [
-      "Sự thay đổi nhiệt độ",
-      "Sự thay đổi thể của chất",
-      "Sự xuất hiện của chất mới",
-      "Tốc độ diễn ra biến đổi"
+      "Quá trình đông đặc kim loại.",
+      "Quá trình khuếch tán cơ học.",
+      "Biến đổi vật lí nóng chảy quặng.",
+      "Biến đổi hoá học."
     ],
-    "correctIndex": 2
+    "answer": 3
   },
   {
     "id": 50,
-    "text": "Đốt cháy dây magnesium (Mg) trong không khí thu được bột trắng magnesium oxide (MgO). Đây là:",
+    "question": "Biện pháp nào sau đây dựa trên việc ngăn chặn biến đổi hoá học có hại xảy ra trong đời sống?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự thăng hoa của Mg",
-      "Sự nóng chảy của Mg"
+      "Bào nhẵn bề mặt gỗ làm bàn ghế.",
+      "Xay xát gạo để loại bỏ vỏ cám.",
+      "Đập nhỏ đá hộc để xây nhà.",
+      "Sơn phủ bề mặt đồ vật bằng sắt để chống gỉ sét."
     ],
-    "correctIndex": 1
+    "answer": 3
   }
 ]

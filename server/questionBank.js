@@ -103,8 +103,20 @@ function sampleQuestions(element, difficulty) {
       ? q.options
       : ['A','B','C','D'].map(k => q.options?.[k] ?? '');
 
+    // Resolve original correct option index
+    let origCorrectIdx = 0;
+    if (q.correctIndex !== undefined) {
+      origCorrectIdx = q.correctIndex;
+    } else if (typeof q.answer === 'number') {
+      origCorrectIdx = q.answer;
+    } else if (typeof q.answer === 'string') {
+      const letters = ['A','B','C','D'];
+      const found = letters.indexOf(q.answer.trim().toUpperCase());
+      if (found !== -1) origCorrectIdx = found;
+    }
+
     // Tag with correct flag
-    const tagged = opts.map((text, i) => ({ text, isCorrect: i === (q.correctIndex ?? 0) }));
+    const tagged = opts.map((text, i) => ({ text, isCorrect: i === origCorrectIdx }));
     const shuffledOpts = _shuffle(tagged);
 
     const newCorrectIndex = shuffledOpts.findIndex(o => o.isCorrect);

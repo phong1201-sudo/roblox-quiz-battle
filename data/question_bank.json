@@ -2,1624 +2,1657 @@
   "thunder": [
     {
       "id": 1,
-      "text": "Biến đổi vật lí là hiện tượng:",
+      "question": "Biến đổi vật lí là hiện tượng trong đó:",
       "options": [
-        "Chất bị biến đổi về trạng thái, hình dáng nhưng giữ nguyên là chất ban đầu",
-        "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác",
-        "Chất bị phân hủy thành các nguyên tố hóa học",
-        "Chất tác dụng với oxygen tạo ra oxide"
+        "Phân tử chất này biến đổi thành phân tử chất khác.",
+        "Chất chỉ biến đổi về trạng thái, hình dạng nhưng vẫn giữ nguyên bản chất là chất ban đầu.",
+        "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác.",
+        "Nguyên tử bị thay đổi cấu trúc hạt nhân."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 2,
-      "text": "Biến đổi hóa học là hiện tượng:",
+      "question": "Biến đổi hoá học khác với biến đổi vật lí ở điểm cốt lõi nào sau đây?",
       "options": [
-        "Chất thay đổi thể từ rắn sang lỏng",
-        "Chất bị hòa tan vào nước",
-        "Chất bị biến đổi tạo thành chất mới",
-        "Chất bị thay đổi kích thước và hình dạng"
+        "Có sự thay đổi về thể tích của chất.",
+        "Có sự tạo thành chất mới có tính chất khác với chất ban đầu.",
+        "Có sự thay đổi về trạng thái tồn tại (rắn, lỏng, khí).",
+        "Có sự thay đổi về nhiệt độ môi trường xung quanh."
       ],
-      "correctIndex": 2
+      "answer": 1
     },
     {
       "id": 3,
-      "text": "Quá trình nào sau đây là quá trình biến đổi vật lí?",
+      "question": "Quá trình nào sau đây mô tả sự biến đổi vật lí?",
       "options": [
-        "Đốt cháy than trong không khí",
-        "Nước đá tan chảy thành nước lỏng",
-        "Sắt bị gỉ trong không khí ẩm",
-        "Thức ăn bị thối vữa"
+        "Đốt than củi sinh ra khí carbon dioxide và tro bếp.",
+        "Sắt để trong không khí ẩm lâu ngày bị gỉ đỏ.",
+        "Nước đá tan chảy thành nước lỏng khi để ở nhiệt độ phòng.",
+        "Cho vôi sống vào nước tạo thành vôi tôi toả nhiều nhiệt."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 4,
-      "text": "Quá trình nào sau đây thể hiện sự biến đổi hóa học?",
+      "question": "Hiện tượng nào dưới đây thể hiện sự biến đổi hoá học?",
       "options": [
-        "Hòa tan muối ăn vào nước",
-        "Cắt nhỏ dây thép thành nhiều đoạn",
-        "Đốt cháy cồn sinh ra khí carbon dioxide và hơi nước",
-        "Quả bóng bay bị bơm căng"
+        "Thức ăn để lâu ngày bị ôi thiu và có mùi hôi.",
+        "Mùi thơm của hoa quả lan toả khắp phòng.",
+        "Cắt nhỏ dây sắt thành các đoạn ngắn.",
+        "Hoà tan muối ăn vào nước thu được nước muối."
       ],
-      "correctIndex": 2
+      "answer": 0
     },
     {
       "id": 5,
-      "text": "Dấu hiệu rõ ràng nhất chứng tỏ có biến đổi hóa học xảy ra là:",
+      "question": "Trong một phản ứng hoá học, bản chất của sự biến đổi là gì?",
       "options": [
-        "Sự thay đổi thể của chất",
-        "Sự thay đổi kích thước hạt",
-        "Sự tạo thành chất mới",
-        "Sự thay đổi vị trí của vật"
+        "Số lượng các nguyên tử trong phân tử bị giảm đi.",
+        "Sự phá vỡ liên kết giữa các nguyên tử cũ và hình thành liên kết mới.",
+        "Sự tăng lên về số lượng nguyên tố hoá học.",
+        "Sự thay đổi khối lượng của các nguyên tử."
       ],
-      "correctIndex": 2
+      "answer": 1
     },
     {
       "id": 6,
-      "text": "Hiện tượng nến chảy lỏng khi bị đốt nóng thuộc loại biến đổi nào?",
+      "question": "Dấu hiệu nào sau đây KHÔNG PHẢI là dấu hiệu nhận biết có biến đổi hoá học xảy ra?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Vừa là biến đổi vật lí vừa tạo ra chất mới",
-        "Không phải biến đổi vật chất"
+        "Chất chuyển từ trạng thái thể lỏng sang thể khí do sôi.",
+        "Có sự thay đổi màu sắc hoặc toả nhiệt, phát sáng.",
+        "Xuất hiện chất khí bốc lên.",
+        "Xuất hiện chất kết tủa không tan."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 7,
-      "text": "Khi đốt cháy hơi nến (paraffin) tạo thành CO2 và H2O, đây là hiện tượng:",
+      "question": "Quá trình nào sau đây KHÔNG tạo ra chất mới?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự ngưng tụ",
-        "Sự hòa tan"
+        "Cô cạn dung dịch đường thu được đường tinh thể.",
+        "Lên men rượu nếp thành giấm.",
+        "Nung nóng đá vôi thu được vôi sống và khí carbon dioxide.",
+        "Đốt cháy khí methane toả nhiệt mạnh."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 8,
-      "text": "Hiện tượng cơm để lâu ngày bị ôi thiu là biến đổi gì?",
+      "question": "Khi cồn ethyl cháy trong không khí sinh ra khí carbon dioxide và hơi nước, quá trình này là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự nóng chảy",
-        "Sự thăng hoa"
+        "Biến đổi hoá học vì cồn phản ứng với oxygen tạo chất mới.",
+        "Quá trình quang hợp.",
+        "Biến đổi vật lí vì cồn bay hơi trước khi cháy.",
+        "Biến đổi sinh học không có phản ứng."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 9,
-      "text": "Quá trình sấy khô quần áo dưới ánh nắng mặt trời là:",
+      "question": "Khi hoà tan đường vào nước ấm rồi khuấy đều, ta thu được nước đường ngọt. Đây là hiện tượng:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng phân hủy",
-        "Phản ứng thế"
+        "Phản ứng phân huỷ.",
+        "Phản ứng toả nhiệt hoá học.",
+        "Biến đổi hoá học.",
+        "Biến đổi vật lí."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 10,
-      "text": "Cho đinh sắt vào dung dịch acid chloride thấy xuất hiện bọt khí và đinh sắt tan dần. Đây là:",
+      "question": "Phát biểu nào sau đây đúng khi nói về sự biến đổi của chất?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình hòa tan cơ học",
-        "Quá trình đông đặc"
+        "Biến đổi hoá học không bao giờ kèm theo sự toả nhiệt hay thu nhiệt.",
+        "Trong biến đổi vật lí, liên kết giữa các phân tử có thể thay đổi nhưng bản chất phân tử giữ nguyên.",
+        "Trong biến đổi hoá học, liên kết giữa các nguyên tử không bị phá vỡ.",
+        "Trong biến đổi vật lí, hạt phân tử bị phá vỡ hoàn toàn."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 11,
-      "text": "Hiện tượng thủy triều lên xuống là hiện tượng:",
+      "question": "Trong các quá trình dưới đây, quá trình nào thuộc loại biến đổi hoá học?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng hóa học",
-        "Biến đổi nhân tạo"
+        "Giặt quần áo phơi khô.",
+        "Nước sôi bay hơi.",
+        "Cột sắt bị gỉ.",
+        "Băng tan ở hai cực Trái Đất."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 12,
-      "text": "Hiện tượng thanh sắt bị gỉ tạo thành vảy gỉ màu nâu đỏ là do:",
+      "question": "Khi đun nóng thuỷ tinh mềm ra rồi thổi thành các bình thuỷ tinh có hình dạng khác nhau, đây là hiện tượng:",
       "options": [
-        "Sắt bị nóng chảy",
-        "Sắt bị va đập biến dạng",
-        "Sắt hóa hợp với oxygen trong không khí ẩm tạo thành chất mới",
-        "Sắt bị hòa tan vào nước mưa"
+        "Phản ứng oxi hoá.",
+        "Biến đổi hoá học.",
+        "Sự phân huỷ thuỷ tinh.",
+        "Biến đổi vật lí."
       ],
-      "correctIndex": 2
+      "answer": 3
     },
     {
       "id": 13,
-      "text": "Hành động nào sau đây chỉ gây ra biến đổi vật lí?",
+      "question": "Đập nhỏ một cục than đá thành các hạt than nhỏ. Quá trình này thể hiện:",
       "options": [
-        "Đốt cháy tờ giấy",
-        "Xé nhỏ tờ giấy",
-        "Nướng chín củ khoai",
-        "Ủ men rượu"
+        "Sự biến đổi vật lí vì chỉ thay đổi kích thước, bản chất chất không đổi.",
+        "Sự đốt cháy than.",
+        "Phản ứng phân huỷ than.",
+        "Sự biến đổi hoá học vì tạo thành các hạt than nhỏ."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 14,
-      "text": "Trong các hiện tượng sau, đâu KHÔNG PHẢI là dấu hiệu nhận biết phản ứng hóa học?",
+      "question": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm mùa đông là ví dụ về:",
       "options": [
-        "Xuất hiện chất kết tủa",
-        "Đổi màu sắc hoặc tỏa nhiệt",
-        "Thoát ra chất khí",
-        "Thay đổi vị trí không gian của vật"
+        "Biến đổi vật lí.",
+        "Sự phân huỷ nước trong khí quyển.",
+        "Phản ứng kết tủa hoá học.",
+        "Biến đổi hoá học của hơi nước thành chất mới."
       ],
-      "correctIndex": 3
+      "answer": 0
     },
     {
       "id": 15,
-      "text": "Quá trình ngưng tụ hơi nước thành hạt sương buổi sáng là biến đổi gì?",
+      "question": "Khi xịt nước hoa trong phòng, sau vài giây cả phòng đều có mùi thơm. Hiện tượng này là do:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự hóa hơi",
-        "Phản ứng tỏa nhiệt"
+        "Nước hoa bị phân huỷ thành chất khí thơm.",
+        "Sự khuếch tán và bay hơi.",
+        "Phản ứng cháy của hương liệu.",
+        "Nước hoa tác dụng hoá học với không khí."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 16,
-      "text": "Lên men nho thành rượu vang là quá trình:",
+      "question": "Thả một viên vitamin C sủi vào ly nước thấy có sủi bọt khí mạnh và ly nước lạnh đi. Đây là hiện tượng:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự cất phân đoạn",
-        "Sự làm lạnh"
+        "Chỉ đơn thuần là biến đổi vật lí.",
+        "Sự đông đặc dung dịch.",
+        "Biến đổi hoá học.",
+        "Sự bay hơi của nước."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 17,
-      "text": "Nung đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí CO2. Đây là:",
+      "question": "Quá trình làm muối ăn từ nước biển bằng phương pháp phơi nắng dựa trên biến đổi nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình hòa tan",
-        "Quá trình kết tinh"
+        "Phản ứng oxi hoá dung dịch muối.",
+        "Biến đổi hoá học làm nước biển biến thành muối.",
+        "Biến đổi vật lí.",
+        "Sự kết tủa do phản ứng hoá học."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 18,
-      "text": "Đun sôi nước đến 100 độ C, nước bốc hơi mãnh liệt. Đây là biến đổi:",
+      "question": "Hành vi nào sau đây chỉ gây ra sự biến đổi vật lí đối với tờ giấy?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng oxy hóa",
-        "Sự phân hủy nước"
+        "Đổ sulfuric acid đặc làm thủng và đen tờ giấy.",
+        "Tẩy màu chữ trên tờ giấy bằng nước Javel.",
+        "Dùng kéo cắt tờ giấy làm đôi.",
+        "Đốt tờ giấy thành tro đen."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 19,
-      "text": "Quá trình quang hợp của cây xanh hấp thụ CO2 và giải phóng O2 là:",
+      "question": "Hiện tượng mỡ heo bị đông lại khi để ở nhiệt độ lạnh mùa đông thuộc loại:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình khuếch tán khí",
-        "Sự ngưng tụ"
+        "Biến đổi hoá học.",
+        "Sự oxi hoá chất béo.",
+        "Sự phân huỷ chất béo.",
+        "Biến đổi vật lí."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 20,
-      "text": "Thả một viên C sủi vào cốc nước thấy sủi bọt khí mạnh. Đây là:",
+      "question": "Khi quấn dây đồng thành cuộn xoắn, đặc điểm nào của đồng không thay đổi?",
       "options": [
-        "Biến đổi vật lí thuần túy",
-        "Biến đổi hóa học",
-        "Quá trình đóng đóng đông",
-        "Sự ngưng tụ"
+        "Độ cong của dây.",
+        "Thành phần hoá học và bản chất kim loại đồng.",
+        "Hình dạng ngoài của dây.",
+        "Khoảng cách giữa hai đầu dây."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 21,
-      "text": "Đập vỡ một quả trứng gà là biến đổi gì?",
+      "question": "Hiện tượng sáp nến chảy lỏng ra khi gặp nhiệt độ cao từ ngọn lửa thuộc loại:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng sinh học",
-        "Sự lên men"
+        "Biến đổi hoá học.",
+        "Sự cháy tạo khí.",
+        "Phản ứng nhiệt phân.",
+        "Biến đổi vật lí."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 22,
-      "text": "Rán (chiên) chín một quả trứng gà là biến đổi gì?",
+      "question": "Nhôm (aluminium) được cán mỏng làm màng bọc thực phẩm là ứng dụng của:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự đông đặc đơn thuần",
-        "Sự bốc hơi nước"
+        "Phản ứng hoá học của nhôm.",
+        "Biến đổi vật lí nhờ tính dẻo của nhôm.",
+        "Sự biến đổi cấu trúc hạt nhân nhôm.",
+        "Tính chất hoá học lưỡng tính."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 23,
-      "text": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm là biến đổi:",
+      "question": "Quá trình nén khí oxygen vào bình thép ở áp suất cao là hiện tượng:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng thủy phân",
-        "Phản ứng oxy hóa"
+        "Biến đổi vật lí.",
+        "Sự phân huỷ khí oxygen.",
+        "Phản ứng tổng hợp oxygen.",
+        "Biến đổi hoá học."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 24,
-      "text": "Làm nước đá trong tủ lạnh thuộc loại biến đổi nào?",
+      "question": "Khi đun chảy bơ thực vật trong chảo nóng để rán bánh, đây là quá trình:",
       "options": [
-        "Biến đổi vật lí (sự đông đặ",
-        "Biến đổi hóa học",
-        "Phản ứng thu nhiệt tạo chất mới",
-        "Phản ứng phân hủy"
+        "Sự phân huỷ bơ.",
+        "Biến đổi vật lí.",
+        "Phản ứng cháy.",
+        "Biến đổi hoá học tạo chất béo mới."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 25,
-      "text": "Lõi dây điện bằng đồng bị gập cong nhiều lần là biến đổi:",
+      "question": "Sự đọng lại của các hạt nước bên ngoài vỏ ly nước đá lạnh là hiện tượng:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự ăn mòn kim loại",
-        "Phản ứng khử"
+        "Hơi nước trong không khí gặp lạnh ngưng tụ.",
+        "Phản ứng hoá học giữa ly và nước.",
+        "Nước thấm qua thành ly.",
+        "Sự phân huỷ thuỷ tinh làm thoát nước."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 26,
-      "text": "Thức ăn sau khi vào dạ dày được enzyme phân giải thành dinh dưỡng là quá trình:",
+      "question": "Trong các hiện tượng sau, hiện tượng nào là biến đổi vật lí?",
       "options": [
-        "Biến đổi vật lí thuần túy",
-        "Biến đổi hóa học",
-        "Quá trình lọc cơ học",
-        "Sự thẩm thấu nước"
+        "Quả trứng bị thối.",
+        "Cơm để lâu bị ôi thiu.",
+        "Đốt cháy than đá.",
+        "Đun sôi nước."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 27,
-      "text": "Mở chai nước nước nước ngọt có gas thấy khí thoát ra là hiện tượng:",
+      "question": "Khi nhỏ vài giọt hydrochloric acid (HCl) vào vỏ trứng (thành phần chính CaCO3), thấy sủi bọt khí mạnh. Hiện tượng này chứng tỏ:",
       "options": [
-        "Biến đổi vật lí (sự giảm độ tan của khí)",
-        "Biến đổi hóa học",
-        "Phản ứng cháy",
-        "Sự ngưng tụ"
+        "Vỏ trứng bị hoà tan vật lí.",
+        "Vỏ trứng bị nóng chảy.",
+        "Acid bị bay hơi do gặp nóng.",
+        "Đã xảy ra biến đổi hoá học tạo ra chất khí mới (CO2)."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 28,
-      "text": "Nung nóng chiếc đinh sắt đỏ rực rồi để nguội trở lại màu cũ. Quá trình này là:",
+      "question": "Đốt cháy một sợi dây magnesium (Mg) trong không khí, sinh ra bột màu trắng magnesium oxide (MgO) và phát ánh sáng chói. Đây là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự oxy hóa hoàn toàn",
-        "Phản ứng phân hủy"
+        "Sự đông đặc kim loại.",
+        "Quá trình ngưng tụ.",
+        "Biến đổi hoá học có sự toả nhiệt và phát sáng mạnh.",
+        "Biến đổi vật lí do Mg hoá hơi."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 29,
-      "text": "Nhỏ vài giọt iodine vào hồ tinh bột thấy xuất hiện màu xanh tím. Đây là:",
+      "question": "Quá trình lên men rượu từ tinh bột gạo bao gồm các biến đổi chính thuộc loại:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (biểu hiện đổi màu đặc trưng)",
-        "Sự hòa tan đơn thuần",
-        "Sự bốc hơi"
+        "Sự bay hơi đơn thuần.",
+        "Biến đổi hoá học do enzyme phân giải và tạo chất mới (ethanol).",
+        "Chỉ là biến đổi vật lí.",
+        "Sự lắng đọng cơ học."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 30,
-      "text": "Đun đường trên chảo đến khi đường chuyển sang màu đen và có mùi khát. Đây là:",
+      "question": "Hiện tượng ngón tay bị đen khi dính phải dung dịch silver nitrate (AgNO3) khi để ngoài ánh sáng là do:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (đường bị phân hủy thành carbon)",
-        "Sự nóng chảy của đường",
-        "Sự cô cạn"
+        "AgNO3 làm bẩn da tay vật lí.",
+        "Ánh sáng làm nóng chảy AgNO3.",
+        "Da tay bị đông đặc.",
+        "AgNO3 bị phân huỷ hoá học tạo bạc kim loại bám vào da."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 31,
-      "text": "Hiện tượng xói mòn đất đai do nước chảy là:",
+      "question": "Khi thả một viên sắt vào dung dịch copper(II) sulfate (CuSO4), sau một thời gian thấy có lớp kim loại màu đỏ bám ngoài viên sắt và màu xanh của dung dịch nhạt dần. Hiện tượng này là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng trao đổi",
-        "Sự rò rỉ chất độc"
+        "Sự ngưng tụ của chất lỏng.",
+        "Biến đổi hoá học (sắt đẩy đồng ra khỏi dung dịch muối).",
+        "Sự hoà tan cơ học.",
+        "Biến đổi vật lí dính bám."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 32,
-      "text": "Đốt gas (mêtan) để nấu ăn sinh ra nhiệt lượng lớn và khí CO2. Đây là biến đổi:",
+      "question": "Nung nóng đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí carbon dioxide (CO2). Phản ứng này thuộc loại:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự chuyển thể gas",
-        "Quá trình nén khí"
+        "Biến đổi vật lí nóng chảy.",
+        "Sự bay hơi đá vôi.",
+        "Sự ngưng tụ khí.",
+        "Biến đổi hoá học."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 33,
-      "text": "Dầu ăn nổi trên mặt nước khi trộn lẫn là hiện tượng thuộc về:",
+      "question": "Dấu hiệu rõ nhất chứng tỏ việc đun nóng đường đến khi chuyển thành chất màu đen (than) và có mùi khét là biến đổi hoá học là gì?",
       "options": [
-        "Tính chất vật lí và biến đổi vật lí",
-        "Phản ứng hóa học",
-        "Sự tạo chất kết tủa",
-        "Phản ứng xà phòng hóa"
+        "Nhiệt độ bếp đun tăng lên.",
+        "Xuất hiện chất mới màu đen (carbon), không còn vị ngọt.",
+        "Thể tích đường thay đổi.",
+        "Đường bị chảy lỏng ra."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 34,
-      "text": "Sữa chua được tạo thành từ sữa tươi nhờ vi khuẩn lactic là biến đổi:",
+      "question": "Cây gỗ đổ lâu năm trong rừng bị vi sinh vật phân huỷ thành gỗ mục là ví dụ về:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (lên men lactic)",
-        "Sự đông đặc vật lí",
-        "Sự bốc hơi nước"
+        "Biến đổi hoá học.",
+        "Sự mài mòn cơ học.",
+        "Biến đổi vật lí do mưa bão.",
+        "Sự ngấm nước của gỗ."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 35,
-      "text": "Hòa tan chút đường vào nước thu được dung dịch đường ngọt. Quá trình này là:",
+      "question": "Khi vôi sống (CaO) tiếp xúc với nước sinh ra vôi tôi (Ca(OH)2) và làm nước sôi ùng ục toả nhiệt rất mạnh. Quá trình này là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng tạo hợp chất mới",
-        "Phản ứng trung hòa"
+        "Sự nóng chảy của CaO.",
+        "Sự hoà tan vật lí toả nhiệt.",
+        "Sự ngưng tụ hơi nước.",
+        "Biến đổi hoá học toả nhiệt mạnh."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 36,
-      "text": "Khí mỏ dầu được nén vào bình chứa ở dạng lỏng là quá trình:",
+      "question": "Tấm sắt để ngoài sân vườn lâu ngày bị phủ một lớp gỉ màu nâu đỏ, xốp và dễ gãy. Hiện tượng này xảy ra do:",
       "options": [
-        "Biến đổi vật lí (sự hoá lỏng do áp suất)",
-        "Biến đổi hóa học",
-        "Phản ứng trùng hợp",
-        "Phản ứng phân hủy"
+        "Sắt bị mài mòn vật lí.",
+        "Sắt bị co giãn vì nhiệt.",
+        "Sắt tác dụng với oxygen và hơi nước trong không khí tạo gỉ sắt.",
+        "Sắt bị dính bụi bẩn từ môi trường."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 37,
-      "text": "Vôi sống (CaO) thả vào nước tỏa nhiệt mạnh và biến thành vôi tôi Ca(OH)2. Đây là:",
+      "question": "Quá trình quang hợp của cây xanh hấp thụ CO2 và nước dưới ánh sáng mặt trời tạo ra glucose và O2 là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự hòa tan cơ học",
-        "Sự ngưng tụ"
+        "Quá trình ngưng tụ.",
+        "Sự khuếch tán khí đơn thuần.",
+        "Biến đổi hoá học.",
+        "Biến đổi vật lí."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 38,
-      "text": "Xăng trong bình xe máy bị cất trữ lâu ngày bốc hơi hao hụt là:",
+      "question": "Nhỏ dung dịch iodine (i-ốt) vào hồ tinh bột thấy xuất hiện màu xanh tím đặc trưng. Đây là hiện tượng:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng cháy chậm",
-        "Sự thủy phân"
+        "Biến đổi vật lí nhuộm màu.",
+        "Biến đổi hoá học.",
+        "Sự bay hơi của i-ốt.",
+        "Sự hoà tan tinh bột."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 39,
-      "text": "Thổi khí thở (chứa CO2) vào nước vôi trong thấy nước vôi vẩn đụ",
+      "question": "Quá trình đốt cháy dải ruy băng nylon toả mùi hôi nồng và để lại giọt nhựa đen cặn là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (tạo kết tủa CaCO3)",
-        "Quá trình bốc hơi",
-        "Quá trình ngưng tụ"
+        "Biến đổi hoá học.",
+        "Sự mài mòn cơ học.",
+        "Biến đổi vật lí chảy dẻo.",
+        "Sự đông đặc nylon."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 40,
-      "text": "Thả mảnh kẽm vào dung dịch acid thấy có khí hydrogen thoát ra. Đây là biến đổi:",
+      "question": "Khi nhỏ dung dịch barium chloride (BaCl2) vào dung dịch sodium sulfate (Na2SO4) thấy xuất hiện kết tủa trắng không tan. Dấu hiệu này chứng tỏ:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình cất lọc",
-        "Quá trình bay hơi"
+        "Chất lỏng bị đông đặc.",
+        "Dung dịch bị sôi.",
+        "Đã xảy ra phản ứng hoá học tạo chất kết tủa mới (BaSO4).",
+        "Sự lắng đọng vật lí của dung dịch."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 41,
-      "text": "Điểm khác nhau căn bản giữa biến đổi vật lí và biến đổi hóa học là:",
+      "question": "Khi đốt một ngọn nến paraffin, giai đoạn nào dưới đây biểu diễn sự biến đổi hoá học?",
       "options": [
-        "Biến đổi vật lí tỏa nhiệt, biến đổi hóa học thu nhiệt",
-        "Biến đổi hóa học có tạo thành chất mới, biến đổi vật lí thì không",
-        "Biến đổi vật lí diễn ra nhanh hơn biến đổi hóa học",
-        "Biến đổi hóa học không làm thay đổi khối lượng chất"
+        "Nến paraffin rắn bị nóng chảy thành paraffin lỏng.",
+        "Paraffin lỏng thấm theo bấc nến và hoá hơi.",
+        "Hơi paraffin phản ứng với oxygen trong không khí tạo thành CO2 và hơi nước.",
+        "Cả giai đoạn nóng chảy và hoá hơi của nến."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 42,
-      "text": "Quá trình nhai nghiền thức ăn ở miệng thuộc loại biến đổi nào?",
+      "question": "Quá trình tiêu hoá thức ăn ở cơ thể người bao gồm cả biến đổi vật lí và hoá học. Quá trình nào dưới đây là biến đổi vật lí?",
       "options": [
-        "Biến đổi vật lí (cơ họ",
-        "Biến đổi hóa học",
-        "Phản ứng thủy phân",
-        "Sự lên men"
+        "Răng nhai nghiền nát thức ăn và dạ dày co bóp đảo trộn thức ăn.",
+        "Enzyme amylase trong nước bọt phân giải tinh bột thành đường maltose.",
+        "Acid HCl trong dạ dày biến đổi tính chất thức ăn.",
+        "Enzyme pepsin trong dạ dày phân giải protein."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 43,
-      "text": "Hiện tượng tạo thành mưa axit do khí SO2, NO2 trong không khí tác dụng với nước mưa là:",
+      "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi hoá học là:",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình bốc hơi",
-        "Quá trình ngưng tụ đơn thuần"
+        "Nước đóng đá, rác thải phân huỷ, cồn bay hơi.",
+        "Hoà tan đường, nướng bánh mì, xé giấy.",
+        "Cháy rừng, làm giấm ăn từ rượu, xích sắt bị gỉ.",
+        "Cắt tóc, luộc trứng chín, đập vỡ cốc thuỷ tinh."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 44,
-      "text": "Quá trình chưng cất rượu để thu lấy cồn nồng độ cao dựa trên biến đổi:",
+      "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi vật lí là:",
       "options": [
-        "Biến đổi vật lí (sự bay hơi và ngưng tụ ở nhiệt độ sôi khác nhau)",
-        "Biến đổi hóa học",
-        "Phản ứng phân hủy cồn",
-        "Phản ứng oxy hóa"
+        "Đốt than, đun nóng đường đến cháy đen, cơm bị thiu.",
+        "Sắt bị gỉ, nung vôi, băng tan.",
+        "Sữa chua lên men, phơi khô quần áo, cháy nến.",
+        "Đun nóng dầu ăn, hoà tan muối vào nước, uốn cong dây thép."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 45,
-      "text": "Cây gỗ bị mục nát theo thời gian trong rừng là do:",
+      "question": "Khi quan sát hiện tượng đun sôi nước đường đến khi cạn khô thu được lớp cặn màu đen, học sinh kết luận:- Giai đoạn 1: Nước bay hơi là biến đổi vật lí.- Giai đoạn 2: Đường bị cháy đen là biến đổi hoá học.Kết luận trên đúng hay sai?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (phân hủy sinh học tạo chất mới)",
-        "Sự đông đông nước",
-        "Sự mài mòn cơ học"
+        "Sai, giai đoạn 1 là hoá học, giai đoạn 2 là vật lí.",
+        "Sai, cả hai giai đoạn đều là biến đổi hoá học.",
+        "Đúng hoàn toàn.",
+        "Sai, cả hai giai đoạn đều là biến đổi vật lí."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 46,
-      "text": "Cây gỗ bị cưa thành từng khúc nhỏ để làm bàn ghế là hiện tượng:",
+      "question": "Vì sao việc dùng nước tẩy Javel làm mất vết mực trên áo được xếp vào biến đổi hoá học?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng trùng hợp",
-        "Sự phân hủy hóa học"
+        "Vì chất trong nước tẩy phản ứng hoá học phá huỷ cấu trúc màu của mực.",
+        "Vì nước tẩy làm hoà tan mực vật lí.",
+        "Vì nước tẩy làm mực bay hơi vào không khí.",
+        "Vì nước tẩy làm mực đông đặc lại."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 47,
-      "text": "Lồ vi sóng làm nóng thức ăn bằng cách làm các phân tử nước dao động mạnh là hiện tượng:",
+      "question": "Trong các hành vi sau, hành vi nào làm biến đổi chất từ hữu ích thành có hại do sự biến đổi hoá học xảy ra?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng nhiệt nhôm",
-        "Phản ứng cháy"
+        "Để thức ăn qua đêm ở nhiệt độ cao làm thức ăn bị thiu sinh độc tố.",
+        "Cắt nhỏ quần áo cũ làm giẻ lau.",
+        "Mài sắc dao làm bếp.",
+        "Làm rơi vỡ chiếc lọ hoa bằng sứ."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 48,
-      "text": "Tấm sắt để ngoài trời mưa lâu ngày xuất hiện lớp gỉ xốp bở. Lớp gỉ này:",
+      "question": "Để phân biệt biến đổi vật lí và biến đổi hoá học trong phòng thí nghiệm một cách chính xác nhất, người ta căn cứ vào:",
       "options": [
-        "khác hẳn sắt ban đầu",
-        "Là chất mới (oxide sắt hydrat hó",
-        "Là hỗn hợp nước và sắt chưa liên kết",
-        "Là chất bùn bẩn bám vào"
+        "Khối lượng của toàn bộ hệ thí nghiệm.",
+        "Sự xuất hiện của chất mới.",
+        "Thể tích và nhiệt độ của hệ phản ứng.",
+        "Màu sắc của các chất trước và sau thí nghiệm."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 49,
-      "text": "Để phân biệt biến đổi vật lí và biến đổi hóa học, người ta dựa vào:",
+      "question": "Trong quá trình sản xuất gang thép, quặng sắt được nung trong lò cao với than cốc ở nhiệt độ cao thu được sắt tự do. Quá trình này thuộc loại:",
       "options": [
-        "Sự thay đổi nhiệt độ",
-        "Sự thay đổi thể của chất",
-        "Sự xuất hiện của chất mới",
-        "Tốc độ diễn ra biến đổi"
+        "Quá trình đông đặc kim loại.",
+        "Quá trình khuếch tán cơ học.",
+        "Biến đổi vật lí nóng chảy quặng.",
+        "Biến đổi hoá học."
       ],
-      "correctIndex": 2
+      "answer": 3
     },
     {
       "id": 50,
-      "text": "Đốt cháy dây magnesium (Mg) trong không khí thu được bột trắng magnesium oxide (MgO). Đây là:",
+      "question": "Biện pháp nào sau đây dựa trên việc ngăn chặn biến đổi hoá học có hại xảy ra trong đời sống?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự thăng hoa của Mg",
-        "Sự nóng chảy của Mg"
+        "Bào nhẵn bề mặt gỗ làm bàn ghế.",
+        "Xay xát gạo để loại bỏ vỏ cám.",
+        "Đập nhỏ đá hộc để xây nhà.",
+        "Sơn phủ bề mặt đồ vật bằng sắt để chống gỉ sét."
       ],
-      "correctIndex": 1
+      "answer": 3
     }
   ],
   "fire": [
     {
       "id": 1,
-      "text": "Khối lượng riêng của một chất được xác định bằng:",
+      "question": "Khối lượng riêng của một chất là gì?",
       "options": [
-        "Khối lượng của một vật bất kỳ làm bằng chất đó.",
-        "Khối lượng của một đơn vị thể tích chất đó.",
         "Trọng lượng của một mét khối chất đó.",
-        "Thể tích của một kilôgam chất đó."
+        "Khối lượng của một thể tích bất kì chất đó.",
+        "Thể tích của một kilôgam chất đó.",
+        "Khối lượng của một đơn vị thể tích (1 m³) chất đó."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 2,
-      "text": "Công thức tính khối lượng riêng D theo khối lượng m và thể tích V là:",
+      "question": "Công thức tính khối lượng riêng D theo khối lượng m và thể tích V là:",
       "options": [
-        "D = m / V",
-        "D = m . V",
+        "D = P / V",
         "D = V / m",
-        "D = p / S"
+        "D = m . V",
+        "D = m / V"
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 3,
-      "text": "Đơn vị hợp pháp của khối lượng riêng trong hệ đo lường SI là:",
+      "question": "Đơn vị hợp pháp của khối lượng riêng trong hệ đo lường SI là:",
       "options": [
-        "g/cm³",
+        "kg/m²",
         "kg/m³",
         "N/m³",
-        "Pa"
+        "g/cm²"
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 4,
-      "text": "Mối liên hệ chuyển đổi đơn vị giữa 1 g/cm³ và kg/m³ là:",
+      "question": "Mối liên hệ giữa khối lượng riêng D và trọng lượng riêng d là gì?",
       "options": [
-        "1 g/cm³ = 0,001 kg/m³",
-        "1 g/cm³ = 100 kg/m³",
-        "1 g/cm³ = 1000 kg/m³",
-        "1 g/cm³ = 10 kg/m³"
+        "D = 10 . d",
+        "d = 10 . D",
+        "d = D + 10",
+        "d = D / 10"
       ],
-      "correctIndex": 2
+      "answer": 1
     },
     {
       "id": 5,
-      "text": "Một khối sắt có thể tích 0,02 m³. Biết khối lượng riêng của sắt là 7800 kg/m³, khối lượng của khối sắt đó là:",
+      "question": "Đơn vị của trọng lượng riêng d là:",
       "options": [
-        "78 kg",
-        "156 kg",
-        "390 kg",
-        "15,6 kg"
+        "kg/m³",
+        "J/m³",
+        "N/m³",
+        "N/m²"
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 6,
-      "text": "Biết khối lượng riêng của nhôm là 2700 kg/m³. Một vật làm bằng nhôm có khối lượng 13,5 kg thì có thể tích là:",
+      "question": "Biết khối lượng riêng của nhôm là 2700 kg/m³. Điều này có ý nghĩa gì?",
       "options": [
-        "0,005 m³",
-        "0,05 m³",
-        "0,5 m³",
-        "0,02 m³"
+        "1 m³ nhôm có khối lượng là 2700 kg.",
+        "2700 m³ nhôm nặng 1 kg.",
+        "1 kg nhôm có thể tích là 2700 m³.",
+        "1 cm³ nhôm nặng 2700 N."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 7,
-      "text": "Đại lượng cho biết trọng lượng của một mét khối một chất được gọi là:",
+      "question": "Một khối sắt có thể tích 0,02 m³ và khối lượng 156 kg. Khối lượng riêng của sắt là:",
       "options": [
-        "Khối lượng riêng",
-        "Trọng lượng riêng",
-        "Áp suất",
-        "Lực đẩy Archimedes"
+        "7800 kg/m³",
+        "780 kg/m³",
+        "3120 kg/m³",
+        "1560 kg/m³"
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 8,
-      "text": "Mối liên hệ giữa trọng lượng riêng d (N/m³) và khối lượng riêng D (kg/m³) của cùng một chất là:",
+      "question": "Khối lượng riêng của nước nguyên chất ở 4°C bằng bao nhiêu?",
       "options": [
-        "d = D / 10",
-        "d = 10 . D",
-        "d = 10 / D",
-        "d = 100 . D"
+        "10000 kg/m³",
+        "100 kg/m³",
+        "1 kg/m³",
+        "1000 kg/m³"
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 9,
-      "text": "Để xác định khối lượng riêng của một chất lỏng như dầu ăn trong phòng thực hành, người ta cần dùng bộ dụng cụ nào?",
+      "question": "Để đo khối lượng riêng của một hòn đá nhỏ hình dạng bất kì, ta cần dùng những dụng cụ nào?",
       "options": [
-        "Lực kế và thước dây",
-        "Nhiệt kế và áp kế",
-        "Cân điện tử và bình chia độ",
-        "Lực kế và đồng hồ bấm giây"
+        "Thước dây và lực kế.",
+        "Chỉ cần lực kế.",
+        "Chỉ cần bình chia độ.",
+        "Cân và bình chia độ (hoặc bình tràn)."
       ],
-      "correctIndex": 2
+      "answer": 3
     },
     {
       "id": 10,
-      "text": "Một chai dầu ăn có thể tích 500 cm³, biết khối lượng riêng của dầu ăn là 880 kg/m³. Khối lượng dầu ăn trong chai là:",
+      "question": "Muốn tăng khối lượng riêng của một khối khí nhốt trong bình kín, ta có thể:",
       "options": [
-        "0,88 kg",
-        "0,44 kg",
-        "4,4 kg",
-        "440 kg"
+        "Bơm thêm cùng loại khí đó vào bình.",
+        "Đun nóng bình khí.",
+        "Làm lạnh bình khí.",
+        "Mở nắp bình cho khí thoát ra."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 11,
-      "text": "Khi đun nóng một lượng chất lỏng đựng trong bình thủy tinh, khối lượng riêng của chất lỏng sẽ thay đổi như thế nào?",
+      "question": "Áp lực là gì?",
       "options": [
-        "Tăng lên vì khối lượng tăng.",
-        "Giảm đi vì thể tích chất lỏng nở ra tăng lên.",
-        "Không thay đổi.",
-        "Lúc đầu tăng sau đó giảm."
+        "Lực ma sát xuất hiện ở mặt tiếp xúc.",
+        "Lực kéo có phương song song với mặt bị ép.",
+        "Lực hút của Trái Đất tác dụng lên vật.",
+        "Lực ép có phương vuông góc với mặt bị ép."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 12,
-      "text": "Khi dùng bình chia độ và cân để đo khối lượng riêng của một hòn đá nhỏ không thấm nước, thể tích hòn đá được tính bằng:",
+      "question": "Công thức tính áp suất p trên diện tích bị ép S khi có áp lực F tác dụng là:",
       "options": [
-        "Thể tích nước ban đầu trong bình.",
-        "Hiệu số giữa thể tích nước dâng lên khi thả hòn đá vào và thể tích nước ban đầu.",
-        "Tổng thể tích nước ban đầu và thể tích bình.",
-        "Thể tích hòn đá đo bằng thước dây."
+        "p = F / S",
+        "p = F . S",
+        "p = F + S",
+        "p = S / F"
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 13,
-      "text": "Áp lực là gì?",
+      "question": "Đơn vị của áp suất là Pascal (Pa). 1 Pa tương đương với:",
       "options": [
-        "Lực kéo có phương song song với mặt bị ép.",
-        "Lực ép có phương vuông góc với mặt bị ép.",
-        "Lực tác dụng theo phương nằm ngang bất kỳ.",
-        "Lực làm quay một vật quanh một trục cố định."
+        "1 N.m",
+        "1 N/cm²",
+        "1 N/m²",
+        "1 kg/m²"
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 14,
-      "text": "Trong các trường hợp sau, trường hợp nào lực tác dụng đóng vai trò là áp lực?",
+      "question": "Để tăng áp suất tác dụng lên một bề mặt, ta có thể:",
       "options": [
-        "Trọng lực của quả cầu treo trên sợi dây.",
-        "Trọng lượng của một người đứng thẳng trên mặt sàn nhà.",
-        "Lực kéo xe làm xe chuyển động trên đường.",
-        "Lực hút của nam châm lên miếng sắt nằm ngang."
+        "Giảm áp lực F và giảm diện tích S.",
+        "Giảm áp lực F và tăng diện tích bị ép S.",
+        "Tăng áp lực F và giảm diện tích bị ép S.",
+        "Tăng áp lực F và tăng diện tích S."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 15,
-      "text": "Áp suất được định nghĩa là:",
+      "question": "Tại sao lưỡi dao, lưỡi kéo càng mỏng thì cắt đồ vật càng dễ dàng?",
       "options": [
-        "Độ lớn của lực ép tác dụng lên toàn bộ mặt đất.",
-        "Độ lớn của áp lực trên một đơn vị diện tích bị ép.",
-        "Tích của áp lực và diện tích mặt bị ép.",
-        "Lực đẩy tác dụng lên vật nhúng trong chất lỏng."
+        "Vì diện tích bị ép S nhỏ giúp làm tăng áp suất.",
+        "Vì làm tăng diện tích bị ép S làm giảm áp suất.",
+        "Vì làm khối lượng lưỡi dao giảm đi.",
+        "Vì làm giảm lực tác dụng của tay."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 16,
-      "text": "Công thức tính áp suất p trên một bề mặt bị ép S khi chịu áp lực F là:",
+      "question": "Tại sao bánh xe máy kéo chở nặng lại thường làm rất to và rộng bản?",
       "options": [
-        "p = F . S",
-        "p = F / S",
-        "p = S / F",
-        "p = d . h / S"
+        "Để làm tăng áp lực tác dụng lên mặt đường.",
+        "Để làm tăng áp suất lên mặt đường.",
+        "Để tăng diện tích bị ép, giúp giảm áp suất lên mặt đường tránh bị lún.",
+        "Để bánh xe quay nhanh hơn."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 17,
-      "text": "Đơn vị đo áp suất trong hệ SI là Pascan (Pa), trong đó 1 Pa tương đương với:",
+      "question": "Một người đứng bằng cả hai chân tác dụng lên mặt đất áp suất p. Khi người đó co một chân lên thì áp suất tác dụng lên mặt đất sẽ:",
       "options": [
-        "1 N . m²",
-        "1 N/m²",
-        "1 kg/m³",
-        "1 N/cm²"
+        "Không đổi vì khối lượng không đổi.",
+        "Tăng lên gấp đôi.",
+        "Giảm đi một nửa.",
+        "Tăng lên gấp bốn lần."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 18,
-      "text": "Một áp lực 900 N tác dụng vuông góc lên một diện tích bị ép là 0,3 m² sẽ gây ra áp suất bằng:",
+      "question": "Tác dụng một áp lực F = 500 N lên diện tích bị ép S = 0,2 m². Áp suất gây ra là:",
       "options": [
-        "270 Pa",
-        "3000 Pa",
-        "300 Pa",
-        "30 Pa"
+        "250 Pa",
+        "2500 Pa",
+        "100 Pa",
+        "1000 Pa"
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 19,
-      "text": "Để tăng áp suất tác dụng lên một bề mặt bị ép, người ta có thể thực hiện biện pháp nào sau đây?",
+      "question": "Đặt một khối bê tông nặng 4000 N lên sàn nhà, áp suất khối bê tông gây ra là 20 000 Pa. Diện tích tiếp xúc S là:",
       "options": [
-        "Giảm áp lực và tăng diện tích bị ép.",
-        "Tăng áp lực hoặc giảm diện tích bị ép.",
-        "(C)",
-        "Giảm áp lực và giảm trọng lượng vật."
+        "5 m²",
+        "2 m²",
+        "0,2 m²",
+        "0,05 m²"
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 20,
-      "text": "Mũi đinh hay lưỡi dao thường được mài nhọn hoặc làm rất mỏng nhằm mục đích gì?",
+      "question": "Trường hợp nào sau đây có mục đích giảm áp suất?",
       "options": [
-        "Giảm áp lực tác dụng.",
-        "Tăng diện tích bị ép.",
-        "Tăng áp suất giúp đinh đâm sâu hoặc dao cắt dễ dàng.",
-        "Giảm khối lượng riêng của dụng cụ."
+        "Làm gai thô ráp trên đế giày.",
+        "Mài sắc lưỡi dao.",
+        "Đặt tấm gỗ phẳng rộng bên dưới chân đống gạch nặng.",
+        "Mài nhọn đầu đinh."
       ],
-      "correctIndex": 2
+      "answer": 2
     },
     {
       "id": 21,
-      "text": "Bánh của các loại xe máy xúc, xe cút kít hay xe xích bánh sắt thường làm bằng dải xích bản rộng nhằm mục đích:",
+      "question": "Chất lỏng gây ra áp suất theo phương nào?",
       "options": [
-        "Tăng áp suất để xe chạy nhanh hơn.",
-        "Tăng diện tích tiếp xúc để giảm áp suất, giúp xe không bị sa lún vào đất mềm.",
-        "Tăng áp lực của xe lên mặt đường.",
-        "Giảm trọng lượng của toàn bộ xe."
+        "Chỉ theo phương nằm ngang tác dụng lên thành bình.",
+        "Chỉ theo phương thẳng đứng từ trên xuống.",
+        "Theo mọi phương lên đáy bình, thành bình và các vật trong lòng chất lỏng.",
+        "Chỉ tác dụng lên vật chìm ở đáy bình."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 22,
-      "text": "Người đi trên tuyết thường mang giày đi tuyết có phần đế rất rộng để:",
+      "question": "Công thức tính áp suất chất lỏng p tại một điểm ở độ sâu h là:",
       "options": [
-        "Tăng lực ma sát với tuyết.",
-        "Tăng diện tích bị ép nhằm giảm áp suất, tránh bị chìm vào lớp tuyết xốp.",
-        "Tăng áp lực lên mặt tuyết.",
-        "Giảm trọng lượng cơ thể."
+        "p = d / h",
+        "p = D . h",
+        "p = d . S",
+        "p = d . h"
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 23,
-      "text": "Một người đứng cả hai chân lên mặt sàn gây ra áp suất p. Khi người đó co một chân lên khỏi mặt sàn thì áp suất tác dụng lên mặt sàn sẽ:",
+      "question": "Trong công thức p = d . h của áp suất chất lỏng, h đại diện cho:",
       "options": [
-        "(A)",
-        "Tăng lên gấp đôi.",
-        "Không thay đổi.",
-        "Giảm đi bốn lần."
+        "Đường kính của bình chứa.",
+        "Độ sâu từ mặt thoáng chất lỏng đến điểm tính áp suất.",
+        "Khoảng cách từ điểm tính áp suất đến đáy bình.",
+        "Chiều cao toàn phần của cột chất lỏng."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 24,
-      "text": "Áp suất chất lỏng gây ra tại một điểm trong lòng chất lỏng tác dụng theo phương nào?",
+      "question": "Tại sao chân đập thuỷ điện lại luôn được xây rộng và dày hơn rất nhiều so với đỉnh đập?",
       "options": [
-        "Chỉ theo phương thẳng đứng từ trên xuống.",
-        "Chỉ theo phương nằm ngang.",
-        "Theo mọi phương lên đáy bình, thành bình và các vật nằm trong lòng nó.",
-        "Chỉ theo phương vuông góc với thành bình."
+        "Vì nước ở trên đỉnh đập chảy mạnh hơn nước ở đáy đập.",
+        "Để làm đẹp cho công trình.",
+        "Để tiết kiệm vật liệu xây dựng.",
+        "Vì càng xuống sâu áp suất chất lỏng càng lớn, thành đập cần chịu lực lớn hơn."
       ],
-      "correctIndex": 2
+      "answer": 3
     },
     {
       "id": 25,
-      "text": "Công thức tính áp suất chất lỏng p tại điểm có độ sâu h so với mặt thoáng là (d là trọng lượng riêng chất lỏng):",
+      "question": "Một thợ lặn ở độ sâu 30 m dưới mặt nước biển. Cho trọng lượng riêng của nước biển là 10 300 N/m³. Áp suất nước biển tác dụng lên thợ lặn là:",
       "options": [
-        "p = d . h",
-        "p = D . h",
-        "p = d / h",
-        "p = F / h"
+        "309 000 Pa",
+        "30 900 Pa",
+        "343,3 Pa",
+        "10 330 Pa"
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 26,
-      "text": "Trong công thức tính áp suất chất lỏng p = d . h, đơn vị bắt buộc của độ sâu h là:",
+      "question": "Hai bình A và B chứa cùng một loại nước. Bình A có cột nước cao 0,8 m, bình B có cột nước cao 0,5 m. So sánh áp suất đáy pA và pB:",
       "options": [
-        "mét (m)",
-        "xen-ti-mét (cm)",
-        "đề-xi-mét (dm)",
-        "mi-li-mét (mm)"
+        "pA < pB",
+        "pA = pB",
+        "pA > pB",
+        "Không so sánh được."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 27,
-      "text": "Trong lòng một chất lỏng đứng yên, áp suất tại các điểm nằm trên cùng một mặt phẳng nằm ngang thì:",
+      "question": "Trong một bình thông nhau chứa cùng một chất lỏng đứng yên, mực chất lỏng ở các nhánh như thế nào?",
       "options": [
-        "Khác nhau tùy thuộc hình dạng thành bình.",
-        "Bằng nhau.",
-        "Điểm nào gần tâm bình hơn thì lớn hơn.",
-        "Điểm nào ở sâu hơn thì nhỏ hơn."
+        "Luôn ở cùng một độ cao.",
+        "Tùy thuộc vào hình dạng của các nhánh.",
+        "Ở nhánh to mực nước cao hơn nhánh nhỏ.",
+        "Ở nhánh nhỏ mực nước cao hơn nhánh to."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 28,
-      "text": "Càng xuống sâu trong lòng chất lỏng thì áp suất chất lỏng sẽ:",
+      "question": "Thiết bị/ứng dụng nào sau đây hoạt động dựa trên nguyên lí bình thông nhau?",
       "options": [
-        "Càng tăng.",
-        "Càng giảm.",
-        "Không thay đổi.",
-        "Tăng giảm thất thường."
+        "Khinh khí cầu bay trên không.",
+        "Ống thuỷ (ống nhựa trong chứa nước) thợ xây dùng để xác định các điểm cùng độ cao.",
+        "Ống hút dùng để uống nước.",
+        "Đèn xì hơi gas."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 29,
-      "text": "Thợ lặn khi lặn sâu dưới lòng biển phải mặc bộ quần áo lặn chịu lực chuyên dụng chủ yếu để:",
+      "question": "Nguyên lí Pascal áp dụng cho chất lỏng phát biểu rằng:",
       "options": [
-        "Để tiết kiệm vật liệu xây dựng.",
-        "Càng xuống sâu áp suất chất lỏng càng lớn, chân đập cần dày để chịu lực ép lớn.",
-        "Để tạo tính thẩm mỹ cho công trình.",
-        "Giúp nước chảy qua đập nhanh hơn."
+        "Áp suất chất lỏng phụ thuộc vào hình dạng bình chứa.",
+        "Chất lỏng chỉ truyền áp suất theo phương đứng.",
+        "Áp suất tăng thêm tác dụng lên chất lỏng kín được truyền nguyên vẹn theo mọi hướng.",
+        "Áp suất tác dụng lên chất lỏng bị giảm dần theo độ sâu."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 30,
-      "text": "Trong một bình thông nhau chứa cùng một chất lỏng đứng yên, mực chất lỏng ở các nhánh khác nhau sẽ:",
+      "question": "Một máy nén dùng chất lỏng có diện tích pít-tông nhỏ s = 2 cm², pít-tông lớn S = 100 cm². Tác dụng lực f = 100 N lên pít-tông nhỏ thì lực nâng F ở pít-tông lớn là:",
       "options": [
-        "Nhánh to có mực chất lỏng cao hơn nhánh nhỏ.",
-        "Luôn ở cùng một độ cao.",
-        "Nhánh nhỏ có mực chất lỏng cao hơn nhánh to.",
-        "Phụ thuộc vào hình dạng đáy bình."
+        "50 N",
+        "5000 N",
+        "200 N",
+        "1000 N"
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 31,
-      "text": "Nguyên lý hoạt động của máy nén thủy lực (máy dùng chất lỏng) dựa trên tính chất cơ bản nào của chất lỏng?",
+      "question": "Khí quyển xung quanh Trái Đất gây ra áp suất theo hướng nào?",
       "options": [
-        "Chất lỏng có khối lượng riêng không đổi.",
-        "Áp suất tác dụng lên chất lỏng được truyền nguyên vẹn theo mọi hướng trong lòng chất lỏng.",
-        "Chất lỏng có lực đẩy Archimedes rất lớn.",
-        "Chất lỏng nở vì nhiệt lớn hơn chất rắn."
+        "Chỉ tác dụng lên bề mặt đại dương.",
+        "Theo mọi hướng lên mọi vật trên Trái Đất.",
+        "Chỉ tác dụng theo phương ngang.",
+        "Chỉ tác dụng từ trên xuống mặt đất."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 32,
-      "text": "Trong máy nén thủy lực, diện tích pít-tông lớn S2 gấp 50 lần diện tích pít-tông nhỏ S1. Khi tác dụng lực F1 = 100 N lên pít-tông nhỏ thì lực F2 thu được ở pít-tông lớn là:",
+      "question": "Hiện tượng nào sau đây chứng tỏ sự tồn tại của áp suất khí quyển?",
       "options": [
-        "2 N",
-        "5000 N",
-        "500 N",
-        "50 N"
+        "Nước chảy từ trên cao xuống.",
+        "Quả bóng cao su bơm căng bị xẹp khi bấm vào.",
+        "Hút bớt không khí trong hộp sữa giấy làm hộp bị móp vào mọi phía.",
+        "Đá chìm xuống đáy ly nước."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 33,
-      "text": "Áp suất khí quyển là áp suất do:",
+      "question": "Càng lên cao so với mặt nước biển, áp suất khí quyển sẽ:",
       "options": [
-        "Các vật trên Trái Đất đè lên bầu không khí.",
-        "Lớp không khí bao quanh Trái Đất tác dụng lên mọi vật trên Trái Đất theo mọi phương.",
-        "Mặt Trời tác dụng lên bầu khí quyển.",
-        "Hơi nước trong không khí ngưng tụ lại gây ra."
+        "Càng tăng lên.",
+        "Tăng rồi lại giảm.",
+        "Không thay đổi.",
+        "Càng giảm đi."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 34,
-      "text": "Hiện tượng nào dưới đây KHÔNG phải do áp suất khí quyển gây ra?",
+      "question": "Thí nghiệm lịch sử nổi tiếng minh chứng cho sức mạnh áp suất khí quyển sử dụng hai bán cầu bằng đồng là thí nghiệm nào?",
       "options": [
-        "Dùng ống nhựa nhỏ để hút nước từ cốc lên miệng.",
-        "Rót nước từ ấm trà ra tách dễ dàng nhờ có lỗ hở nhỏ trên nắp ấm.",
-        "Cắm ống thủy tinh ngập trong nước, bịt đầu trên kéo lên thấy nước không chảy ra.",
-        "Quả bóng bàn bị bẹp thả vào nước nóng phồng trở lại."
+        "Thí nghiệm Torricelli.",
+        "Thí nghiệm Galileo.",
+        "Thí nghiệm Archimedes.",
+        "Thí nghiệm bán cầu Magdeburg."
       ],
-      "correctIndex": 3
+      "answer": 3
     },
     {
       "id": 35,
-      "text": "Càng lên cao so với mặt nước biển thì áp suất khí quyển sẽ:",
+      "question": "Khi leo lên núi cao hoặc đi máy bay cất cánh nhanh, ta thường có cảm giác bị ù tai. Nguyên nhân là do:",
       "options": [
-        "Càng tăng vì không khí càng dày đặ",
-        "Càng giảm vì mật độ không khí càng thưa thớt.",
-        "Không thay đổi.",
-        "Lúc tăng lúc giảm không theo quy luật."
+        "Gió trên núi cao quá mạnh.",
+        "Áp suất khí quyển bên ngoài giảm đột ngột, tạo chênh lệch với áp suất không khí trong tai giữa.",
+        "Nhiệt độ trên cao quá thấp.",
+        "Áp suất khí quyển bên ngoài tăng nhanh."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 36,
-      "text": "Khi đi máy bay lúc cất cánh hoặc hạ cánh, hành khách thường có cảm giác bị ù tai hoặc tức ngự",
+      "question": "Áp suất khí quyển tiêu chuẩn ở mặt nước biển có giá trị khoảng:",
       "options": [
-        "Tiếng ồn động cơ máy bay quá lớn.",
-        "Sự thay đổi áp suất khí quyển đột ngột gây mất cân bằng áp suất hai bên màng nhĩ.",
-        "Nhiệt độ trong khoang máy bay giảm nhanh.",
-        "Vận tốc máy bay thay đổi đột ngột."
+        "760 cmHg",
+        "76 cmHg (khoảng 101 300 Pa)",
+        "10 000 Pa",
+        "100 Pa"
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 37,
-      "text": "Để khắc phục triệu chứng ù tai khi thay đổi độ cao hoặc áp suất đột ngột, động tác nào giúp cân bằng áp suất hai bên màng nhĩ?",
+      "question": "Dụng cụ dùng để đo áp suất khí quyển được gọi là:",
       "options": [
-        "Nuốt nước bọt hoặc ngáp.",
-        "Bịt chặt hai mắt.",
-        "Thở thật nhanh và sâu.",
-        "Lắc mạnh đầu sang hai bên."
+        "Nhiệt kế.",
+        "Khí áp kế.",
+        "Lực kế.",
+        "Ampe kế."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 38,
-      "text": "Nhà du hành vũ trụ khi làm việc ngoài khoảng không vũ trụ phải mặc bộ trang phục bảo hộ chuyên dụng vì:",
+      "question": "Tại sao các phi hành gia khi làm việc ngoài không gian bắt buộc phải mặc trang phục vũ trụ đặc biệt?",
       "options": [
-        "N/m³",
-        "g/cm³",
-        "mmHg (milimét thủy ngân) hoặc atm",
-        "kg/m³"
+        "Để tránh bị mưa rơi vào người.",
+        "Để chống lại lực hút quá lớn của Trái Đất.",
+        "Chỉ để giúp phi hành gia dễ di chuyển.",
+        "Để giữ ấm và duy trì áp suất ổn định cho cơ thể vì ngoài không gian là môi trường chân không."
       ],
-      "correctIndex": 2
+      "answer": 3
     },
     {
       "id": 39,
-      "text": "Mọi vật khi nhúng chìm hoặc nổi một phần trong chất lỏng đều chịu tác dụng của lực đẩy Archimedes có phương và chiều như thế nào?",
+      "question": "Một vật nhúng chìm trong chất lỏng chịu tác dụng của lực đẩy Archimedes có phương và chiều như thế nào?",
       "options": [
-        "Phương nằm ngang, chiều từ trái sang phải.",
-        "Phương thẳng đứng, chiều từ dưới lên trên.",
         "Phương thẳng đứng, chiều từ trên xuống dưới.",
-        "Phương nghiêng góc 45 độ."
+        "Phương thẳng đứng, chiều từ dưới lên trên.",
+        "Phương xiên theo góc nhúng vật.",
+        "Phương nằm ngang, chiều từ trái sang phải."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 40,
-      "text": "Độ lớn của lực đẩy Archimedes tác dụng lên vật nhúng trong chất lỏng được tính theo công thức nào (d là trọng lượng riêng chất lỏng, V là thể tích phần ngập)?",
+      "question": "Công thức tính độ lớn lực đẩy Archimedes FA là:",
       "options": [
         "FA = d . V",
-        "FA = D . V",
-        "FA = m . g",
-        "FA = p . S"
+        "FA = m . V",
+        "FA = d / V",
+        "FA = D . V"
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 41,
-      "text": "Trong công thức FA = d . V, đại lượng V đại diện cho:",
+      "question": "Trong công thức FA = d . V, V là đại diện cho:",
       "options": [
-        "17 N",
-        "3 N",
-        "70 N",
-        "0,7 N"
+        "Thể tích của bình chứa chất lỏng.",
+        "Thể tích toàn phần của vật.",
+        "Thể tích phần chất lỏng bị vật chiếm chỗ.",
+        "Khối lượng phần lỏng dâng lên."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 42,
-      "text": "Hai thỏi nhôm và thép có thể tích bằng nhau cùng được nhúng chìm hoàn toàn trong cùng một bình nướ",
+      "question": "Lực đẩy Archimedes tác dụng lên vật phụ thuộc vào những yếu tố nào?",
       "options": [
-        "Thỏi thép chịu lực đẩy lớn hơn vì thép nặng hơn nhôm.",
-        "Thỏi nhôm chịu lực đẩy lớn hơn vì nhôm nhẹ hơn.",
-        "Hai thỏi chịu lực đẩy Archimedes bằng nhau vì thể tích chiếm chỗ trong nước bằng nhau.",
-        "Không so sánh được do thiếu độ sâu."
+        "Trọng lượng riêng của chất lỏng và thể tích phần chất lỏng bị chiếm chỗ.",
+        "Trọng lượng riêng của vật và nhiệt độ môi trường.",
+        "Khối lượng của vật và độ sâu của vật.",
+        "Hình dạng của vật và chất làm nên vật."
       ],
-      "correctIndex": 2
+      "answer": 0
     },
     {
       "id": 43,
-      "text": "Một thỏi đồng được nhúng chìm lần lượt vào nước và vào dầu ăn. Biết trọng lượng riêng của nước lớn hơn dầu ăn. Lực đẩy Archimedes tác dụng lên thỏi đồng lớn hơn khi nhúng vào:",
+      "question": "Thả một quả cầu kim loại chìm hoàn toàn vào trong nước. Khi thả quả cầu ở độ sâu 1 m và độ sâu 3 m thì lực đẩy Archimedes tác dụng lên nó sẽ:",
       "options": [
-        "Nước",
-        "Dầu ăn",
-        "Bằng nhau trong cả hai môi trường",
-        "Không so sánh được"
+        "Giảm dần khi xuống sâu.",
+        "Bằng nhau.",
+        "Ở độ sâu 3 m lớn hơn gấp 3 lần.",
+        "Ở độ sâu 1 m lớn hơn."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 44,
-      "text": "Một vật nhúng trong chất lỏng sẽ bị chìm xuống đáy bình khi:",
+      "question": "Gọi P là trọng lượng của vật, FA là lực đẩy Archimedes. Điều kiện để vật chìm xuống đáy chất lỏng là:",
       "options": [
-        "Lực đẩy Archimedes lớn hơn trọng lượng của vật (FA > P).",
-        "Lực đẩy Archimedes nhỏ hơn trọng lượng của vật (FA < P).",
-        "Lực đẩy Archimedes bằng trọng lượng của vật (FA = P).",
-        "Trọng lượng riêng của chất lỏng lớn hơn trọng lượng riêng của vật."
+        "P > FA",
+        "P = 0,5 FA",
+        "P < FA",
+        "P = FA"
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 45,
-      "text": "Điều kiện để một vật nổi lên trên mặt chất lỏng là trọng lượng riêng của vật (dvật) và chất lỏng (dchất lỏng) thỏa mãn:",
+      "question": "Điều kiện để một vật lơ lửng trong lòng chất lỏng là:",
       "options": [
-        "dvật > dchất lỏng",
-        "dvật < dchất lỏng",
-        "dvật = dchất lỏng",
-        "dvật không phụ thuộc dchất lỏng"
+        "Hình dạng vật phải là khối cầu.",
+        "Trọng lượng riêng dvật > dchất lỏng.",
+        "P < FA.",
+        "Trọng lượng P của vật bằng lực đẩy Archimedes FA."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 46,
-      "text": "Khi một quả bóng nhựa nổi và đứng yên trên mặt nước, độ lớn của lực đẩy Archimedes FA lúc này bằng:",
+      "question": "Khi một vật nổi trên mặt chất lỏng và đứng yên, lực đẩy Archimedes FA có độ lớn như thế nào so với trọng lượng P của vật?",
       "options": [
-        "Trọng lượng riêng của chất lỏng.",
-        "Trọng lượng P của quả bóng.",
-        "Hiệu giữa trọng lượng vật và lực cản.",
-        "Bằng 0."
+        "Đúng bằng trọng lượng P của vật.",
+        "Lớn hơn trọng lượng P của vật.",
+        "Bằng 0.",
+        "Nhỏ hơn trọng lượng P của vật."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 47,
-      "text": "Tàu thủy làm bằng vỏ thép rất nặng nhưng vẫn nổi được trên mặt nước là nhờ:",
+      "question": "Một miếng gỗ nổi trên mặt nước. Nếu thả miếng gỗ đó vào dầu hỏa (có trọng lượng riêng nhỏ hơn nước) thì phần gỗ chìm trong dầu hỏa sẽ:",
       "options": [
-        "Khối lượng riêng của thép nhỏ hơn nướ",
-        "Tàu được thiết kế rỗng bên trong làm tăng thể tích chiếm chỗ, giúp trọng lượng riêng trung bình của toàn bộ tàu nhỏ hơn trọng lượng riêng của nướ",
-        "Động cơ tàu liên tục đẩy tàu nổi lên.",
-        "Áp suất không khí dưới đáy tàu nâng tàu lên."
+        "Nhiều hơn phần gỗ chìm trong nước.",
+        "Không thay đổi.",
+        "Miếng gỗ sẽ bị chìm hoàn toàn xuống đáy.",
+        "Ít hơn phần gỗ chìm trong nước."
       ],
-      "correctIndex": 1
+      "answer": 0
+    },
+    {
+      "id": 48,
+      "question": "Nguyên tắc giúp tàu thuỷ bằng thép (chất liệu nặng hơn nước rất nhiều) vẫn có thể nổi trên mặt nước biển là gì?",
+      "options": [
+        "Tàu được thiết kế rỗng bên trong nên trọng lượng riêng trung bình của cả con tàu nhỏ hơn trọng lượng riêng của nước biển.",
+        "Do muối biển nâng tàu lên.",
+        "Nhờ chân vịt đẩy tàu nổi lên.",
+        "Tàu được sơn lớp sơn chống thấm đặc biệt."
+      ],
+      "answer": 0
+    },
+    {
+      "id": 49,
+      "question": "Thể tích của một khối sắt là 0,002 m³. Nhúng chìm khối sắt này vào trong nước có d = 10 000 N/m³. Lực đẩy Archimedes tác dụng lên khối sắt là:",
+      "options": [
+        "200 N",
+        "2 N",
+        "20 N",
+        "5 N"
+      ],
+      "answer": 2
+    },
+    {
+      "id": 50,
+      "question": "Thả một hòn đá có khối lượng 0,5 kg vào bình chia độ làm nước dâng lên 200 cm³. Lực đẩy Archimedes tác dụng lên hòn đá là (cho dnước = 10 000 N/m³):",
+      "options": [
+        "20 N",
+        "0,2 N",
+        "5 N",
+        "2 N"
+      ],
+      "answer": 3
     }
   ],
   "frost": [
     {
       "id": 1,
-      "text": "Biến đổi vật lí là hiện tượng:",
+      "question": "Cơ thể người được chia thành mấy phần chính?",
       "options": [
-        "Chất bị biến đổi về trạng thái, hình dáng nhưng giữ nguyên là chất ban đầu",
-        "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác",
-        "Chất bị phân hủy thành các nguyên tố hóa học",
-        "Chất tác dụng với oxygen tạo ra oxide"
+        "4 phần (Đầu, cổ, thân, chi).",
+        "5 phần (Đầu, ngực, bụng, tay, chân).",
+        "3 phần (Đầu, thân, các chi).",
+        "2 phần (Đầu và thân)."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 2,
-      "text": "Biến đổi hóa học là hiện tượng:",
+      "question": "Hệ cơ quan nào dưới đây có chức năng nâng đỡ, bảo vệ cơ thể và tạo khung vận động?",
       "options": [
-        "Chất thay đổi thể từ rắn sang lỏng",
-        "Chất bị hòa tan vào nước",
-        "Chất bị biến đổi tạo thành chất mới",
-        "Chất bị thay đổi kích thước và hình dạng"
+        "Hệ bài tiết.",
+        "Hệ tuần hòan.",
+        "Hệ vận động.",
+        "Hệ hô hấp."
       ],
-      "correctIndex": 2
+      "answer": 2
     },
     {
       "id": 3,
-      "text": "Quá trình nào sau đây là quá trình biến đổi vật lí?",
+      "question": "Bộ xương người trưởng thành có khoảng bao nhiêu chiếc xương?",
       "options": [
-        "Đốt cháy than trong không khí",
-        "Nước đá tan chảy thành nước lỏng",
-        "Sắt bị gỉ trong không khí ẩm",
-        "Thức ăn bị thối vữa"
+        "106 chiếc.",
+        "156 chiếc.",
+        "206 chiếc.",
+        "306 chiếc."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 4,
-      "text": "Quá trình nào sau đây thể hiện sự biến đổi hóa học?",
+      "question": "Khớp nào sau đây thuộc loại khớp động?",
       "options": [
-        "Hòa tan muối ăn vào nước",
-        "Cắt nhỏ dây thép thành nhiều đoạn",
-        "Đốt cháy cồn sinh ra khí carbon dioxide và hơi nước",
-        "Quả bóng bay bị bơm căng"
+        "Khớp đầu gối.",
+        "Khớp xương hộp sọ.",
+        "Khớp giữa xương chậu và xương cùng.",
+        "Khớp giữa các đốt sống."
       ],
-      "correctIndex": 2
+      "answer": 0
     },
     {
       "id": 5,
-      "text": "Dấu hiệu rõ ràng nhất chứng tỏ có biến đổi hóa học xảy ra là:",
+      "question": "Để phòng chống tật cong vẹo cột sống ở học sinh, biện pháp nào sau đây là đúng?",
       "options": [
-        "Sự thay đổi thể của chất",
-        "Sự thay đổi kích thước hạt",
-        "Sự tạo thành chất mới",
-        "Sự thay đổi vị trí của vật"
+        "Hạn chế tập thể dục thể thao.",
+        "Ngồi học đúng tư thế, bàn ghế hợp kích thước.",
+        "Mang cặp sách nặng về một bên tay.",
+        "Thường xuyên cúi sát mắt xuống mặt bàn."
       ],
-      "correctIndex": 2
+      "answer": 1
     },
     {
       "id": 6,
-      "text": "Hiện tượng nến chảy lỏng khi bị đốt nóng thuộc loại biến đổi nào?",
+      "question": "Khi sơ cứu người bị gãy xương cẳng tay, hành động nào sau đây là cần thiết nhất?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Vừa là biến đổi vật lí vừa tạo ra chất mới",
-        "Không phải biến đổi vật chất"
+        "Cho nạn nhân đi lại tự do.",
+        "Nẹp cố định vị trí xương gãy trước khi di chuyển.",
+        "Cố gắng nắn lại chỗ xương gãy.",
+        "Chườm nóng trực tiếp lên chỗ gãy."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 7,
-      "text": "Khi đốt cháy hơi nến (paraffin) tạo thành CO2 và H2O, đây là hiện tượng:",
+      "question": "Tinh bột bắt đầu được biến đổi hóa học tại cơ quan nào trong hệ tiêu hóa?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự ngưng tụ",
-        "Sự hòa tan"
+        "Dạ dày.",
+        "Ruột non.",
+        "Thực quản.",
+        "Khoang miệng."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 8,
-      "text": "Hiện tượng cơm để lâu ngày bị ôi thiu là biến đổi gì?",
+      "question": "Enzyme amylase trong nước bọt có tác dụng phân giải tinh bột chín thành loại đường nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự nóng chảy",
-        "Sự thăng hoa"
+        "Đường sucrose.",
+        "Đường maltose.",
+        "Đường fructose.",
+        "Đường glucose."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 9,
-      "text": "Quá trình sấy khô quần áo dưới ánh nắng mặt trời là:",
+      "question": "Cơ quan nào là nơi diễn ra quá trình hấp thụ chất dinh dưỡng chủ yếu nhất?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng phân hủy",
-        "Phản ứng thế"
+        "Ruột non.",
+        "Dạ dày.",
+        "Ruột già.",
+        "Khoang miệng."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 10,
-      "text": "Cho đinh sắt vào dung dịch acid chloride thấy xuất hiện bọt khí và đinh sắt tan dần. Đây là:",
+      "question": "Tuyến tiêu hóa nào lớn nhất trong cơ thể người, tiết ra dịch mật?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình hòa tan cơ học",
-        "Quá trình đông đặc"
+        "Tuyến vị.",
+        "Tuyến tụy.",
+        "Tuyến nước bọt.",
+        "Gan."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 11,
-      "text": "Hiện tượng thủy triều lên xuống là hiện tượng:",
+      "question": "Biện pháp nào sau đây giúp bảo vệ hệ tiêu hóa khỏe mạnh?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng hóa học",
-        "Biến đổi nhân tạo"
+        "Thường xuyên ăn đồ cay nóng và ôi thiu.",
+        "Ăn quá no vào buổi tối.",
+        "Vừa ăn vừa vận động mạnh.",
+        "Ăn chín uống sôi, vệ sinh răng miệng sạch sẽ."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 12,
-      "text": "Hiện tượng thanh sắt bị gỉ tạo thành vảy gỉ màu nâu đỏ là do:",
+      "question": "Thành phần nào của máu chiếm khoảng 55% thể tích và có vai trò duy trì máu ở trạng thái lỏng?",
       "options": [
-        "Sắt bị nóng chảy",
-        "Sắt bị va đập biến dạng",
-        "Sắt hóa hợp với oxygen trong không khí ẩm tạo thành chất mới",
-        "Sắt bị hòa tan vào nước mưa"
+        "Bạch cầu.",
+        "Hồng cầu.",
+        "Tiểu cầu.",
+        "Huyết tương."
       ],
-      "correctIndex": 2
+      "answer": 3
     },
     {
       "id": 13,
-      "text": "Hành động nào sau đây chỉ gây ra biến đổi vật lí?",
+      "question": "Loại tế bào máu nào có chứa hemoglobin (huyết cầu tố) giúp vận chuyển O2 và CO2?",
       "options": [
-        "Đốt cháy tờ giấy",
-        "Xé nhỏ tờ giấy",
-        "Nướng chín củ khoai",
-        "Ủ men rượu"
+        "Bạch cầu.",
+        "Hồng cầu.",
+        "Tiểu cầu.",
+        "Tế bào lympho."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 14,
-      "text": "Trong các hiện tượng sau, đâu KHÔNG PHẢI là dấu hiệu nhận biết phản ứng hóa học?",
+      "question": "Loại tế bào máu nào đóng vai trò cốt lõi trong cơ chế đông máu?",
       "options": [
-        "Xuất hiện chất kết tủa",
-        "Đổi màu sắc hoặc tỏa nhiệt",
-        "Thoát ra chất khí",
-        "Thay đổi vị trí không gian của vật"
+        "Đại thực bào.",
+        "Tiểu cầu.",
+        "Hồng cầu.",
+        "Bạch cầu."
       ],
-      "correctIndex": 3
+      "answer": 1
     },
     {
       "id": 15,
-      "text": "Quá trình ngưng tụ hơi nước thành hạt sương buổi sáng là biến đổi gì?",
+      "question": "Người có nhóm máu O có thể truyền máu cho người thuộc nhóm máu nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự hóa hơi",
-        "Phản ứng tỏa nhiệt"
+        "Chỉ nhóm máu A và B.",
+        "Chỉ nhóm máu AB.",
+        "Chỉ nhóm máu O.",
+        "Mọi nhóm máu (O, A, B, AB)."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 16,
-      "text": "Lên men nho thành rượu vang là quá trình:",
+      "question": "Người có nhóm máu AB có thể nhận máu từ những nhóm máu nào (theo nguyên tắc không gây ngưng kết)?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự cất phân đoạn",
-        "Sự làm lạnh"
+        "Chỉ nhận được nhóm máu AB.",
+        "Chỉ nhận được từ nhóm O.",
+        "Không thể nhận máu từ ai.",
+        "Nhận được từ tất cả các nhóm máu (O, A, B, AB)."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 17,
-      "text": "Nung đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí CO2. Đây là:",
+      "question": "Tim người được cấu tạo gồm mấy ngăn?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình hòa tan",
-        "Quá trình kết tinh"
+        "2 ngăn.",
+        "3 ngăn.",
+        "4 ngăn (2 tâm nhĩ, 2 tâm thất).",
+        "6 ngăn."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 18,
-      "text": "Đun sôi nước đến 100 độ C, nước bốc hơi mãnh liệt. Đây là biến đổi:",
+      "question": "Mạch máu nào có chức năng dẫn máu từ các cơ quan trở về tim?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng oxy hóa",
-        "Sự phân hủy nước"
+        "Động mạch.",
+        "Mao mạch.",
+        "Động mạch chủ.",
+        "Tĩnh mạch."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 19,
-      "text": "Quá trình quang hợp của cây xanh hấp thụ CO2 và giải phóng O2 là:",
+      "question": "Khi vết thương bị chảy máu phun thành tia đỏ tươi, đó là dấu hiệu tổn thương loại mạch máu nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình khuếch tán khí",
-        "Sự ngưng tụ"
+        "Mạch lympho.",
+        "Mao mạch.",
+        "Tĩnh mạch.",
+        "Động mạch."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 20,
-      "text": "Thả một viên C sủi vào cốc nước thấy sủi bọt khí mạnh. Đây là:",
+      "question": "Biện pháp sơ cứu khẩn cấp khi bị chảy máu động mạch ở tay hoặc chân là gì?",
       "options": [
-        "Biến đổi vật lí thuần túy",
-        "Biến đổi hóa học",
-        "Quá trình đóng đóng đông",
-        "Sự ngưng tụ"
+        "Chườm nóng lên chỗ chảy máu.",
+        "Bóp chặt động mạch và dùng dây garo buộc phía trên vết thương.",
+        "Bôi xà phòng trực tiếp lên vết thương.",
+        "Dùng nước rửa sạch rồi để tự khỏi."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 21,
-      "text": "Đập vỡ một quả trứng gà là biến đổi gì?",
+      "question": "Hệ cơ quan nào đảm nhận chức năng trao đổi khí giữa cơ thể và môi trường ngoài?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng sinh học",
-        "Sự lên men"
+        "Hệ hô hấp.",
+        "Hệ tuần hòan.",
+        "Hệ bài tiết.",
+        "Hệ tiêu hóa."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 22,
-      "text": "Rán (chiên) chín một quả trứng gà là biến đổi gì?",
+      "question": "Cơ quan nào là nơi diễn ra sự trao đổi khí trực tiếp giữa máu và không khí ở phổi?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự đông đặc đơn thuần",
-        "Sự bốc hơi nước"
+        "Phế nang.",
+        "Khí quản.",
+        "Thanh quản.",
+        "Phế quản."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 23,
-      "text": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm là biến đổi:",
+      "question": "Hoạt động hít vào bình thường được thực hiện nhờ sự co của các cơ nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng thủy phân",
-        "Phản ứng oxy hóa"
+        "Cơ liên sườn ngoài và cơ hòanh.",
+        "Cơ liên sườn trong và cơ tay.",
+        "Cơ bụng và cơ tim.",
+        "Cơ lưng và cơ cổ."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 24,
-      "text": "Làm nước đá trong tủ lạnh thuộc loại biến đổi nào?",
+      "question": "Chất độc nicotine và CO trong khói thuốc lá gây hại nghiêm trọng nhất cho hệ cơ quan nào?",
       "options": [
-        "Biến đổi vật lí (sự đông đặ",
-        "Biến đổi hóa học",
-        "Phản ứng thu nhiệt tạo chất mới",
-        "Phản ứng phân hủy"
+        "Hệ vận động.",
+        "Hệ hô hấp và hệ tuần hòan.",
+        "Hệ tiêu hóa.",
+        "Hệ bài tiết."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 25,
-      "text": "Lõi dây điện bằng đồng bị gập cong nhiều lần là biến đổi:",
+      "question": "Việc trồng nhiều cây xanh xung quanh khu dân cư có lợi gì đối với hệ hô hấp?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự ăn mòn kim loại",
-        "Phản ứng khử"
+        "Tăng nhiệt độ môi trường sống.",
+        "Tăng lượng khí CO2 trong không khí.",
+        "Lọc bụi, cung cấp O2 và làm sạch không khí.",
+        "Giảm độ ẩm không khí xuống mức cực thấp."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 26,
-      "text": "Thức ăn sau khi vào dạ dày được enzyme phân giải thành dinh dưỡng là quá trình:",
+      "question": "Cơ quan quan trọng nhất của hệ bài tiết nước tiểu là gì?",
       "options": [
-        "Biến đổi vật lí thuần túy",
-        "Biến đổi hóa học",
-        "Quá trình lọc cơ học",
-        "Sự thẩm thấu nước"
+        "Ống dẫn nước tiểu.",
+        "Bóng đái (bàng quang).",
+        "Thận.",
+        "Ống đái."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 27,
-      "text": "Mở chai nước nước nước ngọt có gas thấy khí thoát ra là hiện tượng:",
+      "question": "Mỗi quả thận ở người chứa khoảng bao nhiêu đơn vị chức năng (nephron)?",
       "options": [
-        "Biến đổi vật lí (sự giảm độ tan của khí)",
-        "Biến đổi hóa học",
-        "Phản ứng cháy",
-        "Sự ngưng tụ"
+        "100 đơn vị.",
+        "10.000 đơn vị.",
+        "1 triệu đơn vị.",
+        "10 triệu đơn vị."
       ],
-      "correctIndex": 0
+      "answer": 2
     },
     {
       "id": 28,
-      "text": "Nung nóng chiếc đinh sắt đỏ rực rồi để nguội trở lại màu cũ. Quá trình này là:",
+      "question": "Quá trình lọc máu để tạo thành nước tiểu đầu diễn ra tại vị trí nào của thận?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự oxy hóa hoàn toàn",
-        "Phản ứng phân hủy"
+        "Ống góp.",
+        "Bể thận.",
+        "Ống thận.",
+        "Cầu thận."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 29,
-      "text": "Nhỏ vài giọt iodine vào hồ tinh bột thấy xuất hiện màu xanh tím. Đây là:",
+      "question": "Nước tiểu chính thức khác nước tiểu đầu ở đặc điểm cơ bản nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (biểu hiện đổi màu đặc trưng)",
-        "Sự hòa tan đơn thuần",
-        "Sự bốc hơi"
+        "Chứa nhiều đường glucose hơn.",
+        "Có màu trắng đục.",
+        "Nồng độ chất cặn bã đậm đặc hơn, hầu như không còn chất dinh dưỡng.",
+        "Chứa nhiều tế bào máu đỏ."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 30,
-      "text": "Đun đường trên chảo đến khi đường chuyển sang màu đen và có mùi khát. Đây là:",
+      "question": "Thói quen nào sau đây giúp hạn chế nguy cơ hình thành sỏi thận?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (đường bị phân hủy thành carbon)",
-        "Sự nóng chảy của đường",
-        "Sự cô cạn"
+        "Thường xuyên nhịn đi tiểu.",
+        "Ăn nhiều thức ăn chứa chất cặn bã.",
+        "Ăn quá mặn và uống ít nước.",
+        "Uống đủ nước hàng ngày và không nhịn tiểu."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 31,
-      "text": "Hiện tượng xói mòn đất đai do nước chảy là:",
+      "question": "Đơn vị cấu tạo và chức năng cơ bản của hệ thần kinh là gì?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng trao đổi",
-        "Sự rò rỉ chất độc"
+        "Tế bào cơ.",
+        "Tế bào thần kinh (neuron).",
+        "Tế bào tuyến.",
+        "Tế bào biểu mô."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 32,
-      "text": "Đốt gas (mêtan) để nấu ăn sinh ra nhiệt lượng lớn và khí CO2. Đây là biến đổi:",
+      "question": "Hệ thần kinh trung ương ở người bao gồm những cơ quan nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự chuyển thể gas",
-        "Quá trình nén khí"
+        "Tủy sống và hạch thần kinh.",
+        "Não và các dây thần kinh.",
+        "Các dây thần kinh và hạch thần kinh.",
+        "Bộ não và tủy sống."
       ],
-      "correctIndex": 1
+      "answer": 3
     },
     {
       "id": 33,
-      "text": "Dầu ăn nổi trên mặt nước khi trộn lẫn là hiện tượng thuộc về:",
+      "question": "Bộ phận nào của mắt có vai trò như một thấu kính hội tụ, có thể điều tiết để ảnh hiện rõ trên màng lưới?",
       "options": [
-        "Tính chất vật lí và biến đổi vật lí",
-        "Phản ứng hóa học",
-        "Sự tạo chất kết tủa",
-        "Phản ứng xà phòng hóa"
+        "Màng lưới (võng mạc).",
+        "Thể thủy tinh.",
+        "Màng giác (giác mạc).",
+        "Lòng đen."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 34,
-      "text": "Sữa chua được tạo thành từ sữa tươi nhờ vi khuẩn lactic là biến đổi:",
+      "question": "Người bị tật cận thị thường nhìn rõ các vật ở cự ly nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (lên men lactic)",
-        "Sự đông đặc vật lí",
-        "Sự bốc hơi nước"
+        "Ở gần, khó nhìn rõ vật ở xa.",
+        "Không nhìn rõ vật ở bất kỳ khoảng cách nào.",
+        "Ở xa, khó nhìn rõ vật ở gần.",
+        "Chỉ nhìn rõ vật vào buổi tối."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 35,
-      "text": "Hòa tan chút đường vào nước thu được dung dịch đường ngọt. Quá trình này là:",
+      "question": "Để khắc phục tật cận thị, người bệnh cần đeo loại kính nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng tạo hợp chất mới",
-        "Phản ứng trung hòa"
+        "Kính phân kỳ (kính lõm).",
+        "Kính râm.",
+        "Kính hội tụ (kính lồi).",
+        "Không cần đeo kính, chỉ cần nghỉ ngơi."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 36,
-      "text": "Khí mỏ dầu được nén vào bình chứa ở dạng lỏng là quá trình:",
+      "question": "Cơ quan thính giác giúp cơ thể nhận biết âm thanh bao gồm các phần chính nào?",
       "options": [
-        "Biến đổi vật lí (sự hoá lỏng do áp suất)",
-        "Biến đổi hóa học",
-        "Phản ứng trùng hợp",
-        "Phản ứng phân hủy"
+        "Vành tai và các dây thần kinh.",
+        "Tai ngoài, tai giữa và tai trong.",
+        "Màng nhĩ và vành tai.",
+        "Ốc tai và ống nghe."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 37,
-      "text": "Vôi sống (CaO) thả vào nước tỏa nhiệt mạnh và biến thành vôi tôi Ca(OH)2. Đây là:",
+      "question": "Hệ nội tiết điều hòa các quá trình sinh lý trong cơ thể thông qua chất hóa học nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự hòa tan cơ học",
-        "Sự ngưng tụ"
+        "Hormone.",
+        "Kháng thể.",
+        "Enzyme.",
+        "Vitamin."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 38,
-      "text": "Xăng trong bình xe máy bị cất trữ lâu ngày bốc hơi hao hụt là:",
+      "question": "Tuyến nội tiết nào được coi là tuyến chỉ huy, điều tiết hoạt động của các tuyến nội tiết khác?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng cháy chậm",
-        "Sự thủy phân"
+        "Tuyến yên.",
+        "Tuyến tụy.",
+        "Tuyến trên thận.",
+        "Tuyến giáp."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 39,
-      "text": "Thổi khí thở (chứa CO2) vào nước vôi trong thấy nước vôi vẩn đụ",
+      "question": "Bệnh bướu cổ do thiếu hụt nguyên tố vi lượng nào trong khẩu phần ăn hàng ngày?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (tạo kết tủa CaCO3)",
-        "Quá trình bốc hơi",
-        "Quá trình ngưng tụ"
+        "Calcium (Canxi).",
+        "Zinc (Kẽm).",
+        "Iodine (I-ốt).",
+        "Iron (Sắt)."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 40,
-      "text": "Thả mảnh kẽm vào dung dịch acid thấy có khí hydrogen thoát ra. Đây là biến đổi:",
+      "question": "Tuyến tụy tiết ra hai loại hormone nào để điều hòa lượng đường (glucose) trong máu?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình cất lọc",
-        "Quá trình bay hơi"
+        "Adrenaline và noradrenaline.",
+        "Thyroxine và oxytocin.",
+        "Insulin và glucagon.",
+        "Estrogen và progesterone."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 41,
-      "text": "Điểm khác nhau căn bản giữa biến đổi vật lí và biến đổi hóa học là:",
+      "question": "Khi lượng đường trong máu tăng cao sau bữa ăn, tuyến tụy tiết hormone nào để hạ đường huyết?",
       "options": [
-        "Biến đổi vật lí tỏa nhiệt, biến đổi hóa học thu nhiệt",
-        "Biến đổi hóa học có tạo thành chất mới, biến đổi vật lí thì không",
-        "Biến đổi vật lí diễn ra nhanh hơn biến đổi hóa học",
-        "Biến đổi hóa học không làm thay đổi khối lượng chất"
+        "Insulin.",
+        "Glucagon.",
+        "Thyroxine.",
+        "Testosterone."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 42,
-      "text": "Quá trình nhai nghiền thức ăn ở miệng thuộc loại biến đổi nào?",
+      "question": "Lớp ngoài cùng của da có vai trò chống thấm nước và ngăn vi khuẩn xâm nhập là lớp nào?",
       "options": [
-        "Biến đổi vật lí (cơ họ",
-        "Biến đổi hóa học",
-        "Phản ứng thủy phân",
-        "Sự lên men"
+        "Lớp cơ.",
+        "Lớp bì.",
+        "Lớp mỡ dưới da.",
+        "Lớp biểu bì (lớp sừng)."
       ],
-      "correctIndex": 0
+      "answer": 3
     },
     {
       "id": 43,
-      "text": "Hiện tượng tạo thành mưa axit do khí SO2, NO2 trong không khí tác dụng với nước mưa là:",
+      "question": "Sắc tố melanin quyết định màu da ở người nằm ở lớp nào của da?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Quá trình bốc hơi",
-        "Quá trình ngưng tụ đơn thuần"
+        "Lớp bì.",
+        "Lớp biểu bì.",
+        "Lớp mỡ dưới da.",
+        "Tuyến mồ hôi."
       ],
-      "correctIndex": 1
+      "answer": 1
     },
     {
       "id": 44,
-      "text": "Quá trình chưng cất rượu để thu lấy cồn nồng độ cao dựa trên biến đổi:",
+      "question": "Thân nhiệt bình thường của người khỏe mạnh dao động quanh mức bao nhiêu?",
       "options": [
-        "Biến đổi vật lí (sự bay hơi và ngưng tụ ở nhiệt độ sôi khác nhau)",
-        "Biến đổi hóa học",
-        "Phản ứng phân hủy cồn",
-        "Phản ứng oxy hóa"
+        "35°C.",
+        "37°C.",
+        "39°C.",
+        "40°C."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 45,
-      "text": "Cây gỗ bị mục nát theo thời gian trong rừng là do:",
+      "question": "Khi trời nóng, cơ thể thực hiện phản ứng nào sau đây để tỏa nhiệt ra môi trường?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học (phân hủy sinh học tạo chất mới)",
-        "Sự đông đông nước",
-        "Sự mài mòn cơ học"
+        "Dãn mạch máu dưới da và tăng tiết mồ hôi.",
+        "Co các cơ dựng lông.",
+        "Giảm tiết mồ hôi và thở chậm.",
+        "Co mạch máu dưới da và run giật."
       ],
-      "correctIndex": 1
+      "answer": 0
     },
     {
       "id": 46,
-      "text": "Cây gỗ bị cưa thành từng khúc nhỏ để làm bàn ghế là hiện tượng:",
+      "question": "Khi gặp người bị say nắng (sốc nhiệt), hành động sơ cứu đúng đắn là gì?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng trùng hợp",
-        "Sự phân hủy hóa học"
+        "Đưa vào nơi thóang mát, nới lỏng quần áo và chườm mát.",
+        "Cho uống ngay nước đá lạnh.",
+        "Cho nạn nhân chạy bộ nhẹ nhàng.",
+        "Phủ chăn kín người cho toát mồ hôi."
       ],
-      "correctIndex": 0
+      "answer": 0
     },
     {
       "id": 47,
-      "text": "Lồ vi sóng làm nóng thức ăn bằng cách làm các phân tử nước dao động mạnh là hiện tượng:",
+      "question": "Tuyến sinh dục nam (tinh hòan) có chức năng tiết ra hormone sinh dục nào?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Phản ứng nhiệt nhôm",
-        "Phản ứng cháy"
+        "Insulin.",
+        "Testosterone.",
+        "Estrogen.",
+        "Progesterone."
       ],
-      "correctIndex": 0
+      "answer": 1
     },
     {
       "id": 48,
-      "text": "Tấm sắt để ngoài trời mưa lâu ngày xuất hiện lớp gỉ xốp bở. Lớp gỉ này:",
+      "question": "Tuyến sinh dục nữ (buồng trứng) tiết ra hormone nào quyết định các đặc tính sinh dục nữ?",
       "options": [
-        "khác hẳn sắt ban đầu",
-        "Là chất mới (oxide sắt hydrat hó",
-        "Là hỗn hợp nước và sắt chưa liên kết",
-        "Là chất bùn bẩn bám vào"
+        "Thyroxine.",
+        "Adrenaline.",
+        "Estrogen.",
+        "Testosterone."
       ],
-      "correctIndex": 1
+      "answer": 2
     },
     {
       "id": 49,
-      "text": "Để phân biệt biến đổi vật lí và biến đổi hóa học, người ta dựa vào:",
+      "question": "Quá trình thụ tinh giữa tinh trùng và trứng thường diễn ra ở vị trí nào?",
       "options": [
-        "Sự thay đổi nhiệt độ",
-        "Sự thay đổi thể của chất",
-        "Sự xuất hiện của chất mới",
-        "Tốc độ diễn ra biến đổi"
+        "Tại buồng trứng.",
+        "Trong tử cung.",
+        "Ở 1/3 phía ngoài của ống dẫn trứng.",
+        "Tại âm đạo."
       ],
-      "correctIndex": 2
+      "answer": 2
     },
     {
       "id": 50,
-      "text": "Đốt cháy dây magnesium (Mg) trong không khí thu được bột trắng magnesium oxide (MgO). Đây là:",
+      "question": "Việc sử dụng bao cao su khi quan hệ tình dục có tác dụng quan trọng gì?",
       "options": [
-        "Biến đổi vật lí",
-        "Biến đổi hóa học",
-        "Sự thăng hoa của Mg",
-        "Sự nóng chảy của Mg"
+        "Vừa giúp tránh thai hiệu quả vừa phòng ngừa các bệnh lây truyền qua đường tình dục.",
+        "Chỉ giúp tránh thai ngoài ý muốn.",
+        "Chỉ ngăn ngừa bệnh lây truyền qua đường tình dục.",
+        "Tăng cường chức năng của hệ bài tiết."
       ],
-      "correctIndex": 1
+      "answer": 0
     }
   ]
 }

@@ -125,13 +125,18 @@ class RoomManager {
     questions.forEach(q => {
       // Build tagged option list
       //  q.options may be an object {A,B,C,D} or an array ['optA','optB','optC','optD']
+      let rawCorrect = (q.correctIndex !== undefined)
+        ? q.correctIndex
+        : (typeof q.answer === 'number' ? q.answer : ['A','B','C','D'].indexOf(String(q.answer || 'A').toUpperCase()));
+      const targetCorrectIdx = rawCorrect >= 0 ? rawCorrect : 0;
+
       let optArr;
       if (Array.isArray(q.options)) {
-        optArr = q.options.map((text, idx) => ({ text, isCorrect: idx === q.correctIndex }));
+        optArr = q.options.map((text, idx) => ({ text, isCorrect: idx === targetCorrectIdx }));
       } else {
         // Object form {A, B, C, D}
         const keys = ['A','B','C','D'];
-        optArr = keys.map((k, idx) => ({ text: q.options[k] ?? '', isCorrect: idx === q.correctIndex }));
+        optArr = keys.map((k, idx) => ({ text: q.options[k] ?? '', isCorrect: idx === targetCorrectIdx }));
       }
 
       shuffleArray(optArr);

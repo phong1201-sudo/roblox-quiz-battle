@@ -1,552 +1,552 @@
 [
   {
     "id": 1,
-    "text": "Biến đổi vật lí là hiện tượng:",
+    "question": "Cơ thể người được chia thành mấy phần chính?",
     "options": [
-      "Chất bị biến đổi về trạng thái, hình dáng nhưng giữ nguyên là chất ban đầu",
-      "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác",
-      "Chất bị phân hủy thành các nguyên tố hóa học",
-      "Chất tác dụng với oxygen tạo ra oxide"
+      "4 phần (Đầu, cổ, thân, chi).",
+      "5 phần (Đầu, ngực, bụng, tay, chân).",
+      "3 phần (Đầu, thân, các chi).",
+      "2 phần (Đầu và thân)."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 2,
-    "text": "Biến đổi hóa học là hiện tượng:",
+    "question": "Hệ cơ quan nào dưới đây có chức năng nâng đỡ, bảo vệ cơ thể và tạo khung vận động?",
     "options": [
-      "Chất thay đổi thể từ rắn sang lỏng",
-      "Chất bị hòa tan vào nước",
-      "Chất bị biến đổi tạo thành chất mới",
-      "Chất bị thay đổi kích thước và hình dạng"
+      "Hệ bài tiết.",
+      "Hệ tuần hòan.",
+      "Hệ vận động.",
+      "Hệ hô hấp."
     ],
-    "correctIndex": 2
+    "answer": 2
   },
   {
     "id": 3,
-    "text": "Quá trình nào sau đây là quá trình biến đổi vật lí?",
+    "question": "Bộ xương người trưởng thành có khoảng bao nhiêu chiếc xương?",
     "options": [
-      "Đốt cháy than trong không khí",
-      "Nước đá tan chảy thành nước lỏng",
-      "Sắt bị gỉ trong không khí ẩm",
-      "Thức ăn bị thối vữa"
+      "106 chiếc.",
+      "156 chiếc.",
+      "206 chiếc.",
+      "306 chiếc."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 4,
-    "text": "Quá trình nào sau đây thể hiện sự biến đổi hóa học?",
+    "question": "Khớp nào sau đây thuộc loại khớp động?",
     "options": [
-      "Hòa tan muối ăn vào nước",
-      "Cắt nhỏ dây thép thành nhiều đoạn",
-      "Đốt cháy cồn sinh ra khí carbon dioxide và hơi nước",
-      "Quả bóng bay bị bơm căng"
+      "Khớp đầu gối.",
+      "Khớp xương hộp sọ.",
+      "Khớp giữa xương chậu và xương cùng.",
+      "Khớp giữa các đốt sống."
     ],
-    "correctIndex": 2
+    "answer": 0
   },
   {
     "id": 5,
-    "text": "Dấu hiệu rõ ràng nhất chứng tỏ có biến đổi hóa học xảy ra là:",
+    "question": "Để phòng chống tật cong vẹo cột sống ở học sinh, biện pháp nào sau đây là đúng?",
     "options": [
-      "Sự thay đổi thể của chất",
-      "Sự thay đổi kích thước hạt",
-      "Sự tạo thành chất mới",
-      "Sự thay đổi vị trí của vật"
+      "Hạn chế tập thể dục thể thao.",
+      "Ngồi học đúng tư thế, bàn ghế hợp kích thước.",
+      "Mang cặp sách nặng về một bên tay.",
+      "Thường xuyên cúi sát mắt xuống mặt bàn."
     ],
-    "correctIndex": 2
+    "answer": 1
   },
   {
     "id": 6,
-    "text": "Hiện tượng nến chảy lỏng khi bị đốt nóng thuộc loại biến đổi nào?",
+    "question": "Khi sơ cứu người bị gãy xương cẳng tay, hành động nào sau đây là cần thiết nhất?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Vừa là biến đổi vật lí vừa tạo ra chất mới",
-      "Không phải biến đổi vật chất"
+      "Cho nạn nhân đi lại tự do.",
+      "Nẹp cố định vị trí xương gãy trước khi di chuyển.",
+      "Cố gắng nắn lại chỗ xương gãy.",
+      "Chườm nóng trực tiếp lên chỗ gãy."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 7,
-    "text": "Khi đốt cháy hơi nến (paraffin) tạo thành CO2 và H2O, đây là hiện tượng:",
+    "question": "Tinh bột bắt đầu được biến đổi hóa học tại cơ quan nào trong hệ tiêu hóa?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự ngưng tụ",
-      "Sự hòa tan"
+      "Dạ dày.",
+      "Ruột non.",
+      "Thực quản.",
+      "Khoang miệng."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 8,
-    "text": "Hiện tượng cơm để lâu ngày bị ôi thiu là biến đổi gì?",
+    "question": "Enzyme amylase trong nước bọt có tác dụng phân giải tinh bột chín thành loại đường nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự nóng chảy",
-      "Sự thăng hoa"
+      "Đường sucrose.",
+      "Đường maltose.",
+      "Đường fructose.",
+      "Đường glucose."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 9,
-    "text": "Quá trình sấy khô quần áo dưới ánh nắng mặt trời là:",
+    "question": "Cơ quan nào là nơi diễn ra quá trình hấp thụ chất dinh dưỡng chủ yếu nhất?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng phân hủy",
-      "Phản ứng thế"
+      "Ruột non.",
+      "Dạ dày.",
+      "Ruột già.",
+      "Khoang miệng."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 10,
-    "text": "Cho đinh sắt vào dung dịch acid chloride thấy xuất hiện bọt khí và đinh sắt tan dần. Đây là:",
+    "question": "Tuyến tiêu hóa nào lớn nhất trong cơ thể người, tiết ra dịch mật?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình hòa tan cơ học",
-      "Quá trình đông đặc"
+      "Tuyến vị.",
+      "Tuyến tụy.",
+      "Tuyến nước bọt.",
+      "Gan."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 11,
-    "text": "Hiện tượng thủy triều lên xuống là hiện tượng:",
+    "question": "Biện pháp nào sau đây giúp bảo vệ hệ tiêu hóa khỏe mạnh?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng hóa học",
-      "Biến đổi nhân tạo"
+      "Thường xuyên ăn đồ cay nóng và ôi thiu.",
+      "Ăn quá no vào buổi tối.",
+      "Vừa ăn vừa vận động mạnh.",
+      "Ăn chín uống sôi, vệ sinh răng miệng sạch sẽ."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 12,
-    "text": "Hiện tượng thanh sắt bị gỉ tạo thành vảy gỉ màu nâu đỏ là do:",
+    "question": "Thành phần nào của máu chiếm khoảng 55% thể tích và có vai trò duy trì máu ở trạng thái lỏng?",
     "options": [
-      "Sắt bị nóng chảy",
-      "Sắt bị va đập biến dạng",
-      "Sắt hóa hợp với oxygen trong không khí ẩm tạo thành chất mới",
-      "Sắt bị hòa tan vào nước mưa"
+      "Bạch cầu.",
+      "Hồng cầu.",
+      "Tiểu cầu.",
+      "Huyết tương."
     ],
-    "correctIndex": 2
+    "answer": 3
   },
   {
     "id": 13,
-    "text": "Hành động nào sau đây chỉ gây ra biến đổi vật lí?",
+    "question": "Loại tế bào máu nào có chứa hemoglobin (huyết cầu tố) giúp vận chuyển O2 và CO2?",
     "options": [
-      "Đốt cháy tờ giấy",
-      "Xé nhỏ tờ giấy",
-      "Nướng chín củ khoai",
-      "Ủ men rượu"
+      "Bạch cầu.",
+      "Hồng cầu.",
+      "Tiểu cầu.",
+      "Tế bào lympho."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 14,
-    "text": "Trong các hiện tượng sau, đâu KHÔNG PHẢI là dấu hiệu nhận biết phản ứng hóa học?",
+    "question": "Loại tế bào máu nào đóng vai trò cốt lõi trong cơ chế đông máu?",
     "options": [
-      "Xuất hiện chất kết tủa",
-      "Đổi màu sắc hoặc tỏa nhiệt",
-      "Thoát ra chất khí",
-      "Thay đổi vị trí không gian của vật"
+      "Đại thực bào.",
+      "Tiểu cầu.",
+      "Hồng cầu.",
+      "Bạch cầu."
     ],
-    "correctIndex": 3
+    "answer": 1
   },
   {
     "id": 15,
-    "text": "Quá trình ngưng tụ hơi nước thành hạt sương buổi sáng là biến đổi gì?",
+    "question": "Người có nhóm máu O có thể truyền máu cho người thuộc nhóm máu nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự hóa hơi",
-      "Phản ứng tỏa nhiệt"
+      "Chỉ nhóm máu A và B.",
+      "Chỉ nhóm máu AB.",
+      "Chỉ nhóm máu O.",
+      "Mọi nhóm máu (O, A, B, AB)."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 16,
-    "text": "Lên men nho thành rượu vang là quá trình:",
+    "question": "Người có nhóm máu AB có thể nhận máu từ những nhóm máu nào (theo nguyên tắc không gây ngưng kết)?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự cất phân đoạn",
-      "Sự làm lạnh"
+      "Chỉ nhận được nhóm máu AB.",
+      "Chỉ nhận được từ nhóm O.",
+      "Không thể nhận máu từ ai.",
+      "Nhận được từ tất cả các nhóm máu (O, A, B, AB)."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 17,
-    "text": "Nung đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí CO2. Đây là:",
+    "question": "Tim người được cấu tạo gồm mấy ngăn?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình hòa tan",
-      "Quá trình kết tinh"
+      "2 ngăn.",
+      "3 ngăn.",
+      "4 ngăn (2 tâm nhĩ, 2 tâm thất).",
+      "6 ngăn."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 18,
-    "text": "Đun sôi nước đến 100 độ C, nước bốc hơi mãnh liệt. Đây là biến đổi:",
+    "question": "Mạch máu nào có chức năng dẫn máu từ các cơ quan trở về tim?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng oxy hóa",
-      "Sự phân hủy nước"
+      "Động mạch.",
+      "Mao mạch.",
+      "Động mạch chủ.",
+      "Tĩnh mạch."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 19,
-    "text": "Quá trình quang hợp của cây xanh hấp thụ CO2 và giải phóng O2 là:",
+    "question": "Khi vết thương bị chảy máu phun thành tia đỏ tươi, đó là dấu hiệu tổn thương loại mạch máu nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình khuếch tán khí",
-      "Sự ngưng tụ"
+      "Mạch lympho.",
+      "Mao mạch.",
+      "Tĩnh mạch.",
+      "Động mạch."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 20,
-    "text": "Thả một viên C sủi vào cốc nước thấy sủi bọt khí mạnh. Đây là:",
+    "question": "Biện pháp sơ cứu khẩn cấp khi bị chảy máu động mạch ở tay hoặc chân là gì?",
     "options": [
-      "Biến đổi vật lí thuần túy",
-      "Biến đổi hóa học",
-      "Quá trình đóng đóng đông",
-      "Sự ngưng tụ"
+      "Chườm nóng lên chỗ chảy máu.",
+      "Bóp chặt động mạch và dùng dây garo buộc phía trên vết thương.",
+      "Bôi xà phòng trực tiếp lên vết thương.",
+      "Dùng nước rửa sạch rồi để tự khỏi."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 21,
-    "text": "Đập vỡ một quả trứng gà là biến đổi gì?",
+    "question": "Hệ cơ quan nào đảm nhận chức năng trao đổi khí giữa cơ thể và môi trường ngoài?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng sinh học",
-      "Sự lên men"
+      "Hệ hô hấp.",
+      "Hệ tuần hòan.",
+      "Hệ bài tiết.",
+      "Hệ tiêu hóa."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 22,
-    "text": "Rán (chiên) chín một quả trứng gà là biến đổi gì?",
+    "question": "Cơ quan nào là nơi diễn ra sự trao đổi khí trực tiếp giữa máu và không khí ở phổi?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự đông đặc đơn thuần",
-      "Sự bốc hơi nước"
+      "Phế nang.",
+      "Khí quản.",
+      "Thanh quản.",
+      "Phế quản."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 23,
-    "text": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm là biến đổi:",
+    "question": "Hoạt động hít vào bình thường được thực hiện nhờ sự co của các cơ nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng thủy phân",
-      "Phản ứng oxy hóa"
+      "Cơ liên sườn ngoài và cơ hòanh.",
+      "Cơ liên sườn trong và cơ tay.",
+      "Cơ bụng và cơ tim.",
+      "Cơ lưng và cơ cổ."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 24,
-    "text": "Làm nước đá trong tủ lạnh thuộc loại biến đổi nào?",
+    "question": "Chất độc nicotine và CO trong khói thuốc lá gây hại nghiêm trọng nhất cho hệ cơ quan nào?",
     "options": [
-      "Biến đổi vật lí (sự đông đặ",
-      "Biến đổi hóa học",
-      "Phản ứng thu nhiệt tạo chất mới",
-      "Phản ứng phân hủy"
+      "Hệ vận động.",
+      "Hệ hô hấp và hệ tuần hòan.",
+      "Hệ tiêu hóa.",
+      "Hệ bài tiết."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 25,
-    "text": "Lõi dây điện bằng đồng bị gập cong nhiều lần là biến đổi:",
+    "question": "Việc trồng nhiều cây xanh xung quanh khu dân cư có lợi gì đối với hệ hô hấp?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự ăn mòn kim loại",
-      "Phản ứng khử"
+      "Tăng nhiệt độ môi trường sống.",
+      "Tăng lượng khí CO2 trong không khí.",
+      "Lọc bụi, cung cấp O2 và làm sạch không khí.",
+      "Giảm độ ẩm không khí xuống mức cực thấp."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 26,
-    "text": "Thức ăn sau khi vào dạ dày được enzyme phân giải thành dinh dưỡng là quá trình:",
+    "question": "Cơ quan quan trọng nhất của hệ bài tiết nước tiểu là gì?",
     "options": [
-      "Biến đổi vật lí thuần túy",
-      "Biến đổi hóa học",
-      "Quá trình lọc cơ học",
-      "Sự thẩm thấu nước"
+      "Ống dẫn nước tiểu.",
+      "Bóng đái (bàng quang).",
+      "Thận.",
+      "Ống đái."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 27,
-    "text": "Mở chai nước nước nước ngọt có gas thấy khí thoát ra là hiện tượng:",
+    "question": "Mỗi quả thận ở người chứa khoảng bao nhiêu đơn vị chức năng (nephron)?",
     "options": [
-      "Biến đổi vật lí (sự giảm độ tan của khí)",
-      "Biến đổi hóa học",
-      "Phản ứng cháy",
-      "Sự ngưng tụ"
+      "100 đơn vị.",
+      "10.000 đơn vị.",
+      "1 triệu đơn vị.",
+      "10 triệu đơn vị."
     ],
-    "correctIndex": 0
+    "answer": 2
   },
   {
     "id": 28,
-    "text": "Nung nóng chiếc đinh sắt đỏ rực rồi để nguội trở lại màu cũ. Quá trình này là:",
+    "question": "Quá trình lọc máu để tạo thành nước tiểu đầu diễn ra tại vị trí nào của thận?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự oxy hóa hoàn toàn",
-      "Phản ứng phân hủy"
+      "Ống góp.",
+      "Bể thận.",
+      "Ống thận.",
+      "Cầu thận."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 29,
-    "text": "Nhỏ vài giọt iodine vào hồ tinh bột thấy xuất hiện màu xanh tím. Đây là:",
+    "question": "Nước tiểu chính thức khác nước tiểu đầu ở đặc điểm cơ bản nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (biểu hiện đổi màu đặc trưng)",
-      "Sự hòa tan đơn thuần",
-      "Sự bốc hơi"
+      "Chứa nhiều đường glucose hơn.",
+      "Có màu trắng đục.",
+      "Nồng độ chất cặn bã đậm đặc hơn, hầu như không còn chất dinh dưỡng.",
+      "Chứa nhiều tế bào máu đỏ."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 30,
-    "text": "Đun đường trên chảo đến khi đường chuyển sang màu đen và có mùi khát. Đây là:",
+    "question": "Thói quen nào sau đây giúp hạn chế nguy cơ hình thành sỏi thận?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (đường bị phân hủy thành carbon)",
-      "Sự nóng chảy của đường",
-      "Sự cô cạn"
+      "Thường xuyên nhịn đi tiểu.",
+      "Ăn nhiều thức ăn chứa chất cặn bã.",
+      "Ăn quá mặn và uống ít nước.",
+      "Uống đủ nước hàng ngày và không nhịn tiểu."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 31,
-    "text": "Hiện tượng xói mòn đất đai do nước chảy là:",
+    "question": "Đơn vị cấu tạo và chức năng cơ bản của hệ thần kinh là gì?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng trao đổi",
-      "Sự rò rỉ chất độc"
+      "Tế bào cơ.",
+      "Tế bào thần kinh (neuron).",
+      "Tế bào tuyến.",
+      "Tế bào biểu mô."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 32,
-    "text": "Đốt gas (mêtan) để nấu ăn sinh ra nhiệt lượng lớn và khí CO2. Đây là biến đổi:",
+    "question": "Hệ thần kinh trung ương ở người bao gồm những cơ quan nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự chuyển thể gas",
-      "Quá trình nén khí"
+      "Tủy sống và hạch thần kinh.",
+      "Não và các dây thần kinh.",
+      "Các dây thần kinh và hạch thần kinh.",
+      "Bộ não và tủy sống."
     ],
-    "correctIndex": 1
+    "answer": 3
   },
   {
     "id": 33,
-    "text": "Dầu ăn nổi trên mặt nước khi trộn lẫn là hiện tượng thuộc về:",
+    "question": "Bộ phận nào của mắt có vai trò như một thấu kính hội tụ, có thể điều tiết để ảnh hiện rõ trên màng lưới?",
     "options": [
-      "Tính chất vật lí và biến đổi vật lí",
-      "Phản ứng hóa học",
-      "Sự tạo chất kết tủa",
-      "Phản ứng xà phòng hóa"
+      "Màng lưới (võng mạc).",
+      "Thể thủy tinh.",
+      "Màng giác (giác mạc).",
+      "Lòng đen."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 34,
-    "text": "Sữa chua được tạo thành từ sữa tươi nhờ vi khuẩn lactic là biến đổi:",
+    "question": "Người bị tật cận thị thường nhìn rõ các vật ở cự ly nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (lên men lactic)",
-      "Sự đông đặc vật lí",
-      "Sự bốc hơi nước"
+      "Ở gần, khó nhìn rõ vật ở xa.",
+      "Không nhìn rõ vật ở bất kỳ khoảng cách nào.",
+      "Ở xa, khó nhìn rõ vật ở gần.",
+      "Chỉ nhìn rõ vật vào buổi tối."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 35,
-    "text": "Hòa tan chút đường vào nước thu được dung dịch đường ngọt. Quá trình này là:",
+    "question": "Để khắc phục tật cận thị, người bệnh cần đeo loại kính nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng tạo hợp chất mới",
-      "Phản ứng trung hòa"
+      "Kính phân kỳ (kính lõm).",
+      "Kính râm.",
+      "Kính hội tụ (kính lồi).",
+      "Không cần đeo kính, chỉ cần nghỉ ngơi."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 36,
-    "text": "Khí mỏ dầu được nén vào bình chứa ở dạng lỏng là quá trình:",
+    "question": "Cơ quan thính giác giúp cơ thể nhận biết âm thanh bao gồm các phần chính nào?",
     "options": [
-      "Biến đổi vật lí (sự hoá lỏng do áp suất)",
-      "Biến đổi hóa học",
-      "Phản ứng trùng hợp",
-      "Phản ứng phân hủy"
+      "Vành tai và các dây thần kinh.",
+      "Tai ngoài, tai giữa và tai trong.",
+      "Màng nhĩ và vành tai.",
+      "Ốc tai và ống nghe."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 37,
-    "text": "Vôi sống (CaO) thả vào nước tỏa nhiệt mạnh và biến thành vôi tôi Ca(OH)2. Đây là:",
+    "question": "Hệ nội tiết điều hòa các quá trình sinh lý trong cơ thể thông qua chất hóa học nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự hòa tan cơ học",
-      "Sự ngưng tụ"
+      "Hormone.",
+      "Kháng thể.",
+      "Enzyme.",
+      "Vitamin."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 38,
-    "text": "Xăng trong bình xe máy bị cất trữ lâu ngày bốc hơi hao hụt là:",
+    "question": "Tuyến nội tiết nào được coi là tuyến chỉ huy, điều tiết hoạt động của các tuyến nội tiết khác?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng cháy chậm",
-      "Sự thủy phân"
+      "Tuyến yên.",
+      "Tuyến tụy.",
+      "Tuyến trên thận.",
+      "Tuyến giáp."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 39,
-    "text": "Thổi khí thở (chứa CO2) vào nước vôi trong thấy nước vôi vẩn đụ",
+    "question": "Bệnh bướu cổ do thiếu hụt nguyên tố vi lượng nào trong khẩu phần ăn hàng ngày?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (tạo kết tủa CaCO3)",
-      "Quá trình bốc hơi",
-      "Quá trình ngưng tụ"
+      "Calcium (Canxi).",
+      "Zinc (Kẽm).",
+      "Iodine (I-ốt).",
+      "Iron (Sắt)."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 40,
-    "text": "Thả mảnh kẽm vào dung dịch acid thấy có khí hydrogen thoát ra. Đây là biến đổi:",
+    "question": "Tuyến tụy tiết ra hai loại hormone nào để điều hòa lượng đường (glucose) trong máu?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình cất lọc",
-      "Quá trình bay hơi"
+      "Adrenaline và noradrenaline.",
+      "Thyroxine và oxytocin.",
+      "Insulin và glucagon.",
+      "Estrogen và progesterone."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 41,
-    "text": "Điểm khác nhau căn bản giữa biến đổi vật lí và biến đổi hóa học là:",
+    "question": "Khi lượng đường trong máu tăng cao sau bữa ăn, tuyến tụy tiết hormone nào để hạ đường huyết?",
     "options": [
-      "Biến đổi vật lí tỏa nhiệt, biến đổi hóa học thu nhiệt",
-      "Biến đổi hóa học có tạo thành chất mới, biến đổi vật lí thì không",
-      "Biến đổi vật lí diễn ra nhanh hơn biến đổi hóa học",
-      "Biến đổi hóa học không làm thay đổi khối lượng chất"
+      "Insulin.",
+      "Glucagon.",
+      "Thyroxine.",
+      "Testosterone."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 42,
-    "text": "Quá trình nhai nghiền thức ăn ở miệng thuộc loại biến đổi nào?",
+    "question": "Lớp ngoài cùng của da có vai trò chống thấm nước và ngăn vi khuẩn xâm nhập là lớp nào?",
     "options": [
-      "Biến đổi vật lí (cơ họ",
-      "Biến đổi hóa học",
-      "Phản ứng thủy phân",
-      "Sự lên men"
+      "Lớp cơ.",
+      "Lớp bì.",
+      "Lớp mỡ dưới da.",
+      "Lớp biểu bì (lớp sừng)."
     ],
-    "correctIndex": 0
+    "answer": 3
   },
   {
     "id": 43,
-    "text": "Hiện tượng tạo thành mưa axit do khí SO2, NO2 trong không khí tác dụng với nước mưa là:",
+    "question": "Sắc tố melanin quyết định màu da ở người nằm ở lớp nào của da?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Quá trình bốc hơi",
-      "Quá trình ngưng tụ đơn thuần"
+      "Lớp bì.",
+      "Lớp biểu bì.",
+      "Lớp mỡ dưới da.",
+      "Tuyến mồ hôi."
     ],
-    "correctIndex": 1
+    "answer": 1
   },
   {
     "id": 44,
-    "text": "Quá trình chưng cất rượu để thu lấy cồn nồng độ cao dựa trên biến đổi:",
+    "question": "Thân nhiệt bình thường của người khỏe mạnh dao động quanh mức bao nhiêu?",
     "options": [
-      "Biến đổi vật lí (sự bay hơi và ngưng tụ ở nhiệt độ sôi khác nhau)",
-      "Biến đổi hóa học",
-      "Phản ứng phân hủy cồn",
-      "Phản ứng oxy hóa"
+      "35°C.",
+      "37°C.",
+      "39°C.",
+      "40°C."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 45,
-    "text": "Cây gỗ bị mục nát theo thời gian trong rừng là do:",
+    "question": "Khi trời nóng, cơ thể thực hiện phản ứng nào sau đây để tỏa nhiệt ra môi trường?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học (phân hủy sinh học tạo chất mới)",
-      "Sự đông đông nước",
-      "Sự mài mòn cơ học"
+      "Dãn mạch máu dưới da và tăng tiết mồ hôi.",
+      "Co các cơ dựng lông.",
+      "Giảm tiết mồ hôi và thở chậm.",
+      "Co mạch máu dưới da và run giật."
     ],
-    "correctIndex": 1
+    "answer": 0
   },
   {
     "id": 46,
-    "text": "Cây gỗ bị cưa thành từng khúc nhỏ để làm bàn ghế là hiện tượng:",
+    "question": "Khi gặp người bị say nắng (sốc nhiệt), hành động sơ cứu đúng đắn là gì?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng trùng hợp",
-      "Sự phân hủy hóa học"
+      "Đưa vào nơi thóang mát, nới lỏng quần áo và chườm mát.",
+      "Cho uống ngay nước đá lạnh.",
+      "Cho nạn nhân chạy bộ nhẹ nhàng.",
+      "Phủ chăn kín người cho toát mồ hôi."
     ],
-    "correctIndex": 0
+    "answer": 0
   },
   {
     "id": 47,
-    "text": "Lồ vi sóng làm nóng thức ăn bằng cách làm các phân tử nước dao động mạnh là hiện tượng:",
+    "question": "Tuyến sinh dục nam (tinh hòan) có chức năng tiết ra hormone sinh dục nào?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Phản ứng nhiệt nhôm",
-      "Phản ứng cháy"
+      "Insulin.",
+      "Testosterone.",
+      "Estrogen.",
+      "Progesterone."
     ],
-    "correctIndex": 0
+    "answer": 1
   },
   {
     "id": 48,
-    "text": "Tấm sắt để ngoài trời mưa lâu ngày xuất hiện lớp gỉ xốp bở. Lớp gỉ này:",
+    "question": "Tuyến sinh dục nữ (buồng trứng) tiết ra hormone nào quyết định các đặc tính sinh dục nữ?",
     "options": [
-      "khác hẳn sắt ban đầu",
-      "Là chất mới (oxide sắt hydrat hó",
-      "Là hỗn hợp nước và sắt chưa liên kết",
-      "Là chất bùn bẩn bám vào"
+      "Thyroxine.",
+      "Adrenaline.",
+      "Estrogen.",
+      "Testosterone."
     ],
-    "correctIndex": 1
+    "answer": 2
   },
   {
     "id": 49,
-    "text": "Để phân biệt biến đổi vật lí và biến đổi hóa học, người ta dựa vào:",
+    "question": "Quá trình thụ tinh giữa tinh trùng và trứng thường diễn ra ở vị trí nào?",
     "options": [
-      "Sự thay đổi nhiệt độ",
-      "Sự thay đổi thể của chất",
-      "Sự xuất hiện của chất mới",
-      "Tốc độ diễn ra biến đổi"
+      "Tại buồng trứng.",
+      "Trong tử cung.",
+      "Ở 1/3 phía ngoài của ống dẫn trứng.",
+      "Tại âm đạo."
     ],
-    "correctIndex": 2
+    "answer": 2
   },
   {
     "id": 50,
-    "text": "Đốt cháy dây magnesium (Mg) trong không khí thu được bột trắng magnesium oxide (MgO). Đây là:",
+    "question": "Việc sử dụng bao cao su khi quan hệ tình dục có tác dụng quan trọng gì?",
     "options": [
-      "Biến đổi vật lí",
-      "Biến đổi hóa học",
-      "Sự thăng hoa của Mg",
-      "Sự nóng chảy của Mg"
+      "Vừa giúp tránh thai hiệu quả vừa phòng ngừa các bệnh lây truyền qua đường tình dục.",
+      "Chỉ giúp tránh thai ngoài ý muốn.",
+      "Chỉ ngăn ngừa bệnh lây truyền qua đường tình dục.",
+      "Tăng cường chức năng của hệ bài tiết."
     ],
-    "correctIndex": 1
+    "answer": 0
   }
 ]

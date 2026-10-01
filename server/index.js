@@ -661,7 +661,7 @@ app.get(['/api/admin/rigging', '/api/rigging'], (req, res) => {
 // ── Ensure runtime directories exist (important for Render ephemeral FS) ─────
 const uploadDir     = path.join(__dirname, 'uploads');
 const skinsDir      = path.join(__dirname, '../public/skins');
-const questionsDir  = path.join(__dirname, '../data/questions');
+const questionsDir  = path.join(__dirname, '../data/question');
 const charactersDir = path.join(__dirname, '../public/assets/characters');
 const modelsDir     = path.join(__dirname, '../public/assets/models');
 [uploadDir, skinsDir, questionsDir, charactersDir, modelsDir].forEach(d => {
@@ -827,31 +827,37 @@ app.get('/api/questions/:element', (req, res) => {
  */
 app.get('/api/questions/active', (req, res) => {
   const { element } = req.query;
-  const bankFile = path.join(__dirname, '../data/question_bank.json');
+  const questionDir = path.resolve(__dirname, '../data/question');
   try {
-    if (fs.existsSync(bankFile)) {
-      const data = JSON.parse(fs.readFileSync(bankFile, 'utf8'));
-      if (element && data[element]) {
-        return res.json({
-          ok: true,
-          element,
-          total: data[element].length,
-          questions: data[element],
-        });
-      }
+    const loadFile = (name) => {
+      const p = path.join(questionDir, name);
+      return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : [];
+    };
+    const fire = loadFile('Fire.json');
+    const frost = loadFile('Frost.json');
+    const thunder = loadFile('thunder.json');
+    const all = { fire, frost, thunder };
+
+    if (element) {
+      const el = element.toLowerCase();
+      const list = all[el] || [];
       return res.json({
         ok: true,
-        categories: {
-          thunder: data.thunder?.length || 0,
-          fire:    data.fire?.length || 0,
-          frost:   data.frost?.length || 0,
-        },
-        data,
+        element: el,
+        total: list.length,
+        questions: list,
       });
     }
-    // Fallback to questionBank module if file missing
-    const active = questionBank.getActiveQuestionBank(element);
-    res.json({ ok: true, data: active });
+
+    return res.json({
+      ok: true,
+      categories: {
+        thunder: thunder.length,
+        fire: fire.length,
+        frost: frost.length,
+      },
+      data: all,
+    });
   } catch (err) {
     console.error('[questions/active]', err.message);
     res.status(500).json({ ok: false, error: err.message });
@@ -1456,8 +1462,8 @@ io.on('connection', (socket) => {
 const HOST = '0.0.0.0';
 server.listen(PORT, HOST, () => {
   console.log(`[Quiz-Battle 3D] Server listening on ${HOST}:${PORT}`);
-  const fireQuestions = questionBank.getActiveQuestionBank('fire');
-  const frostQuestions = questionBank.getActiveQuestionBank('frost');
-  const thunderQuestions = questionBank.getActiveQuestionBank('thunder');
-  console.log(`[Question Bank Loaded] Fire: ${fireQuestions.length}, Frost: ${frostQuestions.length}, Thunder: ${thunderQuestions.length}`);
+  const fireQ = questionBank.getActiveQuestionBank('fire');
+  const frostQ = questionBank.getActiveQuestionBank('frost');
+  const thunderQ = questionBank.getActiveQuestionBank('thunder');
+  console.log(`[VERIFY QUESTIONS] Fire: ${fireQ.length}, Frost: ${frostQ.length}, Thunder: ${thunderQ.length}`);
 });
