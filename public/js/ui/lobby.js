@@ -1142,7 +1142,11 @@ function _buildAdminDashboard(container, gameState) {
 
   let adminBoss     = 'thunder';
   let adminDiff     = 'easy';
-  let adminTestGear = 'thunder'; // Default to thunder full set
+  const currentSaved = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || 'default';
+  const cleanSaved = ['default', 'thunder', 'fire', 'frost'].includes(currentSaved.toLowerCase().trim()) ? currentSaved.toLowerCase().trim() : 'default';
+  let adminTestGear = cleanSaved === 'default' ? 'normal' : cleanSaved;
 
   const devRow1 = document.createElement('div');
   devRow1.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
@@ -1189,6 +1193,11 @@ function _buildAdminDashboard(container, gameState) {
         x.style.color = '#888';
       });
       adminTestGear = g.id;
+      const outfitToSave = g.id === 'normal' ? 'default' : g.id;
+      try {
+        sessionStorage.setItem('selectedOutfit', outfitToSave);
+        localStorage.setItem('selectedOutfit', outfitToSave);
+      } catch (e) {}
       btn.style.background = `rgba(${g.rgb},0.2)`;
       btn.style.borderColor = g.color;
       btn.style.color = g.color;

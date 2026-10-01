@@ -121,10 +121,12 @@ export function createFallbackBlockCharacter(outfit = 'default') {
  * idle, dodge, slash, hit with robust multi-step fallback chain
  */
 export async function loadPlayerOutfitPoses(scene, outfit) {
-  const activeOutfit = outfit
+  const raw = outfit
     || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
     || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
     || 'default';
+  const clean = (typeof raw === 'string') ? raw.toLowerCase().trim() : 'default';
+  const activeOutfit = ['default', 'thunder', 'fire', 'frost'].includes(clean) ? clean : 'default';
   activeElement = activeOutfit;
   const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
   if (!currentTHREE) {
@@ -136,10 +138,16 @@ export async function loadPlayerOutfitPoses(scene, outfit) {
     playerGroup = new currentTHREE.Group();
   }
 
-  // Clear any existing models
+  // Clear any existing models completely
   while (playerGroup.children.length > 0) {
     playerGroup.remove(playerGroup.children[0]);
   }
+
+  // Reset poses map completely
+  playerPoses.idle = null;
+  playerPoses.dodge = null;
+  playerPoses.slash = null;
+  playerPoses.hit = null;
 
   const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
   const DracoLoaderClass = currentTHREE.DRACOLoader || (typeof window !== 'undefined' ? window.THREE?.DRACOLoader : null);
@@ -222,8 +230,8 @@ export async function loadPlayerOutfitPoses(scene, outfit) {
     return null;
   };
 
-  // 1. PRIMARY IDLE MODEL: Only wait for idle model (< 1s) to resolve Question 1 immediately
-  await loadSinglePose('idle');
+  // Strictly await all 4 poses to ensure dodge, slash, and hit models are mounted
+  await Promise.all(['idle', 'dodge', 'slash', 'hit'].map(p => loadSinglePose(p)));
 
   if (!playerPoses.idle) {
     const fallback = createFallbackBlockCharacter(activeElement);
@@ -231,8 +239,15 @@ export async function loadPlayerOutfitPoses(scene, outfit) {
     playerGroup.add(fallback);
   }
 
-  // Set explicit initial visibility
-  if (playerPoses['idle']) playerPoses['idle'].visible = true;
+  // Ensure every pose has a valid mesh
+  for (const pose of ['dodge', 'slash', 'hit']) {
+    if (!playerPoses[pose]) {
+      playerPoses[pose] = playerPoses.idle;
+    }
+  }
+
+  // Set explicit initial visibility to idle
+  setPlayerPose('idle');
 
   playerGroup.position.set(-4.5, 0, 0);
   playerGroup.rotation.y = Math.PI / 2; // Facing Boss (+X)
@@ -243,26 +258,7 @@ export async function loadPlayerOutfitPoses(scene, outfit) {
   }
 
   window.playerModel = playerGroup;
-
-  // 2. Silently fetch the remaining action poses in the background asynchronously
-  const remainingPoses = ['dodge', 'slash', 'hit'];
-  (async () => {
-    for (const pose of remainingPoses) {
-      try {
-        await loadSinglePose(pose);
-      } catch (e) {
-        console.warn(`[Player] Background load error for ${pose}:`, e);
-      }
-    }
-    // Update any missing poses with idle fallback
-    for (const pose of remainingPoses) {
-      if (!playerPoses[pose] && playerPoses.idle) {
-        playerPoses[pose] = playerPoses.idle;
-      }
-    }
-    console.log(`[Player Loader] All poses ready in background for ${activeElement}`);
-  })();
-
+  console.log(`[Player Loader] Strictly loaded 4 poses for "${activeElement}"`);
   return playerGroup;
 }
 

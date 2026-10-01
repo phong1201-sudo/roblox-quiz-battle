@@ -131,6 +131,18 @@ export function displayQuestion(idx = 0) {
   }
 }
 
+// Normalize outfit key strictly to: 'default' | 'thunder' | 'fire' | 'frost'
+export function getActivePlayerOutfit() {
+  const raw = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || 'default';
+  const clean = raw.toLowerCase().trim();
+  if (['default', 'thunder', 'fire', 'frost'].includes(clean)) {
+    return clean;
+  }
+  return 'default';
+}
+
 export async function startGame(gameState) {
   window.gameScene = scene;
   currentGameState = gameState;
@@ -146,10 +158,8 @@ export async function startGame(gameState) {
     loadingOverlay.style.opacity = '1';
   }
 
-  // 1. Get strictly the user's selected outfit from storage (fallback to 'default')
-  const activeOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit')) || 
-                       (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit')) || 
-                       'default';
+  // 1. Get strictly the user's selected outfit from storage
+  const activePlayerOutfit = getActivePlayerOutfit();
 
   // 2. Boss type is determined strictly by the chosen stage
   const stageBossSelection = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
@@ -157,13 +167,21 @@ export async function startGame(gameState) {
     ? stageBossSelection
     : (['thunder', 'fire', 'frost'][stageBossSelection] || 'thunder');
 
-  console.log(`[BATTLE START] Equipping Player Mesh: "${activeOutfit}" | Spawning Boss: "${activeBossType}"`);
+  console.log(`[BATTLE INIT CHECK] Loading Player: "${activePlayerOutfit}" | Boss: "${activeBossType}"`);
+
+  // Clear old player meshes completely before loading to avoid ghost models
+  const playerGroup = Player.getPlayerObject?.();
+  if (playerGroup) {
+    while (playerGroup.children.length > 0) {
+      playerGroup.remove(playerGroup.children[0]);
+    }
+  }
 
   Arena.setArenaTheme(activeBossType);
 
-  // 3. Load meshes with their respective independent parameters
+  // 3. Strictly pass the user's outfit and independent boss element
   const loadTasks = [
-    Player.loadPlayerOutfitPoses(scene, activeOutfit)
+    Player.loadPlayerOutfitPoses(scene, activePlayerOutfit)
   ];
   if (gameMode === 'pve') {
     loadTasks.push(Boss.loadBossPoses(scene, activeBossType));

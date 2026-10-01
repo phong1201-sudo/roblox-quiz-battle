@@ -11,6 +11,18 @@ export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, 
 export { playGuaranteedBossHammerSlam, getBossArmPivot, bossCombatArmCompound, getBossCombatArmCompound } from './boss.js';
 export { PRESET_TRACKS, switchCombatBGM, handleCustomLocalFile } from '../audio.js';
 
+// Normalize outfit key strictly to: 'default' | 'thunder' | 'fire' | 'frost'
+export function getActivePlayerOutfit() {
+  const raw = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || 'default';
+  const clean = (typeof raw === 'string') ? raw.toLowerCase().trim() : 'default';
+  if (['default', 'thunder', 'fire', 'frost'].includes(clean)) {
+    return clean;
+  }
+  return 'default';
+}
+
 const BOSS_VFX_POS = new THREE.Vector3(4.8, 4.0, 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -501,59 +513,56 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
         .to({ x: 3.2, y: 0.8, z: 0.0 }, 150)
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
-          // Trigger hit impact VFX, floating -2 HP damage text, screen shake
-          if (context.applyHit1Damage) context.applyHit1Damage();
-          Effects.triggerShake(context.isMilestone ? 0.65 : 0.25, context.isMilestone ? 0.5 : 0.25);
-          Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-2 HP', '#ffee44', context.isMilestone ? 42 : 28);
-
-          // 2. Bind Strike VFX & Text Strictly to Player's Outfit (combat.js, vfx.js)
-          const equippedSkin = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
-            || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
-            || 'default';
-
+          const outfit = getActivePlayerOutfit();
           const bossObj = Boss.getBossObject?.();
           const targetPos = (bossObj && bossObj.position) ? bossObj.position : BOSS_VFX_POS;
 
-          if (equippedSkin === 'frost') {
-            // Frost Outfit Attack
-            VFX.spawnFrostSlashVFX(targetPos);
-            VFX.showCombatFloatingBanner('FROSTBITE!', '#38bdf8');
-          } else if (equippedSkin === 'fire') {
-            // Fire Outfit Attack
-            VFX.spawnFireSlashVFX(targetPos);
-            VFX.showCombatFloatingBanner('BURNING!', '#f97316');
-          } else if (equippedSkin === 'thunder') {
-            // Thunder Outfit Attack
-            VFX.spawnThunderSlashVFX(targetPos);
-            VFX.showCombatFloatingBanner('SHOCKED!', '#facc15');
-          } else {
-            // Default Outfit Attack (Steel blade)
-            VFX.spawnPhysicalSlashVFX(targetPos); // Sharp golden/white sparks, no elemental magic
+          // 1. Apply Boss Damage & Procs based on equippedOutfit
+          if (context.applyHit1Damage) context.applyHit1Damage();
+
+          if (outfit === 'default') {
+            // Default Outfit: 1 damage, physical metal spark VFX, CRITICAL HIT!
+            Effects.triggerShake(context.isMilestone ? 0.65 : 0.25, context.isMilestone ? 0.5 : 0.25);
+            Effects.spawnDamageNumber(targetPos, '-1 HP', '#ffffff', context.isMilestone ? 42 : 28);
+            VFX.spawnPhysicalSlashVFX(targetPos);
             VFX.showCombatFloatingBanner('CRITICAL HIT!', '#ffffff');
+          } else {
+            // Elemental Outfits: 2 damage total (-1 slash, -1 elemental proc)
+            Effects.triggerShake(context.isMilestone ? 0.65 : 0.35, context.isMilestone ? 0.5 : 0.3);
+            const dmgColor = outfit === 'fire' ? '#ff4500' : (outfit === 'frost' ? '#38bdf8' : '#facc15');
+            Effects.spawnDamageNumber(targetPos, '-2 HP', dmgColor, context.isMilestone ? 42 : 32);
+
+            if (outfit === 'fire') {
+              VFX.spawnFireSlashVFX(targetPos);
+              VFX.showCombatFloatingBanner('BURNING! -1 HP', '#f97316');
+              try { Audio.playFire?.(); } catch (e) {}
+              setTimeout(() => {
+                if (context.applyHit2Damage) context.applyHit2Damage();
+                Effects.spawnFireVortexAroundBoss(targetPos);
+                Effects.triggerFireBurst(targetPos, '-1 HP');
+              }, 120);
+            } else if (outfit === 'frost') {
+              VFX.spawnFrostSlashVFX(targetPos);
+              VFX.showCombatFloatingBanner('FROSTBITE! -1 HP', '#38bdf8');
+              try { Audio.playFrost?.(); } catch (e) {}
+              setTimeout(() => {
+                if (context.applyHit2Damage) context.applyHit2Damage();
+                Effects.triggerFrostShatter(targetPos, '-1 HP');
+              }, 120);
+            } else if (outfit === 'thunder') {
+              VFX.spawnThunderSlashVFX(targetPos);
+              VFX.showCombatFloatingBanner('SHOCKED! -1 HP', '#facc15');
+              try { Audio.playThunder?.(); } catch (e) {}
+              setTimeout(() => {
+                if (context.applyHit2Damage) context.applyHit2Damage();
+                Effects.triggerLightningSlash(targetPos, '-1 HP');
+              }, 120);
+            }
           }
 
-          // 4. Boss takes hit: setBossPose('hit') -> hold 300ms -> setBossPose('angry') -> hold 1100ms -> setBossPose('idle')
+          // 2. Boss takes hit reaction
           Boss.setBossPose('hit');
           Boss.playBossHurt();
-
-          if (isFullSet && selectedElement) {
-            setTimeout(() => {
-              if (selectedElement === 'thunder') {
-                try { Audio.playThunder?.(); } catch (e) {}
-                if (context.applyHit2Damage) context.applyHit2Damage();
-                Effects.triggerLightningSlash(BOSS_VFX_POS, context.hit2Label || '-1 HP');
-              } else if (selectedElement === 'fire') {
-                try { Audio.playFire?.(); } catch (e) {}
-                if (context.applyHit2Damage) context.applyHit2Damage();
-                Effects.spawnFireVortexAroundBoss(BOSS_VFX_POS);
-                Effects.triggerFireBurst(BOSS_VFX_POS, context.hit2Label || '-1 HP');
-              } else if (selectedElement === 'frost') {
-                try { Audio.playFrost?.(); } catch (e) {}
-                if (context.applyHit2Damage) context.applyHit2Damage();
-                Effects.triggerFrostShatter(BOSS_VFX_POS, context.hit2Label || '-1 HP');
-              }
-            }, 120);
-          }
 
           setTimeout(() => {
             Boss.setBossPose('angry');
@@ -562,7 +571,7 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
             }, 1100);
           }, 300);
 
-          // 5. Leap back: Tween playerGroup.position back to (-4.5, 0, 0) in 400ms -> setPlayerPose('idle')
+          // 3. Leap back: Tween playerGroup.position back to (-4.5, 0, 0) in 400ms -> setPlayerPose('idle')
           new TWEEN.Tween(playerObj.position)
             .to({ x: -4.5, y: 0.0, z: 0.0 }, 400)
             .easing(TWEEN.Easing.Quadratic.Out)
@@ -746,11 +755,12 @@ export function executeCombatTurn(ev, onDone) {
         Effects.triggerShake(0.75, 0.6);
         Effects.screenFlash('rgba(239,35,60,0.6)', 0.4);
 
-        const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
-        const dmgLabel = `💥 BARRAGE -${playerDmg} HP`;
+        const outfit = getActivePlayerOutfit();
+        const incomingDamage = (outfit === 'default') ? 2 : 1;
+        const dmgLabel = `💥 BARRAGE -${incomingDamage} HP`;
         const playerPos = Player.getPosition();
         const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-        Effects.spawnDamageNumber(textPos, dmgLabel, '#ef233c', 40);
+        Effects.spawnDamageNumber(textPos, dmgLabel, '#ef4444', 40);
 
         // Full-body damage VFX upon hit (Fire: burning, Frost: frozen ice block, Thunder: lightning explosion)
         Effects.triggerPlayerHitVFX(bossElement, playerPos);
@@ -807,11 +817,12 @@ export function executeCombatTurn(ev, onDone) {
           Effects.triggerShake(0.45, 0.35);
           Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
 
-          const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
-          const dmgLabel = `-${playerDmg} HP`;
+          const outfit = getActivePlayerOutfit();
+          const incomingDamage = (outfit === 'default') ? 2 : 1;
+          const dmgLabel = `-${incomingDamage} HP`;
           const playerPos = Player.getPosition();
           const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-          Effects.spawnDamageNumber(textPos, dmgLabel, isFullSet ? '#ffd166' : '#ef233c', 32);
+          Effects.spawnDamageNumber(textPos, dmgLabel, incomingDamage === 1 ? '#ffd166' : '#ef4444', 32);
 
           // Full-body damage VFX upon hit (Fire: burning, Frost: frozen ice block, Thunder: lightning explosion)
           Effects.triggerPlayerHitVFX(bossElement, playerPos);
@@ -870,7 +881,7 @@ export function executeCombatTurn(ev, onDone) {
     if (isPlayerMilestone) {
       playCutInBanner({
         type: 'player',
-        element: selectedElement || 'thunder',
+        element: (selectedElement && selectedElement !== 'default') ? selectedElement : 'fire',
         onDone: executeCorrectBranch,
       });
     } else {

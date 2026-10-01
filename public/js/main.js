@@ -85,6 +85,20 @@ function makeGameState(base) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ── Sync URL outfit params to storage if present ─────────────────────────
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlOutfit = urlParams.get('outfit');
+        if (urlOutfit) {
+            const clean = urlOutfit.toLowerCase().trim();
+            if (['default', 'thunder', 'fire', 'frost'].includes(clean)) {
+                sessionStorage.setItem('selectedOutfit', clean);
+                localStorage.setItem('selectedOutfit', clean);
+                localStorage.setItem('player_equipped', JSON.stringify({ outfit: clean, weapon: clean }));
+            }
+        }
+    } catch(e) {}
+
     // ── Audio: mount toggle button + register first-interaction bootstrap ──
     Audio.mountAudioToggle();
     Audio.bootstrapOnInteraction();

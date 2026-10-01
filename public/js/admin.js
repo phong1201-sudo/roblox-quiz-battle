@@ -262,20 +262,25 @@ function setupQuestionManager() {
 function setupDevLaunch() {
   const getSelectedOutfit = () => {
     const el = document.getElementById('dev-player-outfit');
-    return (el && el.value) ? el.value : (sessionStorage.getItem('selectedOutfit') || localStorage.getItem('selectedOutfit') || 'default');
+    const raw = (el && el.value) ? el.value : (sessionStorage.getItem('selectedOutfit') || localStorage.getItem('selectedOutfit') || 'default');
+    const clean = (typeof raw === 'string') ? raw.toLowerCase().trim() : 'default';
+    return ['default', 'thunder', 'fire', 'frost'].includes(clean) ? clean : 'default';
   };
 
   const applyOutfitToStorage = (outfit) => {
+    const clean = ['default', 'thunder', 'fire', 'frost'].includes(outfit) ? outfit : 'default';
     try {
-      localStorage.setItem('player_equipped', JSON.stringify({ outfit, weapon: outfit }));
-      sessionStorage.setItem('selectedOutfit', outfit);
-      localStorage.setItem('selectedOutfit', outfit);
+      localStorage.setItem('player_equipped', JSON.stringify({ outfit: clean, weapon: clean }));
+      sessionStorage.setItem('selectedOutfit', clean);
+      localStorage.setItem('selectedOutfit', clean);
     } catch (e) {}
   };
 
   const devOutfitSelect = document.getElementById('dev-player-outfit');
   if (devOutfitSelect) {
-    const savedOutfit = sessionStorage.getItem('selectedOutfit') || localStorage.getItem('selectedOutfit') || 'default';
+    const raw = sessionStorage.getItem('selectedOutfit') || localStorage.getItem('selectedOutfit') || 'default';
+    const clean = (typeof raw === 'string') ? raw.toLowerCase().trim() : 'default';
+    const savedOutfit = ['default', 'thunder', 'fire', 'frost'].includes(clean) ? clean : 'default';
     devOutfitSelect.value = savedOutfit;
     devOutfitSelect.addEventListener('change', (e) => {
       applyOutfitToStorage(e.target.value);
