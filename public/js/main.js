@@ -18,6 +18,7 @@ export function showScreen(name) {
     const target = document.getElementById(`screen-${name}`);
     if (target) target.classList.add('active');
 }
+window.showScreen = showScreen;
 
 // ─── Lazy-init Three.js scene AFTER #screen-game is visible ──────────────────
 function ensureSceneInit() {
@@ -106,6 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initBgmSelector();
 
     // ── Always activate menu screen first — auth modal overlays it ───────────
+    try {
+        sessionStorage.removeItem('hostedRoomCode');
+        localStorage.removeItem('hostedRoomCode');
+    } catch(e) {}
+    Multiplayer.cancelHosting();
     showScreen('menu');
 
     // ── Dismiss initial app loading screen smoothly ───────────────────────────
@@ -138,6 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Epic Splash Intro Screen (Roblox vs Monster) with Tap-to-Start ───────
     initSplashScreen(() => {
         const user = Auth.getCurrentUser();
+        try {
+            sessionStorage.removeItem('hostedRoomCode');
+            localStorage.removeItem('hostedRoomCode');
+        } catch(e) {}
+        Multiplayer.cancelHosting();
+
         if (!user) {
             Auth.showAuthModal();
         } else {
@@ -154,6 +166,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nameInput && user.username) nameInput.value = user.username;
         // God Father flag driven purely by server role
         window._godFather = (user.role === 'admin');
+
+        // Clear any leftover room code upon login/menu entry
+        try {
+            sessionStorage.removeItem('hostedRoomCode');
+            localStorage.removeItem('hostedRoomCode');
+        } catch(e) {}
+        Multiplayer.cancelHosting();
+        if (window.gameState) {
+            window.gameState.code = null;
+            window.gameState.isHost = false;
+        }
+
         // CRITICAL: make sure menu screen is active after auth modal closes
         showScreen('menu');
         // Start lobby music now that we have a user interaction (login click)

@@ -92,16 +92,18 @@ export function joinMultiplayerRoom(code) {
     return;
   }
 
-  if (roomState.isHostingActive && roomState.code && roomState.code !== code) {
-    alert(`Bạn đang là chủ phòng ${roomState.code}. Vui lòng thoát phòng cũ trước khi tham gia!`);
-    return;
-  }
-
   const cleanCode = (code || '').trim().toUpperCase();
   if (cleanCode.length !== 4) {
     alert('Mã phòng phải có đúng 4 ký tự!');
     return;
   }
+
+  // Smoothly clean up any previous room hosted by this player
+  if (roomState.isHostingActive && roomState.code) {
+    console.log(`[Multiplayer] Auto-dismantling previous room ${roomState.code} before joining ${cleanCode}`);
+    emit('leave_room', { code: roomState.code });
+  }
+  cancelHosting();
 
   const color = document.getElementById('player-color')?.value || '#00b4d8';
   let equipped = { outfit: 'default', weapon: 'default' };
@@ -149,6 +151,17 @@ export function setRoomStage(stage) {
 }
 
 /**
+ * Host or guest leaves room cleanly
+ */
+export function leaveRoom(code) {
+  const targetCode = code || roomState.code;
+  if (targetCode) {
+    emit('leave_room', { code: targetCode });
+  }
+  cancelHosting();
+}
+
+/**
  * Host cancels hosting
  */
 export function cancelHosting() {
@@ -156,6 +169,14 @@ export function cancelHosting() {
   roomState.code = null;
   roomState.players = [];
   roomState.isHost = false;
+  try {
+    sessionStorage.removeItem('hostedRoomCode');
+    localStorage.removeItem('hostedRoomCode');
+  } catch (e) {}
+  if (window.gameState) {
+    window.gameState.code = null;
+    window.gameState.isHost = false;
+  }
 }
 
 /**
@@ -238,6 +259,29 @@ on('room_created', (data) => {
   roomState.mode = data.mode || 'team_vs_boss';
   roomState.stage = data.stage || 'thunder';
   roomState.isHostingActive = true;
+  try {
+    sessionStorage.setItem('hostedRoomCode', data.code);
+    localStorage.setItem('hostedRoomCode', data.code);
+  } catch(e) {}
+});
+
+on('room_closed', ({ reason } = {}) => {
+  cancelHosting();
+  if (reason) alert(reason);
+  const show = window.showScreen || ((s) => {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+    document.getElementById(`screen-${s}`)?.classList.add('active');
+  });
+  show('menu');
+});
+
+on('room_left', () => {
+  cancelHosting();
+  const show = window.showScreen || ((s) => {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+    document.getElementById(`screen-${s}`)?.classList.add('active');
+  });
+  show('menu');
 });
 
 on('room_joined', (data) => {

@@ -559,11 +559,30 @@ export function init(gameState) {
   const btnStart = document.getElementById('btn-start');
   if (btnStart) btnStart.style.display = 'none';
 
+  // Cancel Room button (host only)
+  const btnCancelRoom = document.getElementById('btn-cancel-room');
+  if (btnCancelRoom) {
+    btnCancelRoom.style.display = gameState.isHost ? 'inline-block' : 'none';
+    btnCancelRoom.onclick = () => {
+      try {
+        sessionStorage.removeItem('hostedRoomCode');
+        localStorage.removeItem('hostedRoomCode');
+      } catch(e) {}
+      Multiplayer.leaveRoom(gameState.code);
+      showScreen('menu');
+    };
+  }
+
   // Back button
   const btnBack = document.getElementById('btn-back-menu');
   if (btnBack) {
+    btnBack.textContent = gameState.isHost ? '❌ Hủy phòng & Quay lại' : '← Rời phòng & Quay lại';
     btnBack.onclick = () => {
-      try { Multiplayer.cancelHosting(); } catch(e) {}
+      try {
+        sessionStorage.removeItem('hostedRoomCode');
+        localStorage.removeItem('hostedRoomCode');
+      } catch(e) {}
+      Multiplayer.leaveRoom(gameState.code);
       showScreen('menu');
     };
   }
@@ -632,8 +651,22 @@ function _buildStudentLobby(container, gameState) {
     <span style="font-size:11px;font-weight:800;color:#00cfff;letter-spacing:1px;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;">
       ${gameState.isHost ? '⚙️ Cài Đặt Phòng (Chủ Phòng)' : '🎮 Thông Tin Phòng Đấu'}
     </span>
-    <span style="font-size:9px;color:#aaa;">Phòng: <b style="color:#ffcc00;letter-spacing:2px;">${gameState.code}</b></span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:9px;color:#aaa;">Phòng: <b style="color:#ffcc00;letter-spacing:2px;">${gameState.code}</b></span>
+    </div>
   `;
+  if (gameState.isHost) {
+    const cancelHostBtn = document.createElement('button');
+    cancelHostBtn.className = 'btn btn-danger';
+    cancelHostBtn.style.cssText = 'font-size:8px;padding:3px 8px;border-radius:4px;cursor:pointer;';
+    cancelHostBtn.textContent = '❌ Hủy phòng';
+    cancelHostBtn.onclick = () => {
+      try { sessionStorage.removeItem('hostedRoomCode'); localStorage.removeItem('hostedRoomCode'); } catch(e) {}
+      Multiplayer.leaveRoom(gameState.code);
+      showScreen('menu');
+    };
+    roomHead.querySelector('div').appendChild(cancelHostBtn);
+  }
   roomSection.appendChild(roomHead);
 
   let curMode = gameState.mode || 'team_vs_boss';

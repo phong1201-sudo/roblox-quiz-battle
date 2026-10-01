@@ -1397,6 +1397,27 @@ io.on('connection', (socket) => {
 
   socket.on('join_room', ({ code, playerName, color, userId, equippedSet, inventory, equipped }) => {
     try {
+      const cleanCode = (code || '').trim().toUpperCase();
+
+      // Auto-dismantle any previous room where this user/socket was host
+      for (const [rCode, room] of roomManager.rooms.entries()) {
+        if (rCode !== cleanCode) {
+          let isHost = (room.hostId === socket.id);
+          if (!isHost) {
+            for (const p of room.players.values()) {
+              if (p.name === playerName || (userId && p.userId === userId)) {
+                if (room.hostId === p.id) { isHost = true; break; }
+              }
+            }
+          }
+          if (isHost) {
+            console.log(`[Room Cleanup] Auto-dismantling previous room ${rCode} for user ${playerName}`);
+            io.to(rCode).emit('room_closed', { reason: 'Chủ phòng đã thoát hoặc tham gia phòng khác.' });
+            roomManager.dismantleRoom(rCode);
+          }
+        }
+      }
+
       let serverInventory = inventory || { thunder: [], fire: [], frost: [] };
       if (userId) {
         try {
@@ -1405,32 +1426,58 @@ io.on('connection', (socket) => {
         } catch(e) {}
       }
       const { players, hostId, isFull, mode, stage } = roomManager.joinRoom(
-        code, socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null
+        cleanCode, socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null
       );
-      socket.join(code);
-      socket.to(code).emit('player_joined', { players });
-      socket.emit('room_joined', { code, players, hostId, mode, stage });
+      socket.join(cleanCode);
+      socket.to(cleanCode).emit('player_joined', { players });
+      socket.emit('room_joined', { code: cleanCode, players, hostId, mode, stage });
 
       // Once 2 players are present, server synchronizes match state and triggers countdown to battle
       if (isFull) {
-        io.to(code).emit('match_countdown', {
+        io.to(cleanCode).emit('match_countdown', {
           seconds: 3,
-          code,
+          code: cleanCode,
           mode,
           stage,
           players,
         });
 
         setTimeout(() => {
-          const r = roomManager.getRoom(code);
+          const r = roomManager.getRoom(cleanCode);
           if (r && r.phase === 'LOBBY') {
-            startMatchForRoom(code);
+            startMatchForRoom(cleanCode);
           }
         }, 3200);
       }
     } catch (e) {
       console.error('[join_room]', e.message);
       socket.emit('error', { message: e.message });
+      socket.emit('join_error', { message: e.message });
+    }
+  });
+
+  socket.on('leave_room', ({ code } = {}) => {
+    try {
+      const cleanCode = (code || '').trim().toUpperCase();
+      let room = cleanCode ? roomManager.getRoom(cleanCode) : null;
+      if (!room) {
+        room = roomManager.findRoomByHost(socket.id);
+      }
+      if (room) {
+        const rCode = room.code;
+        if (room.hostId === socket.id) {
+          console.log(`[leave_room] Host canceled room ${rCode}`);
+          io.to(rCode).emit('room_closed', { reason: 'Chủ phòng đã hủy phòng.' });
+          roomManager.dismantleRoom(rCode);
+        } else {
+          roomManager.removePlayer(socket.id);
+          io.to(rCode).emit('player_left', { playerId: socket.id, players: roomManager.getPlayers(rCode) });
+        }
+        socket.leave(rCode);
+      }
+      socket.emit('room_left', { ok: true, code: cleanCode });
+    } catch (e) {
+      console.error('[leave_room]', e.message);
     }
   });
 

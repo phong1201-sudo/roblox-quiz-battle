@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Montserrat:wght@600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=76.0">
+    <link rel="stylesheet" href="css/style.css?v=77.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -110,7 +110,10 @@
         <!-- Lobby Screen -->
         <div id="screen-lobby" class="screen">
             <div class="panel">
-                <h2>Room Code: <span class="room-code" id="lobby-room-code"></span></h2>
+                <div class="lobby-header-row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <h2 style="margin:0;">Room Code: <span class="room-code" id="lobby-room-code"></span></h2>
+                    <button id="btn-cancel-room" class="btn btn-danger" style="font-size:9px; padding:6px 12px; display:none;">❌ Hủy phòng &amp; Quay lại</button>
+                </div>
                 
                 <div id="upload-section">
                   <div style="display:flex; gap:4px; margin-bottom:8px;">
@@ -363,6 +366,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=76.0"></script>
+    <script type="module" src="js/main.js?v=77.0"></script>
 </body>
 </html>

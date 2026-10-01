@@ -88,14 +88,39 @@ class RoomManager {
     };
   }
 
-  joinRoom(code, socketId, playerName, color, userId, equippedSet, inventory, equipped) {
+  dismantleRoom(code) {
     const room = this.rooms.get(code);
-    if (!room) throw new Error('Phòng không tồn tại!');
+    if (!room) return null;
+    if (room.timer) {
+      clearTimeout(room.timer);
+      room.timer = null;
+    }
+    this.rooms.delete(code);
+    return room;
+  }
 
-    // Host constraint: A client currently hosting cannot join another room unless they exit host mode
-    const currentHostRoom = this.findRoomByHost(socketId);
-    if (currentHostRoom && currentHostRoom.code !== code) {
-      throw new Error(`Bạn đang là chủ phòng ${currentHostRoom.code}. Vui lòng hủy phòng cũ trước khi tham gia!`);
+  joinRoom(code, socketId, playerName, color, userId, equippedSet, inventory, equipped) {
+    const cleanCode = (code || '').trim().toUpperCase();
+    const room = this.rooms.get(cleanCode);
+    if (!room) throw new Error('Phòng không tồn tại hoặc đã bị hủy!');
+
+    // Auto-dismantle any previous room hosted by this socket/user when joining another room
+    for (const [rCode, r] of this.rooms.entries()) {
+      if (rCode !== cleanCode) {
+        let isHost = (r.hostId === socketId);
+        if (!isHost) {
+          for (const p of r.players.values()) {
+            if (p.name === playerName || (userId && p.userId === userId)) {
+              if (r.hostId === p.id) { isHost = true; break; }
+            }
+          }
+        }
+        if (isHost) {
+          console.log(`[Room Cleanup] Auto-dismantling previous room ${rCode} for host ${playerName}`);
+          if (r.timer) clearTimeout(r.timer);
+          this.rooms.delete(rCode);
+        }
+      }
     }
 
     if (room.phase !== 'LOBBY' && room.phase !== 'GAME_OVER' && !room.players.has(socketId)) {
