@@ -21,18 +21,39 @@ let currentGameState = null;
 let combatBusy    = false;
 let pendingEvents = [];
 
-// ── Fighter positions — face-to-face stance ───────────────────────────────────
-//   Player on left (x = -3), Boss on right (x = +3)
-//   Camera sits slightly off-centre on the Z axis to show a nice 3/4 view
+// ── Fighter instances & positions ─────────────────────────────────────────────
+let player1Instance = null;
+let player2Instance = null;
+
 const PLAYER_HOME = new THREE.Vector3(-4.5, 0.0, 0);
 const BOSS_HOME   = new THREE.Vector3( 4.8, 0.0, 0);
 
 // ── Arena Center & Camera Focus Target ────────────────────────────────────────
 export const ARENA_CENTER = new THREE.Vector3(0, 1.8, 0);
 
-// ── Camera — balanced framing for both combatants head-to-feet on platform ────
-const CAM_POS    = new THREE.Vector3(0, 3.8, 11.5);
-const CAM_TARGET = ARENA_CENTER.clone();
+// ── Camera Positions for Modes ───────────────────────────────────────────────
+const CAM_POS_SINGLE = new THREE.Vector3(0, 3.8, 11.5);
+const CAM_POS_TEAM   = new THREE.Vector3(0, 4.5, 14.5);
+const CAM_POS_PVP    = new THREE.Vector3(0, 3.8, 12.0);
+const CAM_POS        = CAM_POS_SINGLE.clone();
+
+export function getDefaultCamPos() {
+  const isTeam = (gameMode === 'team_vs_boss' || (gameMode === 'pve' && player2Instance));
+  const isPvP  = (gameMode === 'pvp_1v1' || gameMode === 'pvp');
+  if (isTeam) return CAM_POS_TEAM.clone();
+  if (isPvP)  return CAM_POS_PVP.clone();
+  return CAM_POS_SINGLE.clone();
+}
+
+export function getFighterInstance(playerId) {
+  if (player2Instance && player2Instance.id === playerId) return player2Instance;
+  if (player1Instance && (player1Instance.id === playerId || !playerId)) return player1Instance;
+  return player1Instance;
+}
+
+export function getFighters() {
+  return { p1: player1Instance, p2: player2Instance };
+}
 
 // ── Scene Lights Reference ───────────────────────────────────────────────────
 let sceneLights = null;
@@ -146,10 +167,13 @@ export function getActivePlayerOutfit() {
 export async function startGame(gameState) {
   window.gameScene = scene;
   currentGameState = gameState;
-  gameMode = gameState.mode || 'pve';
-  totalHp  = gameState.totalHp || 10;
+  gameMode = gameState.mode || 'team_vs_boss';
+  totalHp  = gameState.totalHp || 50;
   battleReady = false;
   isMatchInitiated = false;
+
+  const isPvP  = (gameMode === 'pvp_1v1' || gameMode === 'pvp');
+  const isTeam = (gameMode === 'team_vs_boss' || gameMode === 'pve');
 
   // Show Pre-battle Loading Gate Overlay
   const loadingOverlay = document.getElementById('battle-loading-overlay');
@@ -158,34 +182,99 @@ export async function startGame(gameState) {
     loadingOverlay.style.opacity = '1';
   }
 
-  // 1. Get strictly the user's selected outfit from storage
-  const activePlayerOutfit = getActivePlayerOutfit();
+  // 1. Players & Outfits setup
+  const players = gameState.players || [];
+  const myId    = socket.id || window.myId || gameState.myId;
+  const p1Data  = players[0] || { name: gameState.myName, id: myId };
+  const p2Data  = players[1] || null;
 
-  // 2. Boss type is determined strictly by the chosen stage
-  const stageBossSelection = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
+  const myOutfit = getActivePlayerOutfit();
+  const p1Outfit = (p1Data.id === myId)
+    ? myOutfit
+    : (p1Data.equipped?.outfit || p1Data.equippedSet || 'default');
+  const p2Outfit = (p2Data && p2Data.id === myId)
+    ? myOutfit
+    : (p2Data?.equipped?.outfit || p2Data?.equippedSet || 'default');
+
+  // 2. Fighter Positions & Facing
+  let p1Home, p2Home, p1Facing, p2Facing;
+  if (isPvP) {
+    // Mode B: 1 vs 1 PvP (Duels on Elemental Arena)
+    // Player 1 at (-4.5, 0, 0) facing right (Math.PI / 2)
+    // Player 2 at (4.5, 0, 0) facing left (-Math.PI / 2)
+    p1Home   = { x: -4.5, y: 0, z: 0 };
+    p1Facing = Math.PI / 2;
+    p2Home   = { x: 4.5, y: 0, z: 0 };
+    p2Facing = -Math.PI / 2;
+  } else if (isTeam && p2Data) {
+    // Mode A: Team vs Boss (2 Players vs 1 Elemental Boss)
+    // Player 1 (Host) at (-4.5, 0, 1.6)
+    // Player 2 (Guest) at (-4.5, 0, -1.6)
+    p1Home   = { x: -4.5, y: 0, z: 1.6 };
+    p1Facing = Math.PI / 2;
+    p2Home   = { x: -4.5, y: 0, z: -1.6 };
+    p2Facing = Math.PI / 2;
+  } else {
+    // Single Player vs Boss
+    p1Home   = { x: -4.5, y: 0, z: 0 };
+    p1Facing = Math.PI / 2;
+    p2Home   = null;
+    p2Facing = null;
+  }
+
+  // 3. Boss element determination
+  const stageBossSelection = gameState.bossElement || gameState.stage || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
   const activeBossType = (typeof stageBossSelection === 'string')
     ? stageBossSelection
     : (['thunder', 'fire', 'frost'][stageBossSelection] || 'thunder');
 
-  console.log(`[BATTLE INIT CHECK] Loading Player: "${activePlayerOutfit}" | Boss: "${activeBossType}"`);
-
-  // Clear old player meshes completely before loading to avoid ghost models
-  const playerGroup = Player.getPlayerObject?.();
-  if (playerGroup) {
-    while (playerGroup.children.length > 0) {
-      playerGroup.remove(playerGroup.children[0]);
-    }
-  }
+  console.log(`[BATTLE INIT] Mode: "${gameMode}" | P1: "${p1Outfit}" | P2: "${p2Outfit}" | Stage: "${activeBossType}"`);
 
   Arena.setArenaTheme(activeBossType);
 
-  // 3. Strictly pass the user's outfit and independent boss element
-  const loadTasks = [
-    Player.loadPlayerOutfitPoses(scene, activePlayerOutfit)
-  ];
-  if (gameMode === 'pve') {
+  // Position Camera according to mode
+  const defaultCam = getDefaultCamPos();
+  camera.position.copy(defaultCam);
+  camera.lookAt(ARENA_CENTER);
+
+  // Clear old fighter instances
+  if (player1Instance?.group) scene.remove(player1Instance.group);
+  if (player2Instance?.group) scene.remove(player2Instance.group);
+  player1Instance = null;
+  player2Instance = null;
+
+  const loadTasks = [];
+
+  // Load Player 1
+  loadTasks.push(
+    Player.createPlayerInstance(scene, p1Outfit, p1Home, p1Facing).then(inst => {
+      player1Instance = inst;
+      player1Instance.id = p1Data.id;
+      player1Instance.name = p1Data.name;
+      return inst;
+    })
+  );
+
+  // Load Player 2 (if present)
+  if (p2Data && p2Home) {
+    loadTasks.push(
+      Player.createPlayerInstance(scene, p2Outfit, p2Home, p2Facing).then(inst => {
+        player2Instance = inst;
+        player2Instance.id = p2Data.id;
+        player2Instance.name = p2Data.name;
+        return inst;
+      })
+    );
+  }
+
+  // Load Boss (strictly if not PvP)
+  if (!isPvP) {
     loadTasks.push(Boss.loadBossPoses(scene, activeBossType));
     bossActive = true;
+  } else {
+    bossActive = false;
+    const oldBoss = Boss.getBossObject?.();
+    if (oldBoss && scene.children.includes(oldBoss)) scene.remove(oldBoss);
   }
 
   try {
@@ -195,18 +284,18 @@ export async function startGame(gameState) {
     console.error('[scene] Pre-battle gate loading error:', err);
   }
 
-  // Position player
-  const playerObj = Player.getPlayerObject();
-  if (playerObj) {
-    playerObj.position.copy(PLAYER_HOME);
-    if (!scene.children.includes(playerObj)) scene.add(playerObj);
-  }
-
   // Position boss & setup boss HUD
-  if (gameMode === 'pve') {
+  if (!isPvP) {
     const bossObj = Boss.getBossObject?.();
     if (bossObj) {
-      bossObj.position.copy(BOSS_HOME);
+      // Boss positioned at (5.0, 0, 0) and scaled 2.0x in Team vs Boss
+      const bossPos = (isTeam && p2Data) ? new THREE.Vector3(5.0, 0, 0) : BOSS_HOME;
+      bossObj.position.copy(bossPos);
+      if (isTeam && p2Data) {
+        bossObj.scale.set(2.0, 2.0, 2.0);
+      } else {
+        bossObj.scale.set(1.0, 1.0, 1.0);
+      }
       if (!scene.children.includes(bossObj)) scene.add(bossObj);
     }
 
@@ -219,6 +308,9 @@ export async function startGame(gameState) {
         `<span class="boss-name">${bossData.name}</span>`;
       bossInfoEl.style.display = 'flex';
     }
+  } else {
+    const bossInfoEl = document.getElementById('boss-info');
+    if (bossInfoEl) bossInfoEl.style.display = 'none';
   }
 
   // Fade out loading overlay
@@ -230,7 +322,7 @@ export async function startGame(gameState) {
     }, 500);
   }
 
-  // Start combat BGM once models are mounted in memory (strictly single track playback)
+  // Start combat BGM once models are mounted in memory
   try {
     const combatBgmUrl = Audio.getActiveCombatBGMUrl(activeBossType);
     Audio.switchCombatBGM(combatBgmUrl);
@@ -518,8 +610,9 @@ export function resetCameraToDefault(duration = 600, onDone = null) {
   const posObj = { x: startPos.x, y: startPos.y, z: startPos.z };
   const easeFunc = (TWEEN.Easing?.Sinusoidal?.InOut) || (TWEEN.Easing?.Quadratic?.Out);
 
+  const targetCam = getDefaultCamPos();
   activeCamTween = new TWEEN.Tween(posObj)
-    .to({ x: CAM_POS.x, y: CAM_POS.y, z: CAM_POS.z }, duration)
+    .to({ x: targetCam.x, y: targetCam.y, z: targetCam.z }, duration)
     .easing(easeFunc)
     .onUpdate(() => {
       camera.position.set(posObj.x, posObj.y, posObj.z);

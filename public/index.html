@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Montserrat:wght@600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=75.0">
+    <link rel="stylesheet" href="css/style.css?v=76.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -183,21 +183,56 @@
                 </div>
 
                 <!-- HP Bars (top center of arena) -->
-                <div id="hp-bars">
-                    <div class="hp-bar-wrap" id="hp-bar-player">
-                        <div class="hp-label" id="hp-label-player">YOU</div>
-                        <div class="hp-track">
-                            <div class="hp-fill" id="hp-fill-player" style="background:#06d6a0; width:100%;"></div>
+                <div id="hp-bars" class="hp-bars-container">
+                    <!-- Left: Player 1 (and Player 2 stacked in Team vs Boss) -->
+                    <div class="hp-column left" id="hp-col-left">
+                        <!-- Player 1 HP Bar -->
+                        <div class="hp-bar-wrap" id="hp-bar-player">
+                            <div class="hp-bar-info">
+                                <span class="hp-label" id="hp-label-player">PLAYER 1</span>
+                                <span class="hp-val" id="hp-val-player">50/50</span>
+                            </div>
+                            <div class="hp-track">
+                                <div class="hp-fill" id="hp-fill-player" style="background:#06d6a0; width:100%;"></div>
+                            </div>
                         </div>
-                        <div class="hp-val" id="hp-val-player">10</div>
+                        <!-- Player 2 HP Bar (Stacked below Player 1 in Team vs Boss mode) -->
+                        <div class="hp-bar-wrap" id="hp-bar-player2-team" style="display:none;">
+                            <div class="hp-bar-info">
+                                <span class="hp-label" id="hp-label-player2-team">PLAYER 2</span>
+                                <span class="hp-val" id="hp-val-player2-team">50/50</span>
+                            </div>
+                            <div class="hp-track">
+                                <div class="hp-fill" id="hp-fill-player2-team" style="background:#00cfff; width:100%;"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="hp-vs">VS</div>
-                    <div class="hp-bar-wrap right" id="hp-bar-enemy">
-                        <div class="hp-label" id="hp-label-enemy">BOSS</div>
-                        <div class="hp-track">
-                            <div class="hp-fill" id="hp-fill-enemy" style="background:#ef233c; width:100%;"></div>
+
+                    <!-- Center VS Badge -->
+                    <div class="hp-vs" id="hp-vs-badge">VS</div>
+
+                    <!-- Right: Boss (Team vs Boss) or Player 2 (1v1 PvP) -->
+                    <div class="hp-column right" id="hp-col-right">
+                        <!-- Boss HP Bar -->
+                        <div class="hp-bar-wrap right" id="hp-bar-enemy">
+                            <div class="hp-bar-info right">
+                                <span class="hp-val" id="hp-val-enemy"></span>
+                                <span class="hp-label" id="hp-label-enemy">BOSS</span>
+                            </div>
+                            <div class="hp-track">
+                                <div class="hp-fill" id="hp-fill-enemy" style="background:#ef233c; width:100%;"></div>
+                            </div>
                         </div>
-                        <div class="hp-val" id="hp-val-enemy">10</div>
+                        <!-- Player 2 HP Bar (for 1v1 PvP mode) -->
+                        <div class="hp-bar-wrap right" id="hp-bar-player2-pvp" style="display:none;">
+                            <div class="hp-bar-info right">
+                                <span class="hp-val" id="hp-val-player2-pvp">50/50</span>
+                                <span class="hp-label" id="hp-label-player2-pvp">PLAYER 2</span>
+                            </div>
+                            <div class="hp-track">
+                                <div class="hp-fill" id="hp-fill-player2-pvp" style="background:#f59e0b; width:100%;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -328,6 +363,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=75.0"></script>
+    <script type="module" src="js/main.js?v=76.0"></script>
 </body>
 </html>

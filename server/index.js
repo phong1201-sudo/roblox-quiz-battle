@@ -1274,64 +1274,54 @@ const resolveQuestion = (code) => {
       const finalHp = {};
       for (const p of room.players.values()) finalHp[p.id] = p.hp;
 
-      let winner     = null;
-      let maxHp      = -1;
+      // Compute MVP and scores
+      const mvpResult = roomManager.calculateMvp(code) || {};
+      const { mvp, scores } = mvpResult;
+
+      let winner = null;
+      let maxHp = -1;
       for (const p of room.players.values()) {
         if ((p.hp ?? 0) > maxHp) {
-          maxHp  = p.hp ?? 0;
+          maxHp = p.hp ?? 0;
           winner = { id: p.id, name: p.name, hp: p.hp };
         }
       }
 
-      const verdict = room.mode === 'pve' ? roomManager.getPveVerdict(code) : null;
+      const verdict = (room.mode === 'team_vs_boss' || room.mode === 'pve')
+        ? roomManager.getPveVerdict(code)
+        : null;
 
       // ── PERFECT loot grants ────────────────────────────────────────────────
-      const lootGrants = [];   // { playerId, element, newPieces, fullSetUnlocked }
+      const lootGrants = [];
       if (verdict === 'PERFECT' && room.bossElement) {
-        const elem       = room.bossElement;
-        const difficulty = room.difficulty || 'medium';
-
+        const elem = room.bossElement;
         for (const p of room.players.values()) {
-          if (!p.userId) continue;   // unauthenticated player — skip
-
-          // 2-piece system: weapon + outfit
-          // Easy (20/20):   grants weapon
-          // Medium (30/30): grants outfit (if already has outfit, grants weapon instead)
-          // Hard (50/50):   grants BOTH weapon + outfit (full set)
-          let piecesToGrant;
-          if (difficulty === 'easy') {
-            piecesToGrant = ['weapon'];
-          } else if (difficulty === 'medium') {
-            const existUser = db.getUser(p.userId);
-            const owned     = existUser?.inventory?.[elem] || [];
-            piecesToGrant   = owned.includes('outfit') ? ['weapon'] : ['outfit'];
-          } else {
-            // hard or dev: full 2-piece set
-            piecesToGrant = ['weapon', 'outfit'];
-          }
-
+          if (!p.userId) continue;
+          const piecesToGrant = ['weapon', 'outfit'];
           const grant = db.unlockPiece(p.userId, elem, piecesToGrant);
           if (grant.ok && grant.newPieces.length > 0) {
             lootGrants.push({
-              playerId:        p.id,
-              element:         elem,
-              newPieces:       grant.newPieces,
+              playerId: p.id,
+              element: elem,
+              newPieces: grant.newPieces,
               fullSetUnlocked: grant.fullSetUnlocked,
-              updatedUser:     grant.user,
+              updatedUser: grant.user,
             });
           }
         }
       }
 
       io.to(code).emit('game_over', {
-        hp:        finalHp,
-        bossHp:    room.bossHp,
-        totalHp:   room.totalHp,
+        hp: finalHp,
+        bossHp: room.bossHp,
+        totalHp: room.totalHp,
         winner,
+        mvp,
+        scores,
         verdict,
-        mode:      room.mode,
-        element:   room.bossElement || null,
-        difficulty: room.difficulty || null,
+        mode: room.mode,
+        stage: room.stage || room.bossElement || 'thunder',
+        element: room.bossElement || room.stage || 'thunder',
         lootGrants,
       });
       room.phase = 'GAME_OVER';
@@ -1339,12 +1329,54 @@ const resolveQuestion = (code) => {
   }, 5000);
 };
 
+/** Centralized function to start match for a room */
+function startMatchForRoom(code, options = {}) {
+  const room = roomManager.getRoom(code);
+  if (!room || room.phase === 'QUESTION') return;
+
+  roomManager.startGame(code, room.hostId);
+
+  const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
+  const stage = options.element || room.stage || room.bossElement || 'thunder';
+  const bossIdx = BOSS_ELEMENTS.indexOf(stage);
+
+  // Load questions for the selected stage (50 questions hard bank)
+  let bankQuestions = questionBank.sampleQuestions(stage, options.difficulty || 'hard');
+  if (!bankQuestions || bankQuestions.length === 0) {
+    bankQuestions = questionBank.getActiveQuestionBank(stage);
+  }
+  if (!bankQuestions || bankQuestions.length === 0) {
+    bankQuestions = questionParser.getDemoQuestions();
+  }
+
+  roomManager.setQuestions(code, bankQuestions);
+  room.stage = stage;
+  room.bossElement = stage;
+  room.bossIndex = bossIdx >= 0 ? bossIdx : 0;
+
+  // Initialize 50 HP for players and boss
+  roomManager.initHp(code);
+
+  io.to(code).emit('game_started');
+  io.to(code).emit('game_mode_set', {
+    mode: room.mode,
+    stage: room.stage,
+    bossElement: room.stage,
+    element: room.stage,
+    totalHp: room.totalHp,
+    bossHp: room.bossHp,
+    players: Array.from(room.players.values()),
+  });
+
+  const nextQ = roomManager.nextQuestion(code);
+  if (nextQ) sendQuestion(code);
+}
+
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
 
-  socket.on('create_room', ({ playerName, color, userId, equippedSet, inventory, equipped }) => {
+  socket.on('create_room', ({ playerName, color, userId, equippedSet, inventory, equipped, mode, stage }) => {
     try {
-      // Server-side inventory lookup as source of truth (fallback to client-sent)
       let serverInventory = inventory || { thunder: [], fire: [], frost: [] };
       if (userId) {
         try {
@@ -1352,12 +1384,15 @@ io.on('connection', (socket) => {
           if (u?.inventory) serverInventory = u.inventory;
         } catch(e) {}
       }
-      const { code, players, hostId } = roomManager.createRoom(
-        socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null
+      const { code, players, hostId, mode: rMode, stage: rStage } = roomManager.createRoom(
+        socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null, mode, stage
       );
       socket.join(code);
-      socket.emit('room_created', { code, players, hostId });
-    } catch (e) { console.error('[create_room]', e.message); }
+      socket.emit('room_created', { code, players, hostId, mode: rMode, stage: rStage });
+    } catch (e) {
+      console.error('[create_room]', e.message);
+      socket.emit('error', { message: e.message });
+    }
   });
 
   socket.on('join_room', ({ code, playerName, color, userId, equippedSet, inventory, equipped }) => {
@@ -1369,118 +1404,57 @@ io.on('connection', (socket) => {
           if (u?.inventory) serverInventory = u.inventory;
         } catch(e) {}
       }
-      const { players, hostId } = roomManager.joinRoom(
+      const { players, hostId, isFull, mode, stage } = roomManager.joinRoom(
         code, socket.id, playerName, color, userId, equippedSet || null, serverInventory, equipped || null
       );
       socket.join(code);
       socket.to(code).emit('player_joined', { players });
-      socket.emit('room_joined', { code, players, hostId });
+      socket.emit('room_joined', { code, players, hostId, mode, stage });
+
+      // Once 2 players are present, server synchronizes match state and triggers countdown to battle
+      if (isFull) {
+        io.to(code).emit('match_countdown', {
+          seconds: 3,
+          code,
+          mode,
+          stage,
+          players,
+        });
+
+        setTimeout(() => {
+          const r = roomManager.getRoom(code);
+          if (r && r.phase === 'LOBBY') {
+            startMatchForRoom(code);
+          }
+        }, 3200);
+      }
     } catch (e) {
       console.error('[join_room]', e.message);
       socket.emit('error', { message: e.message });
     }
   });
 
-  /** Host selects game mode before starting */
+  /** Host selects game mode */
   socket.on('set_mode', ({ code, mode }) => {
     try {
       roomManager.setMode(code, mode);
-      io.to(code).emit('mode_changed', { mode });
+      const r = roomManager.getRoom(code);
+      io.to(code).emit('mode_changed', { mode: r ? r.mode : mode });
     } catch (e) { console.error('[set_mode]', e.message); }
+  });
+
+  /** Host selects stage / element */
+  socket.on('set_stage', ({ code, stage }) => {
+    try {
+      roomManager.setStage(code, stage);
+      const r = roomManager.getRoom(code);
+      io.to(code).emit('stage_changed', { stage: r ? r.stage : stage });
+    } catch (e) { console.error('[set_stage]', e.message); }
   });
 
   socket.on('start_game', ({ code, element, difficulty, testGear }) => {
     try {
-      const room = roomManager.startGame(code, socket.id);
-
-      // ── Load questions from bank if element + difficulty provided ──────────
-      const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
-      const VALID_DIFFS   = ['easy', 'medium', 'hard', 'dev'];
-      const bossIdx = BOSS_ELEMENTS.indexOf(element);
-
-      if (element && VALID_DIFFS.includes(difficulty) && questionBank.getBankSize(element) > 0) {
-        const bankQuestions = questionBank.sampleQuestions(element, difficulty);
-        if (bankQuestions.length > 0) {
-          room.questions   = bankQuestions;
-          room.bossElement = element;
-          room.bossIndex   = bossIdx >= 0 ? bossIdx : 0;
-          room.difficulty  = difficulty;
-        }
-      } else if (difficulty === 'dev') {
-        const demo = questionParser.getDemoQuestions().slice(0, 5);
-        room.questions   = demo;
-        room.bossElement = element || null;
-        room.bossIndex   = bossIdx >= 0 ? bossIdx : 0;
-        room.difficulty  = 'dev';
-      } else if (element && bossIdx >= 0) {
-        room.bossElement = element;
-        room.bossIndex   = bossIdx;
-        room.difficulty  = difficulty || 'medium';
-      }
-
-      if (!room.questions || room.questions.length === 0) {
-        const defaultEl = room.bossElement || 'thunder';
-        const bankQuestions = questionBank.sampleQuestions(defaultEl, room.difficulty || 'medium');
-        if (bankQuestions && bankQuestions.length > 0) {
-          room.questions = bankQuestions;
-          if (!room.bossElement) room.bossElement = defaultEl;
-          console.log(`[game] Room ${code} automatically loaded ${bankQuestions.length} questions from permanent question bank for element: ${defaultEl}`);
-        } else {
-          room.questions = questionParser.getDemoQuestions();
-        }
-      }
-
-      // ── Dev gear override: specific element full-set or normal ────────────
-      if (testGear) {
-        let activeGear = null;
-        let isFull = false;
-
-        if (['thunder', 'fire', 'frost'].includes(testGear)) {
-          activeGear = testGear;
-          isFull = true;
-        } else if (testGear === 'full') {
-          activeGear = element || 'thunder';
-          isFull = true;
-        } else if (testGear === 'normal') {
-          activeGear = null;
-          isFull = false;
-        }
-
-        for (const p of room.players.values()) {
-          if (!p.inventory) p.inventory = { thunder: [], fire: [], frost: [] };
-          if (isFull && activeGear) {
-            p.inventory[activeGear] = ['weapon', 'outfit'];
-            p.equippedSet = activeGear;
-            p.damagePerHit = 2;
-            console.log(`[testGear] Player ${p.name} equipped full ${activeGear} set (2-hit)`);
-          } else {
-            p.inventory = { thunder: [], fire: [], frost: [] };
-            p.equippedSet = null;
-            p.damagePerHit = 1;
-            console.log(`[testGear] Player ${p.name} equipped normal gear (1-hit)`);
-          }
-        }
-
-        room.devEquippedSet = activeGear;
-      }
-
-      // Initialise HP from question count
-      roomManager.initHp(code);
-
-      io.to(code).emit('game_started');
-      io.to(code).emit('game_mode_set', {
-        mode: room.mode,
-        totalHp: room.totalHp,
-        bossIndex: room.bossIndex || 0,
-        bossElement: room.bossElement || 'thunder',
-        element: room.bossElement || 'thunder',
-        testGear: testGear || null,
-        equippedSet: testGear ? (room.devEquippedSet || null) : undefined,
-      });
-
-
-      const nextQ = roomManager.nextQuestion(code);
-      if (nextQ) sendQuestion(code);
+      startMatchForRoom(code, { element, difficulty, testGear });
     } catch (e) {
       console.error('[start_game]', e.message);
       socket.emit('error', { message: e.message });

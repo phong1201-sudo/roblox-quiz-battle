@@ -61,39 +61,78 @@ export function init(gameState) {
 let visualBossHpPercent = 100;
 
 function initHpBars(gameState) {
-  const hpLabelPlayer = document.getElementById('hp-label-player');
-  const hpLabelEnemy  = document.getElementById('hp-label-enemy');
+  const isTeam = (gameState.mode === 'team_vs_boss' || gameState.mode === 'pve');
+  const isPvP = (gameState.mode === 'pvp_1v1' || gameState.mode === 'pvp');
+  const players = gameState.players || [];
+  const p1 = players[0] || { name: gameState.myName, id: gameState.myId };
+  const p2 = players[1] || null;
 
-  if (hpLabelPlayer) hpLabelPlayer.textContent = gameState.myName;
+  const totalHp = gameState.totalHp || 50;
 
-  if (hpLabelEnemy) {
-    if (gameState.mode === 'pve') {
-      hpLabelEnemy.textContent = 'BOSS';
-      hpLabelEnemy.style.color = '#ef233c';
-    } else {
-      const opponent = gameState.players.find(p => p.id !== gameState.myId);
-      hpLabelEnemy.textContent = opponent ? opponent.name : 'ENEMY';
-      if (opponent) hpLabelEnemy.style.color = opponent.color || '#fff';
-    }
+  // Setup Player 1
+  const labelP1 = document.getElementById('hp-label-player');
+  const valP1   = document.getElementById('hp-val-player');
+  const fillP1  = document.getElementById('hp-fill-player');
+  if (labelP1) labelP1.textContent = p1.name || 'PLAYER 1';
+  if (valP1)   valP1.textContent = `${totalHp}/${totalHp}`;
+  if (fillP1)  { fillP1.style.width = '100%'; fillP1.style.backgroundColor = '#06d6a0'; }
+
+  // Elements for Mode Switching
+  const barP2Team = document.getElementById('hp-bar-player2-team');
+  const barEnemy  = document.getElementById('hp-bar-enemy');
+  const barP2PvP  = document.getElementById('hp-bar-player2-pvp');
+  const vsBadge   = document.getElementById('hp-vs-badge') || document.querySelector('.hp-vs');
+
+  if (isPvP) {
+    // ⚔️ 1v1 PvP Mode
+    if (barP2Team) barP2Team.style.display = 'none';
+    if (barEnemy)  barEnemy.style.display = 'none';
+    if (barP2PvP)  barP2PvP.style.display = 'flex';
+    if (vsBadge)   vsBadge.style.display = 'block';
+
+    const labelP2PvP = document.getElementById('hp-label-player2-pvp');
+    const valP2PvP   = document.getElementById('hp-val-player2-pvp');
+    const fillP2PvP  = document.getElementById('hp-fill-player2-pvp');
+    if (labelP2PvP) labelP2PvP.textContent = p2 ? p2.name : 'PLAYER 2';
+    if (valP2PvP)   valP2PvP.textContent = `${totalHp}/${totalHp}`;
+    if (fillP2PvP)  { fillP2PvP.style.width = '100%'; fillP2PvP.style.backgroundColor = '#ef233c'; }
+  } else if (isTeam && p2) {
+    // 👥 Team vs Boss Mode (Stacked 2 players on left)
+    if (barP2Team) barP2Team.style.display = 'flex';
+    if (barEnemy)  barEnemy.style.display = 'flex';
+    if (barP2PvP)  barP2PvP.style.display = 'none';
+    if (vsBadge)   vsBadge.style.display = 'block';
+
+    const labelP2Team = document.getElementById('hp-label-player2-team');
+    const valP2Team   = document.getElementById('hp-val-player2-team');
+    const fillP2Team  = document.getElementById('hp-fill-player2-team');
+    if (labelP2Team) labelP2Team.textContent = p2.name || 'PLAYER 2';
+    if (valP2Team)   valP2Team.textContent = `${totalHp}/${totalHp}`;
+    if (fillP2Team)  { fillP2Team.style.width = '100%'; fillP2Team.style.backgroundColor = '#00cfff'; }
+
+    // Boss Bar
+    const labelEnemy = document.getElementById('hp-label-enemy');
+    const valEnemy   = document.getElementById('hp-val-enemy');
+    const fillEnemy  = document.getElementById('hp-fill-enemy');
+    if (labelEnemy) labelEnemy.textContent = 'BOSS';
+    if (valEnemy)   valEnemy.textContent = '';
+    if (fillEnemy)  { fillEnemy.style.width = '100%'; fillEnemy.style.backgroundColor = '#ef233c'; }
+  } else {
+    // Single player vs Boss
+    if (barP2Team) barP2Team.style.display = 'none';
+    if (barEnemy)  barEnemy.style.display = 'flex';
+    if (barP2PvP)  barP2PvP.style.display = 'none';
+    if (vsBadge)   vsBadge.style.display = 'block';
+
+    const labelEnemy = document.getElementById('hp-label-enemy');
+    const valEnemy   = document.getElementById('hp-val-enemy');
+    const fillEnemy  = document.getElementById('hp-fill-enemy');
+    if (labelEnemy) labelEnemy.textContent = 'BOSS';
+    if (valEnemy)   valEnemy.textContent = '';
+    if (fillEnemy)  { fillEnemy.style.width = '100%'; fillEnemy.style.backgroundColor = '#ef233c'; }
   }
 
   visualBossHpPercent = 100;
-  const hpFillPlayer = document.getElementById('hp-fill-player');
-  const hpFillEnemy  = document.getElementById('hp-fill-enemy');
-  if (hpFillPlayer) { hpFillPlayer.style.width = '100%'; hpFillPlayer.style.backgroundColor = '#06d6a0'; }
-  if (hpFillEnemy)  { hpFillEnemy.style.width  = '100%'; hpFillEnemy.style.backgroundColor  = '#ef233c'; }
-
-  const hpValPlayer = document.getElementById('hp-val-player');
-  const hpValEnemy  = document.getElementById('hp-val-enemy');
-  const total = gameState.totalHp || 10;
-  if (hpValPlayer) hpValPlayer.textContent = `${total}/${total}`;
-  if (hpValEnemy) {
-    if (gameState.mode === 'pve') {
-      hpValEnemy.textContent = ''; // CRITICAL: Never display numbers/percentages for Boss HP bar
-    } else {
-      hpValEnemy.textContent = `${total}/${total}`;
-    }
-  }
 }
 
 export function setBossVisualHpPercent(pct) {
@@ -106,11 +145,7 @@ export function setBossVisualHpPercent(pct) {
     hpFillEnemy.style.backgroundColor = visualBossHpPercent > 60 ? '#06d6a0' : visualBossHpPercent > 30 ? '#ffbe0b' : '#ef233c';
   }
   if (hpValEnemy) {
-    if (window.gameState?.mode === 'pve' || !window.gameState?.mode) {
-      hpValEnemy.textContent = ''; // Pure clean colored progress bar
-    } else {
-      hpValEnemy.textContent = `${Math.round(visualBossHpPercent)}%`;
-    }
+    hpValEnemy.textContent = ''; // Clean visual bar for Boss
   }
 }
 
@@ -119,41 +154,59 @@ export function deductBossHpPercent(amount) {
 }
 
 export function updateHpBars(hp, bossHp) {
-  const gs      = window.gameState;
-  const totalHp = gs?.totalHp || 10;
-  const myHp    = (hp && hp[gs?.myId] !== undefined) ? hp[gs.myId] : totalHp;
+  const gs = window.gameState;
+  const totalHp = gs?.totalHp || 50;
+  const players = gs?.players || [];
+  const p1 = players[0] || { id: gs?.myId };
+  const p2 = players[1] || null;
 
-  const hpFillPlayer = document.getElementById('hp-fill-player');
-  const hpValPlayer  = document.getElementById('hp-val-player');
-  if (hpFillPlayer) {
-    const pct = Math.max(0, Math.min(100, (myHp / totalHp) * 100));
-    hpFillPlayer.style.transition = 'width 0.5s ease';
-    hpFillPlayer.style.width = `${pct}%`;
-    hpFillPlayer.style.backgroundColor = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
+  const isPvP = (gs?.mode === 'pvp_1v1' || gs?.mode === 'pvp');
+
+  // Update Player 1 HP
+  if (p1 && hp && hp[p1.id] !== undefined) {
+    const p1Hp = hp[p1.id];
+    const fillP1 = document.getElementById('hp-fill-player');
+    const valP1  = document.getElementById('hp-val-player');
+    if (fillP1) {
+      const pct = Math.max(0, Math.min(100, (p1Hp / totalHp) * 100));
+      fillP1.style.transition = 'width 0.5s ease';
+      fillP1.style.width = `${pct}%`;
+      fillP1.style.backgroundColor = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
+    }
+    if (valP1) valP1.textContent = `${p1Hp}/${totalHp}`;
   }
-  if (hpValPlayer) hpValPlayer.textContent = `${myHp}/${totalHp}`;
 
-  if (gs?.mode === 'pve') {
-    if (bossHp !== undefined && bossHp !== null) {
-      const pct = Math.max(0, Math.min(100, (bossHp / totalHp) * 100));
-      setBossVisualHpPercent(pct);
+  // Update Player 2 HP (Stacked in Team, or right header in PvP)
+  if (p2 && hp && hp[p2.id] !== undefined) {
+    const p2Hp = hp[p2.id];
+    const pct = Math.max(0, Math.min(100, (p2Hp / totalHp) * 100));
+    const barCol = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
+
+    if (isPvP) {
+      const fillP2PvP = document.getElementById('hp-fill-player2-pvp');
+      const valP2PvP  = document.getElementById('hp-val-player2-pvp');
+      if (fillP2PvP) {
+        fillP2PvP.style.transition = 'width 0.5s ease';
+        fillP2PvP.style.width = `${pct}%`;
+        fillP2PvP.style.backgroundColor = barCol;
+      }
+      if (valP2PvP) valP2PvP.textContent = `${p2Hp}/${totalHp}`;
+    } else {
+      const fillP2Team = document.getElementById('hp-fill-player2-team');
+      const valP2Team  = document.getElementById('hp-val-player2-team');
+      if (fillP2Team) {
+        fillP2Team.style.transition = 'width 0.5s ease';
+        fillP2Team.style.width = `${pct}%`;
+        fillP2Team.style.backgroundColor = pct > 60 ? '#00cfff' : pct > 30 ? '#ffbe0b' : '#ef233c';
+      }
+      if (valP2Team) valP2Team.textContent = `${p2Hp}/${totalHp}`;
     }
-    const hpValEnemy = document.getElementById('hp-val-enemy');
-    if (hpValEnemy) hpValEnemy.textContent = '';
-  } else {
-    // PvP 1v1
-    const hpFillEnemy = document.getElementById('hp-fill-enemy');
-    const hpValEnemy  = document.getElementById('hp-val-enemy');
-    const opponent = gs?.players?.find(p => p.id !== gs.myId);
-    let enemyHp = totalHp;
-    if (opponent && hp && hp[opponent.id] !== undefined) enemyHp = hp[opponent.id];
-    if (hpFillEnemy) {
-      const pct = Math.max(0, Math.min(100, (enemyHp / totalHp) * 100));
-      hpFillEnemy.style.transition = 'width 0.5s ease';
-      hpFillEnemy.style.width = `${pct}%`;
-      hpFillEnemy.style.backgroundColor = pct > 60 ? '#06d6a0' : pct > 30 ? '#ffbe0b' : '#ef233c';
-    }
-    if (hpValEnemy) hpValEnemy.textContent = `${enemyHp}/${totalHp}`;
+  }
+
+  // Update Boss HP in Team vs Boss mode
+  if (!isPvP && bossHp !== undefined && bossHp !== null) {
+    const pct = Math.max(0, Math.min(100, (bossHp / totalHp) * 100));
+    setBossVisualHpPercent(pct);
   }
 }
 

@@ -5,7 +5,7 @@ import * as Effects from './effects.js';
 import * as VFX     from './vfx.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
-import { triggerCinematicShot, resetCameraToDefault, triggerCombatSlowMo, setCombatTimeScale } from './scene.js';
+import { triggerCinematicShot, resetCameraToDefault, triggerCombatSlowMo, setCombatTimeScale, getFighterInstance, getFighters } from './scene.js';
 
 export { playGuaranteedPlayerSlash, playArmSwingSlash, playSwordSlashAnimation, slashAnimation, getPlayerArmPivot, combatArmCompound, getCombatArmCompound } from './player.js';
 export { playGuaranteedBossHammerSlam, getBossArmPivot, bossCombatArmCompound, getBossCombatArmCompound } from './boss.js';
@@ -611,6 +611,178 @@ export function executeCombatTurn(ev, onDone) {
     clearTimeout(turnSafetyTimer);
     safeOnDone();
   };
+
+  const mode = window.gameState?.mode || 'team_vs_boss';
+  const isPvP = (mode === 'pvp_1v1' || mode === 'pvp' || (ev.victimId && ev.victimId !== 'boss' && ev.attackerId !== 'boss'));
+  const { p1, p2 } = getFighters();
+  const isMultiplayerTeam = (!isPvP && p1 && p2);
+
+  if (isPvP) {
+    if (ev.type === 'attack') {
+      const attacker = getFighterInstance(ev.attackerId);
+      const victim = getFighterInstance(ev.victimId);
+      if (!attacker || !victim) {
+        doneWrapper();
+        return;
+      }
+      triggerCinematicShot();
+      const targetX = victim.homePos.x * 0.45;
+      const targetZ = victim.homePos.z;
+
+      attacker.playSlash({
+        targetX,
+        targetZ,
+        onHit: () => {
+          try { Audio.playSlash?.(); } catch (e) {}
+          try { Audio.playHit?.(); } catch (e) {}
+          Effects.triggerShake(0.35, 0.25);
+          Effects.spawnHitSpark(victim.group.position);
+
+          const dmg = ev.damage || (ev.hasElemental ? 1 : 2);
+          const hitColor = ev.hasElemental ? '#00cfff' : '#ef4444';
+          const textPos = new THREE.Vector3(victim.group.position.x, victim.group.position.y + 2.0, victim.group.position.z);
+          Effects.spawnDamageNumber(textPos, `-${dmg} HP`, hitColor, 32);
+
+          const outfit = ev.attackerOutfit || attacker.outfit || 'default';
+          if (outfit === 'fire') {
+            VFX.spawnFireSlashVFX(victim.group.position);
+            VFX.showCombatFloatingBanner(`BURNING! -${dmg} HP`, '#f97316');
+            try { Audio.playFire?.(); } catch (e) {}
+          } else if (outfit === 'frost') {
+            VFX.spawnFrostSlashVFX(victim.group.position);
+            VFX.showCombatFloatingBanner(`FROSTBITE! -${dmg} HP`, '#38bdf8');
+            try { Audio.playFrost?.(); } catch (e) {}
+          } else if (outfit === 'thunder') {
+            VFX.spawnThunderSlashVFX(victim.group.position);
+            VFX.showCombatFloatingBanner(`SHOCKED! -${dmg} HP`, '#facc15');
+            try { Audio.playThunder?.(); } catch (e) {}
+          } else {
+            VFX.spawnPhysicalSlashVFX(victim.group.position);
+            VFX.showCombatFloatingBanner(`CRITICAL HIT! -${dmg} HP`, '#ffffff');
+          }
+
+          victim.playHurt?.({ onDone: () => {} });
+
+          if (ev.victimRemainingHp !== undefined && hud.updateHpBars) {
+            const hpMap = {};
+            hpMap[ev.victimId] = ev.victimRemainingHp;
+            hud.updateHpBars(hpMap);
+          }
+        },
+        onDone: () => {
+          resetCameraToDefault(300, doneWrapper);
+        }
+      });
+      return;
+    } else {
+      // Dodge / Miss in PvP
+      const target = getFighterInstance(ev.targetId);
+      if (target && target.playDodge) {
+        target.playDodge({ onDone: doneWrapper });
+      } else {
+        doneWrapper();
+      }
+      return;
+    }
+  }
+
+  if (isMultiplayerTeam) {
+    if (ev.type === 'attack' && ev.victimId === 'boss') {
+      const attacker = getFighterInstance(ev.attackerId);
+      if (!attacker) {
+        doneWrapper();
+        return;
+      }
+      triggerCinematicShot();
+      const targetX = 2.8;
+      const targetZ = attacker.homePos.z * 0.4;
+      const bossObj = Boss.getBossObject?.();
+      const bossPos = (bossObj && bossObj.position) ? bossObj.position : BOSS_VFX_POS;
+
+      attacker.playSlash({
+        targetX,
+        targetZ,
+        onHit: () => {
+          try { Audio.playSlash?.(); } catch (e) {}
+          Effects.triggerShake(0.35, 0.3);
+
+          const dmg = ev.damage || (ev.hasElemental ? 2 : 1);
+          const outfit = ev.outfit || attacker.outfit || 'default';
+          const dmgColor = outfit === 'fire' ? '#ff4500' : (outfit === 'frost' ? '#38bdf8' : (outfit === 'thunder' ? '#facc15' : '#ffffff'));
+          Effects.spawnDamageNumber(bossPos, `-${dmg} HP`, dmgColor, 32);
+
+          if (outfit === 'fire') {
+            VFX.spawnFireSlashVFX(bossPos);
+            VFX.showCombatFloatingBanner(`BURNING! -${dmg} HP`, '#f97316');
+            try { Audio.playFire?.(); } catch (e) {}
+          } else if (outfit === 'frost') {
+            VFX.spawnFrostSlashVFX(bossPos);
+            VFX.showCombatFloatingBanner(`FROSTBITE! -${dmg} HP`, '#38bdf8');
+            try { Audio.playFrost?.(); } catch (e) {}
+          } else if (outfit === 'thunder') {
+            VFX.spawnThunderSlashVFX(bossPos);
+            VFX.showCombatFloatingBanner(`SHOCKED! -${dmg} HP`, '#facc15');
+            try { Audio.playThunder?.(); } catch (e) {}
+          } else {
+            VFX.spawnPhysicalSlashVFX(bossPos);
+            VFX.showCombatFloatingBanner(`CRITICAL HIT! -${dmg} HP`, '#ffffff');
+          }
+
+          Boss.setBossPose('hit');
+          Boss.playBossHurt();
+
+          if (ev.currentBossHp !== undefined && ev.totalQuestions) {
+            const pct = (ev.currentBossHp / ev.totalQuestions) * 100;
+            Boss.setBossHpPercent(pct);
+            if (hud.setBossVisualHpPercent) hud.setBossVisualHpPercent(pct);
+          }
+
+          setTimeout(() => {
+            Boss.setBossPose('idle');
+          }, 400);
+        },
+        onDone: () => {
+          resetCameraToDefault(300, doneWrapper);
+        }
+      });
+      return;
+    } else if (ev.attackerId === 'boss' || ev.victimId) {
+      const victim = getFighterInstance(ev.victimId || ev.targetId);
+      const bElem = ev.element || ev.bossElement || Boss.getBossElement() || 'thunder';
+      triggerCinematicShot();
+
+      Boss.setBossPose('angry');
+      setTimeout(() => {
+        Boss.setBossPose('attack');
+        Boss.playBossAttack(bElem, () => {
+          try { Audio.playHit?.(); } catch (e) {}
+          Effects.triggerShake(0.45, 0.35);
+          Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
+
+          const incomingDmg = ev.damage || (ev.hasElemental ? 1 : 2);
+          const dmgLabel = `-${incomingDmg} HP`;
+          const vPos = victim ? victim.group.position : new THREE.Vector3(-4.5, 0, 0);
+          const textPos = new THREE.Vector3(vPos.x, vPos.y + 2.0, vPos.z);
+          Effects.spawnDamageNumber(textPos, dmgLabel, incomingDmg === 1 ? '#00cfff' : '#ef4444', 32);
+
+          Effects.triggerPlayerHitVFX(bElem, vPos);
+          victim?.playHurt?.({ onDone: () => {} });
+
+          if (ev.remainingPlayerHp !== undefined && hud.updateHpBars) {
+            const hpMap = {};
+            if (victim) hpMap[victim.id] = ev.remainingPlayerHp;
+            hud.updateHpBars(hpMap, ev.currentBossHp);
+          }
+
+          setTimeout(() => {
+            Boss.setBossPose('idle');
+            resetCameraToDefault(300, doneWrapper);
+          }, 450);
+        }, () => {});
+      }, 500);
+      return;
+    }
+  }
 
   const activeOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
     || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))

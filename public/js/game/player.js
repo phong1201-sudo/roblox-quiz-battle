@@ -269,6 +269,209 @@ export function loadPlayerModel(targetScene, outfitElement = 'default', onLoaded
   });
 }
 
+/**
+ * Creates an independent 3D Character Instance for multiplayer co-op and PvP
+ */
+export async function createPlayerInstance(scene, outfit = 'default', homePos = { x: -4.5, y: 0, z: 0 }, facingY = Math.PI / 2) {
+  const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
+  const group = new currentTHREE.Group();
+  const poses = { idle: null, dodge: null, slash: null, hit: null };
+
+  const clean = (typeof outfit === 'string') ? outfit.toLowerCase().trim() : 'default';
+  const activeOutfit = ['default', 'thunder', 'fire', 'frost'].includes(clean) ? clean : 'default';
+
+  const GLTFLoaderClass = currentTHREE.GLTFLoader || (typeof window !== 'undefined' ? window.THREE?.GLTFLoader : null);
+  const DracoLoaderClass = currentTHREE.DRACOLoader || (typeof window !== 'undefined' ? window.THREE?.DRACOLoader : null);
+  const loader = GLTFLoaderClass ? new GLTFLoaderClass() : null;
+  if (loader && DracoLoaderClass) {
+    try {
+      const dracoLoader = new DracoLoaderClass();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+      loader.setDRACOLoader(dracoLoader);
+    } catch (e) {}
+  }
+  if (loader && !loader.loadAsync) {
+    loader.loadAsync = function(url) {
+      return new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+    };
+  }
+
+  const loadSinglePose = async (pose) => {
+    const primaryUrl = `/assets/character/player_${activeOutfit}_${pose}.glb`;
+    const fallbackUrl = `/assets/character/player_${activeOutfit}_idle.glb`;
+    const emergencyUrl = `/assets/character/player_default_idle.glb`;
+
+    let gltf = null;
+    if (loader) {
+      try {
+        gltf = await loader.loadAsync(primaryUrl);
+      } catch (err) {
+        try {
+          gltf = await loader.loadAsync(fallbackUrl);
+        } catch (err2) {
+          try {
+            gltf = await loader.loadAsync(emergencyUrl);
+          } catch (err3) {}
+        }
+      }
+    }
+
+    if (gltf && gltf.scene) {
+      const mesh = gltf.scene;
+      mesh.traverse((c) => {
+        if (c.isMesh) {
+          c.castShadow = true;
+          c.receiveShadow = true;
+          if (c.material) {
+            c.material.transparent = false;
+            c.material.opacity = 1.0;
+          }
+        }
+      });
+      mesh.updateMatrixWorld(true);
+      const box = new currentTHREE.Box3().setFromObject(mesh);
+      const size = box.getSize(new currentTHREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const targetHeight = 3.2;
+      const scale = targetHeight / maxDim;
+      mesh.scale.set(scale, scale, scale);
+
+      mesh.updateMatrixWorld(true);
+      const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
+      mesh.position.y = -scaledBox.min.y;
+      mesh.position.x = 0;
+      mesh.position.z = 0;
+
+      mesh.visible = (pose === 'idle');
+      poses[pose] = mesh;
+      group.add(mesh);
+      return mesh;
+    }
+    return null;
+  };
+
+  await Promise.all(['idle', 'dodge', 'slash', 'hit'].map(p => loadSinglePose(p)));
+
+  if (!poses.idle) {
+    const fallback = createFallbackBlockCharacter(activeOutfit);
+    poses.idle = fallback;
+    group.add(fallback);
+  }
+  for (const pose of ['dodge', 'slash', 'hit']) {
+    if (!poses[pose]) poses[pose] = poses.idle;
+  }
+
+  const setPose = (poseName = 'idle') => {
+    const targetMesh = poses[poseName] || poses.idle;
+    for (const k in poses) {
+      if (poses[k]) poses[k].visible = (poses[k] === targetMesh);
+    }
+  };
+  setPose('idle');
+
+  group.position.set(homePos.x, homePos.y, homePos.z);
+  group.rotation.y = facingY;
+
+  const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);
+  if (targetScene && !targetScene.children.includes(group)) {
+    targetScene.add(group);
+  }
+
+  // Combat animation handlers
+  const playSlash = ({ targetX = 2.2, targetZ = homePos.z, onHit, onDone } = {}) => {
+    setPose('dodge');
+    const startX = homePos.x;
+    const startZ = homePos.z;
+    const startTime = performance.now();
+    let hitTriggered = false;
+
+    const tDash = 160;
+    const tSlash = 220;
+    const tReturn = 180;
+    const tTotal = tDash + tSlash + tReturn;
+
+    function step(now) {
+      const elapsed = now - startTime;
+      if (elapsed < tDash) {
+        const p = elapsed / tDash;
+        const ease = p * (2 - p);
+        group.position.x = currentTHREE.MathUtils.lerp(startX, targetX, ease);
+        group.position.z = currentTHREE.MathUtils.lerp(startZ, targetZ, ease);
+      } else if (elapsed < tDash + tSlash) {
+        setPose('slash');
+        group.position.x = targetX;
+        group.position.z = targetZ;
+        const p = (elapsed - tDash) / tSlash;
+        if (p >= 0.5 && !hitTriggered) {
+          hitTriggered = true;
+          if (onHit) onHit();
+        }
+      } else if (elapsed < tTotal) {
+        setPose('idle');
+        const p = (elapsed - (tDash + tSlash)) / tReturn;
+        const ease = p * (2 - p);
+        group.position.x = currentTHREE.MathUtils.lerp(targetX, startX, ease);
+        group.position.z = currentTHREE.MathUtils.lerp(targetZ, startZ, ease);
+      } else {
+        group.position.set(homePos.x, homePos.y, homePos.z);
+        setPose('idle');
+        if (onDone) onDone();
+        return;
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  };
+
+  const playHurt = ({ onDone } = {}) => {
+    setPose('hit');
+    const origMaterials = [];
+    group.traverse((c) => {
+      if (c.isMesh && c.material) {
+        origMaterials.push({ mat: c.material, color: c.material.color.clone() });
+        c.material.color.setHex(0xff2222);
+      }
+    });
+
+    const startX = homePos.x;
+    const startTime = performance.now();
+    function shake(now) {
+      const elapsed = now - startTime;
+      if (elapsed < 350) {
+        const offset = Math.sin(elapsed * 0.05) * 0.15;
+        group.position.x = startX + offset;
+        requestAnimationFrame(shake);
+      } else {
+        group.position.set(homePos.x, homePos.y, homePos.z);
+        origMaterials.forEach(m => m.mat.color.copy(m.color));
+        setPose('idle');
+        if (onDone) onDone();
+      }
+    }
+    requestAnimationFrame(shake);
+  };
+
+  const playDodge = ({ onDone } = {}) => {
+    setPose('dodge');
+    setTimeout(() => {
+      setPose('idle');
+      if (onDone) onDone();
+    }, 400);
+  };
+
+  return {
+    group,
+    poses,
+    setPose,
+    homePos: { ...homePos },
+    facingY,
+    outfit: activeOutfit,
+    playSlash,
+    playHurt,
+    playDodge,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PERSISTENT ELEMENTAL WEAPON AURA PARTICLE VFX (FIRE, FROST, THUNDER)
 // ─────────────────────────────────────────────────────────────────────────────

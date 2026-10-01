@@ -662,16 +662,42 @@ input[type=color] {
 }
 
 /* ─── HP BARS — top-center of arena ───────────────────────────────────── */
-#hp-bars {
+#hp-bars, .hp-bars-container {
   position: absolute;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   pointer-events: none;
   z-index: 20;
+}
+
+.hp-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hp-column.left {
+  align-items: flex-start;
+}
+
+.hp-column.right {
+  align-items: flex-end;
+}
+
+.hp-bar-info {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  align-items: center;
+}
+
+.hp-bar-info.right {
+  justify-content: space-between;
 }
 
 .hp-bar-wrap {

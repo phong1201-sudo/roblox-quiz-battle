@@ -85,15 +85,25 @@ export function init(data, gameState) {
         });
     }
 
-    // Remove old PvP winner div if any
+    // Remove old PvP / MVP winner divs if any
     const oldWinner = document.querySelector('.pvp-winner');
     if (oldWinner) oldWinner.remove();
+    const oldMvp = document.querySelector('.mvp-banner');
+    if (oldMvp) oldMvp.remove();
 
-    if (data.mode === 'pvp' && data.winner) {
+    const isPvP = (data.mode === 'pvp_1v1' || data.mode === 'pvp');
+    if (isPvP && data.winner) {
         const winnerDiv = document.createElement('div');
         winnerDiv.className = 'pvp-winner';
-        winnerDiv.innerHTML = `🏆 <span>${data.winner.name}</span> WINS! (${data.winner.hp} HP left)`;
+        winnerDiv.innerHTML = `🏆 CHIẾN THẮNG 1V1: <span>${data.winner.name}</span> (${data.winner.hp} HP còn lại)`;
         document.getElementById('screen-results')?.prepend(winnerDiv);
+    } else if (!isPvP && data.mvp) {
+        const mvpDiv = document.createElement('div');
+        mvpDiv.className = 'mvp-banner pvp-winner';
+        mvpDiv.style.borderColor = '#00cfff';
+        mvpDiv.style.background = 'rgba(0, 207, 255, 0.15)';
+        mvpDiv.innerHTML = `👑 MVP CHIẾN ĐỘI: <span style="color:#00cfff; font-weight:800;">${data.mvp.name}</span> — <b>${data.mvp.score} Điểm</b> <span style="font-size:10px; color:#aaa;">(${data.mvp.correct} câu đúng • ${data.mvp.remainingHp} HP)</span>`;
+        document.getElementById('screen-results')?.prepend(mvpDiv);
     }
 
     // ── 🔁 Play Again: Re-initialize match with current element and question set cleanly ──

@@ -5,6 +5,7 @@ import * as hud    from './ui/hud.js';
 import * as results from './ui/results.js';
 import * as scene  from './game/scene.js';
 import * as Audio  from './audio.js';
+import * as Multiplayer from './multiplayer.js';
 import { initSplashScreen } from './splash.js';
 import { initBgmSelector } from './ui/bgmSelector.js';
 
@@ -164,31 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Menu buttons ──────────────────────────────────────────────────────────
     const btnCreate = document.getElementById('btn-create');
     btnCreate.addEventListener('click', () => {
-        const user = Auth.getCurrentUser();
-        if (!user) { Auth.showAuthModal(); return; }
-
-        const playerName = user.username;   // always use auth username
-        const color      = document.getElementById('player-color').value;
-
-        // God Father flag from server role — no localStorage
-        window._godFather = (user.role === 'admin');
-
-        let equipped = { outfit: 'default', weapon: 'default' };
-        try {
-            const saved = JSON.parse(localStorage.getItem('player_equipped'));
-            if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
-        } catch(e) {}
-        const isFullSet = (equipped.outfit === equipped.weapon && equipped.outfit !== 'default');
-        const equippedSet = isFullSet ? equipped.outfit : (user.equippedSet || null);
-
-        emit('create_room', {
-            playerName,
-            color,
-            userId:       user.id,
-            equippedSet,
-            equipped,
-            inventory:    user.inventory    || { thunder: [], fire: [], frost: [] },
-        });
+        Multiplayer.createMultiplayerRoom({ mode: 'team_vs_boss', stage: 'thunder' });
     });
 
     const btnJoinScreen = document.getElementById('btn-join-screen');
@@ -199,33 +176,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnJoinRoom = document.getElementById('btn-join-room');
     btnJoinRoom.addEventListener('click', () => {
-        const user = Auth.getCurrentUser();
-        if (!user) { Auth.showAuthModal(); return; }
         const code = document.getElementById('room-code-input').value.trim().toUpperCase();
-        if (code.length !== 4) { alert('Room code must be 4 characters'); return; }
-        const color = document.getElementById('player-color').value;
-
-        let equipped = { outfit: 'default', weapon: 'default' };
-        try {
-            const saved = JSON.parse(localStorage.getItem('player_equipped'));
-            if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
-        } catch(e) {}
-        const isFullSet = (equipped.outfit === equipped.weapon && equipped.outfit !== 'default');
-        const equippedSet = isFullSet ? equipped.outfit : (user.equippedSet || null);
-
-        emit('join_room', {
-            code,
-            playerName:   user.username,
-            color,
-            userId:       user.id,
-            equippedSet,
-            equipped,
-            inventory:    user.inventory    || { thunder: [], fire: [], frost: [] },
-        });
+        Multiplayer.joinMultiplayerRoom(code);
     });
 
     const btnBackJoin = document.getElementById('btn-back-join');
-    btnBackJoin.addEventListener('click', () => showScreen('menu'));
+    btnBackJoin.addEventListener('click', () => {
+        Multiplayer.cancelHosting();
+        showScreen('menu');
+    });
 
     // ── Socket events ─────────────────────────────────────────────────────────
     on('connect', () => { window.myId = socket.id; });
@@ -237,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
             myId: socket.id, myName: user?.username || '?', myColor,
             code: data.code, players: data.players,
             hostId: data.hostId, isHost: true,
-            mode: 'pve', totalHp: 10,
+            mode: data.mode || 'team_vs_boss', totalHp: 50,
+            stage: data.stage || 'thunder', bossElement: data.stage || 'thunder',
         });
         if (lobby.init) lobby.init(window.gameState);
         showScreen('lobby');
@@ -251,15 +211,22 @@ document.addEventListener('DOMContentLoaded', () => {
             myId: socket.id, myName: user?.username || '?', myColor,
             code: data.code, players: data.players,
             hostId: data.hostId, isHost: false,
-            mode: 'pve', totalHp: 10,
+            mode: data.mode || 'team_vs_boss', totalHp: 50,
+            stage: data.stage || 'thunder', bossElement: data.stage || 'thunder',
         });
         if (lobby.init) lobby.init(window.gameState);
         showScreen('lobby');
         try { Audio.playBGM('lobby'); } catch(e) {}
     });
 
-    on('player_joined', (data) => { if (lobby.updatePlayers) lobby.updatePlayers(data.players); });
-    on('player_left',   (data) => { if (lobby.updatePlayers) lobby.updatePlayers(data.players); });
+    on('player_joined', (data) => {
+        if (window.gameState) window.gameState.players = data.players;
+        if (lobby.updatePlayers) lobby.updatePlayers(data.players);
+    });
+    on('player_left',   (data) => {
+        if (window.gameState) window.gameState.players = data.players;
+        if (lobby.updatePlayers) lobby.updatePlayers(data.players);
+    });
 
     on('game_started', () => {
         showScreen('game');
