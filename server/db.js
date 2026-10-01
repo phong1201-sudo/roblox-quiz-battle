@@ -140,6 +140,34 @@ function login(username, password) {
   return { ok: true, user: _public(user) };
 }
 
+function changePassword(username, oldPassword, newPassword) {
+  username = (username || '').trim();
+  if (!username) return { ok: false, error: 'Thiếu tên người dùng.' };
+  if (!oldPassword) return { ok: false, error: 'Vui lòng nhập mật khẩu hiện tại.' };
+  if (!newPassword || newPassword.length < 4) {
+    return { ok: false, error: 'Mật khẩu mới phải có ít nhất 4 ký tự.' };
+  }
+
+  const data = _load();
+  const user = Object.values(data.users).find(
+    u => u.username && u.username.toLowerCase() === username.toLowerCase()
+  );
+  if (!user) return { ok: false, error: 'Người dùng không tồn tại.' };
+
+  // Verify oldPassword matches passwordHash or legacy plaintext password
+  if (user.passwordHash !== _hash(oldPassword) && user.password !== oldPassword) {
+    return { ok: false, error: 'Mật khẩu hiện tại không chính xác!' };
+  }
+
+  // Update password field
+  user.passwordHash = _hash(newPassword);
+  user.password = newPassword;
+
+  _save(data);
+  console.log(`[db] Password successfully changed on disk for user "${user.username}".`);
+  return { ok: true, message: 'Đổi mật khẩu thành công!' };
+}
+
 /**
  * Unlock a piece for a given element.
  * pieces: string | string[]  - must be 'weapon' or 'outfit'
@@ -223,4 +251,4 @@ function getUser(userId) {
   return _public(user);
 }
 
-module.exports = { register, login, getUser, unlockPiece, unlockSet, updateStage, FULL_SET_PIECES };
+module.exports = { register, login, changePassword, getUser, unlockPiece, unlockSet, updateStage, FULL_SET_PIECES };

@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=66.0">
+    <link rel="stylesheet" href="css/style.css?v=67.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -52,6 +52,70 @@
             <div style="width:100%; height:100%; background:linear-gradient(90deg, #00b4d8, #ff6b35, #06d6a0); animation:loadingPulse 1.2s infinite ease-in-out;"></div>
         </div>
         <div id="battle-loading-status" style="color:#aaa; font-size:8px; font-family:'Be Vietnam Pro', sans-serif;">Đang nạp mô hình 3D &amp; hoạt ảnh chiến đấu...</div>
+    </div>
+
+    <!-- Epic Opening Title Splash Screen (Roblox vs Monster) -->
+    <div id="game-splash-screen">
+        <canvas id="splash-particles-canvas"></canvas>
+
+        <div class="splash-content-container">
+            <!-- Header with Curved Title -->
+            <div class="splash-header">
+                <div class="splash-eyebrow">⚔️ ĐẤU TRƯỜNG TRÍ TUỆ 3D ⚔️</div>
+                <h1 class="splash-curved-title">ROBLOX VS MONSTER</h1>
+                <div class="splash-subtitle">BẢN LĨNH CHIẾN BINH • KHIÊU CHIẾN TAM ĐẠI MA THẦN</div>
+            </div>
+
+            <!-- Visual Composition (Hero vs 3 Bosses) -->
+            <div class="splash-battle-stage">
+                <!-- Left: Hero Side -->
+                <div class="splash-side splash-hero-side">
+                    <div class="splash-card splash-hero-card">
+                        <div class="splash-img-wrap">
+                            <img src="assets/ui/cutin_player.png" alt="Roblox Hero" class="splash-avatar-img">
+                        </div>
+                        <div class="splash-tag hero-tag">
+                            <span class="tag-icon">⚡</span>
+                            <span class="tag-title">CHIẾN BINH ROBLOX</span>
+                        </div>
+                        <div class="splash-elements-mini">
+                            <span class="elem-pill pill-thunder">Lôi</span>
+                            <span class="elem-pill pill-fire">Hỏa</span>
+                            <span class="elem-pill pill-frost">Băng</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Clash VS -->
+                <div class="splash-center-vs">
+                    <div class="splash-vs-badge">VS</div>
+                </div>
+
+                <!-- Right: 3 Elemental Bosses Side -->
+                <div class="splash-side splash-boss-side">
+                    <div class="splash-card splash-boss-card">
+                        <div class="splash-img-wrap">
+                            <img src="assets/ui/cutin_boss.png" alt="Elemental Bosses" class="splash-avatar-img">
+                        </div>
+                        <div class="splash-tag boss-tag">
+                            <span class="tag-icon">👹</span>
+                            <span class="tag-title">TAM ĐẠI MA THẦN</span>
+                        </div>
+                        <div class="splash-boss-trio-row">
+                            <div class="boss-mini-badge fire" title="Hỏa Ma Thần">🔥 Hỏa</div>
+                            <div class="boss-mini-badge thunder" title="Lôi Đế">⚡ Lôi</div>
+                            <div class="boss-mini-badge frost" title="Băng Quái">❄️ Băng</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tap to Start Prompt & Credits Footer -->
+            <div class="splash-bottom-wrap">
+                <div class="splash-tap-start">[ Nhấn vào màn hình hoặc click chuột để bắt đầu ]</div>
+                <div class="splash-credits">Design by: Tran Trieu Phong - Tran Bao Cuong</div>
+            </div>
+        </div>
     </div>
 
     <div id="ui-root">
@@ -263,6 +327,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=66.0"></script>
+    <script type="module" src="js/main.js?v=67.0"></script>
 </body>
 </html>

@@ -268,6 +268,16 @@ export function playSlash() {
   osc.start(t + 0.14); osc.stop(t + 0.33);
 }
 
+export function playIntroSwoosh() {
+  const ctx = _getCtx(); if (!ctx || _muted) return;
+  const t = _now();
+  _noise(t, 0.45, 0.35, 1400);
+  _osc('sine', 160, t, t + 0.35, 0.45, 0);
+  _osc('triangle', 330, t + 0.05, t + 0.42, 0.3, 0);
+  _osc('sine', 660, t + 0.12, t + 0.5, 0.25, 0);
+  _osc('sine', 990, t + 0.20, t + 0.6, 0.2, 0);
+}
+
 export function playThunder() {
   const t = _now();
   _noise(t, 0.08, 0.5, 8000);

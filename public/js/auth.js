@@ -248,6 +248,130 @@ function _onLoginSuccess(user) {
   window.dispatchEvent(new CustomEvent('auth:login', { detail: user }));
 }
 
+export async function changePassword(oldPassword, newPassword) {
+  if (!_currentUser?.username) return { success: false, error: 'Chưa đăng nhập.' };
+  return await _post('/api/auth/change-password', {
+    username: _currentUser.username,
+    oldPassword,
+    newPassword,
+  });
+}
+
+export function showChangePasswordModal() {
+  document.getElementById('change-password-modal')?.remove();
+
+  if (!_currentUser) {
+    alert('Vui lòng đăng nhập trước khi đổi mật khẩu.');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'change-password-modal';
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(5, 3, 20, 0.92);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Be Vietnam Pro', 'Nunito', sans-serif;
+    backdrop-filter: blur(8px);
+  `;
+
+  const box = document.createElement('div');
+  box.style.cssText = `
+    background: linear-gradient(160deg, #0d0a24, #1a0a2e);
+    border: 2px solid #ffcc00; border-radius: 14px;
+    padding: 28px 32px; width: 340px; max-width: 92vw;
+    display: flex; flex-direction: column; gap: 14px;
+    box-shadow: 0 0 50px rgba(255, 204, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.8);
+  `;
+
+  box.innerHTML = `
+    <div style="text-align: center;">
+      <div style="font-size: 26px;">🔑</div>
+      <div style="font-size: 16px; font-weight: 900; color: #ffcc00; letter-spacing: 0.5px;">Đổi Mật Khẩu</div>
+      <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">Tài khoản: <strong style="color:#fff;">${_currentUser.username}</strong></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <input type="password" id="cp-old-pass" placeholder="Mật khẩu hiện tại" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:7px;border:1.5px solid #333;background:#0a0820;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;outline:none;">
+      <input type="password" id="cp-new-pass" placeholder="Mật khẩu mới (tối thiểu 4 ký tự)" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:7px;border:1.5px solid #333;background:#0a0820;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;outline:none;">
+      <input type="password" id="cp-confirm-pass" placeholder="Xác nhận mật khẩu mới" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:7px;border:1.5px solid #333;background:#0a0820;color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-size:13px;outline:none;">
+    </div>
+    <div id="cp-status" style="font-size: 11px; color: #ef233c; text-align: center; min-height: 16px;"></div>
+    <div style="display: flex; gap: 8px;">
+      <button id="btn-cp-submit" style="flex: 1; padding: 10px; border-radius: 7px; border: none; cursor: pointer; font-family: 'Be Vietnam Pro', sans-serif; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #ffcc00, #ff6b35); color: #111;">Xác nhận đổi</button>
+      <button id="btn-cp-cancel" style="padding: 10px 16px; border-radius: 7px; border: 1.5px solid #444; cursor: pointer; font-family: 'Be Vietnam Pro', sans-serif; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.06); color: #aaa;">Hủy bỏ</button>
+    </div>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const oldInp = box.querySelector('#cp-old-pass');
+  const newInp = box.querySelector('#cp-new-pass');
+  const confInp = box.querySelector('#cp-confirm-pass');
+  const statusEl = box.querySelector('#cp-status');
+  const submitBtn = box.querySelector('#btn-cp-submit');
+  const cancelBtn = box.querySelector('#btn-cp-cancel');
+
+  setTimeout(() => oldInp?.focus(), 50);
+
+  const setStatus = (msg, color = '#ef233c') => {
+    statusEl.textContent = msg;
+    statusEl.style.color = color;
+  };
+
+  cancelBtn.onclick = () => overlay.remove();
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  submitBtn.onclick = async () => {
+    const oldP = oldInp.value;
+    const newP = newInp.value;
+    const confP = confInp.value;
+
+    if (!oldP || !newP || !confP) {
+      setStatus('Vui lòng điền đầy đủ tất cả các trường.');
+      return;
+    }
+    if (newP.length < 4) {
+      setStatus('Mật khẩu mới phải có ít nhất 4 ký tự.');
+      return;
+    }
+    if (newP !== confP) {
+      setStatus('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+    setStatus('Đang cập nhật mật khẩu...', '#94a3b8');
+
+    try {
+      const res = await changePassword(oldP, newP);
+      if (res.success || res.ok) {
+        setStatus('✓ Đổi mật khẩu thành công!', '#10b981');
+        setTimeout(() => {
+          overlay.remove();
+        }, 1200);
+      } else {
+        setStatus(res.error || 'Đổi mật khẩu thất bại.');
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+      }
+    } catch (e) {
+      setStatus('Lỗi kết nối máy chủ: ' + e.message);
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+    }
+  };
+
+  [oldInp, newInp, confInp].forEach(inp => {
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitBtn.click();
+    });
+  });
+}
+
 function _renderUserBadge(user) {
   // Remove old badge AND old standalone bar if present
   document.getElementById('user-badge')?.remove();
@@ -284,9 +408,14 @@ function _renderUserBadge(user) {
     <span style="font-size:14px;">${isAdmin ? '⚡' : '👤'}</span>
     <span style="color:${isAdmin ? '#ff6666' : '#ffcc00'};font-weight:700;">${user.username}</span>
     <span style="color:#666;font-size:9px;">${isAdmin ? 'ADMIN' : `${(user.unlockedSets||[]).length}/3 bộ`}</span>
+    <button id="btn-change-password" style="margin-left:4px;font-size:9px;padding:2px 7px;border:1px solid #ffcc00;background:rgba(255,204,0,0.1);color:#ffcc00;border-radius:10px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;">Đổi mật khẩu</button>
     <button id="btn-logout" style="margin-left:4px;font-size:9px;padding:2px 7px;border:1px solid #444;background:rgba(255,255,255,0.06);color:#aaa;border-radius:10px;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;">Đăng xuất</button>
   `;
   bar.appendChild(badge);
+
+  badge.querySelector('#btn-change-password').onclick = () => {
+    showChangePasswordModal();
+  };
 
   badge.querySelector('#btn-logout').onclick = () => {
     if (!confirm('Đăng xuất?')) return;
@@ -319,7 +448,10 @@ export function init() {
             _clearSession();
             document.getElementById('user-badge')?.remove();
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            showAuthModal();
+            const splash = document.getElementById('game-splash-screen');
+            if (!splash || splash.style.display === 'none') {
+              showAuthModal();
+            }
           } else {
             // Refresh user data from server (unlockedSets may have changed)
             _saveSession(data.user);

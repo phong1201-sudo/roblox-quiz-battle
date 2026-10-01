@@ -5,6 +5,7 @@ import * as hud    from './ui/hud.js';
 import * as results from './ui/results.js';
 import * as scene  from './game/scene.js';
 import * as Audio  from './audio.js';
+import { initSplashScreen } from './splash.js';
 
 // ─── Track whether Three.js scene has been initialised yet ───────────────────
 let sceneReady = false;
@@ -103,11 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     syncActiveQuestions();
 
-    // ── Auth gate — show login modal unless session is restored ───────────────
-    const alreadyLoggedIn = Auth.init();
-    if (!alreadyLoggedIn) {
-        Auth.showAuthModal();
-    }
+    // ── Auth session restore in background ────────────────────────────────────
+    Auth.init();
+
+    // ── Epic Splash Intro Screen (Roblox vs Monster) with Tap-to-Start ───────
+    initSplashScreen(() => {
+        const user = Auth.getCurrentUser();
+        if (!user) {
+            Auth.showAuthModal();
+        } else {
+            showScreen('menu');
+            try { Audio.playBGM('lobby'); } catch(e) {}
+        }
+    });
 
     // When the user logs in (including auto-restore), ensure menu is visible
     window.addEventListener('auth:login', (e) => {

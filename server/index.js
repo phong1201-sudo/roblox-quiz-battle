@@ -731,6 +731,21 @@ app.post('/api/auth/check', (req, res) => {
   res.json({ ok: true, user: result });
 });
 
+/** POST /api/auth/change-password  { username, oldPassword, newPassword } */
+const handleChangePassword = (req, res) => {
+  const { username, oldPassword, newPassword } = req.body || {};
+  if (!username || !oldPassword || !newPassword) {
+    return res.status(400).json({ success: false, error: 'Vui lòng điền đầy đủ thông tin.' });
+  }
+  const result = db.changePassword(username, oldPassword, newPassword);
+  if (!result.ok) {
+    return res.status(400).json({ success: false, error: result.error });
+  }
+  return res.json({ success: true, message: result.message });
+};
+app.post('/api/auth/change-password', handleChangePassword);
+app.post('/api/change-password', handleChangePassword); // alias
+
 /** POST /api/unlock-set  { userId, setId } → { ok, user } (full set, legacy) */
 app.post('/api/unlock-set', (req, res) => {
   const { userId, setId } = req.body || {};
