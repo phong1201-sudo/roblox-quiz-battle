@@ -162,9 +162,71 @@ export function leaveRoom(code) {
 }
 
 /**
+ * Player toggles ready state in room
+ */
+export function setReady(ready) {
+  if (!roomState.code) return;
+  const myId = socket.id || window.myId;
+  const localP = roomState.players.find(p => p.id === myId);
+  if (localP) localP.ready = Boolean(ready);
+
+  let equipped = { outfit: 'default', weapon: 'default' };
+  try {
+    const saved = JSON.parse(localStorage.getItem('player_equipped'));
+    if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+  } catch (e) {}
+
+  const savedOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || equipped.outfit;
+  equipped.outfit = savedOutfit;
+  equipped.weapon = savedOutfit;
+
+  const isFullSet = (equipped.outfit !== 'default');
+  const equippedSet = isFullSet ? equipped.outfit : null;
+
+  emit('set_ready', {
+    code: roomState.code,
+    ready: Boolean(ready),
+    equippedSet,
+    equipped,
+  });
+}
+
+/**
+ * Player syncs equipment in lobby
+ */
+export function updateEquipment(equipped) {
+  if (!roomState.code) return;
+  const isFullSet = (equipped?.outfit && equipped.outfit !== 'default');
+  const equippedSet = isFullSet ? equipped.outfit : null;
+  emit('update_equipment', {
+    code: roomState.code,
+    equippedSet,
+    equipped,
+  });
+}
+
+/**
+ * Cancel active countdown overlay
+ */
+export function cancelCountdown() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  const overlay = document.getElementById('match-countdown-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.style.opacity = '1';
+  }
+}
+
+/**
  * Host cancels hosting
  */
 export function cancelHosting() {
+  cancelCountdown();
   roomState.isHostingActive = false;
   roomState.code = null;
   roomState.players = [];
@@ -311,3 +373,34 @@ on('match_countdown', (data) => {
   roomState.players = data.players || roomState.players;
   triggerCountdownOverlay(data.seconds || 3, data);
 });
+
+on('player_ready_changed', (data) => {
+  roomState.players = data.players || roomState.players;
+  if (window.gameState) {
+    window.gameState.players = roomState.players;
+  }
+  if (typeof window.updateLobbyReadyUI === 'function') {
+    window.updateLobbyReadyUI(roomState.players);
+  }
+});
+
+on('match_countdown_cancelled', ({ reason } = {}) => {
+  cancelCountdown();
+  if (reason) {
+    console.log('[match_countdown_cancelled]', reason);
+    const toast = document.getElementById('admin-toast');
+    if (toast) toast.remove();
+    const t = document.createElement('div');
+    t.id = 'admin-toast';
+    t.style.cssText = `
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+      background:rgba(239,35,60,0.95);border:2px solid #fff;
+      color:#fff;font-family:'Press Start 2P',sans-serif;font-size:10px;
+      padding:10px 20px;border-radius:6px;z-index:99999;text-align:center;
+    `;
+    t.textContent = `⚠️ ${reason}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+});
+

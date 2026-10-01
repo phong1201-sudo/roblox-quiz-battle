@@ -1432,27 +1432,74 @@ io.on('connection', (socket) => {
       socket.to(cleanCode).emit('player_joined', { players });
       socket.emit('room_joined', { code: cleanCode, players, hostId, mode, stage });
 
-      // Once 2 players are present, server synchronizes match state and triggers countdown to battle
-      if (isFull) {
+      // Broadcast updated player list so both clients see each other
+      io.to(cleanCode).emit('player_joined', { players });
+    } catch (e) {
+      console.error('[join_room]', e.message);
+      socket.emit('error', { message: e.message });
+      socket.emit('join_error', { message: e.message });
+    }
+  });
+
+  /** Ready button toggle for players */
+  socket.on('set_ready', ({ code, ready, equippedSet, equipped }) => {
+    try {
+      const cleanCode = (code || '').trim().toUpperCase();
+      const result = roomManager.setPlayerReady(cleanCode, socket.id, ready, equippedSet, equipped);
+      const { allReady, players, room } = result;
+
+      // Broadcast ready status update to room
+      io.to(cleanCode).emit('player_ready_changed', {
+        playerId: socket.id,
+        ready: Boolean(ready),
+        players,
+      });
+
+      if (allReady) {
+        console.log(`[Ready] Both players ready in room ${cleanCode}. Starting countdown!`);
         io.to(cleanCode).emit('match_countdown', {
           seconds: 3,
           code: cleanCode,
-          mode,
-          stage,
+          mode: room.mode,
+          stage: room.stage,
           players,
         });
 
-        setTimeout(() => {
+        if (room.countdownTimer) clearTimeout(room.countdownTimer);
+        room.countdownTimer = setTimeout(() => {
           const r = roomManager.getRoom(cleanCode);
           if (r && r.phase === 'LOBBY') {
             startMatchForRoom(cleanCode);
           }
         }, 3200);
+      } else {
+        // If countdown was in progress and someone unreadied, cancel it!
+        if (room.countdownTimer) {
+          clearTimeout(room.countdownTimer);
+          room.countdownTimer = null;
+          console.log(`[Ready] Countdown cancelled in room ${cleanCode} because a player unreadied.`);
+          io.to(cleanCode).emit('match_countdown_cancelled', {
+            reason: 'Một người chơi đã hủy sẵn sàng để chọn lại đồ.'
+          });
+        }
       }
     } catch (e) {
-      console.error('[join_room]', e.message);
+      console.error('[set_ready]', e.message);
       socket.emit('error', { message: e.message });
-      socket.emit('join_error', { message: e.message });
+    }
+  });
+
+  /** Equipment change sync in lobby */
+  socket.on('update_equipment', ({ code, equippedSet, equipped }) => {
+    try {
+      const cleanCode = (code || '').trim().toUpperCase();
+      roomManager.updatePlayerEquipment(cleanCode, socket.id, equippedSet, equipped);
+      const room = roomManager.getRoom(cleanCode);
+      if (room) {
+        io.to(cleanCode).emit('player_joined', { players: roomManager.getPlayers(cleanCode) });
+      }
+    } catch (e) {
+      console.error('[update_equipment]', e.message);
     }
   });
 
@@ -1465,6 +1512,11 @@ io.on('connection', (socket) => {
       }
       if (room) {
         const rCode = room.code;
+        if (room.countdownTimer) {
+          clearTimeout(room.countdownTimer);
+          room.countdownTimer = null;
+          io.to(rCode).emit('match_countdown_cancelled', { reason: 'Một người chơi đã rời phòng.' });
+        }
         if (room.hostId === socket.id) {
           console.log(`[leave_room] Host canceled room ${rCode}`);
           io.to(rCode).emit('room_closed', { reason: 'Chủ phòng đã hủy phòng.' });
@@ -1524,6 +1576,12 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     try {
+      const room = roomManager.findRoomBySocket(socket.id);
+      if (room && room.countdownTimer) {
+        clearTimeout(room.countdownTimer);
+        room.countdownTimer = null;
+        io.to(room.code).emit('match_countdown_cancelled', { reason: 'Một người chơi đã mất kết nối.' });
+      }
       const result = roomManager.removePlayer(socket.id);
       if (result) {
         const { code, players, newHostId } = result;

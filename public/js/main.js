@@ -247,6 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.gameState) window.gameState.players = data.players;
         if (lobby.updatePlayers) lobby.updatePlayers(data.players);
     });
+    on('player_ready_changed', (data) => {
+        if (window.gameState) window.gameState.players = data.players;
+        if (lobby.updatePlayers) lobby.updatePlayers(data.players);
+    });
     on('player_left',   (data) => {
         if (window.gameState) window.gameState.players = data.players;
         if (lobby.updatePlayers) lobby.updatePlayers(data.players);

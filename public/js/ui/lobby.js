@@ -62,6 +62,10 @@ function _syncEquippedState() {
   window.gameState.equippedSet = isFullSet ? equipment.outfit : null;
   window.gameState.thunderSet  = (isFullSet && equipment.outfit === 'thunder');
   window.gameState.damagePerHit = isFullSet ? 2 : 1;
+
+  try {
+    Multiplayer.updateEquipment(window.gameState.equipped);
+  } catch(e) {}
 }
 
 function _isItemUnlocked(slot, itemId) {
@@ -954,25 +958,140 @@ function _buildStudentLobby(container, gameState) {
 
   wrap.appendChild(wardSection);
 
-  // ── 4. Start button (host only) ───────────────────────────────────────────
-  const startBtn = document.createElement('button');
-  startBtn.className = 'btn btn-success';
-  startBtn.style.cssText = 'width:100%;padding:12px;font-size:14px;font-weight:800;letter-spacing:1px;margin-top:4px;';
-  startBtn.textContent = '⚔️ Vào trận!';
-  startBtn.disabled = false;
-  startBtn.style.opacity = '1';
+  // ── 4. Ready & Battle Control Center (For BOTH Players) ──────────────────
+  const readySection = document.createElement('div');
+  readySection.id = 'lobby-ready-section';
+  readySection.style.cssText = 'background:rgba(15,23,42,0.85);border:2px solid #00cfff;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 20px rgba(0,207,255,0.2);margin-top:6px;';
 
+  const readyHead = document.createElement('div');
+  readyHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
+  readyHead.innerHTML = `
+    <span style="font-size:12px;font-weight:800;color:#ffcc00;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;letter-spacing:1px;">
+      ⚡ Trạng Thái Sẵn Sàng (Cả 2 cùng sẵn sàng mới bắt đầu)
+    </span>
+  `;
+  readySection.appendChild(readyHead);
+
+  // Status cards for 2 players
+  const statusRow = document.createElement('div');
+  statusRow.id = 'ready-status-row';
+  statusRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;';
+  readySection.appendChild(statusRow);
+
+  // Action button for local player
+  let isLocalReady = false;
+  const readyToggleBtn = document.createElement('button');
+  readyToggleBtn.id = 'btn-toggle-ready';
+  readyToggleBtn.className = 'btn';
+  readyToggleBtn.style.cssText = 'width:100%;padding:14px;font-size:13px;font-weight:800;letter-spacing:1px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:"Be Vietnam Pro",sans-serif;text-transform:uppercase;';
+
+  const updateReadyButtonVisual = () => {
+    if (!isLocalReady) {
+      readyToggleBtn.style.background = 'linear-gradient(135deg, #06d6a0, #059669)';
+      readyToggleBtn.style.color = '#ffffff';
+      readyToggleBtn.style.border = '2px solid #34d399';
+      readyToggleBtn.style.boxShadow = '0 0 16px rgba(6,214,160,0.5)';
+      readyToggleBtn.innerHTML = '⚡ TÔI ĐÃ SẴN SÀNG CHIẾN ĐẤU!';
+    } else {
+      readyToggleBtn.style.background = 'linear-gradient(135deg, #ea580c, #c2410c)';
+      readyToggleBtn.style.color = '#ffffff';
+      readyToggleBtn.style.border = '2px solid #fb923c';
+      readyToggleBtn.style.boxShadow = '0 0 16px rgba(234,88,12,0.5)';
+      readyToggleBtn.innerHTML = '⏳ ĐÃ SẴN SÀNG (Bấm để HỦY & Đổi đồ)';
+    }
+  };
+  updateReadyButtonVisual();
+
+  readyToggleBtn.onclick = () => {
+    isLocalReady = !isLocalReady;
+    updateReadyButtonVisual();
+    Multiplayer.setReady(isLocalReady);
+    _syncEquippedState();
+  };
+  readySection.appendChild(readyToggleBtn);
+
+  // Status cards renderer
+  const updateStatusCards = (playersList) => {
+    const pList = playersList || window.gameState?.players || [];
+    const myId = socket.id || window.myId;
+    statusRow.innerHTML = '';
+
+    for (let i = 0; i < 2; i++) {
+      const p = pList[i];
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;border:1.5px solid #334155;';
+
+      if (p) {
+        const isMe = (p.id === myId);
+        if (isMe && p.ready !== undefined) {
+          isLocalReady = Boolean(p.ready);
+          updateReadyButtonVisual();
+        }
+        const isReady = Boolean(p.ready);
+        const roleLabel = (p.id === (window.gameState?.hostId || gameState.hostId)) ? '👑 Chủ phòng' : '⚔️ Khách';
+        const outfitName = (p.equipped?.outfit || p.equippedSet || 'default').toUpperCase();
+
+        card.style.borderColor = isReady ? '#06d6a0' : '#f59e0b';
+        card.style.boxShadow = isReady ? '0 0 12px rgba(6,214,160,0.3)' : 'none';
+
+        card.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:800;color:${p.color || '#fff'};font-family:'Be Vietnam Pro',sans-serif;">
+              ${p.name} ${isMe ? '(Bạn)' : ''}
+            </span>
+            <span style="font-size:9px;color:#aaa;">${roleLabel}</span>
+          </div>
+          <div style="font-size:9px;color:#88ddff;font-family:'Be Vietnam Pro',sans-serif;">
+            Bộ đồ: <b>${outfitName}</b>
+          </div>
+          <div style="margin-top:4px;padding:5px 8px;border-radius:4px;text-align:center;font-size:10px;font-weight:800;font-family:'Be Vietnam Pro',sans-serif;background:${isReady ? 'rgba(6,214,160,0.15)' : 'rgba(245,158,11,0.15)'};color:${isReady ? '#06d6a0' : '#f59e0b'};border:1px solid ${isReady ? '#06d6a0' : '#f59e0b'};">
+            ${isReady ? '✅ ĐÃ SẴN SÀNG' : '⏳ ĐANG CHỌN ĐỒ...'}
+          </div>
+        `;
+      } else {
+        card.innerHTML = `
+          <div style="font-size:11px;font-weight:700;color:#64748b;font-family:'Be Vietnam Pro',sans-serif;">
+            Người chơi 2
+          </div>
+          <div style="font-size:9px;color:#475569;margin-top:4px;">
+            Chờ đối thủ nhập mã phòng...
+          </div>
+          <div style="margin-top:6px;padding:5px 8px;border-radius:4px;text-align:center;font-size:9px;color:#64748b;border:1px dashed #334155;">
+            ⏳ ĐANG ĐỢI...
+          </div>
+        `;
+      }
+      statusRow.appendChild(card);
+    }
+  };
+
+  updateStatusCards(window.gameState?.players);
+  window.updateLobbyReadyUI = updateStatusCards;
+
+  // Optional manual start button for host
   if (gameState.isHost) {
-    startBtn.addEventListener('click', () => {
+    const hostForceStartBtn = document.createElement('button');
+    hostForceStartBtn.className = 'btn';
+    hostForceStartBtn.style.cssText = 'width:100%;padding:8px;font-size:10px;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(255,255,255,0.06);border:1px solid #475569;color:#94a3b8;font-family:"Be Vietnam Pro",sans-serif;';
+    hostForceStartBtn.textContent = '⚔️ Bắt đầu trận ngay (Chủ phòng)';
+    hostForceStartBtn.onclick = () => {
+      const currentPlayers = window.gameState?.players || [];
+      const allReady = (currentPlayers.length >= 2) && currentPlayers.every(p => p.ready);
+      if (!allReady && currentPlayers.length >= 2) {
+        alert('Cần cả 2 người chơi cùng nhấn "Sẵn sàng" mới có thể bắt đầu chiến đấu!');
+        return;
+      }
       const activeElement = curStage || selectedBoss || 'thunder';
       socket.emit('start_game', {
-        code:       gameState.code,
-        element:    activeElement,
+        code: gameState.code,
+        element: activeElement,
         difficulty: selectedDiff || 'hard',
       });
-    });
-    wrap.appendChild(startBtn);
+    };
+    readySection.appendChild(hostForceStartBtn);
   }
+
+  wrap.appendChild(readySection);
 
   container.appendChild(wrap);
 }
@@ -1412,27 +1531,38 @@ function _buildAdminDashboard(container, gameState) {
 
 export function updatePlayers(players) {
   if (currentState) currentState.players = players;
+  if (window.gameState) window.gameState.players = players;
   const playerList = document.getElementById('player-list');
-  if (!playerList) return;
+  if (playerList) {
+    playerList.innerHTML = '';
+    players.forEach(p => {
+      const li = document.createElement('li');
+      li.style.cssText = 'display:flex;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);';
+      const colorBox = document.createElement('div');
+      colorBox.style.cssText = `width:18px;height:18px;background:${p.color};display:inline-block;margin-right:8px;border-radius:3px;flex-shrink:0;`;
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = p.name;
+      nameSpan.style.fontFamily = "'Be Vietnam Pro', sans-serif";
+      nameSpan.style.fontSize   = '13px';
+      nameSpan.style.color      = '#f8fafc';
+      li.appendChild(colorBox); li.appendChild(nameSpan);
+      if (currentState && p.id === currentState.hostId) {
+        const badge = document.createElement('span');
+        badge.textContent = ' (HOST)';
+        badge.style.cssText = 'color:gold;margin-left:6px;font-weight:800;font-size:11px;';
+        li.appendChild(badge);
+      }
+      const readyBadge = document.createElement('span');
+      readyBadge.style.cssText = `margin-left:auto;font-size:9px;font-weight:800;padding:2px 8px;border-radius:4px;background:${p.ready ? 'rgba(6,214,160,0.15)' : 'rgba(245,158,11,0.15)'};color:${p.ready ? '#06d6a0' : '#f59e0b'};border:1px solid ${p.ready ? '#06d6a0' : '#f59e0b'};`;
+      readyBadge.textContent = p.ready ? '✓ Đã sẵn sàng' : '⏳ Đang chọn đồ';
+      li.appendChild(readyBadge);
+      playerList.appendChild(li);
+    });
+  }
 
-  playerList.innerHTML = '';
-  players.forEach(p => {
-    const li = document.createElement('li');
-    const colorBox = document.createElement('div');
-    colorBox.style.cssText = `width:18px;height:18px;background:${p.color};display:inline-block;margin-right:8px;border-radius:3px;flex-shrink:0;`;
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = p.name;
-    nameSpan.style.fontFamily = "'Be Vietnam Pro', sans-serif";
-    nameSpan.style.fontSize   = '14px';
-    li.appendChild(colorBox); li.appendChild(nameSpan);
-    if (currentState && p.id === currentState.hostId) {
-      const badge = document.createElement('span');
-      badge.textContent = ' (HOST)';
-      badge.style.cssText = 'color:gold;margin-left:8px;font-weight:800;font-size:12px;';
-      li.appendChild(badge);
-    }
-    playerList.appendChild(li);
-  });
+  if (typeof window.updateLobbyReadyUI === 'function') {
+    window.updateLobbyReadyUI(players);
+  }
 }
 
 export function getSelectedPreset() { return null; }

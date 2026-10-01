@@ -678,6 +678,11 @@ export function executeCombatTurn(ev, onDone) {
       // Dodge / Miss in PvP
       const target = getFighterInstance(ev.targetId);
       if (target && target.playDodge) {
+        const tPos = target.group ? target.group.position : (target.homePos || new THREE.Vector3(0, 0, 0));
+        const textPos = new THREE.Vector3(tPos.x, tPos.y + 2.0, tPos.z);
+        Effects.spawnDamageNumber(textPos, `NÉ ĐÒN!`, '#06d6a0', 36);
+        VFX.showCombatFloatingBanner(`DODGE!`, '#06d6a0');
+        try { Audio.playBlip?.(); } catch (e) {}
         target.playDodge({ onDone: doneWrapper });
       } else {
         doneWrapper();
@@ -746,6 +751,31 @@ export function executeCombatTurn(ev, onDone) {
         }
       });
       return;
+    } else if (ev.type === 'dodge') {
+      const victim = getFighterInstance(ev.targetId || ev.victimId);
+      const bElem = ev.element || ev.bossElement || Boss.getBossElement() || 'thunder';
+      triggerCinematicShot();
+
+      Boss.setBossPose('angry');
+      setTimeout(() => {
+        Boss.setBossPose('attack');
+        Boss.playBossAttack(bElem, () => {
+          Effects.triggerShake(0.2, 0.15);
+          const vPos = victim ? victim.group.position : new THREE.Vector3(-4.5, 0, 0);
+          const textPos = new THREE.Vector3(vPos.x, vPos.y + 2.0, vPos.z);
+          Effects.spawnDamageNumber(textPos, `NÉ ĐÒN!`, '#06d6a0', 36);
+          VFX.showCombatFloatingBanner(`DODGE! NÉ ĐÒN THÀNH CÔNG!`, '#06d6a0');
+          try { Audio.playBlip?.(); } catch (e) {}
+
+          victim?.playDodge?.({ onDone: () => {} });
+
+          setTimeout(() => {
+            Boss.setBossPose('idle');
+            resetCameraToDefault(300, doneWrapper);
+          }, 450);
+        }, () => {});
+      }, 400);
+      return;
     } else if (ev.attackerId === 'boss' || ev.victimId) {
       const victim = getFighterInstance(ev.victimId || ev.targetId);
       const bElem = ev.element || ev.bossElement || Boss.getBossElement() || 'thunder';
@@ -759,7 +789,7 @@ export function executeCombatTurn(ev, onDone) {
           Effects.triggerShake(0.45, 0.35);
           Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
 
-          const incomingDmg = ev.damage || (ev.hasElemental ? 1 : 2);
+          const incomingDmg = (ev.damage !== undefined) ? ev.damage : (ev.hasElemental ? 1 : 2);
           const dmgLabel = `-${incomingDmg} HP`;
           const vPos = victim ? victim.group.position : new THREE.Vector3(-4.5, 0, 0);
           const textPos = new THREE.Vector3(vPos.x, vPos.y + 2.0, vPos.z);
