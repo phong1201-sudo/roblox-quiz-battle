@@ -913,68 +913,293 @@ export function spawnBossFireWave(startPos, targetPos, onImpact) {
   }
 }
 
-export function spawnBossLightningBeam(startPos, targetPos, duration = 1600, onImpact) {
+export function spawnBossLightningBeam(startPos, targetPos, duration = 480, onImpact) {
+  if (typeof duration === 'function') {
+    onImpact = duration;
+    duration = 480;
+  }
   if (!sceneRef) { if (onImpact) onImpact(); return; }
-  const steps = 12;
 
-  const buildBeamPoints = () => {
-    const pts = [];
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const x = startPos.x + (targetPos.x - startPos.x) * t;
-      const y = startPos.y + (targetPos.y - startPos.y) * t + ((i > 0 && i < steps) ? (Math.random() - 0.5) * 0.9 : 0);
-      const z = startPos.z + (targetPos.z - startPos.z) * t + ((i > 0 && i < steps) ? (Math.random() - 0.5) * 0.6 : 0);
-      pts.push(x, y, z);
-    }
-    return new Float32Array(pts);
+  const sPos = startPos ? startPos.clone() : new THREE.Vector3(4.3, 3.8, 0);
+  const tPos = targetPos ? targetPos.clone() : new THREE.Vector3(-4.5, 1.2, 0);
+
+  // Group to hold all active bolt meshes & lights
+  const beamGroup = new THREE.Group();
+  sceneRef.add(beamGroup);
+
+  const activeMeshes = [];
+  const activeGeometries = [];
+  const activeMaterials = [];
+  const activeLights = [];
+
+  // Core white material
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+  });
+  activeMaterials.push(coreMat);
+
+  // Outer glowing neon cyan bloom material (radius 0.28 - 0.35)
+  const outerMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x38bdf8,
+    emissiveIntensity: 3.0,
+    roughness: 0.1,
+    metalness: 0.1,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  activeMaterials.push(outerMat);
+
+  // Secondary arc material (cyan/electric blue)
+  const secondaryMat = new THREE.MeshBasicMaterial({
+    color: 0x7dd3fc,
+    transparent: true,
+    opacity: 0.75,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  activeMaterials.push(secondaryMat);
+
+  // 1. Pulsing point lights along the bolt path
+  const lightCount = 3;
+  for (let l = 0; l < lightCount; l++) {
+    const lt = (l + 1) / (lightCount + 1);
+    const pLight = new THREE.PointLight(0x38bdf8, 5.0, 15);
+    pLight.position.set(
+      sPos.x + (tPos.x - sPos.x) * lt,
+      sPos.y + (tPos.y - sPos.y) * lt + 0.3,
+      sPos.z + (tPos.z - sPos.z) * lt
+    );
+    beamGroup.add(pLight);
+    activeLights.push(pLight);
+  }
+
+  // Helper to build a cylinder between two 3D points
+  const addCylinderSegment = (p1, p2, radius, mat, targetGroup = beamGroup) => {
+    const dist = p1.distanceTo(p2);
+    if (dist < 0.01) return null;
+    const geo = new THREE.CylinderGeometry(radius, radius, dist, 6, 1, false);
+    activeGeometries.push(geo);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set((p1.x + p2.x) * 0.5, (p1.y + p2.y) * 0.5, (p1.z + p2.z) * 0.5);
+    const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    targetGroup.add(mesh);
+    activeMeshes.push(mesh);
+    return mesh;
   };
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(buildBeamPoints(), 3));
-  const mat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 3 });
-  const line = new THREE.Line(geo, mat);
-  sceneRef.add(line);
-
-  let elapsed = 0;
-  let impactFired = false;
-  const interval = setInterval(() => {
-    elapsed += 30;
-    if (elapsed >= 90 && !impactFired) {
-      impactFired = true;
-      if (onImpact) onImpact();
+  // Helper to generate a multi-segment zigzag bolt from A to B
+  const generateZigzagBolt = (fromPos, toPos, segments, spreadY, spreadZ, outerR, innerR, targetGroup) => {
+    const pts = [fromPos.clone()];
+    for (let i = 1; i < segments; i++) {
+      const frac = i / segments;
+      const base = new THREE.Vector3().lerpVectors(fromPos, toPos, frac);
+      const jy = (Math.random() - 0.5) * spreadY;
+      const jz = (Math.random() - 0.5) * spreadZ;
+      const jx = (Math.random() - 0.5) * 0.35;
+      pts.push(new THREE.Vector3(base.x + jx, base.y + jy, base.z + jz));
     }
-    geo.setAttribute('position', new THREE.BufferAttribute(buildBeamPoints(), 3));
-    geo.attributes.position.needsUpdate = true;
+    pts.push(toPos.clone());
 
-    // Sparks at target
-    if (Math.random() < 0.6) {
-      const spk = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.18, 0.18),
-        new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x00ffff : 0xffff00 })
+    for (let i = 0; i < pts.length - 1; i++) {
+      const pA = pts[i];
+      const pB = pts[i + 1];
+      // Outer neon cyan sleeve (radius ~ 0.28 - 0.35)
+      addCylinderSegment(pA, pB, outerR, outerMat, targetGroup);
+      // Inner blinding white core (radius ~ 0.14 - 0.18)
+      addCylinderSegment(pA, pB, innerR, coreMat, targetGroup);
+    }
+    return pts;
+  };
+
+  // Sub-container for dynamic crackling meshes so we can refresh them
+  let crackleGroup = new THREE.Group();
+  beamGroup.add(crackleGroup);
+
+  const rebuildBarrage = () => {
+    // Clear previous crackle meshes
+    while (crackleGroup.children.length > 0) {
+      const child = crackleGroup.children[0];
+      crackleGroup.remove(child);
+      if (child.geometry) child.geometry.dispose();
+    }
+
+    // Flicker point lights along bolt path
+    for (const pLight of activeLights) {
+      pLight.intensity = 3.5 + Math.random() * 4.0;
+    }
+
+    // Discharge a cluster of 4 to 6 violent, zigzagging main bolts
+    const boltConfigs = [
+      { offsetStart: new THREE.Vector3(0, 0, 0), offsetEnd: new THREE.Vector3(0, 0, 0), spreadY: 1.4, spreadZ: 0.9, outerR: 0.32, innerR: 0.17 },
+      { offsetStart: new THREE.Vector3(0, 0.4, 0.3), offsetEnd: new THREE.Vector3(0, 0.2, 0.2), spreadY: 1.8, spreadZ: 1.2, outerR: 0.28, innerR: 0.15 },
+      { offsetStart: new THREE.Vector3(0, -0.4, -0.3), offsetEnd: new THREE.Vector3(0, -0.2, -0.2), spreadY: 1.6, spreadZ: 1.1, outerR: 0.28, innerR: 0.15 },
+      { offsetStart: new THREE.Vector3(0.2, 0.6, -0.4), offsetEnd: new THREE.Vector3(0, 0.3, 0.4), spreadY: 2.0, spreadZ: 1.5, outerR: 0.26, innerR: 0.14 },
+      { offsetStart: new THREE.Vector3(-0.2, -0.5, 0.4), offsetEnd: new THREE.Vector3(0, -0.3, -0.3), spreadY: 1.9, spreadZ: 1.4, outerR: 0.26, innerR: 0.14 },
+    ];
+
+    const mainPtsList = [];
+    for (const cfg of boltConfigs) {
+      const pFrom = sPos.clone().add(cfg.offsetStart);
+      const pTo = tPos.clone().add(cfg.offsetEnd);
+      const pts = generateZigzagBolt(pFrom, pTo, 9, cfg.spreadY, cfg.spreadZ, cfg.outerR, cfg.innerR, crackleGroup);
+      mainPtsList.push(pts);
+    }
+
+    // Chaotic secondary crackling arcs branching off
+    for (let b = 0; b < 6; b++) {
+      const randomMain = mainPtsList[Math.floor(Math.random() * mainPtsList.length)];
+      if (!randomMain || randomMain.length < 4) continue;
+      const forkIdx = 2 + Math.floor(Math.random() * (randomMain.length - 4));
+      const forkOrigin = randomMain[forkIdx].clone();
+      const branchDir = new THREE.Vector3(
+        (Math.random() - 0.5) * 2.5 - 1.0,
+        (Math.random() - 0.5) * 2.8,
+        (Math.random() - 0.5) * 2.5
       );
-      spk.position.copy(targetPos);
+      const forkMid = forkOrigin.clone().add(branchDir);
+      const forkEnd = forkMid.clone().add(new THREE.Vector3(
+        (Math.random() - 0.5) * 1.5,
+        (Math.random() - 0.5) * 1.8,
+        (Math.random() - 0.5) * 1.5
+      ));
+
+      addCylinderSegment(forkOrigin, forkMid, 0.14, secondaryMat, crackleGroup);
+      addCylinderSegment(forkMid, forkEnd, 0.09, secondaryMat, crackleGroup);
+    }
+
+    // Sparks at target during attack
+    if (Math.random() < 0.75) {
+      const spk = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.24, 0.24),
+        new THREE.MeshBasicMaterial({ color: Math.random() > 0.4 ? 0x00f0ff : 0xffffff })
+      );
+      spk.position.set(
+        tPos.x + (Math.random() - 0.5) * 0.8,
+        tPos.y + (Math.random() - 0.5) * 1.0,
+        tPos.z + (Math.random() - 0.5) * 0.8
+      );
       sceneRef.add(spk);
       particles.push({
         mesh: spk,
-        velocity: new THREE.Vector3((Math.random() - 0.5) * 6, (Math.random() - 0.2) * 5, (Math.random() - 0.5) * 3),
-        life: 0.3,
-        maxLife: 0.3,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 7, 2 + Math.random() * 5, (Math.random() - 0.5) * 5),
+        life: 0.35,
+        maxLife: 0.35,
       });
     }
+  };
+
+  // Initial build
+  rebuildBarrage();
+
+  // Charred scorch mark on floor helper
+  const spawnScorchMark = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+
+      const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 60);
+      grad.addColorStop(0.0, 'rgba(10, 10, 15, 0.95)');
+      grad.addColorStop(0.4, 'rgba(25, 20, 30, 0.85)');
+      grad.addColorStop(0.8, 'rgba(40, 35, 45, 0.45)');
+      grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(64, 64, 60, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Jagged radial charred fractures
+      ctx.strokeStyle = 'rgba(10, 10, 15, 0.9)';
+      ctx.lineWidth = 3;
+      for (let a = 0; a < 14; a++) {
+        const ang = (a / 14) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+        const len = 35 + Math.random() * 25;
+        ctx.beginPath();
+        ctx.moveTo(64, 64);
+        ctx.lineTo(64 + Math.cos(ang) * len, 64 + Math.sin(ang) * len);
+        ctx.stroke();
+      }
+
+      const scorchTex = new THREE.CanvasTexture(canvas);
+      const scorchGeo = new THREE.PlaneGeometry(3.0, 3.0);
+      scorchGeo.rotateX(-Math.PI / 2);
+      const scorchMat = new THREE.MeshBasicMaterial({
+        map: scorchTex,
+        transparent: true,
+        opacity: 0.88,
+        depthWrite: false,
+      });
+      const scorchMesh = new THREE.Mesh(scorchGeo, scorchMat);
+      scorchMesh.position.set(tPos.x, 0.035, tPos.z);
+      sceneRef.add(scorchMesh);
+
+      // Linger for 3.5s then fade out
+      setTimeout(() => {
+        let fadeT = 0;
+        const fadeInt = setInterval(() => {
+          fadeT += 0.05;
+          if (scorchMesh && scorchMat) {
+            scorchMat.opacity = Math.max(0, 0.88 * (1.0 - fadeT));
+          }
+          if (fadeT >= 1.0) {
+            clearInterval(fadeInt);
+            if (sceneRef) sceneRef.remove(scorchMesh);
+            scorchGeo.dispose();
+            scorchMat.dispose();
+            scorchTex.dispose();
+          }
+        }, 50);
+      }, 2500);
+    } catch (e) {
+      console.warn('[spawnScorchMark] err', e);
+    }
+  };
+
+  let elapsed = 0;
+  let impactFired = false;
+  const tickInterval = 40;
+  const interval = setInterval(() => {
+    elapsed += tickInterval;
+
+    if (elapsed >= 80 && !impactFired) {
+      impactFired = true;
+      if (onImpact) onImpact();
+      triggerShake(0.55, 0.4);
+      screenFlash('rgba(56, 189, 248, 0.45)', 0.25);
+      try { (Audio.playHeavyThunder || Audio.playThunder)?.(); } catch (e) {}
+      spawnScorchMark();
+    }
+
+    rebuildBarrage();
 
     if (elapsed >= duration) {
       clearInterval(interval);
-      if (sceneRef) sceneRef.remove(line);
-      geo.dispose();
-      mat.dispose();
+      if (sceneRef) sceneRef.remove(beamGroup);
+      while (crackleGroup.children.length > 0) {
+        const c = crackleGroup.children[0];
+        crackleGroup.remove(c);
+        if (c.geometry) c.geometry.dispose();
+      }
+      activeGeometries.forEach(g => g.dispose());
+      activeMaterials.forEach(m => m.dispose());
+      activeLights.forEach(l => l.dispose?.());
     }
-  }, 30);
+  }, tickInterval);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ❄️ FROST BOSS: ICE SPIKE GROUND WAVE
 // ─────────────────────────────────────────────────────────────────────────────
 export function spawnBossFrostSpikeWave(startPos, targetPos, duration = 480, onImpact) {
+  if (typeof duration === 'function') {
+    onImpact = duration;
+    duration = 480;
+  }
   if (!sceneRef) { if (onImpact) onImpact(); return; }
 
   const sPos = startPos || new THREE.Vector3(4.3, 0.05, 0);
@@ -1096,6 +1321,10 @@ export const spawnBossFrostTrailAndSpikes = spawnBossFrostSpikeWave;
 // 🔥 FIRE BOSS: MOLTEN FLAME GROUND WAVE
 // ─────────────────────────────────────────────────────────────────────────────
 export function spawnBossMoltenFlameWave(startPos, targetPos, duration = 480, onImpact) {
+  if (typeof duration === 'function') {
+    onImpact = duration;
+    duration = 480;
+  }
   if (!sceneRef) { if (onImpact) onImpact(); return; }
 
   const sPos = startPos || new THREE.Vector3(4.3, 0.05, 0);
@@ -1105,7 +1334,104 @@ export function spawnBossMoltenFlameWave(startPos, targetPos, duration = 480, on
   const dz = (tPos.z - sPos.z) / segments;
   const stepDelay = duration / segments;
   const allMeshes = [];
+  const allGeos = [];
+  const allMats = [];
+  const allTextures = [];
+  const allLights = [];
   let impactFired = false;
+
+  // 1. Procedural Billboard Flame Texture (billowing fire tongues)
+  const flameCanvas = document.createElement('canvas');
+  flameCanvas.width = 128;
+  flameCanvas.height = 256;
+  const flameCtx = flameCanvas.getContext('2d');
+  const flameGrad = flameCtx.createLinearGradient(0, 256, 0, 0);
+  flameGrad.addColorStop(0.0, 'rgba(255, 255, 220, 0.98)'); // Core white-hot
+  flameGrad.addColorStop(0.18, 'rgba(255, 190, 40, 0.95)'); // Yellow
+  flameGrad.addColorStop(0.45, 'rgba(255, 80, 0, 0.88)');  // Intense fire orange
+  flameGrad.addColorStop(0.72, 'rgba(210, 20, 0, 0.65)');  // Deep crimson
+  flameGrad.addColorStop(0.92, 'rgba(120, 0, 0, 0.25)');   // Dissipating tip
+  flameGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');       // Top transparent
+  flameCtx.fillStyle = flameGrad;
+  flameCtx.fillRect(0, 0, 128, 256);
+
+  flameCtx.fillStyle = 'rgba(255, 255, 180, 0.9)';
+  for (let i = 0; i < 18; i++) {
+    const fx = 20 + Math.random() * 88;
+    const fw = 8 + Math.random() * 16;
+    const fh = 120 + Math.random() * 110;
+    flameCtx.beginPath();
+    flameCtx.moveTo(fx - fw / 2, 256);
+    flameCtx.quadraticCurveTo(fx + (Math.random() - 0.5) * 30, 256 - fh * 0.55, fx, 256 - fh);
+    flameCtx.quadraticCurveTo(fx + (Math.random() - 0.5) * 30, 256 - fh * 0.55, fx + fw / 2, 256);
+    flameCtx.fill();
+  }
+  const flameTex = new THREE.CanvasTexture(flameCanvas);
+  allTextures.push(flameTex);
+
+  // 2. Procedural Lava Fissure Texture for the arena floor
+  const fissureCanvas = document.createElement('canvas');
+  fissureCanvas.width = 256;
+  fissureCanvas.height = 128;
+  const fisCtx = fissureCanvas.getContext('2d');
+  fisCtx.fillStyle = 'rgba(25, 6, 2, 0.92)';
+  fisCtx.fillRect(0, 0, 256, 128);
+
+  // Molten glowing crack
+  fisCtx.strokeStyle = 'rgba(255, 60, 0, 0.9)';
+  fisCtx.lineWidth = 14;
+  fisCtx.shadowColor = '#ff4400';
+  fisCtx.shadowBlur = 16;
+  fisCtx.beginPath();
+  let fcy = 64;
+  fisCtx.moveTo(0, fcy);
+  for (let fx = 15; fx <= 256; fx += 20) {
+    fcy = 64 + Math.sin(fx * 0.08) * 16 + (Math.random() - 0.5) * 10;
+    fisCtx.lineTo(fx, fcy);
+  }
+  fisCtx.stroke();
+
+  // White-hot molten core
+  fisCtx.strokeStyle = 'rgba(255, 235, 100, 0.98)';
+  fisCtx.lineWidth = 4;
+  fisCtx.shadowColor = '#ffee66';
+  fisCtx.shadowBlur = 8;
+  fisCtx.stroke();
+
+  const fissureTex = new THREE.CanvasTexture(fissureCanvas);
+  allTextures.push(fissureTex);
+
+  // Shared Materials
+  const flameQuadMat = new THREE.MeshBasicMaterial({
+    map: flameTex,
+    color: 0xff4500,
+    transparent: true,
+    opacity: 0.92,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  allMats.push(flameQuadMat);
+
+  const flameCoreMat = new THREE.MeshBasicMaterial({
+    map: flameTex,
+    color: 0xffd700,
+    transparent: true,
+    opacity: 0.98,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  allMats.push(flameCoreMat);
+
+  const fissureMat = new THREE.MeshBasicMaterial({
+    map: fissureTex,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  allMats.push(fissureMat);
 
   for (let i = 0; i <= segments; i++) {
     const delay = i * stepDelay;
@@ -1115,75 +1441,114 @@ export function spawnBossMoltenFlameWave(startPos, targetPos, duration = 480, on
       const z = sPos.z + dz * i + (Math.random() - 0.5) * 0.35;
       const progress = i / segments;
 
-      // 1. Undulating carpet of ground fire and molten fissure
-      const carpetGeo = new THREE.PlaneGeometry(Math.abs(dx) * 1.4, 1.0 + progress * 0.6);
-      carpetGeo.rotateX(-Math.PI / 2);
-      const carpetMat = new THREE.MeshBasicMaterial({
-        color: 0xff3b00,
-        transparent: true,
-        opacity: 0.88,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false,
+      // 1. Intense floor lava fissure: emissive molten red-orange crack
+      const fissGeo = new THREE.PlaneGeometry(Math.abs(dx) * 1.5, 1.4 + progress * 0.6);
+      fissGeo.rotateX(-Math.PI / 2);
+      allGeos.push(fissGeo);
+      const fissMesh = new THREE.Mesh(fissGeo, fissureMat);
+      fissMesh.position.set(x, 0.038, z);
+      sceneRef.add(fissMesh);
+      allMeshes.push(fissMesh);
+
+      // 2. Fluid, roaring flame geyser (Layered vertical flame billboards/quads)
+      const geyserGroup = new THREE.Group();
+      geyserGroup.position.set(x, 0.0, z);
+
+      const baseH = 2.6 + Math.random() * 1.2 + (progress > 0.8 ? 1.0 : 0);
+      const baseW = 1.4 + Math.random() * 0.5;
+
+      // 3 crossed vertical flame quads at 0, 60, and 120 degrees
+      const angles = [0, Math.PI / 3, (Math.PI * 2) / 3];
+      angles.forEach((angle) => {
+        const qGeo = new THREE.PlaneGeometry(baseW, baseH);
+        qGeo.translate(0, baseH / 2, 0);
+        allGeos.push(qGeo);
+        const qMesh = new THREE.Mesh(qGeo, flameQuadMat);
+        qMesh.rotation.y = angle + (Math.random() - 0.5) * 0.2;
+        geyserGroup.add(qMesh);
       });
-      const carpet = new THREE.Mesh(carpetGeo, carpetMat);
-      carpet.position.set(x, 0.04, z);
-      sceneRef.add(carpet);
-      allMeshes.push(carpet);
 
-      // 2. Jagged vertical flame plane / lava geyser bursting upward
-      const geyserH = 1.8 + Math.random() * 0.9 + (progress > 0.8 ? 0.9 : 0);
-      const geyserR = 0.32 + Math.random() * 0.12;
-      const geyserGeo = new THREE.ConeGeometry(geyserR, geyserH, 4);
-      geyserGeo.translate(0, geyserH / 2, 0);
-      const geyserMat = new THREE.MeshBasicMaterial({
-        color: (i % 2 === 0) ? 0xff3b00 : 0xff7700,
-        transparent: true,
-        opacity: 0.9,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const geyser = new THREE.Mesh(geyserGeo, geyserMat);
-      geyser.position.set(x, -0.6, z);
-      geyser.rotation.y = Math.random() * Math.PI;
-      geyser.rotation.z = (Math.random() - 0.5) * 0.2;
-      sceneRef.add(geyser);
-      allMeshes.push(geyser);
+      // 4th inner core quad (golden yellow)
+      const coreGeo = new THREE.PlaneGeometry(baseW * 0.7, baseH * 0.8);
+      coreGeo.translate(0, (baseH * 0.8) / 2, 0);
+      allGeos.push(coreGeo);
+      const coreMesh = new THREE.Mesh(coreGeo, flameCoreMat);
+      coreMesh.rotation.y = Math.PI / 4;
+      geyserGroup.add(coreMesh);
 
-      // Inner glowing core
-      const coreGeo = new THREE.ConeGeometry(geyserR * 0.6, geyserH * 0.8, 4);
-      coreGeo.translate(0, (geyserH * 0.8) / 2, 0);
-      const coreMat = new THREE.MeshBasicMaterial({
-        color: 0xffd700,
-        transparent: true,
-        opacity: 0.95,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const core = new THREE.Mesh(coreGeo, coreMat);
-      geyser.add(core);
+      // Initial compact scale
+      geyserGroup.scale.set(0.3, 0.08, 0.3);
+      sceneRef.add(geyserGroup);
+      allMeshes.push(geyserGroup);
 
-      // Rapid geyser eruption
-      let eruptT = 0;
-      const eruptInt = setInterval(() => {
-        eruptT += 0.25;
-        geyser.position.y = THREE.MathUtils.lerp(-0.6, 0.0, Math.min(1.0, eruptT));
-        if (eruptT >= 1.0) clearInterval(eruptInt);
-      }, 16);
+      // Point light on eruption
+      const pLight = new THREE.PointLight(0xff4500, 3.5, 7);
+      pLight.position.set(x, 1.2, z);
+      sceneRef.add(pLight);
+      allLights.push(pLight);
 
-      // 3. Erupting embers & sparks
-      for (let p = 0; p < 3; p++) {
+      // Turbulent upward scaling and fluid vortex rotation
+      let eruptTime = 0;
+      const maxEruptTime = 0.55;
+      const eruptInterval = setInterval(() => {
+        eruptTime += 0.032;
+        const p = Math.min(1.0, eruptTime / 0.18); // Rapid rise in 180ms
+        const scaleY = THREE.MathUtils.lerp(0.08, 1.15, p) + Math.sin(eruptTime * 25) * 0.08;
+        const scaleXZ = THREE.MathUtils.lerp(0.3, 1.0, p);
+        geyserGroup.scale.set(scaleXZ, scaleY, scaleXZ);
+        geyserGroup.rotation.y += 0.09; // Fluid vortex spin
+
+        if (eruptTime >= maxEruptTime) {
+          clearInterval(eruptInterval);
+        }
+      }, 32);
+
+      // 3. Swarms of rising embers, turbulent dark smoke plumes, and fiery sparks swirling upward
+      // Rising embers
+      for (let p = 0; p < 4; p++) {
         const ember = new THREE.Mesh(
-          new THREE.BoxGeometry(0.2, 0.2, 0.2),
-          new THREE.MeshBasicMaterial({ color: Math.random() > 0.4 ? 0xffaa00 : 0xff3300, transparent: true, opacity: 0.9 })
+          new THREE.BoxGeometry(0.18, 0.18, 0.18),
+          new THREE.MeshBasicMaterial({ color: Math.random() > 0.4 ? 0xffaa00 : 0xff3b00, transparent: true, opacity: 0.9 })
         );
-        ember.position.set(x + (Math.random() - 0.5) * 0.4, 0.2, z + (Math.random() - 0.5) * 0.4);
+        ember.position.set(x + (Math.random() - 0.5) * 0.5, 0.2, z + (Math.random() - 0.5) * 0.5);
         sceneRef.add(ember);
         particles.push({
           mesh: ember,
-          velocity: new THREE.Vector3((Math.random() - 0.5) * 1.0, 1.8 + Math.random() * 2.5, (Math.random() - 0.5) * 1.0),
-          life: 0.45,
-          maxLife: 0.45
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 1.5, 3.2 + Math.random() * 3.5, (Math.random() - 0.5) * 1.5),
+          life: 0.65,
+          maxLife: 0.65,
+        });
+      }
+
+      // Turbulent dark smoke plumes
+      for (let s = 0; s < 2; s++) {
+        const smoke = new THREE.Mesh(
+          new THREE.BoxGeometry(0.35, 0.35, 0.35),
+          new THREE.MeshBasicMaterial({ color: 0x221111, transparent: true, opacity: 0.45, depthWrite: false })
+        );
+        smoke.position.set(x + (Math.random() - 0.5) * 0.4, 1.8 + Math.random() * 0.8, z + (Math.random() - 0.5) * 0.4);
+        sceneRef.add(smoke);
+        particles.push({
+          mesh: smoke,
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 0.8, 1.8 + Math.random() * 1.5, (Math.random() - 0.5) * 0.8),
+          life: 0.8,
+          maxLife: 0.8,
+        });
+      }
+
+      // Fiery sparks
+      for (let sp = 0; sp < 2; sp++) {
+        const spark = new THREE.Mesh(
+          new THREE.BoxGeometry(0.12, 0.12, 0.12),
+          new THREE.MeshBasicMaterial({ color: 0xffdd44 })
+        );
+        spark.position.set(x, 0.5, z);
+        sceneRef.add(spark);
+        particles.push({
+          mesh: spark,
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 4, 3 + Math.random() * 3, (Math.random() - 0.5) * 4),
+          life: 0.4,
+          maxLife: 0.4,
         });
       }
 
@@ -1191,35 +1556,40 @@ export function spawnBossMoltenFlameWave(startPos, targetPos, duration = 480, on
       if (i === segments && !impactFired) {
         impactFired = true;
         if (onImpact) onImpact();
-        triggerShake(0.45, 0.35);
+        triggerShake(0.55, 0.4);
         try { Audio.playFire?.(); } catch (e) {}
 
         // Fire explosion burst
-        for (let s = 0; s < 18; s++) {
+        for (let s = 0; s < 24; s++) {
           const flamePuff = new THREE.Mesh(
-            new THREE.BoxGeometry(0.22, 0.22, 0.22),
-            new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3300 : 0xffcc00, transparent: true, opacity: 0.9 })
+            new THREE.BoxGeometry(0.25, 0.25, 0.25),
+            new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff3b00 : 0xffcc00, transparent: true, opacity: 0.9 })
           );
-          flamePuff.position.set(tPos.x + (Math.random() - 0.5) * 0.8, 0.8 + Math.random() * 1.2, tPos.z + (Math.random() - 0.5) * 0.8);
+          flamePuff.position.set(tPos.x + (Math.random() - 0.5) * 0.9, 0.8 + Math.random() * 1.4, tPos.z + (Math.random() - 0.5) * 0.9);
           sceneRef.add(flamePuff);
           particles.push({
             mesh: flamePuff,
-            velocity: new THREE.Vector3((Math.random() - 0.5) * 5, 2 + Math.random() * 4, (Math.random() - 0.5) * 5),
-            life: 0.45,
-            maxLife: 0.45
+            velocity: new THREE.Vector3((Math.random() - 0.5) * 6, 2.5 + Math.random() * 4.5, (Math.random() - 0.5) * 6),
+            life: 0.55,
+            maxLife: 0.55,
           });
         }
       }
     }, delay);
   }
 
-  // Cleanup lingering ground fire after 1.4s
+  // Cleanup lingering ground fire and all resources after duration + 1400ms
   setTimeout(() => {
     allMeshes.forEach(m => {
       if (sceneRef) sceneRef.remove(m);
-      if (m.geometry) m.geometry.dispose();
-      if (m.material) m.material.dispose();
     });
+    allLights.forEach(l => {
+      if (sceneRef) sceneRef.remove(l);
+      l.dispose?.();
+    });
+    allGeos.forEach(g => g.dispose());
+    allMats.forEach(m => m.dispose());
+    allTextures.forEach(t => t.dispose());
   }, duration + 1400);
 }
 
