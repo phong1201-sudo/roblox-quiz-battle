@@ -146,23 +146,27 @@ export async function startGame(gameState) {
     loadingOverlay.style.opacity = '1';
   }
 
-  const activeElement = gameState.bossElement || gameState.element || 'thunder';
-  Arena.setArenaTheme(activeElement);
+  // 1. Get the player's genuinely chosen outfit (NEVER fall back to boss type)
+  const playerChosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit')) || 
+                             (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit')) || 
+                             'default';
 
-  // Decouple Player Outfit from Boss Element: Strictly preserve player's independently selected outfit
-  const activeOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
-    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
-    || 'default';
-  // Do NOT override activeOutfit with the boss's element under any circumstances!
+  // 2. Get the boss type determined by the stage/room selection
+  const stageBossSelection = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
+  const activeBossType = (typeof stageBossSelection === 'string')
+    ? stageBossSelection
+    : (['thunder', 'fire', 'frost'][stageBossSelection] || 'thunder');
 
-  // Pre-battle Asset Loading Gate: Block Question 1 until Player and Boss are 100% loaded & mounted
-  const bossTarget = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
+  console.log(`[Arena Init] Player Outfit: "${playerChosenOutfit}" | Boss Type: "${activeBossType}"`);
 
+  Arena.setArenaTheme(activeBossType);
+
+  // 3. Load with their own respective parameters:
   const loadTasks = [
-    Player.loadPlayerOutfitPoses(scene, activeOutfit)
+    Player.loadPlayerOutfitPoses(scene, playerChosenOutfit)
   ];
   if (gameMode === 'pve') {
-    loadTasks.push(Boss.loadBossPoses(scene, bossTarget));
+    loadTasks.push(Boss.loadBossPoses(scene, activeBossType));
     bossActive = true;
   }
 
@@ -188,10 +192,10 @@ export async function startGame(gameState) {
       if (!scene.children.includes(bossObj)) scene.add(bossObj);
     }
 
-    const bossData = Boss.getCurrentBossData?.() || { name: 'Boss', stage: 1, element: bossTarget };
+    const bossData = Boss.getCurrentBossData?.() || { name: 'Boss', stage: 1, element: activeBossType };
     const bossInfoEl = document.getElementById('boss-info');
     if (bossInfoEl) {
-      const elemEmoji = { thunder:'⚡', fire:'🔥', frost:'❄️' }[bossData.element || activeElement] || '👾';
+      const elemEmoji = { thunder:'⚡', fire:'🔥', frost:'❄️' }[bossData.element || activeBossType] || '👾';
       bossInfoEl.innerHTML =
         `<span class="boss-stage">${elemEmoji} Stage ${bossData.stage || 1}</span>` +
         `<span class="boss-name">${bossData.name}</span>`;
@@ -210,7 +214,7 @@ export async function startGame(gameState) {
 
   // Start combat BGM once models are mounted in memory
   try {
-    const track = (activeElement === 'thunder' || activeElement === 'fire' || activeElement === 'frost') ? activeElement : 'thunder';
+    const track = (activeBossType === 'thunder' || activeBossType === 'fire' || activeBossType === 'frost') ? activeBossType : 'thunder';
     Audio.playBGM(track);
   } catch (e) {}
 

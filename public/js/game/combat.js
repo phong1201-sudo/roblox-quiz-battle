@@ -418,6 +418,38 @@ export function executePlayerCounterAttack(selectedElement, isFullSet, onCounter
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// OUTFIT-SPECIFIC COUNTER-ATTACK SLASH VFX HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+export function triggerIceSlashVFX(bossPosition) {
+  try { Audio.playFrost?.(); } catch (e) {}
+  Effects.triggerFrostShatter(bossPosition, '❄️ SHATTER!');
+  Effects.triggerElementalStatus(bossPosition, 'frost', '❄️ SHATTER!');
+  Effects.spawnIceShardsExplosion?.(bossPosition);
+}
+
+export function triggerThunderSlashVFX(bossPosition) {
+  try { Audio.playThunder?.(); } catch (e) {}
+  Effects.triggerLightningSlash(bossPosition, '⚡ SHOCKED!');
+  Effects.triggerElementalStatus(bossPosition, 'thunder', '⚡ SHOCKED!');
+  Effects.triggerElectricSparks?.(bossPosition);
+}
+
+export function triggerFireSlashVFX(bossPosition) {
+  try { Audio.playFire?.(); } catch (e) {}
+  Effects.triggerFireBurst(bossPosition, '🔥 BURNING!');
+  Effects.triggerElementalStatus(bossPosition, 'fire', '🔥 BURNING!');
+  Effects.spawnFireExplosionBurst?.(bossPosition);
+}
+
+export function triggerNormalSlashVFX(bossPosition) {
+  try { Audio.playSlash?.(); } catch (e) {}
+  Effects.spawnHitSpark(bossPosition);
+  Effects.spawnHitSpark(new THREE.Vector3(bossPosition.x + 0.3, bossPosition.y + 0.3, bossPosition.z));
+  Effects.spawnHitSpark(new THREE.Vector3(bossPosition.x - 0.3, bossPosition.y - 0.2, bossPosition.z));
+  Effects.triggerElementalStatus(bossPosition, 'default', '💥 CRITICAL HIT!');
+}
+
 /**
  * Handles the complete correct answer combat sequence:
  * Step 1: Boss executes attack motion
@@ -477,18 +509,24 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
         .easing(TWEEN.Easing.Quadratic.In)
         .onComplete(() => {
           // Trigger hit impact VFX, floating -2 HP damage text, screen shake
-          try { Audio.playSlash?.(); } catch (e) {}
           if (context.applyHit1Damage) context.applyHit1Damage();
-          Effects.spawnHitSpark(BOSS_VFX_POS);
-          if (context.isMilestone) {
-            Effects.spawnHitSpark(new THREE.Vector3(BOSS_VFX_POS.x + 0.3, BOSS_VFX_POS.y + 0.3, BOSS_VFX_POS.z));
-            Effects.spawnHitSpark(new THREE.Vector3(BOSS_VFX_POS.x - 0.3, BOSS_VFX_POS.y - 0.2, BOSS_VFX_POS.z));
-          }
           Effects.triggerShake(context.isMilestone ? 0.65 : 0.25, context.isMilestone ? 0.5 : 0.25);
           Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-2 HP', '#ffee44', context.isMilestone ? 42 : 28);
 
-          // Map the status text and floating damage particles strictly to the active stage/boss element
-          Effects.triggerElementalStatus(BOSS_VFX_POS, bossElement, context.hit1Label);
+          // Bind Slash VFX strictly to playerChosenOutfit (Not Stage Element)
+          const currentOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+            || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+            || 'default';
+
+          if (currentOutfit === 'frost') {
+            triggerIceSlashVFX(BOSS_VFX_POS); // Ice burst, SHATTER!
+          } else if (currentOutfit === 'thunder') {
+            triggerThunderSlashVFX(BOSS_VFX_POS); // Lightning strike, SHOCKED!
+          } else if (currentOutfit === 'fire') {
+            triggerFireSlashVFX(BOSS_VFX_POS); // Flame explosion, BURNING!
+          } else {
+            triggerNormalSlashVFX(BOSS_VFX_POS); // Steel sparks, CRITICAL HIT!
+          }
 
           // 4. Boss takes hit: setBossPose('hit') -> hold 300ms -> setBossPose('angry') -> hold 1100ms -> setBossPose('idle')
           Boss.setBossPose('hit');

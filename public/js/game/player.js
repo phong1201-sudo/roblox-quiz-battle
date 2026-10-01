@@ -946,7 +946,11 @@ export function createPlayer(color = '#ff6b35', element = 'default', equippedGea
     return null;
   }
 
-  activeElement = element || 'default';
+  const chosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || element
+    || 'default';
+  activeElement = chosenOutfit;
 
   if (!playerGroup) {
     playerGroup = new THREE.Group();
@@ -967,7 +971,11 @@ export function createPlayer(color = '#ff6b35', element = 'default', equippedGea
 }
 
 export function createPlayerMesh(element, equippedGear) {
-  activeElement = element || 'default';
+  const chosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || element
+    || 'default';
+  activeElement = chosenOutfit;
   if (playerGroup) {
     loadPlayerOutfitPoses(null, activeElement);
   }

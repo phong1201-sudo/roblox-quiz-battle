@@ -273,6 +273,15 @@ function setupDevLaunch() {
     } catch (e) {}
   };
 
+  const devOutfitSelect = document.getElementById('dev-player-outfit');
+  if (devOutfitSelect) {
+    const savedOutfit = sessionStorage.getItem('selectedOutfit') || localStorage.getItem('selectedOutfit') || 'default';
+    devOutfitSelect.value = savedOutfit;
+    devOutfitSelect.addEventListener('change', (e) => {
+      applyOutfitToStorage(e.target.value);
+    });
+  }
+
   document.getElementById('btn-dev-test-match')?.addEventListener('click', async () => {
     const outfit = getSelectedOutfit();
     applyOutfitToStorage(outfit);

@@ -47,6 +47,12 @@ function _loadEquipped() {
 let equipment = _loadEquipped();
 
 function _syncEquippedState() {
+  const outfitName = equipment?.outfit || 'default';
+  try {
+    sessionStorage.setItem('selectedOutfit', outfitName);
+    localStorage.setItem('selectedOutfit', outfitName);
+  } catch (e) {}
+
   if (!window.gameState) return;
   window.gameState.equipped = { outfit: equipment.outfit, weapon: equipment.weapon };
   window.gameState.equipment = { ...window.gameState.equipped };
@@ -199,6 +205,12 @@ function buildWardrobeUI(container, previewCanvas) {
           btn.style.boxShadow = `0 0 8px ${item.color}88`;
 
           equipment[slot] = item.id;
+          if (slot === 'outfit') {
+            try {
+              sessionStorage.setItem('selectedOutfit', item.id);
+              localStorage.setItem('selectedOutfit', item.id);
+            } catch(e) {}
+          }
           try {
             localStorage.setItem(LS_EQUIPPED_KEY, JSON.stringify(equipment));
           } catch(e) {}
@@ -326,10 +338,24 @@ function buildElementalSetPicker(avatarSection) {
             window.gameState.equippedSet  = null;
             window.gameState.thunderSet   = false;
             window.gameState.damagePerHit = 1;
+            equipment.outfit = 'default';
+            equipment.weapon = 'default';
+            try {
+              sessionStorage.setItem('selectedOutfit', 'default');
+              localStorage.setItem('selectedOutfit', 'default');
+              localStorage.setItem(LS_EQUIPPED_KEY, JSON.stringify(equipment));
+            } catch(e) {}
           } else {
             window.gameState.equippedSet  = s.id;
             window.gameState.thunderSet   = s.id === 'thunder';
             window.gameState.damagePerHit = 2;
+            equipment.outfit = s.id;
+            equipment.weapon = s.id;
+            try {
+              sessionStorage.setItem('selectedOutfit', s.id);
+              localStorage.setItem('selectedOutfit', s.id);
+              localStorage.setItem(LS_EQUIPPED_KEY, JSON.stringify(equipment));
+            } catch(e) {}
           }
         }
         _highlightActiveSet(btnRow, window.gameState?.equippedSet);
@@ -389,6 +415,12 @@ function buildElementalSetPicker(avatarSection) {
       // Also purge legacy key from old sessions
       localStorage.removeItem('unlockedSets');
       if (window.gameState) { window.gameState.equippedSet = null; window.gameState.damagePerHit = 1; }
+      equipment = { outfit: 'default', weapon: 'default' };
+      try {
+        sessionStorage.setItem('selectedOutfit', 'default');
+        localStorage.setItem('selectedOutfit', 'default');
+        localStorage.setItem(LS_EQUIPPED_KEY, JSON.stringify(equipment));
+      } catch(e) {}
       buildElementalSetPicker(avatarSection);   // rebuild picker
     };
     footer.appendChild(resetBtn);
