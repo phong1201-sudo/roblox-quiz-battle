@@ -779,7 +779,24 @@ app.get('/api/questions/:element', (req, res) => {
   if (!VALID_ELEMENTS.includes(element)) {
     return res.status(400).json({ ok: false, error: 'element must be thunder | fire | frost' });
   }
-  const questions = questionBank.getActiveQuestionBank(element);
+  const questionDir = path.resolve(__dirname, '../data/question');
+  let filePath = null;
+  if (fs.existsSync(questionDir)) {
+    const files = fs.readdirSync(questionDir);
+    const match = files.find(f => f.toLowerCase() === `${element}.json`);
+    if (match) filePath = path.join(questionDir, match);
+  }
+  let questions = [];
+  if (filePath && fs.existsSync(filePath)) {
+    try {
+      questions = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (e) {
+      console.error(`[api/questions] Error parsing ${filePath}:`, e.message);
+    }
+  }
+  if (!questions || questions.length === 0) {
+    questions = questionBank.getActiveQuestionBank(element);
+  }
   res.json({
     ok: true,
     element,
@@ -1424,4 +1441,8 @@ io.on('connection', (socket) => {
 const HOST = '0.0.0.0';
 server.listen(PORT, HOST, () => {
   console.log(`[Quiz-Battle 3D] Server listening on ${HOST}:${PORT}`);
+  const fireQuestions = questionBank.getActiveQuestionBank('fire');
+  const frostQuestions = questionBank.getActiveQuestionBank('frost');
+  const thunderQuestions = questionBank.getActiveQuestionBank('thunder');
+  console.log(`[Question Bank Loaded] Fire: ${fireQuestions.length}, Frost: ${frostQuestions.length}, Thunder: ${thunderQuestions.length}`);
 });

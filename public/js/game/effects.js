@@ -218,84 +218,106 @@ export function createBossSuperSaiyanAura(bossGroup, element = 'thunder') {
   auraGroup.name = 'BossSuperSaiyanAura';
 
   // Subtle sustained rumble during roar (1.1s)
-  triggerShake(0.18, 1.1);
+  triggerShake(0.24, 1.1);
 
   let auraLight = null;
   let particleMesh = null;
   let particleData = [];
   let lightningMesh = null;
   let pillarMeshes = [];
+  let mainAuraCone = null;
+  let innerAuraCone = null;
+  let flameTex = null;
+  let flameMat = null;
   let clock = 0;
 
   if (norm === 'fire') {
-    // 🔥 Fire Boss: Fiery pillars and rising combustion flame particles swirling up around body
-    auraLight = new THREE.PointLight(0xff3300, 2.8, 12);
-    auraLight.position.set(0, 2.5, 0);
+    // 🔥 DRAGON BALL SUPER SAIYAN KI / FLAME AURA FOR FIRE BOSS
+    // 1. High-intensity point light centered at the boss torso (color: 0xff3b00, intensity: 4.5, distance: 15)
+    auraLight = new THREE.PointLight(0xff3b00, 4.5, 15);
+    auraLight.position.set(0, 3.2, 0);
     auraGroup.add(auraLight);
 
-    // 4 fiery pillars around boss
-    for (let i = 0; i < 4; i++) {
-      const angle = (i / 4) * Math.PI * 2;
-      const radius = 2.2;
-      const geo = new THREE.CylinderGeometry(0.22, 0.4, 5.0, 8, 1, true);
-      const mat = new THREE.MeshBasicMaterial({
-        color: (i % 2 === 0) ? 0xff3300 : 0xff7700,
-        transparent: true,
-        opacity: 0.55,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      const pillar = new THREE.Mesh(geo, mat);
-      pillar.position.set(Math.cos(angle) * radius, 2.5, Math.sin(angle) * radius);
-      auraGroup.add(pillar);
-      pillarMeshes.push({ mesh: pillar, baseAngle: angle, radius });
+    // 2. Procedural flaming Ki Canvas Texture with vertical animated UV scrolling
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 512, 0, 0);
+    grad.addColorStop(0.0, 'rgba(255, 235, 60, 0.98)');  // Core Ki golden yellow
+    grad.addColorStop(0.22, 'rgba(255, 90, 0, 0.90)');   // Blazing Super Saiyan orange
+    grad.addColorStop(0.60, 'rgba(255, 30, 0, 0.70)');   // Fiery red
+    grad.addColorStop(0.92, 'rgba(180, 0, 0, 0.25)');   // Dissipating crimson
+    grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');        // Top fade
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 512);
+
+    // Vertical jagged Ki flame spikes
+    ctx.fillStyle = 'rgba(255, 255, 190, 0.85)';
+    for (let i = 0; i < 30; i++) {
+      const x = (i / 30) * 256 + (Math.random() - 0.5) * 6;
+      const w = 4 + Math.random() * 8;
+      const h = 220 + Math.random() * 260;
+      ctx.beginPath();
+      ctx.moveTo(x - w / 2, 512);
+      ctx.quadraticCurveTo(x + (Math.random() - 0.5) * 24, 512 - h * 0.5, x, 512 - h);
+      ctx.quadraticCurveTo(x + (Math.random() - 0.5) * 24, 512 - h * 0.5, x + w / 2, 512);
+      ctx.fill();
     }
 
-    // Swirling combustion flame particles
-    const count = 45;
-    const geom = new THREE.BufferGeometry();
-    const posArray = new Float32Array(count * 3);
-    const colArray = new Float32Array(count * 3);
-    const fireCols = [new THREE.Color(0xff2200), new THREE.Color(0xff6600), new THREE.Color(0xffaa00)];
+    flameTex = new THREE.CanvasTexture(canvas);
+    flameTex.wrapS = THREE.RepeatWrapping;
+    flameTex.wrapT = THREE.RepeatWrapping;
 
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = 1.0 + Math.random() * 1.8;
-      const y = Math.random() * 4.5;
-      posArray[i * 3]     = Math.cos(angle) * r;
-      posArray[i * 3 + 1] = y;
-      posArray[i * 3 + 2] = Math.sin(angle) * r;
-
-      const c = fireCols[Math.floor(Math.random() * fireCols.length)];
-      colArray[i * 3]     = c.r;
-      colArray[i * 3 + 1] = c.g;
-      colArray[i * 3 + 2] = c.b;
-
-      particleData.push({
-        angle,
-        r,
-        y,
-        vy: 3.0 + Math.random() * 3.5,
-        rotSpeed: 3.5 + Math.random() * 2.5,
-      });
-    }
-
-    geom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    geom.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
-
-    const pMat = new THREE.PointsMaterial({
-      size: 0.35,
-      vertexColors: true,
+    // 3. Expanding vertical cylinder/cone mesh wrapping the boss (radiusBottom: 2.2, radiusTop: 3.5, height: 7.5)
+    // CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded)
+    const coneGeo = new THREE.CylinderGeometry(3.5, 2.2, 7.5, 32, 8, true);
+    flameMat = new THREE.MeshBasicMaterial({
+      map: flameTex,
+      color: 0xff4500,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.88,
       blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
       depthWrite: false,
     });
-    particleMesh = new THREE.Points(geom, pMat);
-    auraGroup.add(particleMesh);
+    mainAuraCone = new THREE.Mesh(coneGeo, flameMat);
+    mainAuraCone.position.set(0, 3.75, 0);
+    auraGroup.add(mainAuraCone);
 
-  } else if (norm === 'frost' || norm === 'ice') {
+    // Inner core blinding Ki cone (radiusBottom: 1.6, radiusTop: 2.6, height: 7.0, core yellow 0xffd700)
+    const innerConeGeo = new THREE.CylinderGeometry(2.6, 1.6, 7.0, 24, 6, true);
+    const innerFlameMat = new THREE.MeshBasicMaterial({
+      map: flameTex,
+      color: 0xffd700,
+      transparent: true,
+      opacity: 0.82,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    innerAuraCone = new THREE.Mesh(innerConeGeo, innerFlameMat);
+    innerAuraCone.position.set(0, 3.5, 0);
+    auraGroup.add(innerAuraCone);
+
+    // 4. Core ground fire bursts: ring of rising jagged fire pillars erupting from the boss's feet
+    const pillarCount = 8;
+    for (let i = 0; i < pillarCount; i++) {
+      const angle = (i / pillarCount) * Math.PI * 2;
+      const radius = 2.4 + (i % 2) * 0.4;
+      const pGeo = new THREE.ConeGeometry(0.38, 3.6, 4);
+      const pMat = new THREE.MeshBasicMaterial({
+        color: (i % 2 === 0) ? 0xff4500 : 0xffd700,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const pillar = new THREE.Mesh(pGeo, pMat);
+      pillar.position.set(Math.cos(angle) * radius, 1.8, Math.sin(angle) * radius);
+      auraGroup.add(pillar);
+      pillarMeshes.push({ mesh: pillar, baseAngle: angle, radius, phase: i * 0.8 });
+    }
     // ❄️ Frost Boss: Violent swirling blizzard vortex with cold white/cyan mist & radiating sharp icicles
     auraLight = new THREE.PointLight(0x00e5ff, 2.8, 12);
     auraLight.position.set(0, 2.5, 0);
@@ -441,18 +463,48 @@ export function createBossSuperSaiyanAura(bossGroup, element = 'thunder') {
         if (norm === 'thunder') {
           // Rapid strobe
           auraLight.intensity = (Math.random() > 0.3) ? 3.0 : 1.2;
+        } else if (norm === 'fire') {
+          // High-intensity flame core light pulsating around 4.5
+          auraLight.intensity = 4.2 + Math.sin(clock * 18) * 1.2;
         } else {
           auraLight.intensity = 2.4 + Math.sin(clock * 10) * 0.6;
         }
       }
 
-      // Rotate & wobble pillars
-      pillarMeshes.forEach((p, idx) => {
-        p.baseAngle += dt * 1.8;
-        p.mesh.position.x = Math.cos(p.baseAngle) * p.radius;
-        p.mesh.position.z = Math.sin(p.baseAngle) * p.radius;
-        p.mesh.rotation.y += dt * 2.5;
-      });
+      // Update fire-specific Dragon Ball Super Saiyan Ki effects
+      if (norm === 'fire') {
+        if (flameTex) {
+          flameTex.offset.y -= dt * 4.5;
+        }
+        if (flameMat) {
+          const pulse = 0.5 + 0.5 * Math.sin(clock * 14);
+          const col = new THREE.Color(0xff4500).lerp(new THREE.Color(0xffd700), pulse * 0.8);
+          flameMat.color.copy(col);
+        }
+        if (mainAuraCone) {
+          const vib = 1.0 + Math.sin(clock * 24) * 0.05;
+          mainAuraCone.scale.set(vib, 1.0 + Math.sin(clock * 16) * 0.02, vib);
+          mainAuraCone.rotation.y += dt * 1.6;
+        }
+        if (innerAuraCone) {
+          const innerVib = 1.0 + Math.cos(clock * 28) * 0.04;
+          innerAuraCone.scale.set(innerVib, 1.0, innerVib);
+          innerAuraCone.rotation.y -= dt * 2.2;
+        }
+        pillarMeshes.forEach((p) => {
+          const sy = 0.6 + 0.7 * Math.abs(Math.sin(clock * 14 + p.phase));
+          p.mesh.scale.set(1.0, sy, 1.0);
+          p.mesh.rotation.y += dt * 3.5;
+        });
+      } else {
+        // Rotate & wobble pillars for non-fire elements
+        pillarMeshes.forEach((p, idx) => {
+          p.baseAngle += dt * 1.8;
+          p.mesh.position.x = Math.cos(p.baseAngle) * p.radius;
+          p.mesh.position.z = Math.sin(p.baseAngle) * p.radius;
+          p.mesh.rotation.y += dt * 2.5;
+        });
+      }
 
       // Update swirling particles
       if (particleMesh) {
@@ -495,6 +547,9 @@ export function createBossSuperSaiyanAura(bossGroup, element = 'thunder') {
       }
     },
     dispose: () => {
+      if (flameTex) {
+        try { flameTex.dispose(); } catch (e) {}
+      }
       if (auraGroup.parent) {
         auraGroup.parent.remove(auraGroup);
       }

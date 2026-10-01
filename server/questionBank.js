@@ -5,10 +5,7 @@
 const path = require('path');
 const fs   = require('fs');
 
-const BANK_DIRS = [
-  path.join(__dirname, '../data/question'),
-  path.join(__dirname, '../data/questions')
-];
+const BANK_DIR = path.join(__dirname, '../data/question');
 const UNIFIED_BANK_FILE = path.join(__dirname, '../data/question_bank.json');
 
 // ── Difficulty configuration ───────────────────────────────────────────────────
@@ -47,15 +44,13 @@ function _findElementFile(dir, element) {
 // ── Internal: load raw bank from disk ────────────────────────────────────────
 function _loadBank(element) {
   const el = (element || '').toLowerCase();
-  // 1. Check data/question/ directory first
-  for (const dir of BANK_DIRS) {
-    const file = _findElementFile(dir, el);
-    if (file && fs.existsSync(file)) {
-      try {
-        const content = JSON.parse(fs.readFileSync(file, 'utf8'));
-        if (Array.isArray(content) && content.length > 0) return content;
-      } catch (e) {}
-    }
+  // 1. Check data/question/ directory
+  const file = _findElementFile(BANK_DIR, el);
+  if (file && fs.existsSync(file)) {
+    try {
+      const content = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (Array.isArray(content) && content.length > 0) return content;
+    } catch (e) {}
   }
 
   // 2. Check unified bank file
@@ -123,24 +118,21 @@ function sampleQuestions(element, difficulty) {
   });
 }
 
-// ── Internal: save to all bank directories ──────────────────────────────────
+// ── Internal: save to data/question directory ────────────────────────────────
 function _saveToDirs(element, questionsArray) {
   const el = (element || '').toLowerCase();
-  for (const dir of BANK_DIRS) {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const existingFile = _findElementFile(dir, el);
-    const targetFile = existingFile || path.join(dir, `${el}.json`);
-    const tmp = targetFile + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(questionsArray, null, 2), 'utf8');
-    fs.renameSync(tmp, targetFile);
-    // Also ensure Capitalized file exists in data/question/ if applicable (e.g. Fire.json, Frost.json)
-    if (dir.endsWith('question') || dir.includes('question\\') || dir.includes('question/')) {
-      const capName = el.charAt(0).toUpperCase() + el.slice(1) + '.json';
-      const capPath = path.join(dir, capName);
-      if (capPath !== targetFile) {
-        try { fs.writeFileSync(capPath, JSON.stringify(questionsArray, null, 2), 'utf8'); } catch (e) {}
-      }
-    }
+  if (!fs.existsSync(BANK_DIR)) fs.mkdirSync(BANK_DIR, { recursive: true });
+  const existingFile = _findElementFile(BANK_DIR, el);
+  const targetFile = existingFile || path.join(BANK_DIR, `${el}.json`);
+  const tmp = targetFile + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(questionsArray, null, 2), 'utf8');
+  fs.renameSync(tmp, targetFile);
+
+  // Also ensure capitalized version exists if applicable (e.g. Fire.json, Frost.json)
+  const capName = el.charAt(0).toUpperCase() + el.slice(1) + '.json';
+  const capPath = path.join(BANK_DIR, capName);
+  if (capPath !== targetFile) {
+    try { fs.writeFileSync(capPath, JSON.stringify(questionsArray, null, 2), 'utf8'); } catch (e) {}
   }
 }
 

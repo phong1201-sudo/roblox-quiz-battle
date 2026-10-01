@@ -819,16 +819,16 @@ export async function loadBossPoses(scene, element = 'thunder') {
         }
       });
 
-      // Compute precise bounding box
+      // Standardize height to 6.4 (exactly 2.0x of player)
       mesh.updateMatrixWorld(true);
       const box = new currentTHREE.Box3().setFromObject(mesh);
       const size = box.getSize(new currentTHREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const targetBossHeight = 5.76; // Exactly 1.8x player height (1.8 * 3.2)
+      const targetBossHeight = 6.4; // Exactly 2.0x of player (2.0 * 3.2)
       const scale = targetBossHeight / maxDim;
       mesh.scale.set(scale, scale, scale);
 
-      // Recalculate bounding box after scaling to clamp bottom vertex exactly to floor
+      // Anchor bottom vertices precisely at floor level y = 0
       mesh.updateMatrixWorld(true);
       const scaledBox = new currentTHREE.Box3().setFromObject(mesh);
       mesh.position.y = -scaledBox.min.y;
