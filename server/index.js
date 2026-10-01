@@ -690,36 +690,51 @@ const skinUpload = multer({
 });
 
 // ── Auth Endpoints ────────────────────────────────────────────────────────────
-// NOTE: data/users.json is ephemeral on Render (wiped on redeploy).
-// Admin "God Father" is re-seeded automatically by db.js on every startup.
-// Regular player accounts must re-register after a server restart on Render.
+// NOTE: Persistent User Database with MongoDB Atlas & Local JSON Fallback.
+// When MONGODB_URI is provided in Render Environment, users & passwords persist across spin-downs.
 
 /** POST /api/register  { username, password } → { ok, user } */
-app.post('/api/register', (req, res) => {
-  const { username, password } = req.body || {};
-  const result = db.register(username, password);
-  if (!result.ok) return res.status(400).json(result);
-  res.json(result);
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const result = await db.register(username, password);
+    if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
-app.post('/api/auth/register', (req, res) => {   // alias
-  const { username, password } = req.body || {};
-  const result = db.register(username, password);
-  if (!result.ok) return res.status(400).json(result);
-  res.json(result);
+app.post('/api/auth/register', async (req, res) => {   // alias
+  try {
+    const { username, password } = req.body || {};
+    const result = await db.register(username, password);
+    if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 /** POST /api/login  { username, password } → { ok, user } */
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body || {};
-  const result = db.login(username, password);
-  if (!result.ok) return res.status(401).json(result);
-  res.json(result);
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const result = await db.login(username, password);
+    if (!result.ok) return res.status(401).json(result);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
-app.post('/api/auth/login', (req, res) => {      // alias
-  const { username, password } = req.body || {};
-  const result = db.login(username, password);
-  if (!result.ok) return res.status(401).json(result);
-  res.json(result);
+app.post('/api/auth/login', async (req, res) => {      // alias
+  try {
+    const { username, password } = req.body || {};
+    const result = await db.login(username, password);
+    if (!result.ok) return res.status(401).json(result);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 /** POST /api/auth/check  { userId } → { ok, user } — validate a cached session */
@@ -732,19 +747,56 @@ app.post('/api/auth/check', (req, res) => {
 });
 
 /** POST /api/auth/change-password  { username, oldPassword, newPassword } */
-const handleChangePassword = (req, res) => {
-  const { username, oldPassword, newPassword } = req.body || {};
-  if (!username || !oldPassword || !newPassword) {
-    return res.status(400).json({ success: false, error: 'Vui lòng điền đầy đủ thông tin.' });
+const handleChangePassword = async (req, res) => {
+  try {
+    const { username, oldPassword, newPassword } = req.body || {};
+    if (!username || !oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Vui lòng điền đầy đủ thông tin.' });
+    }
+    const result = await db.changePassword(username, oldPassword, newPassword);
+    if (!result.ok) {
+      return res.status(400).json({ success: false, error: result.error });
+    }
+    return res.json({ success: true, message: result.message });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
-  const result = db.changePassword(username, oldPassword, newPassword);
-  if (!result.ok) {
-    return res.status(400).json({ success: false, error: result.error });
-  }
-  return res.json({ success: true, message: result.message });
 };
 app.post('/api/auth/change-password', handleChangePassword);
 app.post('/api/change-password', handleChangePassword); // alias
+
+// ── Diagnostic Persistence Endpoints ──────────────────────────────────────────
+/** GET /api/debug/users-count */
+app.get('/api/debug/users-count', async (req, res) => {
+  try {
+    const info = await db.getUsersCount();
+    res.json({
+      success: true,
+      ...info,
+      serverUptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/** GET /api/debug/storage-status */
+app.get('/api/debug/storage-status', async (req, res) => {
+  try {
+    const info = await db.getUsersCount();
+    res.json({
+      success: true,
+      storage: info.storage,
+      mongoConnected: info.mongoConnected,
+      hasMongoUri: info.hasMongoUri,
+      userCount: info.count,
+      users: info.users
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /** POST /api/unlock-set  { userId, setId } → { ok, user } (full set, legacy) */
 app.post('/api/unlock-set', (req, res) => {
