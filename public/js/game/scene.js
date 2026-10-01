@@ -146,24 +146,24 @@ export async function startGame(gameState) {
     loadingOverlay.style.opacity = '1';
   }
 
-  // 1. Get the player's genuinely chosen outfit (NEVER fall back to boss type)
-  const playerChosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit')) || 
-                             (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit')) || 
-                             'default';
+  // 1. Get strictly the user's selected outfit from storage (fallback to 'default')
+  const activeOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit')) || 
+                       (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit')) || 
+                       'default';
 
-  // 2. Get the boss type determined by the stage/room selection
+  // 2. Boss type is determined strictly by the chosen stage
   const stageBossSelection = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
   const activeBossType = (typeof stageBossSelection === 'string')
     ? stageBossSelection
     : (['thunder', 'fire', 'frost'][stageBossSelection] || 'thunder');
 
-  console.log(`[Arena Init] Player Outfit: "${playerChosenOutfit}" | Boss Type: "${activeBossType}"`);
+  console.log(`[BATTLE START] Equipping Player Mesh: "${activeOutfit}" | Spawning Boss: "${activeBossType}"`);
 
   Arena.setArenaTheme(activeBossType);
 
-  // 3. Load with their own respective parameters:
+  // 3. Load meshes with their respective independent parameters
   const loadTasks = [
-    Player.loadPlayerOutfitPoses(scene, playerChosenOutfit)
+    Player.loadPlayerOutfitPoses(scene, activeOutfit)
   ];
   if (gameMode === 'pve') {
     loadTasks.push(Boss.loadBossPoses(scene, activeBossType));
@@ -225,19 +225,14 @@ export async function startGame(gameState) {
     displayQuestion(0);
   }
 
-  // Elemental set unlock hook
+  // Elemental set unlock hook - preserves chosen player outfit!
   window.__onThunderSetUnlocked = () => {
-    const bossEl  = Boss.getBossElement();
-    const setName = bossEl || 'thunder';
-    Player.applyElementalSet(setName);
     if (window.gameState) {
-      window.gameState.thunderSet   = setName === 'thunder';
-      window.gameState.equippedSet  = setName;
       window.gameState.damagePerHit = 2;
       window.gameState.bossMaxHp    = (window.gameState.totalHp || totalHp) * 2;
     }
     const lightCols = { thunder:0x00ffff, fire:0xff4400, frost:0x88ccff };
-    const flair = new THREE.PointLight(lightCols[setName] || 0xffffff, 2.5, 16);
+    const flair = new THREE.PointLight(lightCols[activeBossType] || 0xffffff, 2.5, 16);
     flair.position.copy(PLAYER_HOME); flair.position.y = 3;
     scene.add(flair);
     setTimeout(() => scene.remove(flair), 4000);

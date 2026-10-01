@@ -44,12 +44,23 @@ function makeGameState(base) {
                 localStorage.setItem('selectedOutfit', urlOutfit);
             } catch (e) {}
         } else {
-            const saved = JSON.parse(localStorage.getItem('player_equipped'));
-            if (saved) {
-                equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+            const savedOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+                || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'));
+            if (savedOutfit) {
+                equipped = { outfit: savedOutfit, weapon: savedOutfit };
                 try {
-                    if (!sessionStorage.getItem('selectedOutfit')) sessionStorage.setItem('selectedOutfit', equipped.outfit);
+                    sessionStorage.setItem('selectedOutfit', savedOutfit);
+                    localStorage.setItem('selectedOutfit', savedOutfit);
                 } catch (e) {}
+            } else {
+                const saved = JSON.parse(localStorage.getItem('player_equipped'));
+                if (saved) {
+                    equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+                    try {
+                        sessionStorage.setItem('selectedOutfit', equipped.outfit);
+                        localStorage.setItem('selectedOutfit', equipped.outfit);
+                    } catch (e) {}
+                }
             }
         }
     } catch(e) {}
@@ -310,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gameState.bossIndex = data.bossIndex ?? 0;
             // Derive bossElement from bossIndex so BGM can pick the right track
             const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
-            window.gameState.bossElement = BOSS_ELEMENTS[data.bossIndex] || 'thunder';
+            window.gameState.bossElement = data.bossElement || data.element || BOSS_ELEMENTS[data.bossIndex] || 'thunder';
 
             window.gameState.testGear = data.testGear;
             const isFull = data.testGear === 'full' || ['thunder', 'fire', 'frost'].includes(data.testGear);

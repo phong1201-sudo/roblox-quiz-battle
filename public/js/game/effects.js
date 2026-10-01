@@ -1,3 +1,5 @@
+import * as Audio from '../audio.js';
+
 let particles = [];
 let sceneRef, cameraRef;
 let shakeTime = 0, shakeMagnitude = 0;
@@ -72,6 +74,198 @@ export function showBanner(text, color, bg) {
   b.style.cssText = `position:fixed;top:28%;left:50%;transform:translate(-50%,-50%);font-family:'Press Start 2P',monospace;font-size:22px;color:${color};background:${bg};padding:12px 26px;border:3px solid ${color};border-radius:6px;pointer-events:none;z-index:9100;text-shadow:0 0 16px ${color}, 2px 2px 0 #000;box-shadow:0 0 25px ${color};animation:damageFloat 1.4s ease-out forwards;letter-spacing:2px;`;
   document.body.appendChild(b);
   setTimeout(()=>b.remove(),1500);
+}
+
+export function showCombatFloatingBanner(text, color = '#ffffff') {
+  showBanner(text, color, 'rgba(10, 10, 20, 0.88)');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🗡️ OUTFIT-SPECIFIC WEAPON SLASH VFX (STRICTLY INDEPENDENT OF BOSS ELEMENT)
+// ─────────────────────────────────────────────────────────────────────────────
+export function spawnFrostSlashVFX(bossPosition) {
+  if (!sceneRef) return;
+  try { (Audio.playIceShatter || Audio.playFrost)?.(); } catch (e) {}
+  screenFlash('rgba(180,230,255,0.45)', 0.45);
+  triggerShake(0.35, 0.35);
+
+  const frostCols = [0x38bdf8, 0x88ddff, 0xcceeFF, 0xffffff];
+  for (let i = 0; i < 28; i++) {
+    const isShard = Math.random() > 0.4;
+    const geo = isShard
+      ? new THREE.ConeGeometry(0.12 + Math.random() * 0.18, 0.6 + Math.random() * 0.8, 4)
+      : new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const m = new THREE.Mesh(
+      geo,
+      new THREE.MeshBasicMaterial({
+        color: frostCols[Math.floor(Math.random() * frostCols.length)],
+        transparent: true,
+        opacity: 0.85,
+      })
+    );
+    m.position.copy(bossPosition);
+    m.position.x += (Math.random() - 0.5) * 2.2;
+    m.position.y += Math.random() * 2.2;
+    m.position.z += (Math.random() - 0.5) * 1.2;
+    sceneRef.add(m);
+
+    const angle = Math.random() * Math.PI * 2;
+    const sp = 3.0 + Math.random() * 8.0;
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(Math.cos(angle) * sp, (Math.random() - 0.2) * 6.0, Math.sin(angle) * sp * 0.5),
+      life: 0.7,
+      maxLife: 0.7,
+    });
+  }
+
+  // Frost shockwave ring
+  const rg = new THREE.RingGeometry(0.4, 1.8, 16);
+  const rm = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false });
+  const ring = new THREE.Mesh(rg, rm);
+  ring.position.copy(bossPosition);
+  ring.position.y += 0.2;
+  ring.rotation.x = -Math.PI / 2;
+  sceneRef.add(ring);
+  particles.push({ mesh: ring, life: 0.55, maxLife: 0.55, isRing: true });
+}
+
+export function spawnFireSlashVFX(bossPosition) {
+  if (!sceneRef) return;
+  try { Audio.playFire?.(); } catch (e) {}
+  screenFlash('rgba(255,80,0,0.45)', 0.45);
+  triggerShake(0.35, 0.35);
+
+  const fireCols = [0xf97316, 0xff4400, 0xffaa00, 0xffdd00];
+  for (let i = 0; i < 32; i++) {
+    const s = 0.15 + Math.random() * 0.35;
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(s, s * 1.8, s),
+      new THREE.MeshBasicMaterial({ color: fireCols[Math.floor(Math.random() * fireCols.length)] })
+    );
+    m.position.copy(bossPosition);
+    m.position.x += (Math.random() - 0.5) * 2.2;
+    m.position.y += Math.random() * 2.0;
+    m.position.z += (Math.random() - 0.5) * 1.2;
+    sceneRef.add(m);
+
+    const angle = Math.random() * Math.PI * 2;
+    const sp = 3.0 + Math.random() * 8.0;
+    const vy = 3.5 + Math.random() * 8.0;
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(Math.cos(angle) * sp, vy, Math.sin(angle) * sp * 0.5),
+      life: 0.75,
+      maxLife: 0.75,
+    });
+  }
+
+  // Flame shockwave ring
+  const rg = new THREE.RingGeometry(0.5, 1.8, 24);
+  const rm = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false });
+  const ring = new THREE.Mesh(rg, rm);
+  ring.position.copy(bossPosition);
+  ring.position.y += 0.15;
+  ring.rotation.x = -Math.PI / 2;
+  sceneRef.add(ring);
+  particles.push({ mesh: ring, life: 0.55, maxLife: 0.55, isRing: true });
+}
+
+export function spawnThunderSlashVFX(bossPosition) {
+  if (!sceneRef) return;
+  try { Audio.playThunder?.(); } catch (e) {}
+  screenFlash('rgba(200,245,255,0.5)', 0.5);
+  triggerShake(0.4, 0.4);
+
+  const bx = bossPosition.x, bz = bossPosition.z;
+  const startY = bossPosition.y + 12, endY = bossPosition.y + 1.2;
+
+  function buildBolt(ox, oz) {
+    const steps = 10, pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const y = startY + (endY - startY) * t;
+      const dx = (i > 0 && i < steps) ? (Math.random() - 0.5) * 1.4 : 0;
+      const dz = (i > 0 && i < steps) ? (Math.random() - 0.5) * 0.7 : 0;
+      pts.push(bx + ox + dx, y, bz + oz + dz);
+    }
+    return new Float32Array(pts);
+  }
+
+  [[0, 0, 0xfacc15, 0.35], [-0.3, 0.1, 0x00ffff, 0.3], [0.3, -0.1, 0xffffff, 0.28]].forEach(([ox, oz, col, life]) => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(buildBolt(ox, oz), 3));
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: col, linewidth: 2 }));
+    sceneRef.add(line);
+    particles.push({ mesh: line, life, maxLife: life, isLine: true });
+  });
+
+  // Electric spark burst
+  const thunderCols = [0xfacc15, 0x00ffff, 0xffffff];
+  for (let i = 0; i < 30; i++) {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.16, 0.16),
+      new THREE.MeshBasicMaterial({ color: thunderCols[Math.floor(Math.random() * thunderCols.length)] })
+    );
+    m.position.copy(bossPosition);
+    m.position.x += (Math.random() - 0.5) * 2.0;
+    m.position.y += Math.random() * 2.2;
+    m.position.z += (Math.random() - 0.5) * 1.2;
+    sceneRef.add(m);
+
+    const a = Math.random() * Math.PI * 2, sp = 4 + Math.random() * 9;
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(Math.cos(a) * sp, Math.random() * 6 + 1.5, Math.sin(a) * sp * 0.4),
+      life: 0.6,
+      maxLife: 0.6,
+    });
+  }
+
+  // Expanding ring
+  const rg = new THREE.RingGeometry(0.5, 1.6, 24);
+  const rm = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
+  const r = new THREE.Mesh(rg, rm);
+  r.position.copy(bossPosition);
+  r.position.y += 1.0;
+  r.rotation.x = -Math.PI / 2;
+  sceneRef.add(r);
+  particles.push({ mesh: r, life: 0.45, maxLife: 0.45, isRing: true });
+}
+
+export function spawnPhysicalSlashVFX(bossPosition) {
+  if (!sceneRef) return;
+  try { Audio.playSlash?.(); } catch (e) {}
+  triggerShake(0.25, 0.25);
+
+  // Sharp golden & pure white sparks (steel impact, NO elemental magic)
+  const sparkCols = [0xffffff, 0xffd700, 0xffea75, 0xfafafa];
+  for (let i = 0; i < 28; i++) {
+    const s = 0.12 + Math.random() * 0.14;
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(s, s * 1.4, s),
+      new THREE.MeshBasicMaterial({ color: sparkCols[Math.floor(Math.random() * sparkCols.length)] })
+    );
+    m.position.copy(bossPosition);
+    m.position.x += (Math.random() - 0.5) * 1.4;
+    m.position.y += 0.8 + Math.random() * 1.5;
+    m.position.z += (Math.random() - 0.5) * 1.0;
+    sceneRef.add(m);
+
+    const angle = Math.random() * Math.PI * 2;
+    const sp = 4.0 + Math.random() * 7.0;
+    particles.push({
+      mesh: m,
+      velocity: new THREE.Vector3(Math.cos(angle) * sp, (Math.random() - 0.2) * 5.0, Math.sin(angle) * sp * 0.5),
+      life: 0.45,
+      maxLife: 0.45,
+    });
+  }
+
+  // Double spark bursts at hit points
+  spawnHitSpark(bossPosition);
+  spawnHitSpark(new THREE.Vector3(bossPosition.x + 0.3, bossPosition.y + 0.3, bossPosition.z));
+  spawnHitSpark(new THREE.Vector3(bossPosition.x - 0.3, bossPosition.y - 0.2, bossPosition.z));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

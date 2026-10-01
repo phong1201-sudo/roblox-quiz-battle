@@ -367,11 +367,8 @@ export function showMilestoneDrop(milestone) {
     setTimeout(() => {
       const element = window.gameState?.bossElement || 'thunder';
       window.__onThunderSetUnlocked?.();
-      try { applyThunderSet(); } catch(e) {}
       try { addUnlockedSet(element); } catch(e) {}
       if (window.gameState) {
-        window.gameState.thunderSet   = element === 'thunder';
-        window.gameState.equippedSet  = element;
         window.gameState.damagePerHit = 2;
         window.gameState.bossMaxHp    = (window.gameState.totalHp || 10) * 2;
       }

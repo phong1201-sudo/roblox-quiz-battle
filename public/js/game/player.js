@@ -948,7 +948,6 @@ export function createPlayer(color = '#ff6b35', element = 'default', equippedGea
 
   const chosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
     || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
-    || element
     || 'default';
   activeElement = chosenOutfit;
 
@@ -973,7 +972,6 @@ export function createPlayer(color = '#ff6b35', element = 'default', equippedGea
 export function createPlayerMesh(element, equippedGear) {
   const chosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
     || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
-    || element
     || 'default';
   activeElement = chosenOutfit;
   if (playerGroup) {
@@ -983,6 +981,12 @@ export function createPlayerMesh(element, equippedGear) {
 
 export function applyElementalSet(element) {
   if (!element) return;
+  const chosenOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'));
+  if (chosenOutfit && chosenOutfit !== 'default') {
+    console.log(`[Player] applyElementalSet ignored - user equipped outfit is: "${chosenOutfit}"`);
+    return;
+  }
   activeElement = element;
   if (playerGroup) {
     loadPlayerOutfitPoses(null, activeElement);

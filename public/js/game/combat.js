@@ -2,6 +2,7 @@
 import * as Player  from './player.js';
 import * as Boss    from './boss.js';
 import * as Effects from './effects.js';
+import * as VFX     from './vfx.js';
 import * as Audio   from '../audio.js';
 import * as hud     from '../ui/hud.js';
 import { triggerCinematicShot, resetCameraToDefault, triggerCombatSlowMo, setCombatTimeScale } from './scene.js';
@@ -422,32 +423,23 @@ export function executePlayerCounterAttack(selectedElement, isFullSet, onCounter
 // OUTFIT-SPECIFIC COUNTER-ATTACK SLASH VFX HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 export function triggerIceSlashVFX(bossPosition) {
-  try { Audio.playFrost?.(); } catch (e) {}
-  Effects.triggerFrostShatter(bossPosition, '❄️ SHATTER!');
-  Effects.triggerElementalStatus(bossPosition, 'frost', '❄️ SHATTER!');
-  Effects.spawnIceShardsExplosion?.(bossPosition);
+  VFX.spawnFrostSlashVFX(bossPosition);
+  VFX.showCombatFloatingBanner('FROSTBITE!', '#38bdf8');
 }
 
 export function triggerThunderSlashVFX(bossPosition) {
-  try { Audio.playThunder?.(); } catch (e) {}
-  Effects.triggerLightningSlash(bossPosition, '⚡ SHOCKED!');
-  Effects.triggerElementalStatus(bossPosition, 'thunder', '⚡ SHOCKED!');
-  Effects.triggerElectricSparks?.(bossPosition);
+  VFX.spawnThunderSlashVFX(bossPosition);
+  VFX.showCombatFloatingBanner('SHOCKED!', '#facc15');
 }
 
 export function triggerFireSlashVFX(bossPosition) {
-  try { Audio.playFire?.(); } catch (e) {}
-  Effects.triggerFireBurst(bossPosition, '🔥 BURNING!');
-  Effects.triggerElementalStatus(bossPosition, 'fire', '🔥 BURNING!');
-  Effects.spawnFireExplosionBurst?.(bossPosition);
+  VFX.spawnFireSlashVFX(bossPosition);
+  VFX.showCombatFloatingBanner('BURNING!', '#f97316');
 }
 
 export function triggerNormalSlashVFX(bossPosition) {
-  try { Audio.playSlash?.(); } catch (e) {}
-  Effects.spawnHitSpark(bossPosition);
-  Effects.spawnHitSpark(new THREE.Vector3(bossPosition.x + 0.3, bossPosition.y + 0.3, bossPosition.z));
-  Effects.spawnHitSpark(new THREE.Vector3(bossPosition.x - 0.3, bossPosition.y - 0.2, bossPosition.z));
-  Effects.triggerElementalStatus(bossPosition, 'default', '💥 CRITICAL HIT!');
+  VFX.spawnPhysicalSlashVFX(bossPosition);
+  VFX.showCombatFloatingBanner('CRITICAL HIT!', '#ffffff');
 }
 
 /**
@@ -513,19 +505,30 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
           Effects.triggerShake(context.isMilestone ? 0.65 : 0.25, context.isMilestone ? 0.5 : 0.25);
           Effects.spawnDamageNumber(BOSS_VFX_POS, context.hit1Label || '-2 HP', '#ffee44', context.isMilestone ? 42 : 28);
 
-          // Bind Slash VFX strictly to playerChosenOutfit (Not Stage Element)
-          const currentOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+          // 2. Bind Strike VFX & Text Strictly to Player's Outfit (combat.js, vfx.js)
+          const equippedSkin = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
             || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
             || 'default';
 
-          if (currentOutfit === 'frost') {
-            triggerIceSlashVFX(BOSS_VFX_POS); // Ice burst, SHATTER!
-          } else if (currentOutfit === 'thunder') {
-            triggerThunderSlashVFX(BOSS_VFX_POS); // Lightning strike, SHOCKED!
-          } else if (currentOutfit === 'fire') {
-            triggerFireSlashVFX(BOSS_VFX_POS); // Flame explosion, BURNING!
+          const bossObj = Boss.getBossObject?.();
+          const targetPos = (bossObj && bossObj.position) ? bossObj.position : BOSS_VFX_POS;
+
+          if (equippedSkin === 'frost') {
+            // Frost Outfit Attack
+            VFX.spawnFrostSlashVFX(targetPos);
+            VFX.showCombatFloatingBanner('FROSTBITE!', '#38bdf8');
+          } else if (equippedSkin === 'fire') {
+            // Fire Outfit Attack
+            VFX.spawnFireSlashVFX(targetPos);
+            VFX.showCombatFloatingBanner('BURNING!', '#f97316');
+          } else if (equippedSkin === 'thunder') {
+            // Thunder Outfit Attack
+            VFX.spawnThunderSlashVFX(targetPos);
+            VFX.showCombatFloatingBanner('SHOCKED!', '#facc15');
           } else {
-            triggerNormalSlashVFX(BOSS_VFX_POS); // Steel sparks, CRITICAL HIT!
+            // Default Outfit Attack (Steel blade)
+            VFX.spawnPhysicalSlashVFX(targetPos); // Sharp golden/white sparks, no elemental magic
+            VFX.showCombatFloatingBanner('CRITICAL HIT!', '#ffffff');
           }
 
           // 4. Boss takes hit: setBossPose('hit') -> hold 300ms -> setBossPose('angry') -> hold 1100ms -> setBossPose('idle')

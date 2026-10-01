@@ -1420,6 +1420,8 @@ io.on('connection', (socket) => {
         mode: room.mode,
         totalHp: room.totalHp,
         bossIndex: room.bossIndex || 0,
+        bossElement: room.bossElement || 'thunder',
+        element: room.bossElement || 'thunder',
         testGear: testGear || null,
         equippedSet: testGear ? (room.devEquippedSet || null) : undefined,
       });
