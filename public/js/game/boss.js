@@ -1377,17 +1377,20 @@ export function playBossAttack(element, onPeak, onComplete) {
     // Instantly trigger elemental spell VFX
     if (el === 'fire') {
       try { Audio.playFire?.(); } catch(e) {}
-      Effects.spawnBossMeteorShower(
-        new THREE.Vector3(-3.0, 0.5, 0),
+      Effects.spawnBossMoltenFlameWave(
+        new THREE.Vector3(BOSS_HOME.x - 0.5, 0.05, 0),
+        new THREE.Vector3(-4.5, 0.05, 0),
+        480,
         () => {
           safePeak();
         }
       );
     } else if (el === 'frost') {
       try { Audio.playFrost?.(); } catch(e) {}
-      Effects.spawnBossFrostTrailAndSpikes(
+      Effects.spawnBossFrostSpikeWave(
         new THREE.Vector3(BOSS_HOME.x - 0.5, 0.05, 0),
-        new THREE.Vector3(-3.0, 0, 0),
+        new THREE.Vector3(-4.5, 0.05, 0),
+        480,
         () => {
           safePeak();
         }
@@ -1397,7 +1400,7 @@ export function playBossAttack(element, onPeak, onComplete) {
       try { Audio.playThunder?.(); } catch(e) {}
       Effects.spawnBossLightningBeam(
         new THREE.Vector3(BOSS_HOME.x - 0.5, 3.8, 0),
-        new THREE.Vector3(-3.0, 1.5, 0),
+        new THREE.Vector3(-4.5, 1.5, 0),
         380,
         () => {
           safePeak();

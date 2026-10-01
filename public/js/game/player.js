@@ -120,8 +120,12 @@ export function createFallbackBlockCharacter(outfit = 'default') {
  * Loads the 4 distinct pose meshes directly for the active outfit:
  * idle, dodge, slash, hit with robust multi-step fallback chain
  */
-export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
-  activeElement = outfit || 'default';
+export async function loadPlayerOutfitPoses(scene, outfit) {
+  const activeOutfit = outfit
+    || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
+    || 'default';
+  activeElement = activeOutfit;
   const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
   if (!currentTHREE) {
     console.error('[Player Loader] THREE not available');
@@ -158,7 +162,7 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
   const loadSinglePose = async (pose) => {
     const primaryUrl = `/assets/character/player_${activeElement}_${pose}.glb`;
     const fallbackUrl = `/assets/character/player_${activeElement}_idle.glb`;
-    const emergencyUrl = `/assets/character/player_fire_idle.glb`;
+    const emergencyUrl = `/assets/character/player_default_idle.glb`;
 
     let gltf = null;
     if (loader) {

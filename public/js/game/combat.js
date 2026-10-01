@@ -456,8 +456,8 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
   Boss.setBossPose('angry');
 
   // 2. Tween playerGroup.position in a high leap toward the boss:
-  //    In milestone ultra slow-mo, player drifts upward in dodge pose over a full 2.5s (2500ms)
-  const leapDuration = context.isMilestone ? 2500 : 450;
+  //    In milestone hyper slow-mo (0.03x), player drifts upward in dodge pose over a full 2.8s (2800ms)
+  const leapDuration = context.isMilestone ? 2800 : 450;
   Player.setPlayerPose('dodge');
 
   new TWEEN.Tween(playerObj.position)
@@ -561,12 +561,10 @@ export function executeCombatTurn(ev, onDone) {
     safeOnDone();
   };
 
-  const playerOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+  const activeOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
     || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
-    || ev.equippedSet
-    || window.gameState?.equipped?.outfit
-    || Player.getActiveElement()
     || 'default';
+  const playerOutfit = activeOutfit;
   const isFireSet = (playerOutfit === 'fire');
   const isFullSet = (playerOutfit !== 'default' && ['thunder', 'fire', 'frost'].includes(playerOutfit));
   const selectedElement = isFullSet ? playerOutfit : null;
@@ -642,10 +640,10 @@ export function executeCombatTurn(ev, onDone) {
 
   const executeCorrectBranch = () => {
     if (isPlayerMilestone) {
-      // True Anime Ultra Slow-Motion Bullet-Time (timeScale = 0.08) for a full 2.5s
-      setCombatTimeScale(0.08);
+      // True Anime Hyper Slow-Motion Freeze-Frame Drift (timeScale = 0.03) for 2.8s
+      setCombatTimeScale(0.03);
       // Shot 2: Low-Angle Hero Cam gliding slowly around the floating player in dodge pose
-      triggerCinematicShot(2, 2500);
+      triggerCinematicShot(2, 2800);
     } else {
       // Randomly select one of the 5 distinct cinematic camera angles
       triggerCinematicShot();
@@ -663,30 +661,57 @@ export function executeCombatTurn(ev, onDone) {
     Boss.setBossPositionOverride(true);
 
     if (isBossMilestone) {
-      // 1. True Anime Ultra Slow-Motion Bullet-Time (timeScale = 0.08) for a full 2.5s
-      setCombatTimeScale(0.08);
-      // Shot 3: Over-the-Shoulder Boss Cam looking down at player
-      triggerCinematicShot(3, 2500);
+      // 1. True Anime Hyper Slow-Motion Freeze-Frame Drift (timeScale = 0.03) for 2.8s
+      setCombatTimeScale(0.03);
+      // Shot 3: Over-the-Shoulder Boss Cam looking down at player (doubled distance)
+      triggerCinematicShot(3, 2800);
 
       // Player in dodge pose trying to evade
       Player.setPlayerPose('dodge');
       Boss.setBossPose('angry');
 
-      // Slow charge & projectile creep for 2500ms
+      // Spawn ground wave / projectile creeping toward player during the 2.8s hyper slow-mo!
+      if (bossElement === 'frost') {
+        Effects.spawnBossFrostSpikeWave(
+          new THREE.Vector3(4.8 - 0.5, 0.05, 0),
+          new THREE.Vector3(-4.5, 0.05, 0),
+          2700,
+          null
+        );
+      } else if (bossElement === 'fire') {
+        Effects.spawnBossMoltenFlameWave(
+          new THREE.Vector3(4.8 - 0.5, 0.05, 0),
+          new THREE.Vector3(-4.5, 0.05, 0),
+          2700,
+          null
+        );
+      } else {
+        Effects.spawnBossLightningBeam(
+          new THREE.Vector3(4.8 - 0.5, 3.8, 0),
+          new THREE.Vector3(-4.5, 1.5, 0),
+          2700,
+          null
+        );
+      }
+
+      // Slow charge & projectile creep for 2800ms
       setTimeout(() => {
         // Exactly when the strike or projectile hits: snap instantly back to timeScale = 1.0!
         setCombatTimeScale(1.0);
         Boss.setBossPose('attack');
 
         try { Audio.playHit?.(); } catch (e) {}
-        Effects.triggerShake(0.65, 0.55);
-        Effects.screenFlash('rgba(239,35,60,0.5)', 0.35);
+        Effects.triggerShake(0.75, 0.6);
+        Effects.screenFlash('rgba(239,35,60,0.6)', 0.4);
 
         const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
         const dmgLabel = `💥 BARRAGE -${playerDmg} HP`;
         const playerPos = Player.getPosition();
         const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
         Effects.spawnDamageNumber(textPos, dmgLabel, '#ef233c', 40);
+
+        // Full-body damage VFX upon hit (Fire: burning, Frost: frozen ice block, Thunder: lightning explosion)
+        Effects.triggerPlayerHitVFX(bossElement, playerPos);
 
         Player.setPlayerPose('hit');
         if (playerObj && typeof TWEEN !== 'undefined') {
@@ -719,7 +744,7 @@ export function executeCombatTurn(ev, onDone) {
           resetCameraToDefault(500, doneWrapper);
         }, 500);
 
-      }, 2500);
+      }, 2800);
 
     } else {
       // Normal wrong answer:
@@ -737,7 +762,7 @@ export function executeCombatTurn(ev, onDone) {
 
         Boss.playBossAttack(bossElement, () => {
           try { Audio.playHit?.(); } catch (e) {}
-          Effects.triggerShake(0.35, 0.35);
+          Effects.triggerShake(0.45, 0.35);
           Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
 
           const playerDmg = ev.playerDamage || (isFullSet ? 1 : 2);
@@ -745,6 +770,9 @@ export function executeCombatTurn(ev, onDone) {
           const playerPos = Player.getPosition();
           const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
           Effects.spawnDamageNumber(textPos, dmgLabel, isFullSet ? '#ffd166' : '#ef233c', 32);
+
+          // Full-body damage VFX upon hit (Fire: burning, Frost: frozen ice block, Thunder: lightning explosion)
+          Effects.triggerPlayerHitVFX(bossElement, playerPos);
 
           Player.setPlayerPose('hit');
           if (playerObj && typeof TWEEN !== 'undefined') {

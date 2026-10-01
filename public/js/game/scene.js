@@ -150,20 +150,16 @@ export async function startGame(gameState) {
   Arena.setArenaTheme(activeElement);
 
   // Decouple Player Outfit from Boss Element: Strictly preserve player's independently selected outfit
-  const playerOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+  const activeOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
     || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
-    || gameState.equipped?.outfit
-    || gameState.equippedSet
     || 'default';
-  if (playerOutfit) {
-    Player.applyElementalSet(playerOutfit);
-  }
+  // Do NOT override activeOutfit with the boss's element under any circumstances!
 
   // Pre-battle Asset Loading Gate: Block Question 1 until Player and Boss are 100% loaded & mounted
   const bossTarget = gameState.bossElement || gameState.element || ((gameState.bossIndex !== undefined) ? gameState.bossIndex : 0);
 
   const loadTasks = [
-    Player.loadPlayerOutfitPoses(scene, playerOutfit)
+    Player.loadPlayerOutfitPoses(scene, activeOutfit)
   ];
   if (gameMode === 'pve') {
     loadTasks.push(Boss.loadBossPoses(scene, bossTarget));
@@ -424,8 +420,8 @@ export const CINEMATIC_SHOTS = [
   { start: { x: -8.5, y: 4.2, z: 7.5 }, end: { x: 7.5, y: 3.8, z: -6.5 }, duration: 2500 },
   // Shot 2: Low-Angle Hero Cam (looking up from behind player towards boss)
   { start: { x: -6.8, y: 1.5, z: 3.2 }, end: { x: -5.8, y: 1.8, z: 2.2 }, duration: 2200 },
-  // Shot 3: Over-the-Shoulder Boss Cam (looking down at incoming player leap)
-  { start: { x: 6.5, y: 4.2, z: 3.0 }, end: { x: 5.5, y: 3.6, z: 2.0 }, duration: 2200 },
+  // Shot 3: Over-the-Shoulder Boss Cam (looking down at incoming player leap, doubled distance for 2.0x boss)
+  { start: { x: 12.0, y: 6.5, z: 5.5 }, end: { x: 10.0, y: 5.5, z: 3.5 }, duration: 2500 },
   // Shot 4: High Oblique Isometric Aerial (epic grand arena view)
   { start: { x: 0, y: 10.5, z: 10.5 }, end: { x: 2, y: 9.5, z: 9.5 }, duration: 2500 },
   // Shot 5: Side Action Tracking (gliding horizontally alongside combatants)
