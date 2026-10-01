@@ -212,10 +212,10 @@ export async function startGame(gameState) {
     }, 500);
   }
 
-  // Start combat BGM once models are mounted in memory
+  // Start combat BGM once models are mounted in memory (strictly single track playback)
   try {
-    const track = (activeBossType === 'thunder' || activeBossType === 'fire' || activeBossType === 'frost') ? activeBossType : 'thunder';
-    Audio.playBGM(track);
+    const combatBgmUrl = Audio.getActiveCombatBGMUrl(activeBossType);
+    Audio.switchCombatBGM(combatBgmUrl);
   } catch (e) {}
 
   // Consolidate game initiation into a single entry point: Strictly display Question 1 first!

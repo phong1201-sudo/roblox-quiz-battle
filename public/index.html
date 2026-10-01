@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Montserrat:wght@600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=73.0">
+    <link rel="stylesheet" href="css/style.css?v=74.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -203,6 +203,9 @@
 
                 <!-- Feedback overlay (ĐÚNG / SAI flash) -->
                 <div id="answer-feedback"></div>
+
+                <!-- Arena music selector button -->
+                <button id="arena-music-btn" class="arena-music-btn" title="Đổi nhạc nền trận đấu">🎵 Nhạc nền</button>
             </div><!-- /#arena-viewport -->
 
             <!-- ── BOTTOM 25%: Quiz Console ──────────────────────────────── -->
@@ -290,6 +293,41 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=73.0"></script>
+    <!-- Custom Battle BGM Selector Modal -->
+    <div id="bgm-selector-modal" class="bgm-modal-overlay" style="display:none;">
+        <div class="bgm-modal-card">
+            <div class="bgm-modal-header">
+                <h3>🎵 CHỌN NHẠC CHIẾN ĐẤU (BGM)</h3>
+                <button id="bgm-modal-close" class="bgm-modal-close-btn">&times;</button>
+            </div>
+            
+            <div class="bgm-modal-body">
+                <div class="bgm-section-title">Danh Sách Bài Hát Mặc Định:</div>
+                <div id="bgm-presets-container" class="bgm-presets-list">
+                    <!-- Presets rendered dynamically -->
+                </div>
+
+                <div class="bgm-divider"></div>
+
+                <div class="bgm-section-title">Hoặc Tải Lên File MP3 Cá Nhân:</div>
+                <div class="bgm-local-row">
+                    <input type="file" id="local-audio-input" accept="audio/*" style="display:none;">
+                    <button id="btn-pick-local-audio" class="btn btn-primary bgm-upload-btn">📁 Chọn file MP3 từ máy</button>
+                    <span id="local-audio-status" class="bgm-local-status">Chưa chọn file local</span>
+                </div>
+                <div class="bgm-help-text">* File chỉ chạy trong phiên hiện tại từ bộ nhớ tạm trình duyệt (không upload lên server).</div>
+
+                <div class="bgm-divider"></div>
+
+                <div class="bgm-volume-row">
+                    <span class="bgm-vol-label">Âm lượng BGM:</span>
+                    <input type="range" id="bgm-volume-slider" min="0" max="100" value="60" class="bgm-vol-range">
+                    <span id="bgm-volume-val" class="bgm-vol-num">60%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js?v=74.0"></script>
 </body>
 </html>

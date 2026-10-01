@@ -21,13 +21,103 @@ const BGM_TRACKS = {
 const BGM_VOLUME = 0.4;   // balanced so SFX cuts above it
 
 // ── Single global Audio instance ─────────────────────────────────────────────
-let _bgmAudio  = null;    // the ONE <audio> element — never duplicated
+let _bgmAudio  = null;    // the ONE <audio> element for menu/lobby/fanfare
 let _bgmTrack  = null;    // key currently loaded/playing
 let _muted     = false;
 let _inBattle  = false;   // true during active match — prevents accidental lobby BGM switch
 
+export let currentBgmAudio = null;
+export let customBlobUrl = null;
+
+export const PRESET_TRACKS = [
+  { id: 'default', name: 'Mặc định (Arena Battle)', url: '/assets/audio/bgm_battle.mp3' },
+  { id: 'anime_rock', name: 'Epic Anime Rock', url: '/assets/audio/bgm_epic_rock.mp3' },
+  { id: 'electro', name: 'Cyber Electro Pulse', url: '/assets/audio/bgm_electro.mp3' },
+  { id: 'chiptune', name: '8-Bit Arcade Mania', url: '/assets/audio/bgm_arcade.mp3' }
+];
+
+export function switchCombatBGM(sourceUrl) {
+  // 1. Completely stop and reset previous playing BGM to prevent overlapping
+  if (_bgmAudio) {
+    try {
+      _bgmAudio.pause();
+      _bgmAudio.currentTime = 0;
+      _bgmAudio.src = '';
+    } catch (e) {}
+    _bgmAudio = null;
+  }
+  if (currentBgmAudio) {
+    try {
+      currentBgmAudio.pause();
+      currentBgmAudio.currentTime = 0;
+      currentBgmAudio.src = '';
+    } catch (e) {}
+    currentBgmAudio = null;
+  }
+
+  // 2. Initialize new track
+  currentBgmAudio = new window.Audio(sourceUrl);
+  currentBgmAudio.loop = true;
+  currentBgmAudio.volume = _muted ? 0 : parseFloat(localStorage.getItem('bgmVolume') || '0.6');
+
+  // 3. Play safely with user-gesture promise handling
+  currentBgmAudio.play().catch(e => console.warn('[BGM Play Interrupted]', e));
+  _inBattle = true;
+}
+
+export function handleCustomLocalFile(file) {
+  if (!file || !file.type.startsWith('audio/')) return;
+  
+  // Revoke previous blob if exists to avoid memory leak
+  if (customBlobUrl) {
+    try { URL.revokeObjectURL(customBlobUrl); } catch (e) {}
+  }
+
+  // Create temporary memory stream (not uploaded to server)
+  customBlobUrl = URL.createObjectURL(file);
+  switchCombatBGM(customBlobUrl);
+}
+
+export function getActiveCombatBGMUrl(bossType) {
+  if (customBlobUrl) return customBlobUrl;
+  const savedId = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedCombatBgm'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedCombatBgm'));
+  if (savedId) {
+    const found = PRESET_TRACKS.find(t => t.id === savedId);
+    if (found) return found.url;
+  }
+  return PRESET_TRACKS[0].url;
+}
+
+export function setBgmVolume(val) {
+  const vol = Math.max(0, Math.min(1, parseFloat(val)));
+  try { localStorage.setItem('bgmVolume', vol.toString()); } catch (e) {}
+  if (currentBgmAudio && !_muted) {
+    currentBgmAudio.volume = vol;
+  }
+  if (_bgmAudio && !_muted) {
+    _bgmAudio.volume = vol;
+  }
+}
+
+export function getBgmVolume() {
+  try {
+    return parseFloat(localStorage.getItem('bgmVolume') || '0.6');
+  } catch (e) {
+    return 0.6;
+  }
+}
+
 export function setInBattle(inBattle) {
   _inBattle = Boolean(inBattle);
+  if (!_inBattle && currentBgmAudio) {
+    try {
+      currentBgmAudio.pause();
+      currentBgmAudio.currentTime = 0;
+      currentBgmAudio.src = '';
+    } catch (e) {}
+    currentBgmAudio = null;
+  }
 }
 
 export function isInBattle() {
@@ -41,21 +131,28 @@ function _ensureAudio() {
   _bgmAudio.addEventListener('error', (e) => {
     const src = _bgmAudio.src || '(unknown)';
     console.error(`[audio] BGM load error for "${src}":`, e.message || 'media error code ' + _bgmAudio.error?.code);
-    // NO oscillator fallback — just log the error
   });
   return _bgmAudio;
 }
 
 /**
- * Play a BGM track.
- * - Same track already playing → no-op.
- * - Different track → pause, swap src, play.
+ * Play a BGM track (menu/lobby/fanfare).
  */
 export function playBGM(trackKey) {
   // Guard: Battle BGM must loop continuously throughout the entire fight
   if (_inBattle && trackKey === 'lobby') {
     console.log('[audio] Blocked switching to lobby music while in battle.');
     return;
+  }
+
+  // If combat BGM was playing and we switch to lobby/victory, stop combat BGM
+  if (currentBgmAudio) {
+    try {
+      currentBgmAudio.pause();
+      currentBgmAudio.currentTime = 0;
+      currentBgmAudio.src = '';
+    } catch (e) {}
+    currentBgmAudio = null;
   }
 
   const src = BGM_TRACKS[trackKey];
@@ -76,14 +173,14 @@ export function playBGM(trackKey) {
     audio.currentTime  = 0;
   }
 
+  const userVol = getBgmVolume();
   audio.loop   = (trackKey !== 'victory');
-  audio.volume = _muted ? 0 : BGM_VOLUME;
+  audio.volume = _muted ? 0 : userVol;
   _bgmTrack    = trackKey;
 
   const promise = audio.play();
   if (promise && typeof promise.catch === 'function') {
     promise.catch(e => {
-      // Autoplay blocked by browser — queue for first user gesture
       console.log('[audio] BGM autoplay deferred until user gesture:', e.message);
       _pendingTrack = trackKey;
     });
@@ -92,18 +189,28 @@ export function playBGM(trackKey) {
 
 /** Stop BGM immediately and guarantee single audio stream. */
 export function stopBGM() {
+  if (currentBgmAudio) {
+    try {
+      currentBgmAudio.pause();
+      currentBgmAudio.currentTime = 0;
+      currentBgmAudio.src = '';
+    } catch (e) {}
+    currentBgmAudio = null;
+  }
   if (_bgmAudio) {
     try {
       _bgmAudio.pause();
       _bgmAudio.currentTime = 0;
+      _bgmAudio.src = '';
     } catch (e) {}
     _bgmAudio = null;
   }
   _bgmTrack = null;
+  _inBattle = false;
 }
 
 // ── Legacy aliases ────────────────────────────────────────────────────────────
-export function startBgm()       { /* no-op — driven by playBGM() */ }
+export function startBgm()       { /* no-op — driven by switchCombatBGM / playBGM */ }
 export function stopBgm()        { stopBGM(); }
 export function playLobbyMusic() { playBGM('lobby'); }
 export function switchTrack(key) { playBGM(key); }
@@ -114,7 +221,9 @@ let _pendingTrack = null;
 // ── Mute / unmute ─────────────────────────────────────────────────────────────
 export function setMuted(mute) {
   _muted = mute;
-  if (_bgmAudio) _bgmAudio.volume = mute ? 0 : BGM_VOLUME;
+  const vol = getBgmVolume();
+  if (_bgmAudio) _bgmAudio.volume = mute ? 0 : vol;
+  if (currentBgmAudio) currentBgmAudio.volume = mute ? 0 : vol;
 }
 
 export function isMuted() { return _muted; }
@@ -132,7 +241,7 @@ export function toggleMute() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Audio Toggle Button  🔊 / 🔇
+// Audio Toggle Button  🔊 / 🔇 and Music Selector Button 🎵
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function mountAudioToggle() {
@@ -145,6 +254,20 @@ export function mountAudioToggle() {
     bar.className  = 'top-user-bar';
     document.body.appendChild(bar);
   }
+
+  const musicBtn = document.createElement('button');
+  musicBtn.id = 'bgm-selector-btn';
+  musicBtn.className = 'top-bar-music-btn';
+  musicBtn.title = 'Chọn nhạc nền chiến đấu (BGM)';
+  musicBtn.textContent = '🎵';
+  musicBtn.onclick = () => {
+    if (window.openBgmSelector) {
+      window.openBgmSelector();
+    } else {
+      const modal = document.getElementById('bgm-selector-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+  };
 
   const btn        = document.createElement('button');
   btn.id           = 'audio-toggle-btn';
@@ -165,6 +288,7 @@ export function mountAudioToggle() {
   };
 
   bar.prepend(btn);
+  bar.prepend(musicBtn);
 }
 
 // ── Bootstrap BGM on first user gesture ──────────────────────────────────────

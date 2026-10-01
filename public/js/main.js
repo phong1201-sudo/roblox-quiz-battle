@@ -6,6 +6,7 @@ import * as results from './ui/results.js';
 import * as scene  from './game/scene.js';
 import * as Audio  from './audio.js';
 import { initSplashScreen } from './splash.js';
+import { initBgmSelector } from './ui/bgmSelector.js';
 
 // ─── Track whether Three.js scene has been initialised yet ───────────────────
 let sceneReady = false;
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Audio: mount toggle button + register first-interaction bootstrap ──
     Audio.mountAudioToggle();
     Audio.bootstrapOnInteraction();
+    initBgmSelector();
 
     // ── Always activate menu screen first — auth modal overlays it ───────────
     showScreen('menu');

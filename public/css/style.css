@@ -1433,3 +1433,252 @@ button[disabled] {
   margin-bottom: clamp(6px, 1.5vh, 16px);
   pointer-events: none;
 }
+
+/* ─── CUSTOM BATTLE BGM SELECTOR ─────────────────────────────────────── */
+.top-bar-music-btn {
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid #38bdf8;
+  border-radius: 6px;
+  color: #38bdf8;
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.top-bar-music-btn:hover {
+  background: #38bdf8;
+  color: #0f172a;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+  transform: scale(1.05);
+}
+
+.arena-music-btn {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 25;
+  background: rgba(15, 23, 42, 0.88);
+  border: 2px solid #00b4d8;
+  color: #00b4d8;
+  font-family: 'Press Start 2P', 'Nunito', sans-serif;
+  font-size: 9px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 180, 216, 0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: all;
+}
+
+.arena-music-btn:hover {
+  background: #00b4d8;
+  color: #070a13;
+  box-shadow: 0 0 16px #00b4d8;
+  transform: translateY(-1px);
+}
+
+.bgm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 18, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: all;
+  animation: fadeIn 0.2s ease;
+}
+
+.bgm-modal-card {
+  background: #0f172a;
+  border: 2px solid #00b4d8;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 180, 216, 0.25);
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bgm-modal-header {
+  background: #1e293b;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #334155;
+}
+
+.bgm-modal-header h3 {
+  margin: 0;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 11px;
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.bgm-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+  transition: color 0.15s ease;
+}
+
+.bgm-modal-close-btn:hover {
+  color: #ef4444;
+}
+
+.bgm-modal-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.bgm-section-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bgm-presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bgm-preset-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bgm-preset-item:hover {
+  border-color: #38bdf8;
+  background: #273549;
+  transform: translateX(2px);
+}
+
+.bgm-preset-item input[type="radio"] {
+  accent-color: #38bdf8;
+  transform: scale(1.2);
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+.bgm-preset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.bgm-preset-name {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.bgm-preset-id {
+  font-size: 10px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.bgm-preset-icon {
+  font-size: 11px;
+  color: #38bdf8;
+  opacity: 0.7;
+}
+
+.bgm-divider {
+  height: 1px;
+  background: #334155;
+  margin: 4px 0;
+}
+
+.bgm-local-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bgm-upload-btn {
+  font-size: 11px !important;
+  padding: 8px 14px !important;
+  border-radius: 6px !important;
+}
+
+.bgm-local-status {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 12px;
+  color: #94a3b8;
+  word-break: break-all;
+}
+
+.bgm-help-text {
+  font-size: 10px;
+  color: #64748b;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.bgm-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1e293b;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.bgm-vol-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.bgm-vol-range {
+  flex: 1;
+  accent-color: #00b4d8;
+  cursor: pointer;
+}
+
+.bgm-vol-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #38bdf8;
+  min-width: 44px;
+  text-align: right;
+}
