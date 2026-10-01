@@ -186,26 +186,99 @@ document.addEventListener('DOMContentLoaded', () => {
         syncActiveQuestions();
     });
 
-    // ── Menu buttons ──────────────────────────────────────────────────────────
+    // ── Primary Navigation: Single Player vs Multiplayer Hub ────────────────
+    const btnModeSingle = document.getElementById('btn-mode-single');
+    if (btnModeSingle) {
+        btnModeSingle.addEventListener('click', () => {
+            const user = Auth.getCurrentUser();
+            if (!user) { Auth.showAuthModal(); return; }
+
+            const myColor = document.getElementById('player-color')?.value || '#ff6b35';
+            window.gameState = makeGameState({
+                myId: 'single_player',
+                myName: user.username,
+                myColor,
+                code: null,
+                isHost: true,
+                isSinglePlayer: true,
+                mode: 'single',
+                totalHp: 50,
+                stage: 'thunder',
+                bossElement: 'thunder',
+                players: [{
+                    id: 'single_player',
+                    name: user.username,
+                    color: myColor,
+                    hp: 50,
+                    ready: true,
+                }]
+            });
+
+            Multiplayer.cancelHosting();
+            // Strictly unbind any old multiplayer combat listeners in single mode
+            try {
+                socket.off('damage_dealt');
+                socket.off('combat_event');
+                socket.off('hp_update');
+                socket.off('question');
+                socket.off('answer_result');
+            } catch(e) {}
+
+            if (lobby.init) lobby.init(window.gameState);
+            showScreen('lobby');
+            try { Audio.playBGM('lobby'); } catch(e) {}
+        });
+    }
+
+    const btnModeMulti = document.getElementById('btn-mode-multi');
+    if (btnModeMulti) {
+        btnModeMulti.addEventListener('click', () => {
+            if (!Auth.getCurrentUser()) { Auth.showAuthModal(); return; }
+            showScreen('multi-hub');
+        });
+    }
+
+    const btnHubCreate = document.getElementById('btn-hub-create');
+    if (btnHubCreate) {
+        btnHubCreate.addEventListener('click', () => {
+            Multiplayer.createMultiplayerRoom({ mode: 'team_vs_boss', stage: 'thunder' });
+        });
+    }
+
+    const btnHubJoin = document.getElementById('btn-hub-join');
+    if (btnHubJoin) {
+        btnHubJoin.addEventListener('click', () => {
+            showScreen('join');
+        });
+    }
+
+    const btnBackHub = document.getElementById('btn-back-hub');
+    if (btnBackHub) {
+        btnBackHub.addEventListener('click', () => {
+            showScreen('menu');
+        });
+    }
+
+    // ── Legacy menu buttons fallback ──────────────────────────────────────────
     const btnCreate = document.getElementById('btn-create');
-    btnCreate.addEventListener('click', () => {
+    btnCreate?.addEventListener('click', () => {
         Multiplayer.createMultiplayerRoom({ mode: 'team_vs_boss', stage: 'thunder' });
     });
 
     const btnJoinScreen = document.getElementById('btn-join-screen');
-    btnJoinScreen.addEventListener('click', () => {
+    btnJoinScreen?.addEventListener('click', () => {
         if (!Auth.getCurrentUser()) { Auth.showAuthModal(); return; }
         showScreen('join');
     });
 
     const btnJoinRoom = document.getElementById('btn-join-room');
-    btnJoinRoom.addEventListener('click', () => {
+    btnJoinRoom?.addEventListener('click', () => {
         const code = document.getElementById('room-code-input').value.trim().toUpperCase();
         Multiplayer.joinMultiplayerRoom(code);
     });
 
     const btnBackJoin = document.getElementById('btn-back-join');
-    btnBackJoin.addEventListener('click', () => {
+    btnBackJoin?.addEventListener('click', () => {
         Multiplayer.cancelHosting();
         showScreen('menu');
     });

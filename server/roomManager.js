@@ -58,6 +58,16 @@ class RoomManager {
     const playerOutfit = equipped?.outfit || equippedSet || 'default';
     const hasElemental = ['thunder', 'fire', 'frost'].includes(playerOutfit.toLowerCase());
 
+    room.host = {
+      socketId,
+      username: playerName,
+      outfit: playerOutfit,
+      isReady: false,
+      color,
+      userId: userId || null
+    };
+    room.guest = null;
+
     room.players.set(socketId, {
       id: socketId,
       name: playerName,
@@ -141,6 +151,15 @@ class RoomManager {
     const playerOutfit = equipped?.outfit || equippedSet || 'default';
     const hasElemental = ['thunder', 'fire', 'frost'].includes(playerOutfit.toLowerCase());
 
+    room.guest = {
+      socketId,
+      username: playerName,
+      outfit: playerOutfit,
+      isReady: false,
+      color,
+      userId: userId || null
+    };
+
     room.players.set(socketId, {
       id: socketId,
       name: playerName,
@@ -182,17 +201,23 @@ class RoomManager {
 
     player.ready = Boolean(ready);
 
-    if (equippedSet || equipped) {
-      const playerOutfit = (equipped?.outfit || equippedSet || player.equippedSet || 'default').toLowerCase();
-      const hasElemental = ['thunder', 'fire', 'frost'].includes(playerOutfit);
-      player.equippedSet = playerOutfit;
-      player.equipped = equipped || { outfit: playerOutfit, weapon: playerOutfit };
-      player.damagePerHit = hasElemental ? 2 : 1;
-      player.hasElemental = hasElemental;
+    const playerOutfit = (equipped?.outfit || equippedSet || player.equippedSet || 'default').toLowerCase();
+    const hasElemental = ['thunder', 'fire', 'frost'].includes(playerOutfit);
+    player.equippedSet = playerOutfit;
+    player.equipped = equipped || { outfit: playerOutfit, weapon: playerOutfit };
+    player.damagePerHit = hasElemental ? 2 : 1;
+    player.hasElemental = hasElemental;
+
+    if (room.host && room.host.socketId === socketId) {
+      room.host.isReady = Boolean(ready);
+      room.host.outfit = playerOutfit;
+    } else if (room.guest && room.guest.socketId === socketId) {
+      room.guest.isReady = Boolean(ready);
+      room.guest.outfit = playerOutfit;
     }
 
     const players = Array.from(room.players.values());
-    const allReady = (players.length >= 2) && players.every(p => p.ready);
+    const allReady = (room.host && room.host.isReady) && (room.guest && room.guest.isReady);
 
     return { allReady, players, room };
   }
@@ -224,6 +249,20 @@ class RoomManager {
         if (room.hostId === socketId) {
           newHostId = room.players.keys().next().value;
           room.hostId = newHostId;
+          const newHostPlayer = room.players.get(newHostId);
+          if (newHostPlayer) {
+            room.host = {
+              socketId: newHostId,
+              username: newHostPlayer.name,
+              outfit: newHostPlayer.equippedSet || 'default',
+              isReady: Boolean(newHostPlayer.ready),
+              color: newHostPlayer.color,
+              userId: newHostPlayer.userId || null
+            };
+          }
+          room.guest = null;
+        } else if (room.guest && room.guest.socketId === socketId) {
+          room.guest = null;
         }
         return { code, players: Array.from(room.players.values()), newHostId };
       }
@@ -276,16 +315,22 @@ class RoomManager {
     room.questions = questions;
   }
 
-  setMode(code, mode) {
+  setMode(code, mode, socketId) {
     const room = this.rooms.get(code);
     if (room && room.phase === 'LOBBY') {
+      if (socketId && room.hostId !== socketId) {
+        throw new Error('Cài đặt do Chủ phòng quyết định! Bạn không có quyền thay đổi chế độ.');
+      }
       room.mode = (mode === 'pvp_1v1' || mode === 'pvp') ? 'pvp_1v1' : 'team_vs_boss';
     }
   }
 
-  setStage(code, stage) {
+  setStage(code, stage, socketId) {
     const room = this.rooms.get(code);
     if (room && room.phase === 'LOBBY') {
+      if (socketId && room.hostId !== socketId) {
+        throw new Error('Cài đặt do Chủ phòng quyết định! Bạn không có quyền thay đổi màn chơi.');
+      }
       const clean = ['thunder', 'fire', 'frost'].includes(stage) ? stage : 'thunder';
       room.stage = clean;
       room.bossElement = clean;

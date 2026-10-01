@@ -1,6 +1,7 @@
 import { socket } from '../socket.js';
 import { applyThunderSet, addUnlockedSet } from './lobby.js';
 import * as Audio from '../audio.js';
+import * as scene from '../game/scene.js';
 
 let currentState;
 let currentTimer = null;
@@ -47,9 +48,14 @@ export function init(gameState) {
         try { if (typeof Audio !== 'undefined' && Audio.startBgm) Audio.startBgm(); } catch(e) {}
 
         myAnswer = opt;
-        socket.emit('submit_answer', { code: currentState.code, answer: opt });
         btn.classList.add('selected');
         collapseQuizCard();
+
+        if (currentState && currentState.isSinglePlayer) {
+          evaluateSinglePlayerAnswer(opt);
+        } else {
+          socket.emit('submit_answer', { code: currentState.code, answer: opt });
+        }
       };
     }
   });
@@ -268,8 +274,13 @@ export function showQuestion(data) {
     clearFeedback();
     startTimer(data.timeLimit || 30, () => {
       if (!myAnswer) {
-        socket.emit('submit_answer', { code: currentState.code, answer: null });
-        disableButtons();
+        if (currentState && currentState.isSinglePlayer) {
+          disableButtons();
+          evaluateSinglePlayerAnswer(null);
+        } else {
+          socket.emit('submit_answer', { code: currentState.code, answer: null });
+          disableButtons();
+        }
       }
     });
   } catch(err) {
@@ -525,8 +536,6 @@ export function resetHudState() {
   });
   restoreQuizCard();
   visualBossHpPercent = 100;
-  const hpFillPlayer = document.getElementById('hp-fill-player');
-  const hpFillEnemy  = document.getElementById('hp-fill-enemy');
   if (hpFillPlayer) { hpFillPlayer.style.width = '100%'; hpFillPlayer.style.backgroundColor = '#06d6a0'; }
   if (hpFillEnemy)  { hpFillEnemy.style.width  = '100%'; hpFillEnemy.style.backgroundColor  = '#ef233c'; }
   const hpValPlayer = document.getElementById('hp-val-player');
@@ -534,4 +543,98 @@ export function resetHudState() {
   if (hpValPlayer) hpValPlayer.textContent = '100%';
   if (hpValEnemy)  hpValEnemy.textContent  = '100%';
 }
+
+export function evaluateSinglePlayerAnswer(selectedOpt) {
+  if (!currentState || !currentState.isSinglePlayer) return;
+
+  const qIndex = window.gameState?.currentQuestionIndex ?? 0;
+  const q = window.gameState?.questions?.[qIndex];
+  if (!q) return;
+
+  let correctAns = q.answer || 'A';
+  if (typeof correctAns === 'number') {
+    correctAns = ['A', 'B', 'C', 'D'][correctAns] || 'A';
+  } else {
+    correctAns = String(correctAns).trim().toUpperCase();
+  }
+
+  const isCorrect = (selectedOpt === correctAns);
+  const myOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || window.gameState?.equipped?.outfit || 'default';
+  const isElemental = (myOutfit !== 'default' && ['thunder', 'fire', 'frost'].includes(myOutfit));
+
+  // Exactly ONE player damage evaluation per question:
+  // Default outfit: Boss loses exactly 1 HP.
+  // Elemental outfit: Boss loses exactly 2 HP (1 base + 1 elemental proc).
+  const playerDmg = isElemental ? 2 : 1;
+  // Incoming damage from boss: Default takes 2 HP, Elemental armor reduces to 1 HP.
+  const incomingDmg = isElemental ? 1 : 2;
+
+  let currentBossHp = window.gameState.bossHp ?? window.gameState.totalHp;
+  let currentPlayerHp = window.gameState.playerHp ?? window.gameState.totalHp;
+
+  let events = [];
+  if (isCorrect) {
+    currentBossHp = Math.max(0, currentBossHp - playerDmg);
+    window.gameState.bossHp = currentBossHp;
+    events.push({
+      type: 'attack',
+      attackerId: 'single_player',
+      victimId: 'boss',
+      isCorrect: true,
+      damage: playerDmg,
+      hasElemental: isElemental,
+      outfit: myOutfit,
+      currentBossHp,
+      totalQuestions: window.gameState.totalQuestions,
+      questionNumber: qIndex + 1,
+      questionIndex: qIndex
+    });
+  } else {
+    currentPlayerHp = Math.max(0, currentPlayerHp - incomingDmg);
+    window.gameState.playerHp = currentPlayerHp;
+    events.push({
+      type: 'boss_attack',
+      attackerId: 'boss',
+      victimId: 'single_player',
+      isCorrect: false,
+      damage: incomingDmg,
+      hasElemental: isElemental,
+      element: window.gameState.bossElement || 'thunder',
+      remainingPlayerHp: currentPlayerHp,
+      currentBossHp,
+      totalQuestions: window.gameState.totalQuestions,
+      questionNumber: qIndex + 1,
+      questionIndex: qIndex
+    });
+  }
+
+  // Update HUD
+  showResult({
+    correctAnswer: correctAns,
+    hp: { single_player: currentPlayerHp },
+    bossHp: currentBossHp,
+    questionIndex: qIndex,
+    totalQuestions: window.gameState.totalQuestions
+  });
+
+  // Play combat animation
+  if (scene && scene.onCombatEvent) {
+    scene.onCombatEvent({ events });
+  }
+
+  // Auto-progress turn
+  setTimeout(() => {
+    if (window.gameState.bossHp <= 0 || window.gameState.playerHp <= 0 || (qIndex + 1) >= window.gameState.totalQuestions) {
+      if (typeof window.finishSinglePlayerMatch === 'function') {
+        window.finishSinglePlayerMatch();
+      }
+    } else {
+      if (typeof window.presentSinglePlayerQuestion === 'function') {
+        window.presentSinglePlayerQuestion(qIndex + 1);
+      }
+    }
+  }, 2200);
+}
+
 

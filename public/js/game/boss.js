@@ -131,6 +131,7 @@ export function setBossPose(poseName = 'idle') {
     stopBossSuperSaiyanAura();
   }
 }
+if (typeof window !== 'undefined') window.setBossPose = setBossPose;
 
 // Universal Procedural Boss Arm Pivot & Compound Limb Hierarchy
 export let bossCombatArmCompound = null;

@@ -2,6 +2,10 @@ import { socket } from '../socket.js';
 import { showScreen } from '../main.js';
 import * as Audio from '../audio.js';
 import * as Multiplayer from '../multiplayer.js';
+import * as hud from './hud.js';
+import * as scene from '../game/scene.js';
+import * as results from './results.js';
+import * as Auth from '../auth.js';
 // THREE is available as a global from the CDN script tag
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -612,6 +616,173 @@ export function init(gameState) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SINGLE PLAYER MATCH CONTROLLER
+// ─────────────────────────────────────────────────────────────────────────────
+export async function startSinglePlayerMatch({ bossElement = 'thunder', difficulty = 'medium', outfit = 'default' } = {}) {
+  try {
+    const user = Auth.getCurrentUser ? Auth.getCurrentUser() : null;
+    const myOutfit = outfit || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit')) || 'default';
+    const isFullSet = (myOutfit !== 'default' && ['thunder', 'fire', 'frost'].includes(myOutfit));
+
+    // 1. Fetch questions for the selected Boss element
+    let questions = [];
+    try {
+      const res = await fetch(`/api/questions/${bossElement}`);
+      const data = await res.json();
+      if (data && data.questions && data.questions.length > 0) {
+        questions = data.questions;
+      }
+    } catch (e) {
+      console.warn('[SinglePlayer] Failed to fetch questions from API:', e);
+    }
+    if (!questions || questions.length === 0) {
+      questions = window.activeQuestionBank?.[bossElement] || [];
+    }
+    if (!questions || questions.length === 0) {
+      questions = [
+        { question: 'Thủ đô của Việt Nam là thành phố nào?', options: ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Huế'], answer: 'A' },
+        { question: 'Kim loại nào nhẹ nhất trong các kim loại sau?', options: ['Sắt', 'Nhôm', 'Liti', 'Vàng'], answer: 'C' },
+        { question: 'Hành tinh nào gần Mặt Trời nhất trong Hệ Mặt Trời?', options: ['Sao Kim', 'Sao Thủy', 'Sao Hỏa', 'Trái Đất'], answer: 'B' },
+      ];
+    }
+
+    // Shuffle questions
+    questions = questions.slice().sort(() => Math.random() - 0.5);
+    const limit = difficulty === 'easy' ? 20 : (difficulty === 'medium' ? 30 : 50);
+    questions = questions.slice(0, Math.min(limit, questions.length));
+
+    // 2. Build explicit single-player gameState
+    window.gameState = {
+      myId: 'single_player',
+      myName: user?.username || 'Người chơi',
+      myColor: '#ff6b35',
+      code: null,
+      isHost: true,
+      isSinglePlayer: true,
+      mode: 'single',
+      stage: bossElement,
+      bossElement: bossElement,
+      difficulty: difficulty,
+      totalHp: questions.length,
+      totalQuestions: questions.length,
+      currentQuestionIndex: 0,
+      questions: questions,
+      playerHp: questions.length,
+      bossHp: questions.length,
+      equipped: { outfit: myOutfit, weapon: myOutfit },
+      equippedSet: isFullSet ? myOutfit : null,
+      damagePerHit: isFullSet ? 2 : 1,
+      hasFullSet: isFullSet,
+      players: [
+        {
+          id: 'single_player',
+          name: user?.username || 'Người chơi',
+          color: '#ff6b35',
+          hp: questions.length,
+          ready: true,
+          equipped: { outfit: myOutfit, weapon: myOutfit },
+          equippedSet: isFullSet ? myOutfit : null
+        }
+      ]
+    };
+
+    // 3. Unbind any socket battle listeners to strictly prevent duplicate listeners & multi-damage
+    try {
+      socket.off('damage_dealt');
+      socket.off('combat_event');
+      socket.off('hp_update');
+      socket.off('question');
+      socket.off('answer_result');
+    } catch(e) {}
+
+    // 4. Switch to battle screen
+    showScreen('game');
+    Audio.setInBattle(true);
+
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('game-canvas');
+      if (canvas && scene.initScene) scene.initScene(canvas);
+      if (hud.init) hud.init(window.gameState);
+      if (scene.startGame) scene.startGame(window.gameState);
+
+      // Start question 1 after arena transition
+      setTimeout(() => {
+        presentSinglePlayerQuestion(0);
+      }, 1400);
+    });
+
+  } catch (err) {
+    console.error('[startSinglePlayerMatch] Error launching match:', err);
+    alert('Không thể khởi tạo trận đấu chơi đơn: ' + err.message);
+  }
+}
+
+export function presentSinglePlayerQuestion(qIndex) {
+  if (!window.gameState || !window.gameState.isSinglePlayer) return;
+  const questions = window.gameState.questions || [];
+  if (qIndex >= questions.length || window.gameState.bossHp <= 0 || window.gameState.playerHp <= 0) {
+    finishSinglePlayerMatch();
+    return;
+  }
+
+  window.gameState.currentQuestionIndex = qIndex;
+  const q = questions[qIndex];
+
+  let optionsObj = {};
+  if (Array.isArray(q.options)) {
+    ['A', 'B', 'C', 'D'].forEach((k, idx) => {
+      optionsObj[k] = q.options[idx] || '';
+    });
+  } else {
+    optionsObj = q.options || {};
+  }
+
+  const qData = {
+    index: qIndex + 1,
+    total: questions.length,
+    question: q.question,
+    options: optionsObj,
+    timeLimit: 30,
+  };
+
+  if (hud.showQuestion) hud.showQuestion(qData);
+  if (scene.onQuestion) scene.onQuestion(qData);
+}
+
+export function finishSinglePlayerMatch() {
+  if (!window.gameState || !window.gameState.isSinglePlayer) return;
+  const isVictory = (window.gameState.bossHp <= 0);
+  const verdict = isVictory ? (window.gameState.playerHp === window.gameState.totalHp ? 'PERFECT' : 'VICTORY') : 'DEFEAT';
+
+  const resultsData = {
+    verdict,
+    mode: 'pve',
+    element: window.gameState.bossElement,
+    difficulty: window.gameState.difficulty,
+    scores: { single_player: window.gameState.playerHp * 100 },
+    hp: { single_player: window.gameState.playerHp },
+    bossHp: window.gameState.bossHp,
+  };
+
+  Audio.setInBattle(false);
+  try {
+    Audio.stopBGM();
+    if (isVictory) Audio.playBGM('victory');
+  } catch(e) {}
+
+  setTimeout(() => {
+    showScreen('results');
+    if (results.init) results.init(resultsData, window.gameState);
+  }, 1200);
+}
+
+if (typeof window !== 'undefined') {
+  window.startSinglePlayerMatch = startSinglePlayerMatch;
+  window.presentSinglePlayerQuestion = presentSinglePlayerQuestion;
+  window.finishSinglePlayerMatch = finishSinglePlayerMatch;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STUDENT LOBBY
 // ─────────────────────────────────────────────────────────────────────────────
 function _buildStudentLobby(container, gameState) {
@@ -645,140 +816,169 @@ function _buildStudentLobby(container, gameState) {
     return h;
   };
 
-  // ── 0. Multiplayer Game Mode & Stage Selector ─────────────────────────────
-  const roomSection = document.createElement('div');
-  roomSection.style.cssText = 'background:rgba(15,23,42,0.7);border:2px solid #00cfff;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 0 16px rgba(0,207,255,0.15);';
+  if (gameState.isSinglePlayer) {
+    // ── Single Player Entry Banner ──────────────────────────────────────────
+    const singleHead = document.createElement('div');
+    singleHead.style.cssText = 'background:rgba(15,23,42,0.85);border:2px solid #00cfff;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 0 16px rgba(0,207,255,0.2);';
+    singleHead.innerHTML = `
+      <div>
+        <div style="font-size:12px;font-weight:900;color:#00cfff;letter-spacing:1px;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;">
+          ⚔️ ĐẤU TRƯỜNG CHƠI ĐƠN (1 VS 1 BOSS)
+        </div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:2px;">
+          Bản lĩnh một chọi một — Tùy chọn trang phục &amp; cấp độ để xuất trận!
+        </div>
+      </div>
+    `;
+    const backBtn = document.createElement('button');
+    backBtn.className = 'btn btn-danger';
+    backBtn.style.cssText = 'font-size:9px;padding:6px 12px;border-radius:6px;cursor:pointer;';
+    backBtn.textContent = '🔙 Quay lại';
+    backBtn.onclick = () => {
+      showScreen('menu');
+      try { Audio.playBGM('lobby'); } catch(e) {}
+    };
+    singleHead.appendChild(backBtn);
+    wrap.appendChild(singleHead);
+  } else {
+    // ── 0. Multiplayer Game Mode & Stage Selector ─────────────────────────────
+    const roomSection = document.createElement('div');
+    roomSection.style.cssText = 'background:rgba(15,23,42,0.7);border:2px solid #00cfff;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 0 16px rgba(0,207,255,0.15);';
 
-  const roomHead = document.createElement('div');
-  roomHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
-  roomHead.innerHTML = `
-    <span style="font-size:11px;font-weight:800;color:#00cfff;letter-spacing:1px;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;">
-      ${gameState.isHost ? '⚙️ Cài Đặt Phòng (Chủ Phòng)' : '🎮 Thông Tin Phòng Đấu'}
-    </span>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:9px;color:#aaa;">Phòng: <b style="color:#ffcc00;letter-spacing:2px;">${gameState.code}</b></span>
-    </div>
-  `;
-  if (gameState.isHost) {
-    const cancelHostBtn = document.createElement('button');
-    cancelHostBtn.className = 'btn btn-danger';
-    cancelHostBtn.style.cssText = 'font-size:8px;padding:3px 8px;border-radius:4px;cursor:pointer;';
-    cancelHostBtn.textContent = '❌ Hủy phòng';
-    cancelHostBtn.onclick = () => {
+    const roomHead = document.createElement('div');
+    roomHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
+    roomHead.innerHTML = `
+      <span style="font-size:11px;font-weight:800;color:#00cfff;letter-spacing:1px;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;">
+        ${gameState.isHost ? '⚙️ Cài Đặt Phòng (Chủ Phòng)' : '🎮 Thông Tin Phòng Đấu'}
+      </span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:9px;color:#aaa;">Phòng: <b style="color:#ffcc00;letter-spacing:2px;">${gameState.code}</b></span>
+      </div>
+    `;
+    const leaveBtn = document.createElement('button');
+    leaveBtn.className = 'btn btn-danger';
+    leaveBtn.style.cssText = 'font-size:8px;padding:3px 8px;border-radius:4px;cursor:pointer;';
+    leaveBtn.textContent = gameState.isHost ? '❌ Hủy phòng' : '🚪 Rời phòng';
+    leaveBtn.onclick = () => {
       try { sessionStorage.removeItem('hostedRoomCode'); localStorage.removeItem('hostedRoomCode'); } catch(e) {}
       Multiplayer.leaveRoom(gameState.code);
       showScreen('menu');
     };
-    roomHead.querySelector('div').appendChild(cancelHostBtn);
+    roomHead.querySelector('div').appendChild(leaveBtn);
+    roomSection.appendChild(roomHead);
+
+    let curMode = gameState.mode || 'team_vs_boss';
+    let curStage = gameState.stage || 'thunder';
+
+    if (gameState.isHost) {
+      // Mode selection buttons for Host
+      const modeRow = document.createElement('div');
+      modeRow.style.cssText = 'display:flex;gap:8px;';
+      const modes = [
+        { id: 'team_vs_boss', label: '👥 Đồng Đội vs Boss', desc: '2 Người vs 1 Quái Vật' },
+        { id: 'pvp_1v1',      label: '⚔️ Đấu Đơn 1v1',     desc: 'Đấu Kiếm Sinh Tử' },
+      ];
+      const modeBtnRefs = [];
+      modes.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.cssText = `flex:1;padding:8px 6px;font-size:9px;border-radius:6px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;`;
+        btn.innerHTML = `<span style="font-weight:800;font-size:11px;">${m.label}</span><span style="font-size:8px;opacity:0.8;">${m.desc}</span>`;
+        const updateVisual = () => {
+          const active = (curMode === m.id);
+          btn.style.background = active ? 'linear-gradient(135deg, #00cfff, #0284c7)' : 'rgba(255,255,255,0.05)';
+          btn.style.color = active ? '#ffffff' : '#94a3b8';
+          btn.style.borderColor = active ? '#ffffff' : '#334155';
+          btn.style.boxShadow = active ? '0 0 12px rgba(0,207,255,0.4)' : 'none';
+        };
+        updateVisual();
+        modeBtnRefs.push({ id: m.id, update: updateVisual });
+        btn.onclick = () => {
+          curMode = m.id;
+          if (window.gameState) window.gameState.mode = m.id;
+          Multiplayer.setRoomMode(m.id);
+          modeBtnRefs.forEach(x => x.update());
+        };
+        modeRow.appendChild(btn);
+      });
+      roomSection.appendChild(modeRow);
+
+      // Stage selection row for Host
+      const stageRow = document.createElement('div');
+      stageRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+      const stageLabel = document.createElement('span');
+      stageLabel.style.cssText = 'font-size:9px;color:#aaa;font-weight:700;';
+      stageLabel.textContent = 'Kho câu hỏi:';
+      stageRow.appendChild(stageLabel);
+
+      const stages = [
+        { id: 'thunder', label: '⚡ Sét (50 câu)', color: '#00cfff' },
+        { id: 'fire',    label: '🔥 Lửa (50 câu)', color: '#ff6b00' },
+        { id: 'frost',   label: '❄️ Băng (50 câu)', color: '#88ddff' },
+      ];
+      const stageBtnRefs = [];
+      stages.forEach(st => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.cssText = `flex:1;min-width:85px;padding:6px 4px;font-size:8px;border-radius:6px;cursor:pointer;transition:all .15s;`;
+        btn.textContent = st.label;
+        const updateVisual = () => {
+          const active = (curStage === st.id);
+          btn.style.background = active ? st.color : 'rgba(255,255,255,0.05)';
+          btn.style.color = active ? '#050712' : '#ffffff';
+          btn.style.borderColor = active ? '#ffffff' : '#334155';
+          btn.style.fontWeight = active ? '800' : '600';
+        };
+        updateVisual();
+        stageBtnRefs.push({ id: st.id, update: updateVisual });
+        btn.onclick = () => {
+          curStage = st.id;
+          selectedBoss = st.id;
+          if (window.gameState) {
+            window.gameState.stage = st.id;
+            window.gameState.bossElement = st.id;
+          }
+          Multiplayer.setRoomStage(st.id);
+          stageBtnRefs.forEach(x => x.update());
+        };
+        stageRow.appendChild(btn);
+      });
+      roomSection.appendChild(stageRow);
+    } else {
+      // Guest: STRICTLY locked settings
+      const lockedSettings = document.createElement('div');
+      lockedSettings.style.cssText = 'background:rgba(255,204,0,0.08);border:1.5px solid #ffcc00;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;';
+      const getModeName = (m) => (m === 'pvp_1v1' ? '⚔️ Đấu Đơn 1v1 (PvP)' : '👥 Đồng Đội vs Boss (Team)');
+      const getStageName = (s) => (s === 'fire' ? '🔥 Hỏa (50 câu)' : (s === 'frost' ? '❄️ Băng (50 câu)' : '⚡ Sét (50 câu)'));
+
+      lockedSettings.innerHTML = `
+        <div style="font-size:10px;font-weight:800;color:#ffcc00;font-family:'Be Vietnam Pro',sans-serif;letter-spacing:1px;text-transform:uppercase;">
+          🔒 Cài đặt do Chủ phòng quyết định
+        </div>
+        <div id="guest-room-status" style="font-size:10px;color:#cbd5e1;font-family:'Be Vietnam Pro',sans-serif;">
+          Chế độ: <b style="color:#00cfff;">${getModeName(curMode)}</b> | Màn chơi: <b style="color:#ffcc00;">${getStageName(curStage)}</b>
+        </div>
+        <div style="font-size:9px;color:#94a3b8;font-style:italic;">
+          (Bạn chỉ cần chọn Trang phục bên dưới và bấm Sẵn sàng)
+        </div>
+      `;
+      roomSection.appendChild(lockedSettings);
+
+      const updateGuestRoomStatus = () => {
+        const el = lockedSettings.querySelector('#guest-room-status');
+        if (el) el.innerHTML = `Chế độ: <b style="color:#00cfff;">${getModeName(curMode)}</b> | Màn chơi: <b style="color:#ffcc00;">${getStageName(curStage)}</b>`;
+      };
+      socket.on('mode_changed', ({ mode }) => { curMode = mode; updateGuestRoomStatus(); });
+      socket.on('stage_changed', ({ stage }) => { curStage = stage; selectedBoss = stage; updateGuestRoomStatus(); });
+      socket.on('room_state_update', (d) => {
+        if (d.mode) curMode = d.mode;
+        if (d.stage) { curStage = d.stage; selectedBoss = d.stage; }
+        updateGuestRoomStatus();
+      });
+    }
+
+    wrap.appendChild(roomSection);
   }
-  roomSection.appendChild(roomHead);
-
-  let curMode = gameState.mode || 'team_vs_boss';
-  let curStage = gameState.stage || 'thunder';
-
-  // Mode selection buttons
-  const modeRow = document.createElement('div');
-  modeRow.style.cssText = 'display:flex;gap:8px;';
-
-  const modes = [
-    { id: 'team_vs_boss', label: '👥 Đồng Đội vs Boss', desc: '2 Người vs 1 Quái Vật' },
-    { id: 'pvp_1v1',      label: '⚔️ Đấu Đơn 1v1',     desc: 'Đấu Kiếm Sinh Tử' },
-  ];
-
-  const modeBtnRefs = [];
-  modes.forEach(m => {
-    const btn = document.createElement('button');
-    btn.className = 'btn';
-    btn.style.cssText = `flex:1;padding:8px 6px;font-size:9px;border-radius:6px;cursor:${gameState.isHost ? 'pointer' : 'default'};transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;`;
-    btn.innerHTML = `<span style="font-weight:800;font-size:11px;">${m.label}</span><span style="font-size:8px;opacity:0.8;">${m.desc}</span>`;
-
-    const updateVisual = () => {
-      const active = (curMode === m.id);
-      btn.style.background = active ? 'linear-gradient(135deg, #00cfff, #0284c7)' : 'rgba(255,255,255,0.05)';
-      btn.style.color = active ? '#ffffff' : '#94a3b8';
-      btn.style.borderColor = active ? '#ffffff' : '#334155';
-      btn.style.boxShadow = active ? '0 0 12px rgba(0,207,255,0.4)' : 'none';
-    };
-    updateVisual();
-    modeBtnRefs.push({ id: m.id, update: updateVisual });
-
-    if (gameState.isHost) {
-      btn.onclick = () => {
-        curMode = m.id;
-        if (window.gameState) window.gameState.mode = m.id;
-        Multiplayer.setRoomMode(m.id);
-        modeBtnRefs.forEach(x => x.update());
-      };
-    }
-    modeRow.appendChild(btn);
-  });
-  roomSection.appendChild(modeRow);
-
-  // Stage selection row (Question Bank)
-  const stageRow = document.createElement('div');
-  stageRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
-
-  const stageLabel = document.createElement('span');
-  stageLabel.style.cssText = 'font-size:9px;color:#aaa;font-weight:700;';
-  stageLabel.textContent = 'Kho câu hỏi:';
-  stageRow.appendChild(stageLabel);
-
-  const stages = [
-    { id: 'thunder', label: '⚡ Sét (50 câu)', color: '#00cfff' },
-    { id: 'fire',    label: '🔥 Lửa (50 câu)', color: '#ff6b00' },
-    { id: 'frost',   label: '❄️ Băng (50 câu)', color: '#88ddff' },
-  ];
-
-  const stageBtnRefs = [];
-  stages.forEach(st => {
-    const btn = document.createElement('button');
-    btn.className = 'btn';
-    btn.style.cssText = `flex:1;min-width:85px;padding:6px 4px;font-size:8px;border-radius:6px;cursor:${gameState.isHost ? 'pointer' : 'default'};transition:all .15s;`;
-    btn.textContent = st.label;
-
-    const updateVisual = () => {
-      const active = (curStage === st.id);
-      btn.style.background = active ? st.color : 'rgba(255,255,255,0.05)';
-      btn.style.color = active ? '#050712' : '#ffffff';
-      btn.style.borderColor = active ? '#ffffff' : '#334155';
-      btn.style.fontWeight = active ? '800' : '600';
-    };
-    updateVisual();
-    stageBtnRefs.push({ id: st.id, update: updateVisual });
-
-    if (gameState.isHost) {
-      btn.onclick = () => {
-        curStage = st.id;
-        selectedBoss = st.id;
-        if (window.gameState) {
-          window.gameState.stage = st.id;
-          window.gameState.bossElement = st.id;
-        }
-        Multiplayer.setRoomStage(st.id);
-        stageBtnRefs.forEach(x => x.update());
-        startBtn.disabled = false;
-        startBtn.style.opacity = '1';
-      };
-    }
-    stageRow.appendChild(btn);
-  });
-  roomSection.appendChild(stageRow);
-
-  socket.on('mode_changed', ({ mode }) => {
-    curMode = mode;
-    if (window.gameState) window.gameState.mode = mode;
-    modeBtnRefs.forEach(x => x.update());
-  });
-  socket.on('stage_changed', ({ stage }) => {
-    curStage = stage;
-    if (window.gameState) {
-      window.gameState.stage = stage;
-      window.gameState.bossElement = stage;
-    }
-    stageBtnRefs.forEach(x => x.update());
-  });
-
-  wrap.appendChild(roomSection);
 
   // ── 1. Boss selector ──────────────────────────────────────────────────────
   const bossSection = document.createElement('div');
@@ -811,9 +1011,6 @@ function _buildStudentLobby(container, gameState) {
       btn.style.boxShadow   = `0 0 16px ${b.glow}`;
       selectedBoss = b.id;
       if (window.gameState) window.gameState.selectedBoss = b.id;
-      // Update start button
-      startBtn.disabled = false;
-      startBtn.style.opacity = '1';
     });
     bossGrid.appendChild(btn);
   });
@@ -959,139 +1156,153 @@ function _buildStudentLobby(container, gameState) {
   wrap.appendChild(wardSection);
 
   // ── 4. Ready & Battle Control Center (For BOTH Players) ──────────────────
-  const readySection = document.createElement('div');
-  readySection.id = 'lobby-ready-section';
-  readySection.style.cssText = 'background:rgba(15,23,42,0.85);border:2px solid #00cfff;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 20px rgba(0,207,255,0.2);margin-top:6px;';
+  if (gameState.isSinglePlayer) {
+    const singleActionSection = document.createElement('div');
+    singleActionSection.id = 'single-action-section';
+    singleActionSection.style.cssText = 'margin-top:10px;display:flex;flex-direction:column;gap:8px;';
 
-  const readyHead = document.createElement('div');
-  readyHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
-  readyHead.innerHTML = `
-    <span style="font-size:12px;font-weight:800;color:#ffcc00;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;letter-spacing:1px;">
-      ⚡ Trạng Thái Sẵn Sàng (Cả 2 cùng sẵn sàng mới bắt đầu)
-    </span>
-  `;
-  readySection.appendChild(readyHead);
-
-  // Status cards for 2 players
-  const statusRow = document.createElement('div');
-  statusRow.id = 'ready-status-row';
-  statusRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;';
-  readySection.appendChild(statusRow);
-
-  // Action button for local player
-  let isLocalReady = false;
-  const readyToggleBtn = document.createElement('button');
-  readyToggleBtn.id = 'btn-toggle-ready';
-  readyToggleBtn.className = 'btn';
-  readyToggleBtn.style.cssText = 'width:100%;padding:14px;font-size:13px;font-weight:800;letter-spacing:1px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:"Be Vietnam Pro",sans-serif;text-transform:uppercase;';
-
-  const updateReadyButtonVisual = () => {
-    if (!isLocalReady) {
-      readyToggleBtn.style.background = 'linear-gradient(135deg, #06d6a0, #059669)';
-      readyToggleBtn.style.color = '#ffffff';
-      readyToggleBtn.style.border = '2px solid #34d399';
-      readyToggleBtn.style.boxShadow = '0 0 16px rgba(6,214,160,0.5)';
-      readyToggleBtn.innerHTML = '⚡ TÔI ĐÃ SẴN SÀNG CHIẾN ĐẤU!';
-    } else {
-      readyToggleBtn.style.background = 'linear-gradient(135deg, #ea580c, #c2410c)';
-      readyToggleBtn.style.color = '#ffffff';
-      readyToggleBtn.style.border = '2px solid #fb923c';
-      readyToggleBtn.style.boxShadow = '0 0 16px rgba(234,88,12,0.5)';
-      readyToggleBtn.innerHTML = '⏳ ĐÃ SẴN SÀNG (Bấm để HỦY & Đổi đồ)';
-    }
-  };
-  updateReadyButtonVisual();
-
-  readyToggleBtn.onclick = () => {
-    isLocalReady = !isLocalReady;
-    updateReadyButtonVisual();
-    Multiplayer.setReady(isLocalReady);
-    _syncEquippedState();
-  };
-  readySection.appendChild(readyToggleBtn);
-
-  // Status cards renderer
-  const updateStatusCards = (playersList) => {
-    const pList = playersList || window.gameState?.players || [];
-    const myId = socket.id || window.myId;
-    statusRow.innerHTML = '';
-
-    for (let i = 0; i < 2; i++) {
-      const p = pList[i];
-      const card = document.createElement('div');
-      card.style.cssText = 'background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;border:1.5px solid #334155;';
-
-      if (p) {
-        const isMe = (p.id === myId);
-        if (isMe && p.ready !== undefined) {
-          isLocalReady = Boolean(p.ready);
-          updateReadyButtonVisual();
-        }
-        const isReady = Boolean(p.ready);
-        const roleLabel = (p.id === (window.gameState?.hostId || gameState.hostId)) ? '👑 Chủ phòng' : '⚔️ Khách';
-        const outfitName = (p.equipped?.outfit || p.equippedSet || 'default').toUpperCase();
-
-        card.style.borderColor = isReady ? '#06d6a0' : '#f59e0b';
-        card.style.boxShadow = isReady ? '0 0 12px rgba(6,214,160,0.3)' : 'none';
-
-        card.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:11px;font-weight:800;color:${p.color || '#fff'};font-family:'Be Vietnam Pro',sans-serif;">
-              ${p.name} ${isMe ? '(Bạn)' : ''}
-            </span>
-            <span style="font-size:9px;color:#aaa;">${roleLabel}</span>
-          </div>
-          <div style="font-size:9px;color:#88ddff;font-family:'Be Vietnam Pro',sans-serif;">
-            Bộ đồ: <b>${outfitName}</b>
-          </div>
-          <div style="margin-top:4px;padding:5px 8px;border-radius:4px;text-align:center;font-size:10px;font-weight:800;font-family:'Be Vietnam Pro',sans-serif;background:${isReady ? 'rgba(6,214,160,0.15)' : 'rgba(245,158,11,0.15)'};color:${isReady ? '#06d6a0' : '#f59e0b'};border:1px solid ${isReady ? '#06d6a0' : '#f59e0b'};">
-            ${isReady ? '✅ ĐÃ SẴN SÀNG' : '⏳ ĐANG CHỌN ĐỒ...'}
-          </div>
-        `;
-      } else {
-        card.innerHTML = `
-          <div style="font-size:11px;font-weight:700;color:#64748b;font-family:'Be Vietnam Pro',sans-serif;">
-            Người chơi 2
-          </div>
-          <div style="font-size:9px;color:#475569;margin-top:4px;">
-            Chờ đối thủ nhập mã phòng...
-          </div>
-          <div style="margin-top:6px;padding:5px 8px;border-radius:4px;text-align:center;font-size:9px;color:#64748b;border:1px dashed #334155;">
-            ⏳ ĐANG ĐỢI...
-          </div>
-        `;
-      }
-      statusRow.appendChild(card);
-    }
-  };
-
-  updateStatusCards(window.gameState?.players);
-  window.updateLobbyReadyUI = updateStatusCards;
-
-  // Optional manual start button for host
-  if (gameState.isHost) {
-    const hostForceStartBtn = document.createElement('button');
-    hostForceStartBtn.className = 'btn';
-    hostForceStartBtn.style.cssText = 'width:100%;padding:8px;font-size:10px;font-weight:700;border-radius:6px;cursor:pointer;background:rgba(255,255,255,0.06);border:1px solid #475569;color:#94a3b8;font-family:"Be Vietnam Pro",sans-serif;';
-    hostForceStartBtn.textContent = '⚔️ Bắt đầu trận ngay (Chủ phòng)';
-    hostForceStartBtn.onclick = () => {
-      const currentPlayers = window.gameState?.players || [];
-      const allReady = (currentPlayers.length >= 2) && currentPlayers.every(p => p.ready);
-      if (!allReady && currentPlayers.length >= 2) {
-        alert('Cần cả 2 người chơi cùng nhấn "Sẵn sàng" mới có thể bắt đầu chiến đấu!');
-        return;
-      }
-      const activeElement = curStage || selectedBoss || 'thunder';
-      socket.emit('start_game', {
-        code: gameState.code,
-        element: activeElement,
-        difficulty: selectedDiff || 'hard',
+    const launchBtn = document.createElement('button');
+    launchBtn.id = 'btn-launch-single';
+    launchBtn.className = 'btn btn-success';
+    launchBtn.style.cssText = 'width:100%;padding:16px;font-size:14px;font-weight:900;letter-spacing:1px;border-radius:10px;cursor:pointer;background:linear-gradient(135deg, #06d6a0, #059669);box-shadow:0 0 20px rgba(6,214,160,0.5);border:2px solid #34d399;color:#ffffff;font-family:"Be Vietnam Pro",sans-serif;text-transform:uppercase;transition:all .2s;';
+    launchBtn.innerHTML = '⚔️ VÀO TRẬN ĐẤU (CHƠI ĐƠN)!';
+    launchBtn.onclick = () => {
+      launchBtn.disabled = true;
+      launchBtn.innerHTML = '⏳ Đang khởi tạo trận đấu...';
+      const outfitName = equipment?.outfit || sessionStorage.getItem('selectedOutfit') || 'default';
+      startSinglePlayerMatch({
+        bossElement: selectedBoss || 'thunder',
+        difficulty: selectedDiff || 'medium',
+        outfit: outfitName
       });
     };
-    readySection.appendChild(hostForceStartBtn);
-  }
+    singleActionSection.appendChild(launchBtn);
+    wrap.appendChild(singleActionSection);
+  } else {
+    const readySection = document.createElement('div');
+    readySection.id = 'lobby-ready-section';
+    readySection.style.cssText = 'background:rgba(15,23,42,0.85);border:2px solid #00cfff;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 20px rgba(0,207,255,0.2);margin-top:6px;';
 
-  wrap.appendChild(readySection);
+    const readyHead = document.createElement('div');
+    readyHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
+    readyHead.innerHTML = `
+      <span style="font-size:12px;font-weight:800;color:#ffcc00;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;letter-spacing:1px;">
+        ⚡ Trạng Thái Sẵn Sàng (Cả 2 cùng sẵn sàng mới bắt đầu)
+      </span>
+    `;
+    readySection.appendChild(readyHead);
+
+    // Status cards for 2 players
+    const statusRow = document.createElement('div');
+    statusRow.id = 'ready-status-row';
+    statusRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;';
+    readySection.appendChild(statusRow);
+
+    // Action button for local player
+    let isLocalReady = false;
+    const readyToggleBtn = document.createElement('button');
+    readyToggleBtn.id = 'btn-toggle-ready';
+    readyToggleBtn.className = 'btn';
+    readyToggleBtn.style.cssText = 'width:100%;padding:14px;font-size:13px;font-weight:800;letter-spacing:1px;border-radius:8px;cursor:pointer;transition:all .2s;font-family:"Be Vietnam Pro",sans-serif;text-transform:uppercase;';
+
+    const updateReadyButtonVisual = () => {
+      if (!isLocalReady) {
+        readyToggleBtn.style.background = 'linear-gradient(135deg, #06d6a0, #059669)';
+        readyToggleBtn.style.color = '#ffffff';
+        readyToggleBtn.style.border = '2px solid #34d399';
+        readyToggleBtn.style.boxShadow = '0 0 16px rgba(6,214,160,0.5)';
+        readyToggleBtn.innerHTML = '⚡ TÔI ĐÃ SẴN SÀNG CHIẾN ĐẤU!';
+      } else {
+        readyToggleBtn.style.background = 'linear-gradient(135deg, #ea580c, #c2410c)';
+        readyToggleBtn.style.color = '#ffffff';
+        readyToggleBtn.style.border = '2px solid #fb923c';
+        readyToggleBtn.style.boxShadow = '0 0 16px rgba(234,88,12,0.5)';
+        readyToggleBtn.innerHTML = '⏳ ĐÃ SẴN SÀNG (Bấm để HỦY & Đổi đồ)';
+      }
+    };
+    updateReadyButtonVisual();
+
+    readyToggleBtn.onclick = () => {
+      isLocalReady = !isLocalReady;
+      updateReadyButtonVisual();
+      Multiplayer.setReady(isLocalReady);
+      _syncEquippedState();
+    };
+    readySection.appendChild(readyToggleBtn);
+
+    // Status cards renderer
+    const updateStatusCards = (playersList) => {
+      const pList = playersList || window.gameState?.players || [];
+      const myId = socket.id || window.myId;
+      statusRow.innerHTML = '';
+
+      for (let i = 0; i < 2; i++) {
+        const p = pList[i];
+        const card = document.createElement('div');
+        card.style.cssText = 'background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;border:1.5px solid #334155;';
+
+        if (p) {
+          const isMe = (p.id === myId);
+          if (isMe && p.ready !== undefined) {
+            isLocalReady = Boolean(p.ready);
+            updateReadyButtonVisual();
+          }
+          const isReady = Boolean(p.ready);
+          const roleLabel = (p.id === (window.gameState?.hostId || gameState.hostId)) ? '👑 Chủ phòng' : '⚔️ Khách';
+          const outfitName = (p.equipped?.outfit || p.equippedSet || 'default').toUpperCase();
+
+          card.style.borderColor = isReady ? '#06d6a0' : '#f59e0b';
+          card.style.boxShadow = isReady ? '0 0 12px rgba(6,214,160,0.3)' : 'none';
+
+          card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:11px;font-weight:800;color:${p.color || '#fff'};font-family:'Be Vietnam Pro',sans-serif;">
+                ${p.name} ${isMe ? '(Bạn)' : ''}
+              </span>
+              <span style="font-size:9px;color:#aaa;">${roleLabel}</span>
+            </div>
+            <div style="font-size:9px;color:#88ddff;font-family:'Be Vietnam Pro',sans-serif;">
+              Bộ đồ: <b>${outfitName}</b>
+            </div>
+            <div style="margin-top:4px;padding:5px 8px;border-radius:4px;text-align:center;font-size:10px;font-weight:800;font-family:'Be Vietnam Pro',sans-serif;background:${isReady ? 'rgba(6,214,160,0.15)' : 'rgba(245,158,11,0.15)'};color:${isReady ? '#06d6a0' : '#f59e0b'};border:1px solid ${isReady ? '#06d6a0' : '#f59e0b'};">
+              ${isReady ? '✅ ĐÃ SẴN SÀNG' : '⏳ ĐANG CHỌN ĐỒ...'}
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div style="font-size:11px;font-weight:700;color:#64748b;font-family:'Be Vietnam Pro',sans-serif;">
+              Người chơi 2
+            </div>
+            <div style="font-size:9px;color:#475569;margin-top:4px;">
+              Chờ đối thủ nhập mã phòng...
+            </div>
+            <div style="margin-top:6px;padding:5px 8px;border-radius:4px;text-align:center;font-size:9px;color:#64748b;border:1px dashed #334155;">
+              ⏳ ĐANG ĐỢI...
+            </div>
+          `;
+        }
+        statusRow.appendChild(card);
+      }
+    };
+
+    updateStatusCards(window.gameState?.players);
+    window.updateLobbyReadyUI = updateStatusCards;
+
+    // Start battle button for host
+    if (gameState.isHost) {
+      const hostForceStartBtn = document.createElement('button');
+      hostForceStartBtn.id = 'btn-host-start-battle';
+      hostForceStartBtn.className = 'btn btn-primary';
+      hostForceStartBtn.style.cssText = 'width:100%;padding:14px;font-size:13px;font-weight:800;border-radius:8px;cursor:pointer;background:linear-gradient(135deg, #00cfff, #0284c7);border:2px solid #38bdf8;color:#ffffff;font-family:"Be Vietnam Pro",sans-serif;letter-spacing:1px;text-transform:uppercase;box-shadow:0 0 16px rgba(0,207,255,0.4);';
+      hostForceStartBtn.textContent = '⚔️ BẮT ĐẦU TRẬN ĐẤU (CHỦ PHÒNG)';
+      hostForceStartBtn.onclick = () => {
+        Multiplayer.requestStartGame();
+      };
+      readySection.appendChild(hostForceStartBtn);
+    }
+
+    wrap.appendChild(readySection);
+  }
 
   container.appendChild(wrap);
 }

@@ -845,13 +845,13 @@ export function executeCombatTurn(ev, onDone) {
   // If full set (2 hits): Hit 1 lands halfway: ((bossHealthRemaining + 0.5) / totalQ) * 100%
   const halfwayPct = ((bossHealthRemaining + 0.5) / totalQ) * 100;
 
-  // Floating text strictly '-2 HP' (or '⚡ -1 HP', '🔥 -1 HP', '❄️ -1 HP')
+  // Floating text strictly '-1 HP' (or '⚡ -1 HP', '🔥 -1 HP', '❄️ -1 HP')
   const hit1Label = selectedElement
     ? (selectedElement === 'thunder' ? '⚡ -1 HP' : selectedElement === 'fire' ? '🔥 -1 HP' : '❄️ -1 HP')
-    : '-2 HP';
+    : '-1 HP';
   const hit2Label = selectedElement
     ? (selectedElement === 'thunder' ? '⚡ -1 HP' : selectedElement === 'fire' ? '🔥 -1 HP' : '❄️ -1 HP')
-    : '-1 HP';
+    : '';
 
   const applyHit1Damage = () => {
     Boss.playBossHurt();

@@ -1441,48 +1441,78 @@ io.on('connection', (socket) => {
     }
   });
 
-  /** Ready button toggle for players */
-  socket.on('set_ready', ({ code, ready, equippedSet, equipped }) => {
-    try {
-      const cleanCode = (code || '').trim().toUpperCase();
-      const result = roomManager.setPlayerReady(cleanCode, socket.id, ready, equippedSet, equipped);
-      const { allReady, players, room } = result;
+  /** Helper to handle player ready state update */
+  const handleReadyUpdate = (cleanCode, socketId, ready, equippedSet, equipped) => {
+    const result = roomManager.setPlayerReady(cleanCode, socketId, ready, equippedSet, equipped);
+    const { allReady, players, room } = result;
 
-      // Broadcast ready status update to room
-      io.to(cleanCode).emit('player_ready_changed', {
-        playerId: socket.id,
-        ready: Boolean(ready),
+    // Broadcast room_state_update and player_ready_changed to both sockets
+    io.to(cleanCode).emit('room_state_update', {
+      code: cleanCode,
+      mode: room.mode,
+      stage: room.stage,
+      host: room.host,
+      guest: room.guest,
+      players,
+    });
+
+    io.to(cleanCode).emit('player_ready_changed', {
+      playerId: socketId,
+      ready: Boolean(ready),
+      players,
+    });
+
+    if (allReady) {
+      console.log(`[Ready] Both players ready in room ${cleanCode}. Starting countdown!`);
+      io.to(cleanCode).emit('match_countdown', {
+        seconds: 3,
+        code: cleanCode,
+        mode: room.mode,
+        stage: room.stage,
         players,
       });
 
-      if (allReady) {
-        console.log(`[Ready] Both players ready in room ${cleanCode}. Starting countdown!`);
-        io.to(cleanCode).emit('match_countdown', {
-          seconds: 3,
-          code: cleanCode,
-          mode: room.mode,
-          stage: room.stage,
-          players,
-        });
-
-        if (room.countdownTimer) clearTimeout(room.countdownTimer);
-        room.countdownTimer = setTimeout(() => {
-          const r = roomManager.getRoom(cleanCode);
-          if (r && r.phase === 'LOBBY') {
-            startMatchForRoom(cleanCode);
-          }
-        }, 3200);
-      } else {
-        // If countdown was in progress and someone unreadied, cancel it!
-        if (room.countdownTimer) {
-          clearTimeout(room.countdownTimer);
-          room.countdownTimer = null;
-          console.log(`[Ready] Countdown cancelled in room ${cleanCode} because a player unreadied.`);
-          io.to(cleanCode).emit('match_countdown_cancelled', {
-            reason: 'Một người chơi đã hủy sẵn sàng để chọn lại đồ.'
+      if (room.countdownTimer) clearTimeout(room.countdownTimer);
+      room.countdownTimer = setTimeout(() => {
+        const r = roomManager.getRoom(cleanCode);
+        if (r && r.phase === 'LOBBY') {
+          io.to(cleanCode).emit('match_start', {
+            mode: r.mode,
+            stage: r.stage,
+            hostUser: r.host,
+            guestUser: r.guest
           });
+          startMatchForRoom(cleanCode);
         }
+      }, 3200);
+    } else {
+      // If countdown was in progress and someone unreadied, cancel it!
+      if (room.countdownTimer) {
+        clearTimeout(room.countdownTimer);
+        room.countdownTimer = null;
+        console.log(`[Ready] Countdown cancelled in room ${cleanCode} because a player unreadied.`);
+        io.to(cleanCode).emit('match_countdown_cancelled', {
+          reason: 'Một người chơi đã hủy sẵn sàng để chọn lại đồ.'
+        });
       }
+    }
+  };
+
+  /** Ready button toggle for players (Dual event support) */
+  socket.on('player_ready_toggle', ({ roomCode, isReady, outfit }) => {
+    try {
+      const cleanCode = (roomCode || '').trim().toUpperCase();
+      handleReadyUpdate(cleanCode, socket.id, isReady, outfit, { outfit, weapon: outfit });
+    } catch (e) {
+      console.error('[player_ready_toggle]', e.message);
+      socket.emit('error', { message: e.message });
+    }
+  });
+
+  socket.on('set_ready', ({ code, ready, equippedSet, equipped }) => {
+    try {
+      const cleanCode = (code || '').trim().toUpperCase();
+      handleReadyUpdate(cleanCode, socket.id, ready, equippedSet, equipped);
     } catch (e) {
       console.error('[set_ready]', e.message);
       socket.emit('error', { message: e.message });
@@ -1536,24 +1566,70 @@ io.on('connection', (socket) => {
   /** Host selects game mode */
   socket.on('set_mode', ({ code, mode }) => {
     try {
-      roomManager.setMode(code, mode);
+      roomManager.setMode(code, mode, socket.id);
       const r = roomManager.getRoom(code);
       io.to(code).emit('mode_changed', { mode: r ? r.mode : mode });
-    } catch (e) { console.error('[set_mode]', e.message); }
+    } catch (e) {
+      console.error('[set_mode]', e.message);
+      socket.emit('error', { message: e.message });
+    }
   });
 
   /** Host selects stage / element */
   socket.on('set_stage', ({ code, stage }) => {
     try {
-      roomManager.setStage(code, stage);
+      roomManager.setStage(code, stage, socket.id);
       const r = roomManager.getRoom(code);
       io.to(code).emit('stage_changed', { stage: r ? r.stage : stage });
-    } catch (e) { console.error('[set_stage]', e.message); }
+    } catch (e) {
+      console.error('[set_stage]', e.message);
+      socket.emit('error', { message: e.message });
+    }
+  });
+
+  /** Host explicit request to launch battle */
+  socket.on('start_game_request', ({ roomCode }) => {
+    try {
+      const cleanCode = (roomCode || '').trim().toUpperCase();
+      const room = roomManager.getRoom(cleanCode);
+      if (!room || !room.host) {
+        socket.emit('start_error', { message: 'Phòng không tồn tại!' });
+        return;
+      }
+      if (room.hostId !== socket.id) {
+        socket.emit('start_error', { message: 'Chỉ chủ phòng mới có quyền bắt đầu trận đấu!' });
+        return;
+      }
+      if (!room.guest) {
+        socket.emit('start_error', { message: 'Cần đủ 2 người chơi trong phòng mới có thể bắt đầu!' });
+        return;
+      }
+      if (room.host.isReady && room.guest.isReady) {
+        io.to(cleanCode).emit('match_start', {
+          mode: room.mode,
+          stage: room.stage,
+          hostUser: room.host,
+          guestUser: room.guest
+        });
+        startMatchForRoom(cleanCode, { element: room.stage });
+      } else {
+        socket.emit('start_error', { message: 'Cả hai người chơi đều phải bấm Sẵn sàng!' });
+      }
+    } catch (e) {
+      console.error('[start_game_request]', e.message);
+      socket.emit('start_error', { message: e.message });
+    }
   });
 
   socket.on('start_game', ({ code, element, difficulty, testGear }) => {
     try {
-      startMatchForRoom(code, { element, difficulty, testGear });
+      const cleanCode = (code || '').trim().toUpperCase();
+      const room = roomManager.getRoom(cleanCode);
+      if (room && room.host && room.guest && (!room.host.isReady || !room.guest.isReady)) {
+        socket.emit('start_error', { message: 'Cả hai người chơi đều phải bấm Sẵn sàng!' });
+        return;
+      }
+      startMatchForRoom(cleanCode, { element, difficulty, testGear });
     } catch (e) {
       console.error('[start_game]', e.message);
       socket.emit('error', { message: e.message });

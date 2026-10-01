@@ -84,15 +84,44 @@
     <div id="ui-root">
         <!-- Menu Screen -->
         <div id="screen-menu" class="screen">
-            <div class="panel">
-                <h1 class="game-title">Quiz Battle 3D</h1>
-                <p class="game-subtitle">Voxel trivia mayhem</p>
+            <div class="panel" style="min-width:340px; text-align:center;">
+                <h1 class="game-title">ROBLOX VS MONSTER</h1>
+                <p class="game-subtitle" style="margin-bottom:14px;">Đấu Trí Voxel &amp; Đại Chiến Quái Vật</p>
                 
-                <input type="text" id="player-name" placeholder="Enter Name..." maxlength="12">
-                <input type="color" id="player-color" value="#ff6b35">
+                <input type="text" id="player-name" placeholder="Enter Name..." maxlength="12" style="width:100%; box-sizing:border-box; margin-bottom:10px;">
+                <input type="color" id="player-color" value="#ff6b35" style="display:none;">
                 
-                <button id="btn-create" class="btn btn-primary">Create Room</button>
-                <button id="btn-join-screen" class="btn btn-success">Join Room</button>
+                <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <button id="btn-mode-single" class="btn btn-primary" style="padding:14px; font-size:11px; font-weight:800; background:linear-gradient(135deg, #00cfff, #0284c7); border:2px solid #38bdf8; box-shadow:0 0 16px rgba(0,207,255,0.3); border-radius:8px; cursor:pointer;">
+                        ⚔️ CHƠI ĐƠN (Single Player)
+                    </button>
+                    <button id="btn-mode-multi" class="btn btn-success" style="padding:14px; font-size:11px; font-weight:800; background:linear-gradient(135deg, #f59e0b, #d97706); border:2px solid #fbbf24; box-shadow:0 0 16px rgba(245,158,11,0.3); border-radius:8px; cursor:pointer;">
+                        👥 CHƠI NHIỀU NGƯỜI (Multiplayer)
+                    </button>
+                    <!-- Legacy buttons preserved for compatibility -->
+                    <button id="btn-create" style="display:none;"></button>
+                    <button id="btn-join-screen" style="display:none;"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multiplayer Hub Screen -->
+        <div id="screen-multi-hub" class="screen">
+            <div class="panel" style="min-width:340px; text-align:center;">
+                <h2 class="game-title" style="font-size:20px; color:#ffcc00;">PHÒNG ĐẤU MULTI</h2>
+                <p class="game-subtitle" style="margin-bottom:16px;">Chọn cách thức tham gia trận đấu</p>
+                
+                <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <button id="btn-hub-create" class="btn btn-primary" style="padding:14px; font-size:11px; font-weight:700; background:linear-gradient(135deg, #00cfff, #0284c7); border-radius:8px; cursor:pointer;">
+                        👑 Tạo phòng mới (Host)
+                    </button>
+                    <button id="btn-hub-join" class="btn btn-success" style="padding:14px; font-size:11px; font-weight:700; background:linear-gradient(135deg, #06d6a0, #059669); border-radius:8px; cursor:pointer;">
+                        🚪 Nhập mã vào phòng (Join)
+                    </button>
+                    <button id="btn-back-hub" class="btn btn-danger" style="padding:10px; font-size:10px; border-radius:6px; cursor:pointer; margin-top:4px;">
+                        🔙 Quay lại menu
+                    </button>
+                </div>
             </div>
         </div>
 

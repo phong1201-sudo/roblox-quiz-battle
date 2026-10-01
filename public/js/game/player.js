@@ -59,6 +59,7 @@ export function setPlayerPose(poseName = 'idle') {
     }
   }
 }
+if (typeof window !== 'undefined') window.setPlayerPose = setPlayerPose;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EMERGENCY FALLBACK BLOCK AVATAR (Guarantees visible character on stage)
@@ -372,55 +373,75 @@ export async function createPlayerInstance(scene, outfit = 'default', homePos = 
   group.position.set(homePos.x, homePos.y, homePos.z);
   group.rotation.y = facingY;
 
+  // Sync main player references so global animation & pose functions target the active character
+  if (homePos.x <= -4.0 && Math.abs(homePos.z) < 2.0) {
+    playerGroup = group;
+    Object.assign(playerPoses, poses);
+    if (typeof window !== 'undefined') window.playerModel = group;
+  }
+
   const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);
   if (targetScene && !targetScene.children.includes(group)) {
     targetScene.add(group);
   }
 
-  // Combat animation handlers
-  const playSlash = ({ targetX = 2.2, targetZ = homePos.z, onHit, onDone } = {}) => {
+  // Combat animation handlers: Parabolic Leap Arc Tween Sequence
+  const playSlash = ({ targetApex = { x: 1.8, y: 3.2, z: homePos.z }, targetStrike = { x: 3.2, y: 0.6, z: homePos.z }, onHit, onDone } = {}) => {
+    isSlashing = true;
     setPose('dodge');
-    const startX = homePos.x;
-    const startZ = homePos.z;
-    const startTime = performance.now();
-    let hitTriggered = false;
+    group.position.set(homePos.x, homePos.y, homePos.z);
 
-    const tDash = 160;
-    const tSlash = 220;
-    const tReturn = 180;
-    const tTotal = tDash + tSlash + tReturn;
+    const TWEEN_LIB = (typeof TWEEN !== 'undefined' && TWEEN) ? TWEEN : (typeof window !== 'undefined' ? window.TWEEN : null);
 
-    function step(now) {
-      const elapsed = now - startTime;
-      if (elapsed < tDash) {
-        const p = elapsed / tDash;
-        const ease = p * (2 - p);
-        group.position.x = currentTHREE.MathUtils.lerp(startX, targetX, ease);
-        group.position.z = currentTHREE.MathUtils.lerp(startZ, targetZ, ease);
-      } else if (elapsed < tDash + tSlash) {
-        setPose('slash');
-        group.position.x = targetX;
-        group.position.z = targetZ;
-        const p = (elapsed - tDash) / tSlash;
-        if (p >= 0.5 && !hitTriggered) {
-          hitTriggered = true;
-          if (onHit) onHit();
-        }
-      } else if (elapsed < tTotal) {
+    if (TWEEN_LIB && TWEEN_LIB.Tween) {
+      // 1. Leap up in parabolic curve to apex: (-4.5, 0, z) -> (1.8, 3.2, z) in 400ms (Quadratic.Out)
+      new TWEEN_LIB.Tween(group.position)
+        .to(targetApex, 400)
+        .easing(TWEEN_LIB.Easing.Quadratic.Out)
+        .onComplete(() => {
+          // 2. At apex over Boss: set slash pose
+          setPose('slash');
+
+          // 3. Fast downward strike tween to (3.2, 0.6, z) in 150ms (Quadratic.In)
+          new TWEEN_LIB.Tween(group.position)
+            .to(targetStrike, 150)
+            .easing(TWEEN_LIB.Easing.Quadratic.In)
+            .onComplete(() => {
+              // Trigger strike VFX, damage floating text, screen shake
+              if (onHit) onHit();
+
+              // Switch boss pose: setBossPose('hit') -> hold 300ms -> setBossPose('idle')
+              try {
+                if (typeof window !== 'undefined' && window.setBossPose) {
+                  window.setBossPose('hit');
+                  setTimeout(() => { try { window.setBossPose('idle'); } catch(e){} }, 300);
+                }
+              } catch(e) {}
+
+              // 4. Leap back to home position in 350ms (Quadratic.Out)
+              new TWEEN_LIB.Tween(group.position)
+                .to({ x: homePos.x, y: homePos.y, z: homePos.z }, 350)
+                .easing(TWEEN_LIB.Easing.Quadratic.Out)
+                .onComplete(() => {
+                  group.position.set(homePos.x, homePos.y, homePos.z);
+                  setPose('idle');
+                  isSlashing = false;
+                  if (onDone) onDone();
+                })
+                .start();
+            })
+            .start();
+        })
+        .start();
+    } else {
+      // Fallback if TWEEN is unavailable
+      if (onHit) onHit();
+      setTimeout(() => {
         setPose('idle');
-        const p = (elapsed - (tDash + tSlash)) / tReturn;
-        const ease = p * (2 - p);
-        group.position.x = currentTHREE.MathUtils.lerp(targetX, startX, ease);
-        group.position.z = currentTHREE.MathUtils.lerp(targetZ, startZ, ease);
-      } else {
-        group.position.set(homePos.x, homePos.y, homePos.z);
-        setPose('idle');
+        isSlashing = false;
         if (onDone) onDone();
-        return;
-      }
-      requestAnimationFrame(step);
+      }, 500);
     }
-    requestAnimationFrame(step);
   };
 
   const playHurt = ({ onDone } = {}) => {
@@ -1247,94 +1268,72 @@ export function updatePlayer(deltaTime) {
  * 4. Call onDone() when back at home.
  */
 export function playCombatAnimation(animType, { onHit, onDone } = {}) {
-  if (!playerGroup || !THREE) {
+  const currentTHREE = THREE || (typeof window !== 'undefined' ? window.THREE : null);
+  const targetGroup = playerGroup || (typeof window !== 'undefined' ? window.playerModel : null);
+
+  if (!targetGroup) {
     if (onHit) onHit();
     if (onDone) onDone();
     return;
   }
 
-  const arm = combatArmCompound;
-  const startX = HOME_X;
-  const targetX = 2.0; // Forward near Boss (at x = 4.5)
-  let hitTriggered = false;
-
-  const DASH_FWD_MS  = 160;
-  const WINDUP_MS    = 100;
-  const SLASH_MS     = 120;
-  const RETURN_MS    = 100;
-  const DASH_BACK_MS = 160;
-
-  const t0 = 0;
-  const t1 = t0 + DASH_FWD_MS;                     // 160
-  const t2 = t1 + WINDUP_MS;                       // 260
-  const t3 = t2 + SLASH_MS;                        // 380 (Strike)
-  const t4 = t3 + RETURN_MS;                       // 480
-  const tTotal = t4 + DASH_BACK_MS;                // 640
-
-  const startTime = performance.now();
   isSlashing = true;
-  setPlayerPose('dodge'); // Leap forward into combat
+  setPlayerPose('dodge');
+  targetGroup.position.set(-4.5, 0.0, 0.0);
 
-  function stepCombat(now) {
-    const elapsed = now - startTime;
+  const TWEEN_LIB = (typeof TWEEN !== 'undefined' && TWEEN) ? TWEEN : (typeof window !== 'undefined' ? window.TWEEN : null);
 
-    // 1. Dash Forward
-    if (elapsed < t1) {
-      const p = elapsed / DASH_FWD_MS;
-      const ease = p * (2 - p); // QuadOut
-      playerGroup.position.x = THREE.MathUtils.lerp(startX, targetX, ease);
-    }
-    // 2. Wind-up Arm -> Swap to Slash Pose
-    else if (elapsed < t2) {
-      setPlayerPose('slash');
-      playerGroup.position.x = targetX;
-      const p = (elapsed - t1) / WINDUP_MS;
-      if (arm) arm.rotation.z = THREE.MathUtils.lerp(0, Math.PI / 3, p);
-    }
-    // 3. Slash Down Across -> Trigger Hit
-    else if (elapsed < t3) {
-      setPlayerPose('slash');
-      playerGroup.position.x = targetX;
-      const p = (elapsed - t2) / SLASH_MS;
-      const ease = p * p; // QuadIn
-      if (arm) arm.rotation.z = THREE.MathUtils.lerp(Math.PI / 3, -Math.PI / 2.5, ease);
-      if (p >= 0.85 && !hitTriggered) {
-        hitTriggered = true;
-        if (onHit) onHit();
-      }
-    }
-    // 4. Return Arm to Idle
-    else if (elapsed < t4) {
-      playerGroup.position.x = targetX;
-      if (!hitTriggered) {
-        hitTriggered = true;
-        if (onHit) onHit();
-      }
-      const p = (elapsed - t3) / RETURN_MS;
-      if (arm) arm.rotation.z = THREE.MathUtils.lerp(-Math.PI / 2.5, 0, p);
-    }
-    // 5. Dash Back to Home
-    else if (elapsed < tTotal) {
-      if (arm) arm.rotation.z = 0;
-      setPlayerPose('idle');
-      const p = (elapsed - t4) / DASH_BACK_MS;
-      const ease = p * (2 - p);
-      playerGroup.position.x = THREE.MathUtils.lerp(targetX, startX, ease);
-    }
-    // 6. Complete
-    else {
-      playerGroup.position.set(HOME_X, HOME_Y, HOME_Z);
-      if (arm) arm.rotation.z = 0;
+  if (TWEEN_LIB && TWEEN_LIB.Tween) {
+    // 1. Leap up in parabolic curve to apex: (-4.5, 0, 0) -> (1.8, 3.2, 0) in 400ms (Quadratic.Out)
+    new TWEEN_LIB.Tween(targetGroup.position)
+      .to({ x: 1.8, y: 3.2, z: 0 }, 400)
+      .easing(TWEEN_LIB.Easing.Quadratic.Out)
+      .onComplete(() => {
+        // 2. At apex over Boss: Set player pose to 'slash'
+        setPlayerPose('slash');
+
+        // 3. Fast downward strike tween to (3.2, 0.6, 0) in 150ms (Quadratic.In)
+        new TWEEN_LIB.Tween(targetGroup.position)
+          .to({ x: 3.2, y: 0.6, z: 0 }, 150)
+          .easing(TWEEN_LIB.Easing.Quadratic.In)
+          .onComplete(() => {
+            // Trigger strike VFX, damage floating text, screen shake
+            if (onHit) onHit();
+
+            // Switch boss pose: setBossPose('hit') -> hold 300ms -> setBossPose('idle')
+            try {
+              if (typeof window !== 'undefined' && window.setBossPose) {
+                window.setBossPose('hit');
+                setTimeout(() => {
+                  try { window.setBossPose('idle'); } catch (e) {}
+                }, 300);
+              }
+            } catch (e) {}
+
+            // 4. Leap back: Tween playerGroup.position back to (-4.5, 0, 0) in 350ms (Quadratic.Out)
+            new TWEEN_LIB.Tween(targetGroup.position)
+              .to({ x: -4.5, y: 0.0, z: 0 }, 350)
+              .easing(TWEEN_LIB.Easing.Quadratic.Out)
+              .onComplete(() => {
+                targetGroup.position.set(-4.5, 0.0, 0.0);
+                setPlayerPose('idle');
+                isSlashing = false;
+                if (onDone) onDone();
+              })
+              .start();
+          })
+          .start();
+      })
+      .start();
+  } else {
+    // Fallback if TWEEN is missing
+    if (onHit) onHit();
+    setTimeout(() => {
       setPlayerPose('idle');
       isSlashing = false;
       if (onDone) onDone();
-      return;
-    }
-
-    requestAnimationFrame(stepCombat);
+    }, 500);
   }
-
-  requestAnimationFrame(stepCombat);
 }
 
 export function slashAnimation(onHit, onDone) {
