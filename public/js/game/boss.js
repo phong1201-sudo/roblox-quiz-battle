@@ -220,7 +220,7 @@ const TWEEN = {
 };
 
 let anim = { active:false, type:null, t:0, duration:0, dodgeDir:1 };
-const BOSS_HOME = { x:4.5, y:0.0, z:0.0 };   // face-to-face with player at x:-4.5
+const BOSS_HOME = { x:4.8, y:0.0, z:0.0 };   // face-to-face with player at x:-4.5
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function makeMat(color, emissive) {
@@ -824,8 +824,8 @@ export async function loadBossPoses(scene, element = 'thunder') {
       const box = new currentTHREE.Box3().setFromObject(mesh);
       const size = box.getSize(new currentTHREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const targetHeight = 4.5;
-      const scale = targetHeight / maxDim;
+      const targetBossHeight = 5.76; // Exactly 1.8x player height (1.8 * 3.2)
+      const scale = targetBossHeight / maxDim;
       mesh.scale.set(scale, scale, scale);
 
       // Recalculate bounding box after scaling to clamp bottom vertex exactly to floor
@@ -864,7 +864,7 @@ export async function loadBossPoses(scene, element = 'thunder') {
   if (bossPoses['idle']) bossPoses['idle'].visible = true;
   currentBossPose = 'idle';
 
-  bossGroup.position.set(4.5, 0, 0);
+  bossGroup.position.set(4.8, 0, 0);
   bossGroup.rotation.y = -Math.PI / 2; // Face towards Player (-X)
 
   const targetScene = scene || (typeof window !== 'undefined' ? window.gameScene : null);

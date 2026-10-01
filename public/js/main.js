@@ -31,12 +31,25 @@ function makeGameState(base) {
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const urlOutfit = urlParams.get('outfit');
+        const urlElement = urlParams.get('element');
+        if (urlElement) {
+            base.bossElement = urlElement;
+        }
         if (urlOutfit) {
             equipped = { outfit: urlOutfit, weapon: urlOutfit };
-            try { localStorage.setItem('player_equipped', JSON.stringify(equipped)); } catch (e) {}
+            try {
+                localStorage.setItem('player_equipped', JSON.stringify(equipped));
+                sessionStorage.setItem('selectedOutfit', urlOutfit);
+                localStorage.setItem('selectedOutfit', urlOutfit);
+            } catch (e) {}
         } else {
             const saved = JSON.parse(localStorage.getItem('player_equipped'));
-            if (saved) equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+            if (saved) {
+                equipped = { outfit: saved.outfit || 'default', weapon: saved.weapon || 'default' };
+                try {
+                    if (!sessionStorage.getItem('selectedOutfit')) sessionStorage.setItem('selectedOutfit', equipped.outfit);
+                } catch (e) {}
+            }
         }
     } catch(e) {}
 

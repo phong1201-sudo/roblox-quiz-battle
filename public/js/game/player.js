@@ -199,7 +199,7 @@ export async function loadPlayerOutfitPoses(scene, outfit = 'default') {
       const box = new currentTHREE.Box3().setFromObject(mesh);
       const size = box.getSize(new currentTHREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const targetHeight = 3.6;
+      const targetHeight = 3.2; // Standardized player height
       const scale = targetHeight / maxDim;
       mesh.scale.set(scale, scale, scale);
 

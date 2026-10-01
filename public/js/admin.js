@@ -262,13 +262,14 @@ function setupQuestionManager() {
 function setupDevLaunch() {
   const getSelectedOutfit = () => {
     const el = document.getElementById('dev-player-outfit');
-    return (el && el.value) ? el.value : (sessionStorage.getItem('selectedOutfit') || 'fire');
+    return (el && el.value) ? el.value : (sessionStorage.getItem('selectedOutfit') || localStorage.getItem('selectedOutfit') || 'default');
   };
 
   const applyOutfitToStorage = (outfit) => {
     try {
       localStorage.setItem('player_equipped', JSON.stringify({ outfit, weapon: outfit }));
       sessionStorage.setItem('selectedOutfit', outfit);
+      localStorage.setItem('selectedOutfit', outfit);
     } catch (e) {}
   };
 
@@ -278,12 +279,12 @@ function setupDevLaunch() {
     try {
       const res = await fetch('/api/dev-questions?code=DEV99', { method: 'POST' });
       if (res.ok) {
-        window.location.href = `/?dev=1&element=fire&outfit=${outfit}`;
+        window.location.href = `/?dev=1&outfit=${encodeURIComponent(outfit)}`;
       } else {
-        window.location.href = `/?outfit=${outfit}`;
+        window.location.href = `/?outfit=${encodeURIComponent(outfit)}`;
       }
     } catch (e) {
-      window.location.href = `/?outfit=${outfit}`;
+      window.location.href = `/?outfit=${encodeURIComponent(outfit)}`;
     }
   });
 

@@ -25,20 +25,20 @@ let pendingEvents = [];
 //   Player on left (x = -3), Boss on right (x = +3)
 //   Camera sits slightly off-centre on the Z axis to show a nice 3/4 view
 const PLAYER_HOME = new THREE.Vector3(-4.5, 0.0, 0);
-const BOSS_HOME   = new THREE.Vector3( 4.5, 0.0, 0);
+const BOSS_HOME   = new THREE.Vector3( 4.8, 0.0, 0);
 
 // ── Arena Center & Camera Focus Target ────────────────────────────────────────
-export const ARENA_CENTER = new THREE.Vector3(0, 1.5, 0);
+export const ARENA_CENTER = new THREE.Vector3(0, 1.8, 0);
 
-// ── Camera — pulled back to show full fighters head-to-feet on platform ───────
-const CAM_POS    = new THREE.Vector3(0, 4.8, 11.5);
+// ── Camera — balanced framing for both combatants head-to-feet on platform ────
+const CAM_POS    = new THREE.Vector3(0, 3.8, 11.5);
 const CAM_TARGET = ARENA_CENTER.clone();
 
 // ── Scene Lights Reference ───────────────────────────────────────────────────
 let sceneLights = null;
 
 // ── Boss hit position for VFX ─────────────────────────────────────────────────
-const BOSS_VFX_POS = new THREE.Vector3(4.5, 4.0, 0);
+const BOSS_VFX_POS = new THREE.Vector3(4.8, 4.0, 0);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT SCENE
@@ -108,6 +108,7 @@ export function initScene(canvas) {
 // START GAME
 // ─────────────────────────────────────────────────────────────────────────────
 let battleReady = false;
+let isMatchInitiated = false;
 let queuedQuestion = null;
 
 export function isBattleReady() {
@@ -118,13 +119,25 @@ export function queueFirstQuestion(data) {
   queuedQuestion = data;
 }
 
+export function displayQuestion(idx = 0) {
+  if (queuedQuestion) {
+    const qData = queuedQuestion;
+    queuedQuestion = null;
+    if (window.gameState) {
+      window.gameState.currentQuestionIndex = (qData.index !== undefined ? qData.index - 1 : idx);
+    }
+    if (hud.showQuestion) hud.showQuestion(qData);
+    internalOnQuestion(qData);
+  }
+}
+
 export async function startGame(gameState) {
   window.gameScene = scene;
   currentGameState = gameState;
   gameMode = gameState.mode || 'pve';
   totalHp  = gameState.totalHp || 10;
   battleReady = false;
-  queuedQuestion = null;
+  isMatchInitiated = false;
 
   // Show Pre-battle Loading Gate Overlay
   const loadingOverlay = document.getElementById('battle-loading-overlay');
@@ -136,11 +149,12 @@ export async function startGame(gameState) {
   const activeElement = gameState.bossElement || gameState.element || 'thunder';
   Arena.setArenaTheme(activeElement);
 
-  // Apply player's equipped elemental set
+  // Decouple Player Outfit from Boss Element: Strictly preserve player's independently selected outfit
   const playerOutfit = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('selectedOutfit'))
+    || (typeof localStorage !== 'undefined' && localStorage.getItem('selectedOutfit'))
     || gameState.equipped?.outfit
     || gameState.equippedSet
-    || 'fire';
+    || 'default';
   if (playerOutfit) {
     Player.applyElementalSet(playerOutfit);
   }
@@ -204,12 +218,11 @@ export async function startGame(gameState) {
     Audio.playBGM(track);
   } catch (e) {}
 
-  // Present Question 1 if queued during model fetch
-  if (queuedQuestion) {
-    const qData = queuedQuestion;
-    queuedQuestion = null;
-    if (hud.showQuestion) hud.showQuestion(qData);
-    internalOnQuestion(qData);
+  // Consolidate game initiation into a single entry point: Strictly display Question 1 first!
+  if (!isMatchInitiated && queuedQuestion) {
+    isMatchInitiated = true;
+    if (window.gameState) window.gameState.currentQuestionIndex = 0;
+    displayQuestion(0);
   }
 
   // Elemental set unlock hook
@@ -243,9 +256,15 @@ export async function startGame(gameState) {
 }
 
 export function onQuestion(data) {
+  queuedQuestion = data;
   if (!battleReady) {
     console.log('[scene] Pre-battle gate active: Queuing Question 1 until models are ready');
-    queuedQuestion = data;
+    return;
+  }
+  if (!isMatchInitiated) {
+    isMatchInitiated = true;
+    if (window.gameState) window.gameState.currentQuestionIndex = 0;
+    displayQuestion(0); // Strictly display Question 1 first!
     return;
   }
   if (hud.showQuestion) hud.showQuestion(data);
@@ -381,6 +400,9 @@ function animate(time) {
 export function resetGameMatch() {
   pendingEvents = [];
   combatBusy = false;
+  isMatchInitiated = false;
+  battleReady = false;
+  queuedQuestion = null;
   if (socketMoveInterval) {
     clearInterval(socketMoveInterval);
     socketMoveInterval = null;
@@ -399,15 +421,15 @@ let activeCamTween = null;
 
 export const CINEMATIC_SHOTS = [
   // Shot 1: Wide Orbit Sweep (210°) from Player to Boss
-  { start: { x: -8, y: 4.0, z: 7 }, end: { x: 7, y: 3.5, z: -6 }, duration: 2500 },
+  { start: { x: -8.5, y: 4.2, z: 7.5 }, end: { x: 7.5, y: 3.8, z: -6.5 }, duration: 2500 },
   // Shot 2: Low-Angle Hero Cam (looking up from behind player towards boss)
-  { start: { x: -6.5, y: 1.2, z: 2.8 }, end: { x: -5.5, y: 1.6, z: 2.0 }, duration: 2200 },
+  { start: { x: -6.8, y: 1.5, z: 3.2 }, end: { x: -5.8, y: 1.8, z: 2.2 }, duration: 2200 },
   // Shot 3: Over-the-Shoulder Boss Cam (looking down at incoming player leap)
-  { start: { x: 6.0, y: 3.5, z: 2.5 }, end: { x: 5.0, y: 3.0, z: 1.5 }, duration: 2200 },
+  { start: { x: 6.5, y: 4.2, z: 3.0 }, end: { x: 5.5, y: 3.6, z: 2.0 }, duration: 2200 },
   // Shot 4: High Oblique Isometric Aerial (epic grand arena view)
-  { start: { x: 0, y: 10.0, z: 9.5 }, end: { x: 2, y: 9.0, z: 8.5 }, duration: 2500 },
+  { start: { x: 0, y: 10.5, z: 10.5 }, end: { x: 2, y: 9.5, z: 9.5 }, duration: 2500 },
   // Shot 5: Side Action Tracking (gliding horizontally alongside combatants)
-  { start: { x: -3, y: 2.8, z: 8.5 }, end: { x: 3, y: 2.8, z: 8.5 }, duration: 2200 }
+  { start: { x: -3.5, y: 3.2, z: 9.5 }, end: { x: 3.5, y: 3.2, z: 9.5 }, duration: 2200 }
 ];
 
 let lastShotIndex = -1;
@@ -415,7 +437,7 @@ let lastShotIndex = -1;
 /**
  * Triggers one of 5 distinct cinematic camera shots.
  * When called with null, randomly picks one of the 5 shots (guaranteeing variety).
- * The focus target MUST ALWAYS stay locked to ARENA_CENTER (0, 1.5, 0)
+ * The focus target MUST ALWAYS stay locked to ARENA_CENTER (0, 1.8, 0)
  * so both Player and Boss NEVER leave the frame!
  *
  * @param {number|null} [shotNum=null] - 1 to 5 (or null for random)
