@@ -410,6 +410,81 @@ function getUser(userId) {
   return null;
 }
 
+async function getUserAsync(userId) {
+  const idNum = Number(userId);
+  if (!idNum) return null;
+  const cached = _cache.users[idNum];
+  if (cached) return _public(cached);
+
+  if (_mongoConnected) {
+    try {
+      const doc = await UserModel.findOne({ id: idNum }).lean();
+      if (doc) {
+        _cache.users[doc.id] = doc;
+        _saveLocal(_cache);
+        return _public(doc);
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
+function unlockOutfit(userId, outfitId) {
+  const idNum = Number(userId);
+  const user = _cache.users[idNum];
+  if (!user) return { ok: false, error: 'User not found' };
+
+  if (!Array.isArray(user.unlockedOutfits)) user.unlockedOutfits = ['default'];
+  if (!user.unlockedOutfits.includes(outfitId)) {
+    user.unlockedOutfits.push(outfitId);
+  }
+  if (!Array.isArray(user.unlockedSets)) user.unlockedSets = [];
+  if (!user.unlockedSets.includes(outfitId)) {
+    user.unlockedSets.push(outfitId);
+  }
+  user.updatedAt = new Date();
+  _saveLocal(_cache);
+
+  if (_mongoConnected) {
+    UserModel.findOneAndUpdate(
+      { id: idNum },
+      { $set: { unlockedOutfits: user.unlockedOutfits, unlockedSets: user.unlockedSets, updatedAt: new Date() } }
+    ).catch(err => console.warn('[db] MongoDB unlockOutfit update warning:', err.message));
+  }
+  return { ok: true, user: _public(user) };
+}
+
+function updateScores(userId, element, score) {
+  const idNum = Number(userId);
+  const user = _cache.users[idNum];
+  if (!user) return { ok: false, error: 'User not found' };
+
+  if (!user.scores || typeof user.scores !== 'object') user.scores = {};
+  const currentMax = Number(user.scores[element] || 0);
+  if (Number(score) > currentMax) {
+    user.scores[element] = Number(score);
+  }
+
+  // If score reached 50, automatically unlock outfit!
+  if (Number(score) >= 50 && ['thunder', 'fire', 'frost'].includes(element)) {
+    if (!Array.isArray(user.unlockedOutfits)) user.unlockedOutfits = ['default'];
+    if (!user.unlockedOutfits.includes(element)) user.unlockedOutfits.push(element);
+    if (!Array.isArray(user.unlockedSets)) user.unlockedSets = [];
+    if (!user.unlockedSets.includes(element)) user.unlockedSets.push(element);
+  }
+
+  user.updatedAt = new Date();
+  _saveLocal(_cache);
+
+  if (_mongoConnected) {
+    UserModel.findOneAndUpdate(
+      { id: idNum },
+      { $set: { scores: user.scores, unlockedOutfits: user.unlockedOutfits, unlockedSets: user.unlockedSets, updatedAt: new Date() } }
+    ).catch(err => console.warn('[db] MongoDB updateScores update warning:', err.message));
+  }
+  return { ok: true, user: _public(user) };
+}
+
 function unlockPiece(userId, element, pieces) {
   const VALID_ELEMS  = ['thunder', 'fire', 'frost'];
   const VALID_PIECES = FULL_SET_PIECES;   // ['weapon', 'outfit']
@@ -514,8 +589,11 @@ module.exports = {
   login,
   changePassword,
   getUser,
+  getUserAsync,
   unlockPiece,
   unlockSet,
+  unlockOutfit,
+  updateScores,
   updateStage,
   getUsersCount,
   FULL_SET_PIECES,

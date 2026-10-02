@@ -47,7 +47,9 @@ class RoomManager {
       timer: null,
       mode: normalizedMode,
       stage: normalizedStage,
+      element: normalizedStage,
       bossElement: normalizedStage,
+      difficulty: 'hard',
       totalHp: 50,
       bossHp: 50,
       bossHpMultiplier: 1,
@@ -333,8 +335,25 @@ class RoomManager {
       }
       const clean = ['thunder', 'fire', 'frost'].includes(stage) ? stage : 'thunder';
       room.stage = clean;
+      room.element = clean;
       room.bossElement = clean;
       room.bossIndex = ['thunder', 'fire', 'frost'].indexOf(clean);
+    }
+  }
+
+  setDifficulty(code, difficulty, socketId) {
+    const room = this.rooms.get(code);
+    if (room && room.phase === 'LOBBY') {
+      if (socketId && room.hostId !== socketId) {
+        throw new Error('Cài đặt do Chủ phòng quyết định! Bạn không có quyền thay đổi độ khó.');
+      }
+      const map = { 'easy': 'easy', '20': 'easy', 'medium': 'medium', '30': 'medium', 'hard': 'hard', '50': 'hard' };
+      const diff = map[String(difficulty).toLowerCase()] || 'hard';
+      room.difficulty = diff;
+      const countMap = { easy: 20, medium: 30, hard: 50 };
+      room.totalHp = countMap[diff] || 50;
+      room.bossHp = room.totalHp;
+      return diff;
     }
   }
 
@@ -362,7 +381,7 @@ class RoomManager {
   initHp(code) {
     const room = this.rooms.get(code);
     if (!room) return;
-    const total = Math.max(50, room.questions.length);
+    const total = room.questions.length > 0 ? room.questions.length : 50;
     room.bossHpMultiplier = 1;
     room.totalHp = total;
     room.bossHp  = total;

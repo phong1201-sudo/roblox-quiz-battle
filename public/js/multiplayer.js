@@ -208,7 +208,20 @@ export function togglePlayerReady(ready) {
  */
 export function requestStartGame() {
   if (!roomState.code || !roomState.isHost) return;
-  emit('start_game_request', { roomCode: roomState.code });
+  emit('host_launch_battle', { roomCode: roomState.code });
+}
+
+export function launchBattle() {
+  requestStartGame();
+}
+
+/**
+ * Host selects room difficulty
+ */
+export function setRoomDifficulty(difficulty) {
+  if (!roomState.code || !roomState.isHost) return;
+  roomState.difficulty = difficulty;
+  emit('set_difficulty', { code: roomState.code, difficulty });
 }
 
 /**
@@ -444,6 +457,70 @@ on('match_start', (data) => {
     window.gameState.stage = data.stage || window.gameState.stage;
     window.gameState.bossElement = data.stage || window.gameState.bossElement;
   }
+});
+
+on('launch_error', ({ message } = {}) => {
+  const msg = message || 'Cả hai người chơi đều phải bấm Sẵn sàng!';
+  alert(`⚠️ ${msg}`);
+  const toast = document.getElementById('admin-toast');
+  if (toast) toast.remove();
+  const t = document.createElement('div');
+  t.id = 'admin-toast';
+  t.style.cssText = `
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:rgba(239,35,60,0.95);border:2px solid #fff;
+    color:#fff;font-family:'Press Start 2P',sans-serif;font-size:10px;
+    padding:10px 20px;border-radius:6px;z-index:99999;text-align:center;
+  `;
+  t.textContent = `⚠️ ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+});
+
+on('difficulty_changed', ({ difficulty }) => {
+  roomState.difficulty = difficulty;
+  if (window.gameState) window.gameState.difficulty = difficulty;
+});
+
+on('match_initialized', (data) => {
+  console.log('[match_initialized] Match launched by server:', data);
+  cancelCountdown();
+
+  // 1. Set match parameters in sessionStorage
+  try {
+    sessionStorage.setItem('match_mode', data.mode);
+    sessionStorage.setItem('match_element', data.element);
+    sessionStorage.setItem('match_difficulty', data.difficulty);
+    sessionStorage.setItem('selectedStage', data.element);
+  } catch (e) {}
+
+  // 2. Sync to window.gameState
+  if (window.gameState) {
+    window.gameState.mode = data.mode || window.gameState.mode;
+    window.gameState.stage = data.element || data.stage || window.gameState.stage;
+    window.gameState.bossElement = data.element || data.stage || window.gameState.bossElement;
+    window.gameState.difficulty = data.difficulty || window.gameState.difficulty || 'hard';
+  }
+
+  // 3. Smooth transition to arena scene
+  const show = window.showScreen || ((s) => {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+    document.getElementById(`screen-${s}`)?.classList.add('active');
+  });
+  show('game');
+
+  Audio.setInBattle(true);
+  try {
+    Audio.stopBGM();
+    Audio.playBGM('battle');
+  } catch (e) {}
+
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('game-canvas');
+    if (canvas && window.scene?.initScene) window.scene.initScene(canvas);
+    if (window.hud?.init) window.hud.init(window.gameState);
+    if (window.scene?.startGame) window.scene.startGame(window.gameState);
+  });
 });
 
 

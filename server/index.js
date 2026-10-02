@@ -738,10 +738,10 @@ app.post('/api/auth/login', async (req, res) => {      // alias
 });
 
 /** POST /api/auth/check  { userId } → { ok, user } — validate a cached session */
-app.post('/api/auth/check', (req, res) => {
+app.post('/api/auth/check', async (req, res) => {
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ ok: false, error: 'userId required' });
-  const result = db.getUser(Number(userId));
+  const result = await db.getUserAsync(Number(userId));
   if (!result) return res.status(404).json({ ok: false, error: 'Session expired — please log in again.' });
   res.json({ ok: true, user: result });
 });
@@ -822,6 +822,25 @@ app.post('/api/update-stage', (req, res) => {
   const { userId, stage } = req.body || {};
   if (userId && stage) db.updateStage(Number(userId), Number(stage));
   res.json({ ok: true });
+});
+
+/** POST /api/unlock-outfit  { userId, outfitId } → { ok, user } */
+app.post('/api/unlock-outfit', (req, res) => {
+  const { userId, outfitId } = req.body || {};
+  if (!userId || !outfitId) return res.status(400).json({ ok: false, error: 'userId and outfitId required' });
+  const result = db.unlockOutfit(Number(userId), outfitId);
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
+});
+
+/** POST /api/save-score  { userId, element, score } → { ok, user } */
+app.post('/api/save-score', (req, res) => {
+  const { userId, element, score } = req.body || {};
+  if (!userId || !element || score === undefined)
+    return res.status(400).json({ ok: false, error: 'userId, element, and score required' });
+  const result = db.updateScores(Number(userId), element, Number(score));
+  if (!result.ok) return res.status(400).json(result);
+  res.json(result);
 });
 
 // ── Admin Question Bank Endpoints ─────────────────────────────────────────────
@@ -1587,34 +1606,77 @@ io.on('connection', (socket) => {
     }
   });
 
+  /** Host selects difficulty */
+  socket.on('set_difficulty', ({ code, difficulty }) => {
+    try {
+      const cleanCode = (code || '').trim().toUpperCase();
+      const diff = roomManager.setDifficulty(cleanCode, difficulty, socket.id);
+      io.to(cleanCode).emit('difficulty_changed', { difficulty: diff });
+    } catch (e) {
+      console.error('[set_difficulty]', e.message);
+      socket.emit('error', { message: e.message });
+    }
+  });
+
+  /** Centralized battle launch validator */
+  const handleLaunchBattle = (cleanCode) => {
+    const room = roomManager.getRoom(cleanCode);
+    if (!room || !room.host) {
+      socket.emit('launch_error', { message: 'Phòng không tồn tại!' });
+      socket.emit('start_error', { message: 'Phòng không tồn tại!' });
+      return;
+    }
+    if (room.hostId !== socket.id) {
+      socket.emit('launch_error', { message: 'Chỉ chủ phòng mới có quyền bắt đầu trận đấu!' });
+      socket.emit('start_error', { message: 'Chỉ chủ phòng mới có quyền bắt đầu trận đấu!' });
+      return;
+    }
+    if (!room.guest) {
+      socket.emit('launch_error', { message: 'Cần đủ 2 người chơi trong phòng mới có thể bắt đầu!' });
+      socket.emit('start_error', { message: 'Cần đủ 2 người chơi trong phòng mới có thể bắt đầu!' });
+      return;
+    }
+    if (room.host.isReady && room.guest.isReady) {
+      console.log(`[BATTLE START] Room ${cleanCode} launching! Mode: ${room.mode}`);
+      io.to(cleanCode).emit('match_initialized', {
+        mode: room.mode,
+        element: room.element || room.stage,
+        stage: room.stage || room.element,
+        difficulty: room.difficulty || 'hard',
+        host: room.host,
+        guest: room.guest
+      });
+      io.to(cleanCode).emit('match_start', {
+        mode: room.mode,
+        stage: room.stage,
+        hostUser: room.host,
+        guestUser: room.guest
+      });
+      startMatchForRoom(cleanCode, {
+        element: room.element || room.stage,
+        difficulty: room.difficulty || 'hard'
+      });
+    } else {
+      socket.emit('launch_error', { message: 'Cả hai người chơi phải bấm Sẵn sàng!' });
+      socket.emit('start_error', { message: 'Cả hai người chơi đều phải bấm Sẵn sàng!' });
+    }
+  };
+
   /** Host explicit request to launch battle */
+  socket.on('host_launch_battle', ({ roomCode }) => {
+    try {
+      const cleanCode = (roomCode || '').trim().toUpperCase();
+      handleLaunchBattle(cleanCode);
+    } catch (e) {
+      console.error('[host_launch_battle]', e.message);
+      socket.emit('launch_error', { message: e.message });
+    }
+  });
+
   socket.on('start_game_request', ({ roomCode }) => {
     try {
       const cleanCode = (roomCode || '').trim().toUpperCase();
-      const room = roomManager.getRoom(cleanCode);
-      if (!room || !room.host) {
-        socket.emit('start_error', { message: 'Phòng không tồn tại!' });
-        return;
-      }
-      if (room.hostId !== socket.id) {
-        socket.emit('start_error', { message: 'Chỉ chủ phòng mới có quyền bắt đầu trận đấu!' });
-        return;
-      }
-      if (!room.guest) {
-        socket.emit('start_error', { message: 'Cần đủ 2 người chơi trong phòng mới có thể bắt đầu!' });
-        return;
-      }
-      if (room.host.isReady && room.guest.isReady) {
-        io.to(cleanCode).emit('match_start', {
-          mode: room.mode,
-          stage: room.stage,
-          hostUser: room.host,
-          guestUser: room.guest
-        });
-        startMatchForRoom(cleanCode, { element: room.stage });
-      } else {
-        socket.emit('start_error', { message: 'Cả hai người chơi đều phải bấm Sẵn sàng!' });
-      }
+      handleLaunchBattle(cleanCode);
     } catch (e) {
       console.error('[start_game_request]', e.message);
       socket.emit('start_error', { message: e.message });

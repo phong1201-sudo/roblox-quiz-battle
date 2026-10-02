@@ -6,6 +6,7 @@ import * as hud from './hud.js';
 import * as scene from '../game/scene.js';
 import * as results from './results.js';
 import * as Auth from '../auth.js';
+import * as Armory from '../armory.js';
 // THREE is available as a global from the CDN script tag
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -791,20 +792,6 @@ function _buildStudentLobby(container, gameState) {
   const unlockedSets = user.unlockedSets || [];
   const FULL_PIECES = ['weapon', 'outfit'];
 
-  const BOSSES = [
-    { id:'thunder', label:'⚡ Lôi Quái',    sub:'Sét thần',    color:'#00cfff', glow:'rgba(0,200,255,0.35)' },
-    { id:'fire',    label:'🔥 Hỏa Ma Vương', sub:'Lửa thiêu',   color:'#ff6b00', glow:'rgba(255,80,0,0.35)' },
-    { id:'frost',   label:'❄️ Băng Tinh',   sub:'Băng tuyết',  color:'#88ddff', glow:'rgba(100,180,255,0.35)' },
-  ];
-  const DIFFICULTIES = [
-    { id:'easy',   label:'Dễ',        sub:'20 câu',  color:'#06d6a0' },
-    { id:'medium', label:'Trung bình', sub:'30 câu',  color:'#ffcc00' },
-    { id:'hard',   label:'Khó',        sub:'50 câu',  color:'#ef233c' },
-  ];
-
-  let selectedBoss   = gameState.stage || 'thunder';
-  let selectedDiff   = 'medium';
-
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
 
@@ -816,7 +803,26 @@ function _buildStudentLobby(container, gameState) {
     return h;
   };
 
-  if (gameState.isSinglePlayer) {
+  const ELEMENTS = [
+    { id: 'thunder', label: '⚡ Sét', boss: 'Lôi Quái', color: '#00cfff', glow: 'rgba(0, 207, 255, 0.35)' },
+    { id: 'fire',    label: '🔥 Lửa', boss: 'Hỏa Ma Vương', color: '#ff6b00', glow: 'rgba(255, 107, 0, 0.35)' },
+    { id: 'frost',   label: '❄️ Băng', boss: 'Băng Tinh', color: '#88ddff', glow: 'rgba(136, 221, 255, 0.35)' },
+  ];
+
+  const DIFFICULTIES = [
+    { id: 'easy',   count: 20, label: 'Dễ (20 câu)',        color: '#06d6a0' },
+    { id: 'medium', count: 30, label: 'Trung bình (30 câu)', color: '#ffcc00' },
+    { id: 'hard',   count: 50, label: 'Khó (50 câu)',        color: '#ef233c' },
+  ];
+
+  let selectedBoss = gameState.stage || gameState.element || 'thunder';
+  let selectedDiff = gameState.difficulty || 'medium';
+
+  const isSinglePlayer = Boolean(gameState.isSinglePlayer);
+  const isHost = Boolean(gameState.isHost);
+  const isGuest = !isSinglePlayer && !isHost;
+
+  if (isSinglePlayer) {
     // ── Single Player Entry Banner ──────────────────────────────────────────
     const singleHead = document.createElement('div');
     singleHead.style.cssText = 'background:rgba(15,23,42,0.85);border:2px solid #00cfff;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 0 16px rgba(0,207,255,0.2);';
@@ -826,7 +832,7 @@ function _buildStudentLobby(container, gameState) {
           ⚔️ ĐẤU TRƯỜNG CHƠI ĐƠN (1 VS 1 BOSS)
         </div>
         <div style="font-size:9px;color:#94a3b8;margin-top:2px;">
-          Bản lĩnh một chọi một — Tùy chọn trang phục &amp; cấp độ để xuất trận!
+          Bản lĩnh một chọi một — Chọn Ải Nguyên Tố, Độ Khó và Trang Phục xuất trận!
         </div>
       </div>
     `;
@@ -840,8 +846,78 @@ function _buildStudentLobby(container, gameState) {
     };
     singleHead.appendChild(backBtn);
     wrap.appendChild(singleHead);
-  } else {
-    // ── 0. Multiplayer Game Mode & Stage Selector ─────────────────────────────
+
+    // ── Unified Element Selector for Single Player ─────────────────────────
+    const elemSection = document.createElement('div');
+    elemSection.appendChild(mkHead('🎯 Chọn Ải Boss & Nguyên Tố'));
+    const elemGrid = document.createElement('div');
+    elemGrid.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
+    ELEMENTS.forEach(el => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.style.cssText = 'flex:1;padding:10px 8px;border-radius:8px;border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;font-family:"Be Vietnam Pro",sans-serif;';
+      const updateVisual = () => {
+        const active = (selectedBoss === el.id);
+        btn.style.borderColor = active ? el.color : 'rgba(255,255,255,0.12)';
+        btn.style.background = active ? el.glow : 'rgba(255,255,255,0.04)';
+        btn.style.boxShadow = active ? `0 0 16px ${el.glow}` : 'none';
+      };
+      btn.innerHTML = `<span style="font-size:16px;">${el.label.split(' ')[0]}</span><span style="font-size:11px;font-weight:800;color:${el.color};">${el.label}</span><span style="font-size:9px;color:#aaa;">Boss ${el.boss}</span>`;
+      btn.onclick = () => {
+        selectedBoss = el.id;
+        if (window.gameState) {
+          window.gameState.selectedBoss = el.id;
+          window.gameState.bossElement = el.id;
+          window.gameState.stage = el.id;
+        }
+        Array.from(elemGrid.children).forEach((c, idx) => {
+          const item = ELEMENTS[idx];
+          const active = (selectedBoss === item.id);
+          c.style.borderColor = active ? item.color : 'rgba(255,255,255,0.12)';
+          c.style.background = active ? item.glow : 'rgba(255,255,255,0.04)';
+          c.style.boxShadow = active ? `0 0 16px ${item.glow}` : 'none';
+        });
+      };
+      updateVisual();
+      elemGrid.appendChild(btn);
+    });
+    elemSection.appendChild(elemGrid);
+    wrap.appendChild(elemSection);
+
+    // ── Difficulty Selector for Single Player ───────────────────────────────
+    const diffSection = document.createElement('div');
+    diffSection.appendChild(mkHead('⚖️ Chọn Độ Khó'));
+    const diffGrid = document.createElement('div');
+    diffGrid.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
+    DIFFICULTIES.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.style.cssText = 'flex:1;padding:10px 8px;border-radius:8px;border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;font-family:"Be Vietnam Pro",sans-serif;';
+      const updateVisual = () => {
+        const active = (selectedDiff === d.id);
+        btn.style.borderColor = active ? d.color : 'rgba(255,255,255,0.12)';
+        btn.style.background = active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
+        btn.style.boxShadow = active ? `0 0 14px ${d.color}44` : 'none';
+      };
+      btn.innerHTML = `<span style="font-size:12px;font-weight:800;color:${d.color};">${d.label}</span><span style="font-size:9px;color:#aaa;">HP Boss: ${d.count}</span>`;
+      btn.onclick = () => {
+        selectedDiff = d.id;
+        if (window.gameState) window.gameState.selectedDifficulty = d.id;
+        Array.from(diffGrid.children).forEach((c, idx) => {
+          const item = DIFFICULTIES[idx];
+          const active = (selectedDiff === item.id);
+          c.style.borderColor = active ? item.color : 'rgba(255,255,255,0.12)';
+          c.style.background = active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)';
+          c.style.boxShadow = active ? `0 0 14px ${item.color}44` : 'none';
+        });
+      };
+      updateVisual();
+      diffGrid.appendChild(btn);
+    });
+    diffSection.appendChild(diffGrid);
+    wrap.appendChild(diffSection);
+  } else if (isHost) {
+    // ── Multiplayer Room Configuration (Creator/Host Only) ───────────────────
     const roomSection = document.createElement('div');
     roomSection.style.cssText = 'background:rgba(15,23,42,0.7);border:2px solid #00cfff;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 0 16px rgba(0,207,255,0.15);';
 
@@ -849,7 +925,7 @@ function _buildStudentLobby(container, gameState) {
     roomHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
     roomHead.innerHTML = `
       <span style="font-size:11px;font-weight:800;color:#00cfff;letter-spacing:1px;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;">
-        ${gameState.isHost ? '⚙️ Cài Đặt Phòng (Chủ Phòng)' : '🎮 Thông Tin Phòng Đấu'}
+        ⚙️ Cài Đặt Phòng (Chủ Phòng)
       </span>
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="font-size:9px;color:#aaa;">Phòng: <b style="color:#ffcc00;letter-spacing:2px;">${gameState.code}</b></span>
@@ -858,7 +934,7 @@ function _buildStudentLobby(container, gameState) {
     const leaveBtn = document.createElement('button');
     leaveBtn.className = 'btn btn-danger';
     leaveBtn.style.cssText = 'font-size:8px;padding:3px 8px;border-radius:4px;cursor:pointer;';
-    leaveBtn.textContent = gameState.isHost ? '❌ Hủy phòng' : '🚪 Rời phòng';
+    leaveBtn.textContent = '❌ Hủy phòng';
     leaveBtn.onclick = () => {
       try { sessionStorage.removeItem('hostedRoomCode'); localStorage.removeItem('hostedRoomCode'); } catch(e) {}
       Multiplayer.leaveRoom(gameState.code);
@@ -868,292 +944,193 @@ function _buildStudentLobby(container, gameState) {
     roomSection.appendChild(roomHead);
 
     let curMode = gameState.mode || 'team_vs_boss';
-    let curStage = gameState.stage || 'thunder';
+    let curStage = gameState.stage || gameState.element || 'thunder';
+    let curDiff = gameState.difficulty || 'medium';
 
-    if (gameState.isHost) {
-      // Mode selection buttons for Host
-      const modeRow = document.createElement('div');
-      modeRow.style.cssText = 'display:flex;gap:8px;';
-      const modes = [
-        { id: 'team_vs_boss', label: '👥 Đồng Đội vs Boss', desc: '2 Người vs 1 Quái Vật' },
-        { id: 'pvp_1v1',      label: '⚔️ Đấu Đơn 1v1',     desc: 'Đấu Kiếm Sinh Tử' },
-      ];
-      const modeBtnRefs = [];
-      modes.forEach(m => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.style.cssText = `flex:1;padding:8px 6px;font-size:9px;border-radius:6px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;`;
-        btn.innerHTML = `<span style="font-weight:800;font-size:11px;">${m.label}</span><span style="font-size:8px;opacity:0.8;">${m.desc}</span>`;
-        const updateVisual = () => {
-          const active = (curMode === m.id);
-          btn.style.background = active ? 'linear-gradient(135deg, #00cfff, #0284c7)' : 'rgba(255,255,255,0.05)';
-          btn.style.color = active ? '#ffffff' : '#94a3b8';
-          btn.style.borderColor = active ? '#ffffff' : '#334155';
-          btn.style.boxShadow = active ? '0 0 12px rgba(0,207,255,0.4)' : 'none';
-        };
-        updateVisual();
-        modeBtnRefs.push({ id: m.id, update: updateVisual });
-        btn.onclick = () => {
-          curMode = m.id;
-          if (window.gameState) window.gameState.mode = m.id;
-          Multiplayer.setRoomMode(m.id);
-          modeBtnRefs.forEach(x => x.update());
-        };
-        modeRow.appendChild(btn);
-      });
-      roomSection.appendChild(modeRow);
+    // Mode selection buttons for Host
+    const modeRow = document.createElement('div');
+    modeRow.style.cssText = 'display:flex;gap:8px;';
+    const modes = [
+      { id: 'team_vs_boss', label: '👥 Đồng Đội vs Boss', desc: '2 Người vs 1 Quái Vật' },
+      { id: 'pvp_1v1',      label: '⚔️ Đấu Đơn 1v1',     desc: 'Đấu Kiếm Sinh Tử' },
+    ];
+    const modeBtnRefs = [];
+    modes.forEach(m => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.style.cssText = `flex:1;padding:8px 6px;font-size:9px;border-radius:6px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;`;
+      btn.innerHTML = `<span style="font-weight:800;font-size:11px;">${m.label}</span><span style="font-size:8px;opacity:0.8;">${m.desc}</span>`;
+      const updateVisual = () => {
+        const active = (curMode === m.id);
+        btn.style.background = active ? 'linear-gradient(135deg, #00cfff, #0284c7)' : 'rgba(255,255,255,0.05)';
+        btn.style.color = active ? '#ffffff' : '#94a3b8';
+        btn.style.borderColor = active ? '#ffffff' : '#334155';
+        btn.style.boxShadow = active ? '0 0 12px rgba(0,207,255,0.4)' : 'none';
+      };
+      updateVisual();
+      modeBtnRefs.push({ id: m.id, update: updateVisual });
+      btn.onclick = () => {
+        curMode = m.id;
+        if (window.gameState) window.gameState.mode = m.id;
+        Multiplayer.setRoomMode(m.id);
+        modeBtnRefs.forEach(x => x.update());
+      };
+      modeRow.appendChild(btn);
+    });
+    roomSection.appendChild(modeRow);
 
-      // Stage selection row for Host
-      const stageRow = document.createElement('div');
-      stageRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
-      const stageLabel = document.createElement('span');
-      stageLabel.style.cssText = 'font-size:9px;color:#aaa;font-weight:700;';
-      stageLabel.textContent = 'Kho câu hỏi:';
-      stageRow.appendChild(stageLabel);
+    // Merged Unified Element Selector for Host
+    const elemRow = document.createElement('div');
+    elemRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+    const elemLabel = document.createElement('span');
+    elemLabel.style.cssText = 'font-size:9px;color:#aaa;font-weight:700;width:100%;';
+    elemLabel.textContent = '🎯 Chọn Ải Boss & Nguyên Tố:';
+    elemRow.appendChild(elemLabel);
 
-      const stages = [
-        { id: 'thunder', label: '⚡ Sét (50 câu)', color: '#00cfff' },
-        { id: 'fire',    label: '🔥 Lửa (50 câu)', color: '#ff6b00' },
-        { id: 'frost',   label: '❄️ Băng (50 câu)', color: '#88ddff' },
-      ];
-      const stageBtnRefs = [];
-      stages.forEach(st => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.style.cssText = `flex:1;min-width:85px;padding:6px 4px;font-size:8px;border-radius:6px;cursor:pointer;transition:all .15s;`;
-        btn.textContent = st.label;
-        const updateVisual = () => {
-          const active = (curStage === st.id);
-          btn.style.background = active ? st.color : 'rgba(255,255,255,0.05)';
-          btn.style.color = active ? '#050712' : '#ffffff';
-          btn.style.borderColor = active ? '#ffffff' : '#334155';
-          btn.style.fontWeight = active ? '800' : '600';
-        };
-        updateVisual();
-        stageBtnRefs.push({ id: st.id, update: updateVisual });
-        btn.onclick = () => {
-          curStage = st.id;
-          selectedBoss = st.id;
-          if (window.gameState) {
-            window.gameState.stage = st.id;
-            window.gameState.bossElement = st.id;
-          }
-          Multiplayer.setRoomStage(st.id);
-          stageBtnRefs.forEach(x => x.update());
-        };
-        stageRow.appendChild(btn);
-      });
-      roomSection.appendChild(stageRow);
-    } else {
-      // Guest: STRICTLY locked settings
-      const lockedSettings = document.createElement('div');
-      lockedSettings.style.cssText = 'background:rgba(255,204,0,0.08);border:1.5px solid #ffcc00;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;';
-      const getModeName = (m) => (m === 'pvp_1v1' ? '⚔️ Đấu Đơn 1v1 (PvP)' : '👥 Đồng Đội vs Boss (Team)');
-      const getStageName = (s) => (s === 'fire' ? '🔥 Hỏa (50 câu)' : (s === 'frost' ? '❄️ Băng (50 câu)' : '⚡ Sét (50 câu)'));
+    const elemBtnRefs = [];
+    ELEMENTS.forEach(el => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.style.cssText = `flex:1;min-width:85px;padding:8px 6px;font-size:9px;border-radius:6px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px;`;
+      btn.innerHTML = `<span style="font-size:13px;">${el.label}</span><span style="font-size:8px;color:#cbd5e1;">Boss ${el.boss}</span>`;
+      const updateVisual = () => {
+        const active = (curStage === el.id);
+        btn.style.background = active ? el.color : 'rgba(255,255,255,0.05)';
+        btn.style.color = active ? '#050712' : '#ffffff';
+        btn.style.borderColor = active ? '#ffffff' : '#334155';
+        btn.style.fontWeight = active ? '800' : '600';
+        btn.style.boxShadow = active ? `0 0 12px ${el.glow}` : 'none';
+      };
+      updateVisual();
+      elemBtnRefs.push({ id: el.id, update: updateVisual });
+      btn.onclick = () => {
+        curStage = el.id;
+        selectedBoss = el.id;
+        if (window.gameState) {
+          window.gameState.stage = el.id;
+          window.gameState.element = el.id;
+          window.gameState.bossElement = el.id;
+        }
+        Multiplayer.setRoomStage(el.id);
+        elemBtnRefs.forEach(x => x.update());
+      };
+      elemRow.appendChild(btn);
+    });
+    roomSection.appendChild(elemRow);
 
+    // Difficulty Selector for Host
+    const diffRow = document.createElement('div');
+    diffRow.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
+    const diffLabel = document.createElement('span');
+    diffLabel.style.cssText = 'font-size:9px;color:#aaa;font-weight:700;width:100%;';
+    diffLabel.textContent = '⚖️ Chọn Độ Khó:';
+    diffRow.appendChild(diffLabel);
+
+    const diffBtnRefs = [];
+    DIFFICULTIES.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.style.cssText = `flex:1;min-width:85px;padding:8px 6px;font-size:9px;border-radius:6px;cursor:pointer;transition:all .15s;`;
+      btn.textContent = d.label;
+      const updateVisual = () => {
+        const active = (curDiff === d.id);
+        btn.style.background = active ? d.color : 'rgba(255,255,255,0.05)';
+        btn.style.color = active ? '#050712' : '#ffffff';
+        btn.style.borderColor = active ? '#ffffff' : '#334155';
+        btn.style.fontWeight = active ? '800' : '600';
+      };
+      updateVisual();
+      diffBtnRefs.push({ id: d.id, update: updateVisual });
+      btn.onclick = () => {
+        curDiff = d.id;
+        selectedDiff = d.id;
+        if (window.gameState) window.gameState.difficulty = d.id;
+        Multiplayer.setRoomDifficulty(d.id);
+        diffBtnRefs.forEach(x => x.update());
+      };
+      diffRow.appendChild(btn);
+    });
+    roomSection.appendChild(diffRow);
+
+    wrap.appendChild(roomSection);
+  } else {
+    // ── Guest / Joiner UI (STRICT LOCKOUT - Host settings hidden) ───────────
+    const roomSection = document.createElement('div');
+    roomSection.style.cssText = 'background:rgba(15,23,42,0.7);border:2px solid #00cfff;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 0 16px rgba(0,207,255,0.15);';
+
+    const roomHead = document.createElement('div');
+    roomHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,207,255,0.25);padding-bottom:6px;';
+    roomHead.innerHTML = `
+      <span style="font-size:11px;font-weight:800;color:#00cfff;letter-spacing:1px;font-family:'Be Vietnam Pro',sans-serif;text-transform:uppercase;">
+        🎮 Thông Tin Phòng Đấu
+      </span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:9px;color:#aaa;">Phòng: <b style="color:#ffcc00;letter-spacing:2px;">${gameState.code}</b></span>
+      </div>
+    `;
+    const leaveBtn = document.createElement('button');
+    leaveBtn.className = 'btn btn-danger';
+    leaveBtn.style.cssText = 'font-size:8px;padding:3px 8px;border-radius:4px;cursor:pointer;';
+    leaveBtn.textContent = '🚪 Rời phòng';
+    leaveBtn.onclick = () => {
+      Multiplayer.leaveRoom(gameState.code);
+      showScreen('menu');
+    };
+    roomHead.querySelector('div').appendChild(leaveBtn);
+    roomSection.appendChild(roomHead);
+
+    let curMode = gameState.mode || 'team_vs_boss';
+    let curStage = gameState.stage || gameState.element || 'thunder';
+    let curDiff = gameState.difficulty || 'medium';
+
+    const lockedSettings = document.createElement('div');
+    lockedSettings.style.cssText = 'background:rgba(255,204,0,0.08);border:1.5px solid #ffcc00;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;';
+
+    const getHostName = () => (window.gameState?.players?.find(p => p.id === (window.gameState?.hostId || gameState.hostId))?.name) || 'Chủ phòng';
+    const getModeName = (m) => (m === 'pvp_1v1' ? '⚔️ Đấu Đơn 1v1 (PvP)' : '👥 Đồng Đội vs Boss (Team)');
+    const getStageName = (s) => (s === 'fire' ? '🔥 Hỏa (Hỏa Ma Vương)' : (s === 'frost' ? '❄️ Băng (Băng Tinh)' : '⚡ Sét (Lôi Quái)'));
+    const getDiffName = (d) => (d === 'easy' ? 'Dễ (20 câu)' : (d === 'hard' ? 'Khó (50 câu)' : 'Trung bình (30 câu)'));
+
+    const updateGuestBanner = () => {
       lockedSettings.innerHTML = `
-        <div style="font-size:10px;font-weight:800;color:#ffcc00;font-family:'Be Vietnam Pro',sans-serif;letter-spacing:1px;text-transform:uppercase;">
-          🔒 Cài đặt do Chủ phòng quyết định
+        <div style="font-size:11px;font-weight:800;color:#ffcc00;font-family:'Be Vietnam Pro',sans-serif;letter-spacing:0.5px;">
+          🎯 Phòng do <span style="color:#00cfff;">${getHostName()}</span> thiết lập
         </div>
-        <div id="guest-room-status" style="font-size:10px;color:#cbd5e1;font-family:'Be Vietnam Pro',sans-serif;">
-          Chế độ: <b style="color:#00cfff;">${getModeName(curMode)}</b> | Màn chơi: <b style="color:#ffcc00;">${getStageName(curStage)}</b>
+        <div id="guest-room-status" style="font-size:10px;color:#cbd5e1;font-family:'Be Vietnam Pro',sans-serif;margin-top:2px;">
+          Chế độ: <b style="color:#00cfff;">${getModeName(curMode)}</b> | Ải Boss: <b style="color:#ffcc00;">${getStageName(curStage)}</b> | Độ khó: <b style="color:#34d399;">${getDiffName(curDiff)}</b>
         </div>
-        <div style="font-size:9px;color:#94a3b8;font-style:italic;">
-          (Bạn chỉ cần chọn Trang phục bên dưới và bấm Sẵn sàng)
+        <div style="font-size:9.5px;color:#94a3b8;font-style:italic;margin-top:2px;">
+          (Bạn chỉ cần chọn Trang phục bên dưới và bấm Sẵn sàng để xuất trận!)
         </div>
       `;
-      roomSection.appendChild(lockedSettings);
+    };
+    updateGuestBanner();
 
-      const updateGuestRoomStatus = () => {
-        const el = lockedSettings.querySelector('#guest-room-status');
-        if (el) el.innerHTML = `Chế độ: <b style="color:#00cfff;">${getModeName(curMode)}</b> | Màn chơi: <b style="color:#ffcc00;">${getStageName(curStage)}</b>`;
-      };
-      socket.on('mode_changed', ({ mode }) => { curMode = mode; updateGuestRoomStatus(); });
-      socket.on('stage_changed', ({ stage }) => { curStage = stage; selectedBoss = stage; updateGuestRoomStatus(); });
-      socket.on('room_state_update', (d) => {
-        if (d.mode) curMode = d.mode;
-        if (d.stage) { curStage = d.stage; selectedBoss = d.stage; }
-        updateGuestRoomStatus();
-      });
-    }
+    socket.on('mode_changed', ({ mode }) => { curMode = mode; updateGuestBanner(); });
+    socket.on('stage_changed', ({ stage }) => { curStage = stage; selectedBoss = stage; updateGuestBanner(); });
+    socket.on('difficulty_changed', ({ difficulty }) => { curDiff = difficulty; updateGuestBanner(); });
+    socket.on('room_state_update', (d) => {
+      if (d.mode) curMode = d.mode;
+      if (d.stage) { curStage = d.stage; selectedBoss = d.stage; }
+      if (d.difficulty) curDiff = d.difficulty;
+      updateGuestBanner();
+    });
 
+    roomSection.appendChild(lockedSettings);
     wrap.appendChild(roomSection);
   }
 
-  // ── 1. Boss selector ──────────────────────────────────────────────────────
-  const bossSection = document.createElement('div');
-  bossSection.appendChild(mkHead('🎯 Chọn Mục Tiêu Boss'));
-  const bossGrid = document.createElement('div');
-  bossGrid.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+  // ── Consolidated Armory: Kho Trang Phục Nguyên Tố ───────────────────────
+  const armoryContainer = document.createElement('div');
+  armoryContainer.id = 'armory-section-wrap';
+  wrap.appendChild(armoryContainer);
 
-  BOSSES.forEach(b => {
-    const pieces = inventory[b.id] || [];
-    const count  = pieces.length;
-    const isFull = FULL_PIECES.every(p => pieces.includes(p));
-
-    const btn = document.createElement('button');
-    btn.dataset.boss = b.id;
-    btn.style.cssText = `flex:1;min-width:80px;padding:10px 6px;border-radius:8px;border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;`;
-    btn.innerHTML = `
-      <span style="font-size:18px;">${b.label.split(' ')[0]}</span>
-      <span style="font-size:11px;font-weight:700;color:${b.color};">${b.label.slice(b.label.indexOf(' ')+1)}</span>
-      <span style="font-size:9px;color:#888;">${b.sub}</span>
-      <span style="font-size:8px;color:${isFull ? b.color : '#555'};margin-top:2px;">${isFull ? '✦ Đầy bộ' : `${count}/2 món`}</span>
-    `;
-    btn.addEventListener('click', () => {
-      bossGrid.querySelectorAll('button').forEach(x => {
-        x.style.borderColor = 'rgba(255,255,255,0.12)';
-        x.style.background  = 'rgba(255,255,255,0.04)';
-        x.style.boxShadow   = 'none';
-      });
-      btn.style.borderColor = b.color;
-      btn.style.background  = b.glow;
-      btn.style.boxShadow   = `0 0 16px ${b.glow}`;
-      selectedBoss = b.id;
-      if (window.gameState) window.gameState.selectedBoss = b.id;
-    });
-    bossGrid.appendChild(btn);
+  Armory.renderArmory(armoryContainer, user, (newOutfit) => {
+    _syncEquippedState();
+    if (typeof window.updateLobbyReadyUI === 'function') {
+      window.updateLobbyReadyUI(window.gameState?.players);
+    }
   });
-  bossSection.appendChild(bossGrid);
-  wrap.appendChild(bossSection);
-
-  // ── 2. Difficulty selector ────────────────────────────────────────────────
-  const diffSection = document.createElement('div');
-  diffSection.appendChild(mkHead('⚖️ Chọn Độ Khó'));
-  const diffGrid = document.createElement('div');
-  diffGrid.style.cssText = 'display:flex;gap:8px;margin-top:8px;';
-
-  DIFFICULTIES.forEach(d => {
-    const btn = document.createElement('button');
-    btn.dataset.diff = d.id;
-    btn.style.cssText = `flex:1;padding:8px 4px;border-radius:7px;border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);cursor:pointer;font-family:"Be Vietnam Pro",sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;`;
-    btn.innerHTML = `<span style="font-size:12px;font-weight:800;color:${d.color};">${d.label}</span><span style="font-size:9px;color:#888;">${d.sub}</span>`;
-    btn.addEventListener('click', () => {
-      diffGrid.querySelectorAll('button').forEach(x => {
-        x.style.borderColor = 'rgba(255,255,255,0.12)';
-        x.style.background  = 'rgba(255,255,255,0.04)';
-      });
-      btn.style.borderColor = d.color;
-      btn.style.background  = `rgba(${d.id==='easy'?'6,214,160':'hard'===d.id?'239,35,60':'255,204,0'},0.1)`;
-      selectedDiff = d.id;
-      if (window.gameState) window.gameState.selectedDifficulty = d.id;
-    });
-    // Pre-select medium
-    if (d.id === 'medium') setTimeout(() => btn.click(), 0);
-    diffGrid.appendChild(btn);
-  });
-  diffSection.appendChild(diffGrid);
-  wrap.appendChild(diffSection);
-
-  // ── 3. Wardrobe + inventory ───────────────────────────────────────────────
-  const wardSection = document.createElement('div');
-  wardSection.appendChild(mkHead('🎒 Trang Bị & Bộ Kỹ Năng'));
-
-  const wardRow = document.createElement('div');
-  wardRow.style.cssText = 'display:flex;gap:12px;align-items:flex-start;margin-top:8px;';
-
-  // Slots
-  const slotsWrap = document.createElement('div');
-  slotsWrap.id = 'wardrobe-slots';
-  slotsWrap.style.flex = '1';
-  wardRow.appendChild(slotsWrap);
-
-  // Preview canvas
-  const previewCol = document.createElement('div');
-  previewCol.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;';
-  const previewCanvas = document.createElement('canvas');
-  previewCanvas.id = 'wardrobe-preview';
-  previewCanvas.width = 80; previewCanvas.height = 96;
-  previewCanvas.style.cssText = 'border:2px solid #ffcc00;border-radius:6px;background:#0d0a1e;image-rendering:pixelated;';
-  previewCol.appendChild(previewCanvas);
-  previewCol.innerHTML += '<span style="font-size:9px;color:#888;font-family:\'Be Vietnam Pro\',sans-serif;">Preview</span>';
-  wardRow.appendChild(previewCol);
-  wardSection.appendChild(wardRow);
-
-  buildWardrobeUI(slotsWrap, previewCanvas);
-  drawWardrobePreview(previewCanvas);
-
-  // Inventory cards display (2 cards per element: Trang Phục & Vũ Khí)
-  const invEl = document.createElement('div');
-  invEl.style.cssText = 'margin-top:10px; display:flex; flex-direction:column; gap:10px;';
-
-  const invTitle = document.createElement('div');
-  invTitle.textContent = '💎 Bộ Sưu Tập Trang Bị Nguyên Tố:';
-  invTitle.style.cssText = 'font-size:11px; font-weight:700; color:#ffcc00; font-family:"Be Vietnam Pro",sans-serif;';
-  invEl.appendChild(invTitle);
-
-  BOSSES.forEach(b => {
-    const pieces = inventory[b.id] || [];
-    const hasOutfit = pieces.includes('outfit') || window._godFather;
-    const hasWeapon = pieces.includes('weapon') || window._godFather;
-    const isFull = hasOutfit && hasWeapon;
-
-    const elemGroup = document.createElement('div');
-    elemGroup.style.cssText = `
-      background:rgba(255,255,255,0.03); border:1.5px solid ${isFull ? b.color : 'rgba(255,255,255,0.08)'};
-      border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:8px;
-      ${isFull ? `box-shadow:0 0 12px ${b.glow};` : ''}
-    `;
-
-    // Element header
-    const elemHeader = document.createElement('div');
-    elemHeader.style.cssText = 'display:flex; align-items:center; justify-content:space-between;';
-    elemHeader.innerHTML = `
-      <span style="font-size:12px; font-weight:800; color:${b.color}; font-family:'Be Vietnam Pro',sans-serif;">${b.label}</span>
-      <span style="font-size:10px; font-weight:700; color:${isFull ? b.color : '#888'}; font-family:'Be Vietnam Pro',sans-serif;">
-        ${isFull ? '✦ ĐỦ BỘ (Sát thương x2)' : `${(hasOutfit?1:0)+(hasWeapon?1:0)}/2 Món`}
-      </span>
-    `;
-    elemGroup.appendChild(elemHeader);
-
-    // 2 Cards container
-    const cardsRow = document.createElement('div');
-    cardsRow.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:8px;';
-
-    // Card 1: Trang Phục
-    const cardOutfit = document.createElement('div');
-    cardOutfit.style.cssText = `
-      background:${hasOutfit ? b.glow : 'rgba(0,0,0,0.3)'};
-      border:1.5px solid ${hasOutfit ? b.color : 'rgba(255,255,255,0.1)'};
-      border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:3px;
-    `;
-    cardOutfit.innerHTML = `
-      <div style="font-size:11px; font-weight:700; color:${hasOutfit ? '#fff' : '#aaa'}; font-family:'Be Vietnam Pro',sans-serif;">
-        👕 Trang Phục ${b.label.split(' ')[1] || ''}
-      </div>
-      <div style="font-size:9px; color:${hasOutfit ? '#06d6a0' : '#888'}; font-weight:600; font-family:'Be Vietnam Pro',sans-serif;">
-        ${hasOutfit ? '✓ Đã mở khóa' : '🔒 Đạt 30/30 hoặc 50/50'}
-      </div>
-    `;
-    cardsRow.appendChild(cardOutfit);
-
-    // Card 2: Vũ Khí
-    const cardWeapon = document.createElement('div');
-    cardWeapon.style.cssText = `
-      background:${hasWeapon ? b.glow : 'rgba(0,0,0,0.3)'};
-      border:1.5px solid ${hasWeapon ? b.color : 'rgba(255,255,255,0.1)'};
-      border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:3px;
-    `;
-    cardWeapon.innerHTML = `
-      <div style="font-size:11px; font-weight:700; color:${hasWeapon ? '#fff' : '#aaa'}; font-family:'Be Vietnam Pro',sans-serif;">
-        ⚔️ Vũ Khí ${b.label.split(' ')[1] || ''}
-      </div>
-      <div style="font-size:9px; color:${hasWeapon ? '#06d6a0' : '#888'}; font-weight:600; font-family:'Be Vietnam Pro',sans-serif;">
-        ${hasWeapon ? '✓ Đã mở khóa' : '🔒 Đạt 20/20 hoặc 50/50'}
-      </div>
-    `;
-    cardsRow.appendChild(cardWeapon);
-
-    elemGroup.appendChild(cardsRow);
-    invEl.appendChild(elemGroup);
-  });
-  wardSection.appendChild(invEl);
-
-  // Elemental set picker
-  buildElementalSetPicker(wardSection);
-  window.__rebuildSetPicker = (sec) => buildElementalSetPicker(sec || wardSection);
-
-  wrap.appendChild(wardSection);
 
   // ── 4. Ready & Battle Control Center (For BOTH Players) ──────────────────
   if (gameState.isSinglePlayer) {
@@ -1296,7 +1273,7 @@ function _buildStudentLobby(container, gameState) {
       hostForceStartBtn.style.cssText = 'width:100%;padding:14px;font-size:13px;font-weight:800;border-radius:8px;cursor:pointer;background:linear-gradient(135deg, #00cfff, #0284c7);border:2px solid #38bdf8;color:#ffffff;font-family:"Be Vietnam Pro",sans-serif;letter-spacing:1px;text-transform:uppercase;box-shadow:0 0 16px rgba(0,207,255,0.4);';
       hostForceStartBtn.textContent = '⚔️ BẮT ĐẦU TRẬN ĐẤU (CHỦ PHÒNG)';
       hostForceStartBtn.onclick = () => {
-        Multiplayer.requestStartGame();
+        Multiplayer.launchBattle();
       };
       readySection.appendChild(hostForceStartBtn);
     }
