@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Montserrat:wght@600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=79.0">
+    <link rel="stylesheet" href="css/style.css?v=80.0">
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTF Loader for r128 -->
@@ -395,6 +395,27 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=79.0"></script>
+    <!-- Armory / Outfit Selection Modal with 3D Preview -->
+    <div id="armory-modal" class="armory-modal-overlay" style="display:none;">
+        <div class="armory-modal-card">
+            <div class="armory-modal-header">
+                <h3>🎒 KHO TRANG PHỤC &amp; XEM TRƯỚC 3D</h3>
+                <button id="armory-modal-close" class="armory-modal-close-btn">&times;</button>
+            </div>
+            
+            <div class="armory-modal-body">
+                <div class="armory-preview-container">
+                    <canvas id="armory-preview-canvas"></canvas>
+                    <div class="preview-hint">Vuốt hoặc kéo chuột để xoay 360°</div>
+                </div>
+
+                <div id="armory-modal-cards-wrap" class="armory-modal-cards-wrap">
+                    <!-- Dynamic outfit cards rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js?v=80.0"></script>
 </body>
 </html>

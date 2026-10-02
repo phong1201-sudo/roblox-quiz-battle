@@ -8,6 +8,7 @@ import * as Audio  from './audio.js';
 import * as Multiplayer from './multiplayer.js';
 import { initSplashScreen } from './splash.js';
 import { initBgmSelector } from './ui/bgmSelector.js';
+import * as Armory from './armory.js';
 
 // ─── Track whether Three.js scene has been initialised yet ───────────────────
 let sceneReady = false;
@@ -105,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Audio.mountAudioToggle();
     Audio.bootstrapOnInteraction();
     initBgmSelector();
+    Armory.bindArmoryModalEvents();
 
     // ── Always activate menu screen first — auth modal overlays it ───────────
     try {
