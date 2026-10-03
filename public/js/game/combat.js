@@ -25,6 +25,18 @@ export function getActivePlayerOutfit() {
 
 const BOSS_VFX_POS = new THREE.Vector3(4.8, 4.0, 0);
 
+// Damage numbers over a player hit by the boss.
+// Full elemental set: one "-1 HP" (the blow). Default outfit: the blow's "-1 HP"
+// followed by a second "-1 HP" from the boss's elemental effect.
+function spawnIncomingDamageNumbers(textPos, incomingDamage, bossElement, size = 32, prefix = '') {
+  Effects.spawnDamageNumber(textPos, `${prefix}-1 HP`, '#ef4444', size);
+  if (incomingDamage < 2) return;
+  const icon  = bossElement === 'fire' ? '🔥' : (bossElement === 'frost' ? '❄️' : '⚡');
+  const color = bossElement === 'fire' ? '#ff8800' : (bossElement === 'frost' ? '#88ddff' : '#facc15');
+  const effectPos = new THREE.Vector3(textPos.x, textPos.y + 0.7, textPos.z);
+  setTimeout(() => Effects.spawnDamageNumber(effectPos, `${icon} -1 HP`, color, size), 350);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 // PROCEDURAL ANIME EYE GENERATORS (CRISP 800x200 VECTOR SVG)
@@ -530,7 +542,7 @@ export function handleCorrectAnswer(selectedElement, isFullSet, onTurnFinished, 
             // Elemental Outfits: 2 damage total (-1 slash, -1 elemental proc)
             Effects.triggerShake(context.isMilestone ? 0.65 : 0.35, context.isMilestone ? 0.5 : 0.3);
             const dmgColor = outfit === 'fire' ? '#ff4500' : (outfit === 'frost' ? '#38bdf8' : '#facc15');
-            Effects.spawnDamageNumber(targetPos, '-2 HP', dmgColor, context.isMilestone ? 42 : 32);
+            Effects.spawnDamageNumber(targetPos, '-1 HP', dmgColor, context.isMilestone ? 42 : 32);
 
             if (outfit === 'fire') {
               VFX.spawnFireSlashVFX(targetPos);
@@ -959,10 +971,9 @@ export function executeCombatTurn(ev, onDone) {
 
         const outfit = getActivePlayerOutfit();
         const incomingDamage = (outfit === 'default') ? 2 : 1;
-        const dmgLabel = `💥 BARRAGE -${incomingDamage} HP`;
         const playerPos = Player.getPosition();
         const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-        Effects.spawnDamageNumber(textPos, dmgLabel, '#ef4444', 40);
+        spawnIncomingDamageNumbers(textPos, incomingDamage, bossElement, 40, '💥 BARRAGE ');
 
         // Full-body damage VFX upon hit (Fire: burning, Frost: frozen ice block, Thunder: lightning explosion)
         Effects.triggerPlayerHitVFX(bossElement, playerPos);
@@ -1021,10 +1032,9 @@ export function executeCombatTurn(ev, onDone) {
 
           const outfit = getActivePlayerOutfit();
           const incomingDamage = (outfit === 'default') ? 2 : 1;
-          const dmgLabel = `-${incomingDamage} HP`;
           const playerPos = Player.getPosition();
           const textPos = new THREE.Vector3(playerPos.x, playerPos.y + 2.0, playerPos.z);
-          Effects.spawnDamageNumber(textPos, dmgLabel, incomingDamage === 1 ? '#ffd166' : '#ef4444', 32);
+          spawnIncomingDamageNumbers(textPos, incomingDamage, bossElement, 32);
 
           // Full-body damage VFX upon hit (Fire: burning, Frost: frozen ice block, Thunder: lightning explosion)
           Effects.triggerPlayerHitVFX(bossElement, playerPos);
