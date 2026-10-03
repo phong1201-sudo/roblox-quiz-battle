@@ -670,7 +670,6 @@ export async function startSinglePlayerMatch({ bossElement = 'thunder', difficul
       questions: questions,
       playerHp: questions.length,
       bossHp: questions.length,
-      correctCount: 0,
       userId: user?.id || null,
       unlockedSets: user?.unlockedSets || [],
       inventory: user?.inventory || { thunder: [], fire: [], frost: [] },
@@ -770,7 +769,7 @@ export function finishSinglePlayerMatch() {
     if (isVictory) Audio.playBGM('victory');
   } catch(e) {}
 
-  saveSinglePlayerScore(window.gameState.bossElement, window.gameState.correctCount || 0);
+  if (verdict === 'PERFECT') savePerfectReward(window.gameState);
 
   setTimeout(() => {
     showScreen('results');
@@ -778,24 +777,31 @@ export function finishSinglePlayerMatch() {
   }, 1200);
 }
 
-// Persist the single-player result to the account (best score per element).
-// The server unlocks the elemental outfit once the score reaches 50.
-function saveSinglePlayerScore(element, score) {
+// Only a PERFECT match (boss defeated without a single wrong answer) is remembered.
+//   Easy   (20/20) -> weapon piece  (20/50)
+//   Medium (30/30) -> outfit piece  (30/50)
+//   Hard   (50/50) -> weapon + outfit = full set
+// Easy + Medium perfects together also complete the set.
+const PERFECT_REWARDS = {
+  easy:   { questions: 20, pieces: ['weapon'] },
+  medium: { questions: 30, pieces: ['outfit'] },
+  hard:   { questions: 50, pieces: ['weapon', 'outfit'] },
+};
+
+function savePerfectReward(gs) {
   const user = Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-  if (!user?.id || !element) return;
-  fetch('/api/save-score', {
+  const reward = PERFECT_REWARDS[gs?.difficulty];
+  // The match must have had the full number of questions for its difficulty
+  if (!user?.id || !reward || !gs.bossElement || gs.totalQuestions < reward.questions) return;
+  fetch('/api/unlock-piece', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: user.id, element, score }),
+    body: JSON.stringify({ userId: user.id, element: gs.bossElement, pieces: reward.pieces }),
   }).then(r => r.json()).then(data => {
     if (!data?.ok || !data.user) return;
     // Refresh the locally cached account so the armory shows the new progress
-    Object.assign(user, {
-      scores:          data.user.scores,
-      unlockedSets:    data.user.unlockedSets,
-      unlockedOutfits: data.user.unlockedOutfits,
-      inventory:       data.user.inventory,
-    });
+    user.unlockedSets = data.user.unlockedSets;
+    user.inventory    = data.user.inventory;
     try {
       sessionStorage.setItem('qb3d_user', JSON.stringify(user));
       localStorage.setItem('qb3d_user', JSON.stringify(user));
@@ -804,7 +810,7 @@ function saveSinglePlayerScore(element, score) {
       window.gameState.unlockedSets = user.unlockedSets || [];
       window.gameState.inventory    = user.inventory || window.gameState.inventory;
     }
-  }).catch(err => console.warn('[SinglePlayer] Could not save score:', err));
+  }).catch(err => console.warn('[SinglePlayer] Could not save perfect reward:', err));
 }
 
 if (typeof window !== 'undefined') {

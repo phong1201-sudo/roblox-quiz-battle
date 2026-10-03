@@ -1321,7 +1321,9 @@ const resolveQuestion = (code) => {
         const elem = room.bossElement;
         for (const p of room.players.values()) {
           if (!p.userId) continue;
-          const piecesToGrant = ['weapon', 'outfit'];
+          // Same rule as single player: easy -> weapon, medium -> outfit, hard -> full set
+          const piecesToGrant = PERFECT_REWARD_PIECES[room.matchDifficulty] || [];
+          if (piecesToGrant.length === 0) continue;
           const grant = db.unlockPiece(p.userId, elem, piecesToGrant);
           if (grant.ok && grant.newPieces.length > 0) {
             lootGrants.push({
@@ -1353,12 +1355,20 @@ const resolveQuestion = (code) => {
   }, 5000);
 };
 
+// Pieces remembered for a PERFECT match, by difficulty (dev runs grant nothing)
+const PERFECT_REWARD_PIECES = {
+  easy:   ['weapon'],
+  medium: ['outfit'],
+  hard:   ['weapon', 'outfit'],
+};
+
 /** Centralized function to start match for a room */
 function startMatchForRoom(code, options = {}) {
   const room = roomManager.getRoom(code);
   if (!room || room.phase === 'QUESTION') return;
 
   roomManager.startGame(code, room.hostId);
+  room.matchDifficulty = options.difficulty || 'hard';
 
   const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
   const stage = options.element || room.stage || room.bossElement || 'thunder';
@@ -1506,7 +1516,7 @@ io.on('connection', (socket) => {
             hostUser: r.host,
             guestUser: r.guest
           });
-          startMatchForRoom(cleanCode);
+          startMatchForRoom(cleanCode, { difficulty: r.difficulty || 'hard' });
         }
       }, 3200);
     } else {

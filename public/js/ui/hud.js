@@ -577,7 +577,6 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
 
   let events = [];
   if (isCorrect) {
-    window.gameState.correctCount = (window.gameState.correctCount || 0) + 1;
     currentBossHp = Math.max(0, currentBossHp - playerDmg);
     window.gameState.bossHp = currentBossHp;
     events.push({
