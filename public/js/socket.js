@@ -15,12 +15,14 @@ if (socket.on) {
     });
 }
 
-// Track registered handlers per event so we can remove-before-add (prevent stacking)
+// Track registered handlers per event. Several modules (main.js, multiplayer.js)
+// listen to the same events, so every distinct handler must stay registered;
+// only registering the very same function twice is ignored (prevents stacking).
 const _handlers = {};
 export function on(event, cb) {
-    // Remove any previous handler for this event to prevent listener accumulation
-    if (_handlers[event]) socket.off(event, _handlers[event]);
-    _handlers[event] = cb;
+    const list = _handlers[event] || (_handlers[event] = new Set());
+    if (list.has(cb)) return;
+    list.add(cb);
     socket.on(event, cb);
 }
 export const emit   = (event, data) => socket.emit(event, data);

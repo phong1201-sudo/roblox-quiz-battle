@@ -199,8 +199,11 @@ async function initDatabase() {
   }
 }
 
-// Automatically initiate database on module require
-initDatabase().catch(err => console.error('[db] initDatabase exception:', err));
+// Automatically initiate database on module require.
+// `ready` resolves once the user store is usable (MongoDB connected & synced, or
+// local JSON fallback chosen). It never rejects. API routes must wait for it:
+// answering before MongoDB is connected makes existing accounts look missing.
+const ready = initDatabase().catch(err => console.error('[db] initDatabase exception:', err));
 
 // ── Public Helper: Format user for client response (hide password) ───────────
 function _public(u) {
@@ -290,7 +293,9 @@ async function register(username, password) {
       await UserModel.create(newUser);
       console.log(`[db] Registered new user "${username}" (ID: ${nextId}) in MongoDB Atlas.`);
     } catch (err) {
+      // Do not report success for an account that was not stored permanently.
       console.error('[db] Error creating user in MongoDB Atlas:', err.message);
+      return { ok: false, error: 'Không lưu được tài khoản vào cơ sở dữ liệu, vui lòng thử lại.' };
     }
   }
 
@@ -598,5 +603,6 @@ module.exports = {
   getUsersCount,
   FULL_SET_PIECES,
   isMongoConnected: () => _mongoConnected,
-  initDatabase
+  initDatabase,
+  ready
 };

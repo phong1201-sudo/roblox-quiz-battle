@@ -536,6 +536,8 @@ export function resetHudState() {
   });
   restoreQuizCard();
   visualBossHpPercent = 100;
+  const hpFillPlayer = document.getElementById('hp-fill-player');
+  const hpFillEnemy  = document.getElementById('hp-fill-enemy');
   if (hpFillPlayer) { hpFillPlayer.style.width = '100%'; hpFillPlayer.style.backgroundColor = '#06d6a0'; }
   if (hpFillEnemy)  { hpFillEnemy.style.width  = '100%'; hpFillEnemy.style.backgroundColor  = '#ef233c'; }
   const hpValPlayer = document.getElementById('hp-val-player');
@@ -575,6 +577,7 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
 
   let events = [];
   if (isCorrect) {
+    window.gameState.correctCount = (window.gameState.correctCount || 0) + 1;
     currentBossHp = Math.max(0, currentBossHp - playerDmg);
     window.gameState.bossHp = currentBossHp;
     events.push({

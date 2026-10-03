@@ -191,12 +191,6 @@ export function setReady(ready) {
     equippedSet,
     equipped,
   });
-
-  emit('player_ready_toggle', {
-    roomCode: roomState.code,
-    isReady: Boolean(ready),
-    outfit: savedOutfit,
-  });
 }
 
 export function togglePlayerReady(ready) {

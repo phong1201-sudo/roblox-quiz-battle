@@ -33,6 +33,11 @@ app.use('/assets/boss', express.static(path.join(publicDir, 'assets/boss'), stat
 app.use('/assets/Boss', express.static(path.join(publicDir, 'assets/boss'), staticOptions));
 app.use(express.static(publicDir, staticOptions));
 
+// Hold API requests until the user database is ready. On a cold start the server
+// accepts connections before MongoDB is connected; answering then would report
+// existing accounts as missing and force players to register again.
+app.use('/api', (req, res, next) => { db.ready.then(() => next()); });
+
 // Direct diagnostic route to verify disk contents on Render / server
 app.get('/api/debug-assets', (req, res) => {
   const charDir = path.join(publicDir, 'assets/character');

@@ -670,6 +670,10 @@ export async function startSinglePlayerMatch({ bossElement = 'thunder', difficul
       questions: questions,
       playerHp: questions.length,
       bossHp: questions.length,
+      correctCount: 0,
+      userId: user?.id || null,
+      unlockedSets: user?.unlockedSets || [],
+      inventory: user?.inventory || { thunder: [], fire: [], frost: [] },
       equipped: { outfit: myOutfit, weapon: myOutfit },
       equippedSet: isFullSet ? myOutfit : null,
       damagePerHit: isFullSet ? 2 : 1,
@@ -687,14 +691,9 @@ export async function startSinglePlayerMatch({ bossElement = 'thunder', difficul
       ]
     };
 
-    // 3. Unbind any socket battle listeners to strictly prevent duplicate listeners & multi-damage
-    try {
-      socket.off('damage_dealt');
-      socket.off('combat_event');
-      socket.off('hp_update');
-      socket.off('question');
-      socket.off('answer_result');
-    } catch(e) {}
+    // 3. Battle socket listeners are left registered (removing them here would break
+    //    multiplayer until the page is reloaded). Not being in a room, this socket
+    //    receives no battle events during a single-player match.
 
     // 4. Switch to battle screen
     showScreen('game');
@@ -771,10 +770,41 @@ export function finishSinglePlayerMatch() {
     if (isVictory) Audio.playBGM('victory');
   } catch(e) {}
 
+  saveSinglePlayerScore(window.gameState.bossElement, window.gameState.correctCount || 0);
+
   setTimeout(() => {
     showScreen('results');
     if (results.init) results.init(resultsData, window.gameState);
   }, 1200);
+}
+
+// Persist the single-player result to the account (best score per element).
+// The server unlocks the elemental outfit once the score reaches 50.
+function saveSinglePlayerScore(element, score) {
+  const user = Auth.getCurrentUser ? Auth.getCurrentUser() : null;
+  if (!user?.id || !element) return;
+  fetch('/api/save-score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: user.id, element, score }),
+  }).then(r => r.json()).then(data => {
+    if (!data?.ok || !data.user) return;
+    // Refresh the locally cached account so the armory shows the new progress
+    Object.assign(user, {
+      scores:          data.user.scores,
+      unlockedSets:    data.user.unlockedSets,
+      unlockedOutfits: data.user.unlockedOutfits,
+      inventory:       data.user.inventory,
+    });
+    try {
+      sessionStorage.setItem('qb3d_user', JSON.stringify(user));
+      localStorage.setItem('qb3d_user', JSON.stringify(user));
+    } catch (e) {}
+    if (window.gameState) {
+      window.gameState.unlockedSets = user.unlockedSets || [];
+      window.gameState.inventory    = user.inventory || window.gameState.inventory;
+    }
+  }).catch(err => console.warn('[SinglePlayer] Could not save score:', err));
 }
 
 if (typeof window !== 'undefined') {

@@ -115,6 +115,15 @@ export function init(data, gameState) {
             const diff      = window.gameState?.difficulty  || 'medium';
             const testGear  = window.gameState?.testGear    || null;
 
+            if (window.gameState?.isSinglePlayer) {
+                window.startSinglePlayerMatch?.({
+                    bossElement: currentEl,
+                    difficulty: diff,
+                    outfit: window.gameState?.equipped?.outfit
+                });
+                return;
+            }
+
             socket.emit('start_game', {
                 code: window.gameState.code,
                 element: currentEl,
@@ -138,6 +147,15 @@ export function init(data, gameState) {
             window.gameState.bossElement = nextEl;
             const diff     = window.gameState?.difficulty || 'medium';
             const testGear = window.gameState?.testGear ? nextEl : null;
+
+            if (window.gameState?.isSinglePlayer) {
+                window.startSinglePlayerMatch?.({
+                    bossElement: nextEl,
+                    difficulty: diff,
+                    outfit: window.gameState?.equipped?.outfit
+                });
+                return;
+            }
 
             socket.emit('start_game', {
                 code: window.gameState.code,

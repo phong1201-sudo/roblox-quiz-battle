@@ -217,14 +217,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             Multiplayer.cancelHosting();
-            // Strictly unbind any old multiplayer combat listeners in single mode
-            try {
-                socket.off('damage_dealt');
-                socket.off('combat_event');
-                socket.off('hp_update');
-                socket.off('question');
-                socket.off('answer_result');
-            } catch(e) {}
+            // NOTE: do not socket.off() the battle listeners here — they are registered
+            // once at page load, so removing them breaks multiplayer until a reload.
+            // The server only sends battle events to sockets that are inside a room.
 
             if (lobby.init) lobby.init(window.gameState);
             showScreen('lobby');
