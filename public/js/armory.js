@@ -35,7 +35,7 @@ export const OUTFITS = [
     damage: '2 HP / đòn (Sét)',
     defense: 'Kháng Sét',
     reqScore: 50,
-    lore: 'Mở khóa khi đạt 50/50 điểm ải Lôi Quái (Khó).'
+    lore: 'Mở khóa: PERFECT ải Lôi Quái mức Khó, hoặc PERFECT cả Dễ và Trung bình.'
   },
   {
     id: 'fire',
@@ -51,7 +51,7 @@ export const OUTFITS = [
     damage: '2 HP / đòn (Lửa)',
     defense: 'Kháng Lửa',
     reqScore: 50,
-    lore: 'Mở khóa khi đạt 50/50 điểm ải Hỏa Ma Vương (Khó).'
+    lore: 'Mở khóa: PERFECT ải Hỏa Ma Vương mức Khó, hoặc PERFECT cả Dễ và Trung bình.'
   },
   {
     id: 'frost',
@@ -67,7 +67,7 @@ export const OUTFITS = [
     damage: '2 HP / đòn (Băng)',
     defense: 'Kháng Băng',
     reqScore: 50,
-    lore: 'Mở khóa khi đạt 50/50 điểm ải Băng Tinh (Khó).'
+    lore: 'Mở khóa: PERFECT ải Băng Tinh mức Khó, hoặc PERFECT cả Dễ và Trung bình.'
   }
 ];
 
@@ -86,6 +86,28 @@ let isPreviewInitialized = false;
 let userInteracting = false;
 let interactionTimeout = null;
 let currentRequestedOutfitKey = null;
+
+// One shared <canvas> (declared in index.html) is moved between the lobby's inline
+// preview box and the armory modal; the WebGL renderer stays bound to it.
+let previewCanvas = null;
+let previewKey = null;             // outfit currently shown in the lobby preview
+const previewMeshCache = new Map(); // outfit id -> loaded idle model
+let lastCanvasW = 0, lastCanvasH = 0;
+
+function getPreviewCanvas() {
+  if (!previewCanvas) previewCanvas = document.getElementById('armory-preview-canvas');
+  return previewCanvas;
+}
+
+/** Move the shared preview canvas into `holder` (lobby preview box or modal). */
+function mountPreviewCanvas(holder) {
+  const canvas = getPreviewCanvas();
+  if (!canvas || !holder) return;
+  if (canvas.parentElement !== holder) holder.insertBefore(canvas, holder.firstChild);
+  const statusEl = document.getElementById('armory-preview-status');
+  if (statusEl && statusEl.parentElement !== holder) holder.appendChild(statusEl);
+  lastCanvasW = lastCanvasH = 0; // force a resize on the next frame
+}
 
 /**
  * Get current equipped outfit ID from storage or gameState
@@ -201,7 +223,7 @@ export function equipOutfit(outfitId, onEquippedCallback) {
  * Initialize the dedicated lightweight Three.js preview viewport
  */
 export function initArmoryPreview() {
-  const canvas = document.getElementById('armory-preview-canvas');
+  const canvas = getPreviewCanvas();
   if (!canvas) return;
 
   const currentTHREE = (typeof THREE !== 'undefined') ? THREE : window.THREE;
@@ -224,8 +246,9 @@ export function initArmoryPreview() {
 
   // 2. Camera
   previewCamera = new currentTHREE.PerspectiveCamera(45, width / height, 0.1, 100);
-  previewCamera.position.set(0, 1.6, 4.6);
-  previewCamera.lookAt(0, 1.25, 0);
+  // Far enough back that the whole character and pedestal fit in a narrow box too
+  previewCamera.position.set(0, 1.7, 5.4);
+  previewCamera.lookAt(0, 1.5, 0);
 
   // 3. Renderer (alpha: true, antialias: true) sized specifically to #armory-preview-canvas
   previewRenderer = new currentTHREE.WebGLRenderer({
@@ -293,12 +316,14 @@ export function initArmoryPreview() {
  * Handle canvas resize
  */
 function handleCanvasResize() {
-  const canvas = document.getElementById('armory-preview-canvas');
+  const canvas = getPreviewCanvas();
   if (!canvas || !previewRenderer || !previewCamera) return;
   const container = canvas.parentElement;
   const width = canvas.clientWidth || (container ? container.clientWidth : 340);
   const height = canvas.clientHeight || (container ? container.clientHeight : 380);
   if (width > 0 && height > 0) {
+    lastCanvasW = width;
+    lastCanvasH = height;
     previewCamera.aspect = width / height;
     previewCamera.updateProjectionMatrix();
     previewRenderer.setSize(width, height, false);
@@ -380,6 +405,12 @@ export function loadPreviewOutfit(outfitKey) {
 
   const currentTHREE = (typeof THREE !== 'undefined') ? THREE : window.THREE;
 
+  // Already showing this outfit: nothing to reload
+  if (currentPreviewMesh && currentPreviewMesh.userData.outfitKey === cleanKey) {
+    startPreviewLoop();
+    return;
+  }
+
   // Clear previous preview meshes from the preview scene:
   if (currentPreviewMesh) {
     previewScene.remove(currentPreviewMesh);
@@ -394,6 +425,15 @@ export function loadPreviewOutfit(outfitKey) {
     if (previewRing && previewRing.material) {
       previewRing.material.color.setHex(colHex);
     }
+  }
+
+  const cached = previewMeshCache.get(cleanKey);
+  if (cached) {
+    previewScene.add(cached);
+    currentPreviewMesh = cached;
+    updatePreviewStatus('');
+    startPreviewLoop();
+    return;
   }
 
   updatePreviewStatus(`Đang tải 3D ${outfitData.name}...`);
@@ -447,6 +487,8 @@ export function loadPreviewOutfit(outfitKey) {
       mesh.position.x = 0;
       mesh.position.z = 0;
 
+      mesh.userData.outfitKey = cleanKey;
+      previewMeshCache.set(cleanKey, mesh);
       previewScene.add(mesh);
       currentPreviewMesh = mesh;
 
@@ -467,7 +509,7 @@ export function loadPreviewOutfit(outfitKey) {
 function updatePreviewStatus(msg) {
   let statusEl = document.getElementById('armory-preview-status');
   if (!statusEl) {
-    const container = document.querySelector('.armory-preview-container');
+    const container = getPreviewCanvas()?.parentElement;
     if (container) {
       statusEl = document.createElement('div');
       statusEl.id = 'armory-preview-status';
@@ -489,28 +531,27 @@ export function startPreviewLoop() {
   if (previewAnimId) return;
 
   function animate() {
-    const modal = document.getElementById('armory-modal');
-    const isModalActive = modal && (
-      modal.style.display === 'block' ||
-      modal.style.display === 'flex' ||
-      modal.classList.contains('active')
-    );
-
-    const canvas = document.getElementById('armory-preview-canvas');
-    const isCanvasAttached = canvas && canvas.offsetParent !== null;
-
-    if (!isModalActive && !isCanvasAttached) {
+    const canvas = getPreviewCanvas();
+    // Canvas removed from the page (lobby rebuilt): stop until it is mounted again
+    if (!canvas || !canvas.isConnected) {
       previewAnimId = null;
       return;
     }
 
-    // Auto-rotation around Y-axis when user is not dragging
-    if (currentPreviewMesh && !userInteracting) {
-      currentPreviewMesh.rotation.y += 0.008;
-    }
+    // Draw only while the preview is actually visible (lobby screen or modal open)
+    if (canvas.offsetParent !== null) {
+      if (canvas.clientWidth !== lastCanvasW || canvas.clientHeight !== lastCanvasH) {
+        handleCanvasResize();
+      }
 
-    if (previewRenderer && previewScene && previewCamera) {
-      previewRenderer.render(previewScene, previewCamera);
+      // Slow auto-rotation around the Y axis when the user is not dragging
+      if (currentPreviewMesh && !userInteracting) {
+        currentPreviewMesh.rotation.y += 0.008;
+      }
+
+      if (previewRenderer && previewScene && previewCamera) {
+        previewRenderer.render(previewScene, previewCamera);
+      }
     }
 
     previewAnimId = requestAnimationFrame(animate);
@@ -549,6 +590,8 @@ export function openArmoryModal(initialOutfitId = null, user = null, onChange = 
     });
   }
 
+  mountPreviewCanvas(modal.querySelector('.armory-preview-container'));
+
   setTimeout(() => {
     initArmoryPreview();
     handleCanvasResize();
@@ -566,6 +609,12 @@ export function closeArmoryModal() {
     modal.style.display = 'none';
   }
   stopPreviewLoop();
+  const inlineHolder = document.getElementById('armory-inline-preview');
+  if (inlineHolder) {
+    mountPreviewCanvas(inlineHolder);
+    loadPreviewOutfit(previewKey || getEquippedOutfit());
+    startPreviewLoop();
+  }
 }
 
 /**
@@ -688,14 +737,27 @@ function renderModalCards(container, selectedId, user, onSelect) {
 }
 
 /**
- * Render the Consolidated Armory UI into the target container (e.g. Lobby section)
+ * Render the Consolidated Armory UI into the target container (e.g. Lobby section).
+ * Left: a live 3D preview of the idle model, slowly rotating. Right: the 4 outfits.
  */
 export function renderArmory(container, user = null, onChange = null) {
+  previewKey = getEquippedOutfit(); // a fresh render always starts on the worn outfit
+  _renderArmory(container, user, onChange);
+}
+
+function _renderArmory(container, user, onChange) {
   if (!container) return;
+
+  // Keep the shared canvas alive while the section is rebuilt
+  const canvas = getPreviewCanvas();
+  if (canvas && container.contains(canvas)) canvas.remove();
   container.innerHTML = '';
 
   bindArmoryModalEvents();
   const equipped = getEquippedOutfit();
+  if (!OUTFITS.some(o => o.id === previewKey)) previewKey = equipped;
+  const shown = OUTFITS.find(o => o.id === previewKey) || OUTFITS[0];
+  const shownStatus = getOutfitStatus(shown.id, user);
 
   const wrap = document.createElement('div');
   wrap.className = 'armory-consolidated-wrap';
@@ -706,7 +768,6 @@ export function renderArmory(container, user = null, onChange = null) {
     font-family: 'Be Vietnam Pro', sans-serif;
   `;
 
-  // Header with quick "Mở xem trước 3D" button
   const head = document.createElement('div');
   head.style.cssText = `
     display: flex;
@@ -723,142 +784,102 @@ export function renderArmory(container, user = null, onChange = null) {
         🎒 Kho Trang Phục Nguyên Tố
       </span>
       <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">
-        Chọn trang phục xuất trận — Sát thương &amp; Kháng thuộc tính tương ứng
+        Chọn trang phục xuất trận — bấm vào một bộ để xem mẫu 3D
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button id="btn-open-3d-armory" class="btn" style="background:linear-gradient(135deg, #00cfff, #0284c7);color:#fff;font-weight:800;font-size:10px;padding:6px 12px;border-radius:6px;border:1px solid #38bdf8;cursor:pointer;box-shadow:0 0 12px rgba(0,207,255,0.4);">
-        🔍 XEM MẪU 3D 360°
-      </button>
-      <div style="font-size: 10px; font-weight: 700; color: #06d6a0; background: rgba(6,214,160,0.1); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(6,214,160,0.3);">
-        Đang mặc: <b style="color:#fff; text-transform: uppercase;">${equipped}</b>
-      </div>
+    <div style="font-size: 10px; font-weight: 700; color: #06d6a0; background: rgba(6,214,160,0.1); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(6,214,160,0.3);">
+      Đang mặc: <b style="color:#fff; text-transform: uppercase;">${equipped}</b>
     </div>
   `;
-
-  const btn3D = head.querySelector('#btn-open-3d-armory');
-  if (btn3D) {
-    btn3D.onclick = () => openArmoryModal(equipped, user, onChange);
-  }
-
   wrap.appendChild(head);
 
-  // 4 Outfit Cards Grid
+  const body = document.createElement('div');
+  body.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;';
+
+  // ── 3D preview box (idle .glb of the selected outfit, auto-rotating) ─────────
+  const previewCol = document.createElement('div');
+  previewCol.style.cssText = 'flex:1 1 240px;min-width:220px;display:flex;flex-direction:column;gap:6px;';
+
+  const holder = document.createElement('div');
+  holder.id = 'armory-inline-preview';
+  holder.className = 'armory-preview-container';
+  holder.style.height = '340px';
+  holder.style.borderColor = shown.color;
+  const hint = document.createElement('div');
+  hint.className = 'preview-hint';
+  hint.textContent = 'Vuốt hoặc kéo chuột để xoay 360°';
+  holder.appendChild(hint);
+  previewCol.appendChild(holder);
+
+  const caption = document.createElement('div');
+  caption.style.cssText = 'text-align:center;font-size:11px;font-weight:800;';
+  caption.innerHTML = `
+    <span style="color:${shown.color};">${shown.name}</span>
+    <span style="color:#94a3b8;font-weight:700;"> — ${shown.subTitle}</span>
+    <div style="font-size:9px;font-weight:700;margin-top:2px;color:${shownStatus.isUnlocked ? '#06d6a0' : '#ffcc00'};">
+      ${shown.id === equipped ? '✅ Đang mặc' : (shownStatus.isUnlocked ? shownStatus.badgeText : '🔒 ' + shownStatus.badgeText)}
+    </div>
+  `;
+  previewCol.appendChild(caption);
+  body.appendChild(previewCol);
+
+  // ── Outfit cards ─────────────────────────────────────────────────────────────
   const grid = document.createElement('div');
   grid.style.cssText = `
+    flex: 2 1 300px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    align-content: start;
   `;
 
   OUTFITS.forEach((outfit) => {
     const isEquipped = (equipped === outfit.id);
+    const isShown = (shown.id === outfit.id);
     const status = getOutfitStatus(outfit.id, user);
 
     const card = document.createElement('div');
     card.className = `armory-card ${isEquipped ? 'equipped' : ''} ${status.isUnlocked ? 'unlocked' : 'locked'}`;
     card.style.cssText = `
-      background: ${isEquipped ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.7)'};
-      border: 2px solid ${isEquipped ? '#06d6a0' : (status.isUnlocked ? outfit.color : 'rgba(255,255,255,0.12)')};
+      background: ${isShown ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.7)'};
+      border: 2px solid ${isShown ? outfit.color : (isEquipped ? '#06d6a0' : 'rgba(255,255,255,0.12)')};
       border-radius: 10px;
       padding: 10px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      position: relative;
+      cursor: pointer;
       transition: all .25s ease;
-      box-shadow: ${isEquipped ? '0 0 20px rgba(6, 214, 160, 0.45)' : (status.isUnlocked ? outfit.borderGlow : 'none')};
+      box-shadow: ${isShown ? outfit.borderGlow : 'none'};
+      opacity: ${status.isUnlocked ? '1' : '0.8'};
     `;
+    card.title = 'Bấm để xem mẫu 3D';
+    card.onclick = () => {
+      if (previewKey === outfit.id) return;
+      previewKey = outfit.id;
+      _renderArmory(container, user, onChange);
+    };
 
-    // Top Header in card
     const cardTop = document.createElement('div');
-    cardTop.style.cssText = 'display:flex; justify-content:space-between; align-items:center;';
+    cardTop.style.cssText = 'display:flex; flex-direction:column; gap:2px;';
     cardTop.innerHTML = `
       <span style="font-size: 12px; font-weight: 800; color: ${outfit.color};">${outfit.name}</span>
       <span style="font-size: 9px; font-weight: 700; color: #aaa; text-transform: uppercase;">${outfit.subTitle}</span>
     `;
     card.appendChild(cardTop);
 
-    // 2D Artwork Poster Preview with 3D overlay button
-    const imgWrap = document.createElement('div');
-    imgWrap.style.cssText = `
-      width: 100%;
-      height: 180px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #070913;
-      border: 1.5px solid ${isEquipped ? '#06d6a0' : 'rgba(255,255,255,0.1)'};
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    `;
-    imgWrap.title = 'Bấm để xem mô hình 3D 360°';
-    imgWrap.onclick = () => openArmoryModal(outfit.id, user, onChange);
-
-    const img = document.createElement('img');
-    img.src = outfit.preview;
-    img.alt = outfit.name;
-    img.loading = 'lazy';
-    img.style.cssText = `
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
-      transition: transform .3s ease;
-      filter: ${status.isUnlocked ? 'none' : 'grayscale(70%) brightness(0.6)'};
-    `;
-    imgWrap.appendChild(img);
-
-    // Overlay 3D quick badge
-    const badge3D = document.createElement('div');
-    badge3D.style.cssText = 'position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.75);border:1px solid #38bdf8;color:#38bdf8;font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;letter-spacing:0.5px;';
-    badge3D.textContent = '3D PREVIEW';
-    imgWrap.appendChild(badge3D);
-
-    // If locked, overlay lock icon
-    if (!status.isUnlocked) {
-      const lockOverlay = document.createElement('div');
-      lockOverlay.style.cssText = `
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      `;
-      lockOverlay.innerHTML = `
-        <span style="font-size: 28px;">🔒</span>
-        <span style="font-size: 10px; font-weight: 800; color: #ffcc00; background: rgba(0,0,0,0.8); padding: 3px 8px; border-radius: 4px; border: 1px solid #ffcc00;">
-          ${status.badgeText}
-        </span>
-      `;
-      imgWrap.appendChild(lockOverlay);
-    }
-
-    card.appendChild(imgWrap);
-
-    // Stats specs row
     const statsRow = document.createElement('div');
-    statsRow.style.cssText = 'display:flex; justify-content:space-between; font-size:10px; font-weight:700; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;';
+    statsRow.style.cssText = 'display:flex; justify-content:space-between; gap:6px; font-size:10px; font-weight:700; background:rgba(0,0,0,0.3); padding:6px 8px; border-radius:6px;';
     statsRow.innerHTML = `
       <span style="color:#ffcc00;">⚔️ ${outfit.damage}</span>
       <span style="color:${outfit.color};">🛡️ ${outfit.defense}</span>
     `;
     card.appendChild(statsRow);
 
-    // Action row: Equip button + 3D View button
-    const actionRow = document.createElement('div');
-    actionRow.style.cssText = 'display:flex;gap:6px;';
-
     const actionBtn = document.createElement('button');
     actionBtn.className = 'btn';
     actionBtn.style.cssText = `
-      flex: 1;
-      padding: 10px;
+      padding: 9px;
       font-size: 11px;
       font-weight: 800;
       border-radius: 6px;
@@ -880,9 +901,11 @@ export function renderArmory(container, user = null, onChange = null) {
       actionBtn.style.color = '#fff';
       actionBtn.style.border = '1px solid #fff';
       actionBtn.innerHTML = '⚡ MẶC TRANG PHỤC';
-      actionBtn.onclick = () => {
+      actionBtn.onclick = (e) => {
+        e.stopPropagation();
         equipOutfit(outfit.id, () => {
-          renderArmory(container, user, onChange);
+          previewKey = outfit.id;
+          _renderArmory(container, user, onChange);
           if (typeof onChange === 'function') onChange(outfit.id);
         });
       };
@@ -891,22 +914,12 @@ export function renderArmory(container, user = null, onChange = null) {
       actionBtn.style.background = 'rgba(255, 255, 255, 0.05)';
       actionBtn.style.color = '#94a3b8';
       actionBtn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-      actionBtn.style.cursor = 'not-allowed';
+      // Let clicks fall through to the card so a locked outfit can still be previewed
+      actionBtn.style.pointerEvents = 'none';
       actionBtn.innerHTML = `🔒 ${status.badgeText}`;
     }
+    card.appendChild(actionBtn);
 
-    const view3DBtn = document.createElement('button');
-    view3DBtn.className = 'btn';
-    view3DBtn.style.cssText = 'padding:10px 12px;font-size:11px;font-weight:800;border-radius:6px;cursor:pointer;background:#1e293b;border:1px solid #38bdf8;color:#38bdf8;';
-    view3DBtn.innerHTML = '👁️ 3D';
-    view3DBtn.title = 'Xem 3D 360°';
-    view3DBtn.onclick = () => openArmoryModal(outfit.id, user, onChange);
-
-    actionRow.appendChild(actionBtn);
-    actionRow.appendChild(view3DBtn);
-    card.appendChild(actionRow);
-
-    // Lore note
     const lore = document.createElement('div');
     lore.style.cssText = 'font-size: 8.5px; color: #64748b; text-align: center; font-style: italic;';
     lore.textContent = outfit.lore;
@@ -915,8 +928,15 @@ export function renderArmory(container, user = null, onChange = null) {
     grid.appendChild(card);
   });
 
-  wrap.appendChild(grid);
+  body.appendChild(grid);
+  wrap.appendChild(body);
   container.appendChild(wrap);
+
+  // Mount the shared canvas in the preview box and show the selected idle model
+  mountPreviewCanvas(holder);
+  initArmoryPreview();
+  loadPreviewOutfit(shown.id);
+  startPreviewLoop();
 }
 
 // Attach helper functions to window for global access
