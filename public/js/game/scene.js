@@ -72,6 +72,11 @@ function getViewportDimensions() {
 }
 
 export function initScene(canvas) {
+  if (renderer) {
+    // Already initialised: a second renderer + render loop would double all animations
+    onWindowResize();
+    return;
+  }
   const { W, H } = getViewportDimensions();
 
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });

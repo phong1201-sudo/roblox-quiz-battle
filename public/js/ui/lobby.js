@@ -670,6 +670,9 @@ export async function startSinglePlayerMatch({ bossElement = 'thunder', difficul
       questions: questions,
       playerHp: questions.length,
       bossHp: questions.length,
+      userId: user?.id || null,
+      unlockedSets: user?.unlockedSets || [],
+      inventory: user?.inventory || { thunder: [], fire: [], frost: [] },
       equipped: { outfit: myOutfit, weapon: myOutfit },
       equippedSet: isFullSet ? myOutfit : null,
       damagePerHit: isFullSet ? 2 : 1,
@@ -687,14 +690,9 @@ export async function startSinglePlayerMatch({ bossElement = 'thunder', difficul
       ]
     };
 
-    // 3. Unbind any socket battle listeners to strictly prevent duplicate listeners & multi-damage
-    try {
-      socket.off('damage_dealt');
-      socket.off('combat_event');
-      socket.off('hp_update');
-      socket.off('question');
-      socket.off('answer_result');
-    } catch(e) {}
+    // 3. Battle socket listeners are left registered (removing them here would break
+    //    multiplayer until the page is reloaded). Not being in a room, this socket
+    //    receives no battle events during a single-player match.
 
     // 4. Switch to battle screen
     showScreen('game');
@@ -771,10 +769,48 @@ export function finishSinglePlayerMatch() {
     if (isVictory) Audio.playBGM('victory');
   } catch(e) {}
 
+  if (verdict === 'PERFECT') savePerfectReward(window.gameState);
+
   setTimeout(() => {
     showScreen('results');
     if (results.init) results.init(resultsData, window.gameState);
   }, 1200);
+}
+
+// Only a PERFECT match (boss defeated without a single wrong answer) is remembered.
+//   Easy   (20/20) -> weapon piece  (20/50)
+//   Medium (30/30) -> outfit piece  (30/50)
+//   Hard   (50/50) -> weapon + outfit = full set
+// Easy + Medium perfects together also complete the set.
+const PERFECT_REWARDS = {
+  easy:   { questions: 20, pieces: ['weapon'] },
+  medium: { questions: 30, pieces: ['outfit'] },
+  hard:   { questions: 50, pieces: ['weapon', 'outfit'] },
+};
+
+function savePerfectReward(gs) {
+  const user = Auth.getCurrentUser ? Auth.getCurrentUser() : null;
+  const reward = PERFECT_REWARDS[gs?.difficulty];
+  // The match must have had the full number of questions for its difficulty
+  if (!user?.id || !reward || !gs.bossElement || gs.totalQuestions < reward.questions) return;
+  fetch('/api/unlock-piece', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: user.id, element: gs.bossElement, pieces: reward.pieces }),
+  }).then(r => r.json()).then(data => {
+    if (!data?.ok || !data.user) return;
+    // Refresh the locally cached account so the armory shows the new progress
+    user.unlockedSets = data.user.unlockedSets;
+    user.inventory    = data.user.inventory;
+    try {
+      sessionStorage.setItem('qb3d_user', JSON.stringify(user));
+      localStorage.setItem('qb3d_user', JSON.stringify(user));
+    } catch (e) {}
+    if (window.gameState) {
+      window.gameState.unlockedSets = user.unlockedSets || [];
+      window.gameState.inventory    = user.inventory || window.gameState.inventory;
+    }
+  }).catch(err => console.warn('[SinglePlayer] Could not save perfect reward:', err));
 }
 
 if (typeof window !== 'undefined') {

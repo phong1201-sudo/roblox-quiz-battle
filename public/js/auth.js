@@ -442,7 +442,12 @@ export function init() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id }),
-        }).then(r => r.json()).then(data => {
+        }).then(async r => ({ status: r.status, data: await r.json() })).then(({ status, data }) => {
+          if (!data.ok && status !== 404) {
+            // Temporary server problem — keep the local session, do not force re-login
+            console.warn('[auth] Session check failed (status ' + status + '), keeping local session');
+            return;
+          }
           if (!data.ok) {
             console.warn('[auth] Server session invalid — re-login required:', data.error);
             _clearSession();

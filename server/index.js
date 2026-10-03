@@ -33,6 +33,11 @@ app.use('/assets/boss', express.static(path.join(publicDir, 'assets/boss'), stat
 app.use('/assets/Boss', express.static(path.join(publicDir, 'assets/boss'), staticOptions));
 app.use(express.static(publicDir, staticOptions));
 
+// Hold API requests until the user database is ready. On a cold start the server
+// accepts connections before MongoDB is connected; answering then would report
+// existing accounts as missing and force players to register again.
+app.use('/api', (req, res, next) => { db.ready.then(() => next()); });
+
 // Direct diagnostic route to verify disk contents on Render / server
 app.get('/api/debug-assets', (req, res) => {
   const charDir = path.join(publicDir, 'assets/character');
@@ -1284,8 +1289,15 @@ const resolveQuestion = (code) => {
   io.to(code).emit('hp_update', { hp, bossHp, questionIndex, totalQuestions });
 
   setTimeout(() => {
-    const allDead = room.mode === 'pve' && Array.from(room.players.values()).every(p => (p.hp ?? 0) <= 0);
-    const nextQ = allDead ? null : roomManager.nextQuestion(code);
+    // The match ends early when a side is out of HP:
+    //  - 1v1: as soon as one player reaches 0 HP
+    //  - Team vs Boss: when every player is at 0 HP, or the boss is
+    const fighters = Array.from(room.players.values());
+    const isPvpMatch = (room.mode === 'pvp_1v1' || room.mode === 'pvp');
+    const matchOver = isPvpMatch
+      ? fighters.some(p => (p.hp ?? 0) <= 0)
+      : (fighters.every(p => (p.hp ?? 0) <= 0) || room.bossHp <= 0);
+    const nextQ = matchOver ? null : roomManager.nextQuestion(code);
     if (nextQ) {
       sendQuestion(code);
     } else {
@@ -1305,6 +1317,10 @@ const resolveQuestion = (code) => {
           winner = { id: p.id, name: p.name, hp: p.hp };
         }
       }
+      // Equal HP at the end is a draw
+      const hpValues = Array.from(room.players.values()).map(p => p.hp ?? 0);
+      const isDraw = hpValues.length > 1 && hpValues.every(h => h === hpValues[0]);
+      if (isDraw) winner = null;
 
       const verdict = (room.mode === 'team_vs_boss' || room.mode === 'pve')
         ? roomManager.getPveVerdict(code)
@@ -1316,7 +1332,11 @@ const resolveQuestion = (code) => {
         const elem = room.bossElement;
         for (const p of room.players.values()) {
           if (!p.userId) continue;
-          const piecesToGrant = ['weapon', 'outfit'];
+          // Only a player who answered every question correctly keeps the reward
+          if ((p.correctAnswerCount || 0) < room.questions.length) continue;
+          // Same rule as single player: easy -> weapon, medium -> outfit, hard -> full set
+          const piecesToGrant = PERFECT_REWARD_PIECES[room.matchDifficulty] || [];
+          if (piecesToGrant.length === 0) continue;
           const grant = db.unlockPiece(p.userId, elem, piecesToGrant);
           if (grant.ok && grant.newPieces.length > 0) {
             lootGrants.push({
@@ -1335,6 +1355,7 @@ const resolveQuestion = (code) => {
         bossHp: room.bossHp,
         totalHp: room.totalHp,
         winner,
+        isDraw,
         mvp,
         scores,
         verdict,
@@ -1348,12 +1369,20 @@ const resolveQuestion = (code) => {
   }, 5000);
 };
 
+// Pieces remembered for a PERFECT match, by difficulty (dev runs grant nothing)
+const PERFECT_REWARD_PIECES = {
+  easy:   ['weapon'],
+  medium: ['outfit'],
+  hard:   ['weapon', 'outfit'],
+};
+
 /** Centralized function to start match for a room */
 function startMatchForRoom(code, options = {}) {
   const room = roomManager.getRoom(code);
   if (!room || room.phase === 'QUESTION') return;
 
   roomManager.startGame(code, room.hostId);
+  room.matchDifficulty = options.difficulty || 'hard';
 
   const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
   const stage = options.element || room.stage || room.bossElement || 'thunder';
@@ -1501,7 +1530,7 @@ io.on('connection', (socket) => {
             hostUser: r.host,
             guestUser: r.guest
           });
-          startMatchForRoom(cleanCode);
+          startMatchForRoom(cleanCode, { difficulty: r.difficulty || 'hard' });
         }
       }, 3200);
     } else {

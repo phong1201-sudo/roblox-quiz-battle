@@ -536,6 +536,8 @@ export function resetHudState() {
   });
   restoreQuizCard();
   visualBossHpPercent = 100;
+  const hpFillPlayer = document.getElementById('hp-fill-player');
+  const hpFillEnemy  = document.getElementById('hp-fill-enemy');
   if (hpFillPlayer) { hpFillPlayer.style.width = '100%'; hpFillPlayer.style.backgroundColor = '#06d6a0'; }
   if (hpFillEnemy)  { hpFillEnemy.style.width  = '100%'; hpFillEnemy.style.backgroundColor  = '#ef233c'; }
   const hpValPlayer = document.getElementById('hp-val-player');
@@ -563,10 +565,11 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
     || window.gameState?.equipped?.outfit || 'default';
   const isElemental = (myOutfit !== 'default' && ['thunder', 'fire', 'frost'].includes(myOutfit));
 
-  // Exactly ONE player damage evaluation per question:
-  // Default outfit: Boss loses exactly 1 HP.
-  // Elemental outfit: Boss loses exactly 2 HP (1 base + 1 elemental proc).
-  const playerDmg = isElemental ? 2 : 1;
+  // Boss HP is hidden and always drops by exactly 1 per correct answer (1/N of the
+  // bar), whatever the outfit: every question of the match must be answered.
+  // An elemental set still SHOWS two hits (slash + elemental proc), but they
+  // share that single point. The outfit only matters when the player is hit.
+  const playerDmg = 1;
   // Incoming damage from boss: Default takes 2 HP, Elemental armor reduces to 1 HP.
   const incomingDmg = isElemental ? 1 : 2;
 
