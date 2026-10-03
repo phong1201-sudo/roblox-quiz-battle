@@ -723,10 +723,16 @@ export function executeCombatTurn(ev, onDone) {
           try { Audio.playSlash?.(); } catch (e) {}
           Effects.triggerShake(0.35, 0.3);
 
-          const dmg = ev.damage || (ev.hasElemental ? 2 : 1);
+          // Boss loses 1 hidden HP per attack. An elemental outfit shows a second
+          // "-1 HP" for its proc, but the bar moves the same amount either way.
+          const dmg = 1;
           const outfit = ev.outfit || attacker.outfit || 'default';
           const dmgColor = outfit === 'fire' ? '#ff4500' : (outfit === 'frost' ? '#38bdf8' : (outfit === 'thunder' ? '#facc15' : '#ffffff'));
           Effects.spawnDamageNumber(bossPos, `-${dmg} HP`, dmgColor, 32);
+          if (['fire', 'frost', 'thunder'].includes(outfit)) {
+            const procPos = new THREE.Vector3(bossPos.x, bossPos.y + 0.7, bossPos.z);
+            setTimeout(() => Effects.spawnDamageNumber(procPos, '-1 HP', dmgColor, 32), 250);
+          }
 
           if (outfit === 'fire') {
             VFX.spawnFireSlashVFX(bossPos);
@@ -802,10 +808,9 @@ export function executeCombatTurn(ev, onDone) {
           Effects.screenFlash('rgba(239,35,60,0.4)', 0.3);
 
           const incomingDmg = (ev.damage !== undefined) ? ev.damage : (ev.hasElemental ? 1 : 2);
-          const dmgLabel = `-${incomingDmg} HP`;
           const vPos = victim ? victim.group.position : new THREE.Vector3(-4.5, 0, 0);
           const textPos = new THREE.Vector3(vPos.x, vPos.y + 2.0, vPos.z);
-          Effects.spawnDamageNumber(textPos, dmgLabel, incomingDmg === 1 ? '#00cfff' : '#ef4444', 32);
+          spawnIncomingDamageNumbers(textPos, incomingDmg, bElem, 32);
 
           Effects.triggerPlayerHitVFX(bElem, vPos);
           victim?.playHurt?.({ onDone: () => {} });

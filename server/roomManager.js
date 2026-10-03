@@ -49,9 +49,9 @@ class RoomManager {
       stage: normalizedStage,
       element: normalizedStage,
       bossElement: normalizedStage,
-      difficulty: 'hard',
-      totalHp: 50,
-      bossHp: 50,
+      difficulty: 'medium',
+      totalHp: 30,
+      bossHp: 30,
       bossHpMultiplier: 1,
       packIndex: 0,
       bossIndex: ['thunder', 'fire', 'frost'].indexOf(normalizedStage),
@@ -488,7 +488,7 @@ class RoomManager {
         // 1. NGƯỜI NHANH TẤN CÔNG TRƯỚC
         if (fasterCorrect) {
           // Người nhanh trả lời ĐÚNG -> Boss trúng đòn (-HP theo bộ đồ người nhanh)
-          const damageDealt = fasterHasElem ? 2 : 1;
+          const damageDealt = 1; // outfit does not change boss damage (the 2nd hit is visual only)
           room.bossHp = Math.max(0, room.bossHp - damageDealt);
           faster.correctAnswerCount = (faster.correctAnswerCount || 0) + 1;
 
@@ -557,7 +557,7 @@ class RoomManager {
           // Người nhanh đánh hụt, không trừ HP Boss
           // Nếu người chậm trả lời ĐÚNG -> Người chậm đánh trúng Boss, Boss đánh người nhanh
           if (slowerCorrect) {
-            const damageDealt = slowerHasElem ? 2 : 1;
+            const damageDealt = 1; // outfit does not change boss damage (the 2nd hit is visual only)
             room.bossHp = Math.max(0, room.bossHp - damageDealt);
             slower.correctAnswerCount = (slower.correctAnswerCount || 0) + 1;
 
@@ -632,7 +632,7 @@ class RoomManager {
           const hasElemental = checkHasElemental(p);
           const outfit = (p.equipped?.outfit || p.equippedSet || 'default').toLowerCase();
           if (isCorrect(p.answer)) {
-            const damageDealt = hasElemental ? 2 : 1;
+            const damageDealt = 1; // outfit does not change boss damage (the 2nd hit is visual only)
             room.bossHp = Math.max(0, room.bossHp - damageDealt);
             p.correctAnswerCount = (p.correctAnswerCount || 0) + 1;
             combatEvents.push({
@@ -707,8 +707,17 @@ class RoomManager {
         const fasterDamageTaken = fasterHasElem ? 1 : 2;
         const slowerDamageTaken = slowerHasElem ? 1 : 2;
 
-        if (fasterCorrect) {
-          // Trường hợp 1: Người nhanh trả lời ĐÚNG -> Người chậm trúng đòn (-HP theo bộ đồ người chậm)
+        if (fasterCorrect && slowerCorrect) {
+          // Cả hai cùng ĐÚNG -> Người nhanh đánh trước, người chậm né được: không ai mất máu
+          faster.correctAnswerCount = (faster.correctAnswerCount || 0) + 1;
+          slower.correctAnswerCount = (slower.correctAnswerCount || 0) + 1;
+          combatEvents.push({
+            type: 'dodge',
+            targetId: slower.id,
+            attackerId: faster.id,
+          });
+        } else if (fasterCorrect) {
+          // Người nhanh ĐÚNG, người chậm SAI -> Người chậm trúng đòn (-HP theo bộ đồ người chậm)
           slower.hp = Math.max(0, slower.hp - slowerDamageTaken);
           faster.correctAnswerCount = (faster.correctAnswerCount || 0) + 1;
 
@@ -773,7 +782,7 @@ class RoomManager {
 
   /**
    * MVP Determination for Team vs Boss:
-   * Total Score = (Correct Answers * 10) + (Remaining HP * 5)
+   * Total Score = Correct Answers + Remaining HP
    */
   calculateMvp(code) {
     const room = this.rooms.get(code);
@@ -789,7 +798,7 @@ class RoomManager {
     for (const p of players) {
       const correct = p.correctAnswerCount || 0;
       const remainingHp = Math.max(0, p.hp || 0);
-      const score = (correct * 10) + (remainingHp * 5);
+      const score = correct + remainingHp;
       scores[p.id] = score;
 
       if (score > highestScore) {

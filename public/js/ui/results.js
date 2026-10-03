@@ -97,6 +97,11 @@ export function init(data, gameState) {
         winnerDiv.className = 'pvp-winner';
         winnerDiv.innerHTML = `🏆 CHIẾN THẮNG 1V1: <span>${data.winner.name}</span> (${data.winner.hp} HP còn lại)`;
         document.getElementById('screen-results')?.prepend(winnerDiv);
+    } else if (isPvP && data.isDraw) {
+        const drawDiv = document.createElement('div');
+        drawDiv.className = 'pvp-winner';
+        drawDiv.textContent = '🤝 HÒA 1V1: hai bên còn số máu bằng nhau';
+        document.getElementById('screen-results')?.prepend(drawDiv);
     } else if (!isPvP && data.mvp) {
         const mvpDiv = document.createElement('div');
         mvpDiv.className = 'mvp-banner pvp-winner';
