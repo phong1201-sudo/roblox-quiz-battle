@@ -25,6 +25,19 @@ export function getActivePlayerOutfit() {
 
 const BOSS_VFX_POS = new THREE.Vector3(4.8, 4.0, 0);
 
+// Leap apex and strike point for a fighter attacking another fighter.
+// The strike lands just in front of the victim, on the attacker's side.
+function duelSlashTargets(attacker, victim) {
+  const dir = Math.sign(victim.homePos.x - attacker.homePos.x) || 1;
+  const strike = { x: victim.homePos.x - dir * 1.3, y: 0.6, z: victim.homePos.z };
+  const apex = {
+    x: attacker.homePos.x + (strike.x - attacker.homePos.x) * 0.7,
+    y: 3.2,
+    z: (attacker.homePos.z + victim.homePos.z) / 2,
+  };
+  return { targetApex: apex, targetStrike: strike };
+}
+
 // Damage numbers over a player hit by the boss.
 // Full elemental set: one "-1 HP" (the blow). Default outfit: the blow's "-1 HP"
 // followed by a second "-1 HP" from the boss's elemental effect.
@@ -638,12 +651,10 @@ export function executeCombatTurn(ev, onDone) {
         return;
       }
       triggerCinematicShot();
-      const targetX = victim.homePos.x * 0.45;
-      const targetZ = victim.homePos.z;
 
       attacker.playSlash({
-        targetX,
-        targetZ,
+        ...duelSlashTargets(attacker, victim),
+        flinchBoss: false,
         onHit: () => {
           try { Audio.playSlash?.(); } catch (e) {}
           try { Audio.playHit?.(); } catch (e) {}
@@ -687,9 +698,28 @@ export function executeCombatTurn(ev, onDone) {
       });
       return;
     } else {
-      // Dodge / Miss in PvP
+      // Dodge in PvP: the attacker really swings at the target, who evades. No HP lost.
       const target = getFighterInstance(ev.targetId);
-      if (target && target.playDodge) {
+      const striker = ev.attackerId ? getFighterInstance(ev.attackerId) : null;
+      if (target && striker && striker !== target && striker.playSlash) {
+        triggerCinematicShot();
+        const showDodge = () => {
+          const tPos = target.group ? target.group.position : (target.homePos || new THREE.Vector3(0, 0, 0));
+          const textPos = new THREE.Vector3(tPos.x, tPos.y + 2.0, tPos.z);
+          Effects.spawnDamageNumber(textPos, `NÉ ĐÒN!`, '#06d6a0', 36);
+          VFX.showCombatFloatingBanner(`DODGE!`, '#06d6a0');
+          try { Audio.playBlip?.(); } catch (e) {}
+          target.playDodge?.({ onDone: () => {} });
+        };
+        // Start evading as the attacker reaches the top of the leap, just before the blade lands
+        setTimeout(showDodge, 380);
+        striker.playSlash({
+          ...duelSlashTargets(striker, target),
+          flinchBoss: false,
+          onHit: () => { try { Audio.playSlash?.(); } catch (e) {} },
+          onDone: () => { resetCameraToDefault(300, doneWrapper); },
+        });
+      } else if (target && target.playDodge) {
         const tPos = target.group ? target.group.position : (target.homePos || new THREE.Vector3(0, 0, 0));
         const textPos = new THREE.Vector3(tPos.x, tPos.y + 2.0, tPos.z);
         Effects.spawnDamageNumber(textPos, `NÉ ĐÒN!`, '#06d6a0', 36);
@@ -704,6 +734,29 @@ export function executeCombatTurn(ev, onDone) {
   }
 
   if (isMultiplayerTeam) {
+    if (ev.type === 'miss') {
+      // The faster player answered wrong: the slash misses, the boss loses nothing
+      const attacker = getFighterInstance(ev.attackerId);
+      if (!attacker) {
+        doneWrapper();
+        return;
+      }
+      triggerCinematicShot();
+      const bossObj = Boss.getBossObject?.();
+      const bossPos = (bossObj && bossObj.position) ? bossObj.position : BOSS_VFX_POS;
+      attacker.playSlash({
+        flinchBoss: false,
+        onHit: () => {
+          try { Audio.playSlash?.(); } catch (e) {}
+          Effects.spawnDamageNumber(bossPos, 'HỤT!', '#94a3b8', 32);
+          VFX.showCombatFloatingBanner('MISS! ĐÁNH HỤT', '#94a3b8');
+        },
+        onDone: () => {
+          resetCameraToDefault(300, doneWrapper);
+        }
+      });
+      return;
+    }
     if (ev.type === 'attack' && ev.victimId === 'boss') {
       const attacker = getFighterInstance(ev.attackerId);
       if (!attacker) {

@@ -485,9 +485,11 @@ class RoomManager {
         const fasterOutfit = (faster.equipped?.outfit || faster.equippedSet || 'default').toLowerCase();
         const slowerOutfit = (slower.equipped?.outfit || slower.equippedSet || 'default').toLowerCase();
 
-        // 1. NGƯỜI NHANH TẤN CÔNG TRƯỚC
+        const bossEl = room.bossElement || room.stage || 'thunder';
+
+        // 1. NGƯỜI NHANH TẤN CÔNG BOSS
         if (fasterCorrect) {
-          // Người nhanh trả lời ĐÚNG -> Boss trúng đòn (-HP theo bộ đồ người nhanh)
+          // Trả lời ĐÚNG -> Boss mất đúng 1 HP ẩn (bộ đồ không đổi sát thương thật)
           const damageDealt = 1; // outfit does not change boss damage (the 2nd hit is visual only)
           room.bossHp = Math.max(0, room.bossHp - damageDealt);
           faster.correctAnswerCount = (faster.correctAnswerCount || 0) + 1;
@@ -501,129 +503,73 @@ class RoomManager {
             hasElemental: fasterHasElem,
             outfit: fasterOutfit,
             element: fasterHasElem ? fasterOutfit : null,
-            bossElement: room.bossElement || room.stage || 'thunder',
+            bossElement: bossEl,
             questionIndex: room.currentIndex,
             totalQuestions: room.totalHp,
             currentBossHp: room.bossHp,
             remainingPlayerHp: faster.hp,
           });
-
-          // SAU ĐÓ BOSS PHẢN CÔNG VÀO NGƯỜI CHẬM
-          if (slowerCorrect) {
-            // Người chậm trả lời cũng ĐÚNG -> Né được đòn phản công!
-            slower.correctAnswerCount = (slower.correctAnswerCount || 0) + 1;
-            combatEvents.push({
-              type: 'dodge',
-              isCorrect: true,
-              attackerId: 'boss',
-              victimId: slower.id,
-              targetId: slower.id,
-              damage: 0,
-              playerDamage: 0,
-              hasElemental: slowerHasElem,
-              outfit: slowerOutfit,
-              element: room.bossElement || room.stage || 'thunder',
-              bossElement: room.bossElement || room.stage || 'thunder',
-              questionIndex: room.currentIndex,
-              remainingPlayerHp: slower.hp,
-              currentBossHp: room.bossHp,
-              totalQuestions: room.totalHp,
-            });
-          } else {
-            // Người chậm trả lời SAI hoặc không trả lời -> Trúng đòn (-HP theo đồ người chậm)
-            const damageTaken = slowerHasElem ? 1 : 2;
-            slower.hp = Math.max(0, slower.hp - damageTaken);
-
-            combatEvents.push({
-              type: 'attack',
-              isCorrect: false,
-              attackerId: 'boss',
-              victimId: slower.id,
-              targetId: slower.id,
-              damage: damageTaken,
-              playerDamage: damageTaken,
-              hasElemental: slowerHasElem,
-              outfit: slowerOutfit,
-              element: room.bossElement || room.stage || 'thunder',
-              bossElement: room.bossElement || room.stage || 'thunder',
-              questionIndex: room.currentIndex,
-              remainingPlayerHp: slower.hp,
-              currentBossHp: room.bossHp,
-              totalQuestions: room.totalHp,
-            });
-          }
         } else {
-          // Người nhanh trả lời SAI:
-          // Người nhanh đánh hụt, không trừ HP Boss
-          // Nếu người chậm trả lời ĐÚNG -> Người chậm đánh trúng Boss, Boss đánh người nhanh
-          if (slowerCorrect) {
-            const damageDealt = 1; // outfit does not change boss damage (the 2nd hit is visual only)
-            room.bossHp = Math.max(0, room.bossHp - damageDealt);
-            slower.correctAnswerCount = (slower.correctAnswerCount || 0) + 1;
+          // Trả lời SAI (hoặc hết giờ) -> đòn đánh hụt, Boss không mất máu
+          combatEvents.push({
+            type: 'miss',
+            isCorrect: false,
+            attackerId: faster.id,
+            victimId: 'boss',
+            damage: 0,
+            hasElemental: fasterHasElem,
+            outfit: fasterOutfit,
+            bossElement: bossEl,
+            questionIndex: room.currentIndex,
+            totalQuestions: room.totalHp,
+            currentBossHp: room.bossHp,
+            remainingPlayerHp: faster.hp,
+          });
+        }
 
-            combatEvents.push({
-              type: 'attack',
-              isCorrect: true,
-              attackerId: slower.id,
-              victimId: 'boss',
-              damage: damageDealt,
-              hasElemental: slowerHasElem,
-              outfit: slowerOutfit,
-              element: slowerHasElem ? slowerOutfit : null,
-              bossElement: room.bossElement || room.stage || 'thunder',
-              questionIndex: room.currentIndex,
-              totalQuestions: room.totalHp,
-              currentBossHp: room.bossHp,
-              remainingPlayerHp: slower.hp,
-            });
+        // 2. BOSS PHẢN ĐÒN VỀ PHÍA NGƯỜI CHẬM — không bao giờ tấn công người nhanh
+        if (slowerCorrect) {
+          // Người chậm trả lời ĐÚNG -> né được, không mất máu
+          slower.correctAnswerCount = (slower.correctAnswerCount || 0) + 1;
+          combatEvents.push({
+            type: 'dodge',
+            isCorrect: true,
+            attackerId: 'boss',
+            victimId: slower.id,
+            targetId: slower.id,
+            damage: 0,
+            playerDamage: 0,
+            hasElemental: slowerHasElem,
+            outfit: slowerOutfit,
+            element: bossEl,
+            bossElement: bossEl,
+            questionIndex: room.currentIndex,
+            remainingPlayerHp: slower.hp,
+            currentBossHp: room.bossHp,
+            totalQuestions: room.totalHp,
+          });
+        } else {
+          // Người chậm trả lời SAI hoặc không trả lời -> trúng đòn (-1 đồ bộ, -2 đồ thường)
+          const damageTaken = slowerHasElem ? 1 : 2;
+          slower.hp = Math.max(0, slower.hp - damageTaken);
 
-            // Boss phản công vào người trả lời sai (faster)
-            const fasterDamageTaken = fasterHasElem ? 1 : 2;
-            faster.hp = Math.max(0, faster.hp - fasterDamageTaken);
-
-            combatEvents.push({
-              type: 'attack',
-              isCorrect: false,
-              attackerId: 'boss',
-              victimId: faster.id,
-              targetId: faster.id,
-              damage: fasterDamageTaken,
-              playerDamage: fasterDamageTaken,
-              hasElemental: fasterHasElem,
-              outfit: fasterOutfit,
-              element: room.bossElement || room.stage || 'thunder',
-              bossElement: room.bossElement || room.stage || 'thunder',
-              questionIndex: room.currentIndex,
-              remainingPlayerHp: faster.hp,
-              currentBossHp: room.bossHp,
-              totalQuestions: room.totalHp,
-            });
-          } else {
-            // Cả hai cùng sai hoặc không trả lời -> Boss tấn công cả hai
-            for (const p of [faster, slower]) {
-              const pHasElem = checkHasElemental(p);
-              const pDamageTaken = pHasElem ? 1 : 2;
-              p.hp = Math.max(0, p.hp - pDamageTaken);
-
-              combatEvents.push({
-                type: 'attack',
-                isCorrect: false,
-                attackerId: 'boss',
-                victimId: p.id,
-                targetId: p.id,
-                damage: pDamageTaken,
-                playerDamage: pDamageTaken,
-                hasElemental: pHasElem,
-                outfit: (p.equipped?.outfit || p.equippedSet || 'default').toLowerCase(),
-                element: room.bossElement || room.stage || 'thunder',
-                bossElement: room.bossElement || room.stage || 'thunder',
-                questionIndex: room.currentIndex,
-                remainingPlayerHp: p.hp,
-                currentBossHp: room.bossHp,
-                totalQuestions: room.totalHp,
-              });
-            }
-          }
+          combatEvents.push({
+            type: 'attack',
+            isCorrect: false,
+            attackerId: 'boss',
+            victimId: slower.id,
+            targetId: slower.id,
+            damage: damageTaken,
+            playerDamage: damageTaken,
+            hasElemental: slowerHasElem,
+            outfit: slowerOutfit,
+            element: bossEl,
+            bossElement: bossEl,
+            questionIndex: room.currentIndex,
+            remainingPlayerHp: slower.hp,
+            currentBossHp: room.bossHp,
+            totalQuestions: room.totalHp,
+          });
         }
       } else {
         // Fallback for single player
