@@ -385,6 +385,7 @@ function internalOnQuestion(data) {
   // Flush any stale combat events from the previous question cycle
   pendingEvents.length = 0;
   combatBusy = false;
+  flushCombatIdleWaiters();
   if (window.gameState) {
     window.gameState.currentQuestionIndex = (data.index !== undefined ? data.index - 1 : 0);
     window.gameState.totalQuestions = data.total || window.gameState.totalHp;
@@ -404,8 +405,35 @@ export function onCombatEvent({ events }) {
   if (!combatBusy) processNextEvent();
 }
 
+// Callbacks waiting for the current combat animations (and HP changes) to finish
+let combatIdleWaiters = [];
+
+function flushCombatIdleWaiters() {
+  const waiters = combatIdleWaiters;
+  combatIdleWaiters = [];
+  waiters.forEach((fire) => { try { fire(); } catch (e) { console.warn('[scene] idle waiter error:', e); } });
+}
+
+/**
+ * Calls `cb` once no combat animation is running or queued (immediately if idle).
+ * `maxWaitMs` is a safety net so a stuck animation can never block the match.
+ */
+export function whenCombatIdle(cb, maxWaitMs = 12000) {
+  if (!combatBusy && pendingEvents.length === 0) { cb(); return; }
+  let done = false;
+  let timer = null;
+  const fire = () => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    cb();
+  };
+  timer = setTimeout(fire, maxWaitMs);
+  combatIdleWaiters.push(fire);
+}
+
 function processNextEvent() {
-  if (pendingEvents.length === 0) { combatBusy = false; return; }
+  if (pendingEvents.length === 0) { combatBusy = false; flushCombatIdleWaiters(); return; }
   combatBusy = true;
   const ev = pendingEvents.shift();
   if (ev && ev.questionNumber === undefined) {
@@ -510,6 +538,7 @@ function animate(time) {
 export function resetGameMatch() {
   pendingEvents = [];
   combatBusy = false;
+  flushCombatIdleWaiters();
   isMatchInitiated = false;
   battleReady = false;
   queuedQuestion = null;
@@ -532,10 +561,14 @@ let activeCamTween = null;
 export const CINEMATIC_SHOTS = [
   // Shot 1: Wide Orbit Sweep (210°) from Player to Boss
   { start: { x: -8.5, y: 4.2, z: 7.5 }, end: { x: 7.5, y: 3.8, z: -6.5 }, duration: 2500 },
-  // Shot 2: Low-Angle Hero Cam (looking up from behind player towards boss)
-  { start: { x: -6.8, y: 1.5, z: 3.2 }, end: { x: -5.8, y: 1.8, z: 2.2 }, duration: 2200 },
-  // Shot 3: Over-the-Shoulder Boss Cam (looking down at incoming player leap, doubled distance for 2.0x boss)
-  { start: { x: 12.0, y: 6.5, z: 5.5 }, end: { x: 10.0, y: 5.5, z: 3.5 }, duration: 2500 },
+  // Shot 2: Wide low-angle Hero Cam (player milestone 10-20-30-40-50).
+  // Pulled far back on the player's side so the whole leap (up to y≈6) and the
+  // downward slash on the boss stay in frame.
+  { start: { x: -6.0, y: 2.2, z: 14.5 }, end: { x: -3.5, y: 2.8, z: 13.5 }, duration: 2200 },
+  // Shot 3: Wide tilted Boss Cam (boss milestone 5-15-25-35-45).
+  // High three-quarter view from the boss's side, sweeping toward the centre:
+  // shows the whole arena floor, the boss from the side/front and the player.
+  { start: { x: 7.0, y: 7.5, z: 14.5 }, end: { x: 3.5, y: 6.5, z: 14.0 }, duration: 2500 },
   // Shot 4: High Oblique Isometric Aerial (epic grand arena view)
   { start: { x: 0, y: 10.5, z: 10.5 }, end: { x: 2, y: 9.5, z: 9.5 }, duration: 2500 },
   // Shot 5: Side Action Tracking (gliding horizontally alongside combatants)

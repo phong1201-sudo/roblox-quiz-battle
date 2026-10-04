@@ -36,7 +36,11 @@ app.use(express.static(publicDir, staticOptions));
 // Hold API requests until the user database is ready. On a cold start the server
 // accepts connections before MongoDB is connected; answering then would report
 // existing accounts as missing and force players to register again.
-app.use('/api', (req, res, next) => { db.ready.then(() => next()); });
+// The question banks uploaded by the admin are restored from MongoDB as well.
+const appReady = db.ready
+  .then(() => questionBank.hydrate(db))
+  .catch(err => console.error('[boot] startup restore failed:', err));
+app.use('/api', (req, res, next) => { appReady.then(() => next()); });
 
 // Direct diagnostic route to verify disk contents on Render / server
 app.get('/api/debug-assets', (req, res) => {
@@ -870,30 +874,36 @@ app.get('/api/questions/:element', (req, res) => {
   if (!VALID_ELEMENTS.includes(element)) {
     return res.status(400).json({ ok: false, error: 'element must be thunder | fire | frost' });
   }
-  const questionDir = path.resolve(__dirname, '../data/question');
-  let filePath = null;
-  if (fs.existsSync(questionDir)) {
-    const files = fs.readdirSync(questionDir);
-    const match = files.find(f => f.toLowerCase() === `${element}.json`);
-    if (match) filePath = path.join(questionDir, match);
-  }
-  let questions = [];
-  if (filePath && fs.existsSync(filePath)) {
-    try {
-      questions = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    } catch (e) {
-      console.error(`[api/questions] Error parsing ${filePath}:`, e.message);
-    }
-  }
-  if (!questions || questions.length === 0) {
-    questions = questionBank.getActiveQuestionBank(element);
-  }
+  // Battles only see what the admin enabled (newest batch or whole bank);
+  // the admin explorer asks for everything with ?all=1.
+  const questions = req.query.all === '1'
+    ? questionBank.getAllQuestions(element)
+    : questionBank.getPlayableQuestions(element);
   res.json({
     ok: true,
     element,
+    scope: questionBank.getScope(element),
     total: questions.length,
     questions,
   });
+});
+
+/** GET /api/admin/questions/overview — totals, batches and battle scope per element */
+app.get('/api/admin/questions/overview', (req, res) => {
+  const out = {};
+  VALID_ELEMENTS.forEach((el) => { out[el] = questionBank.getOverview(el); });
+  res.json({ ok: true, storage: db.isMongoConnected() ? 'mongodb' : 'local_json', ...out });
+});
+
+/** POST /api/admin/questions/scope { element, scope: 'all' | 'latest' } */
+app.post('/api/admin/questions/scope', (req, res) => {
+  try {
+    const { element, scope } = req.body || {};
+    const saved = questionBank.setScope(element, scope);
+    res.json({ ok: true, element, scope: saved, overview: questionBank.getOverview(element) });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
 });
 
 /**
@@ -977,16 +987,10 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
       parsed = arr.map(item => {
         const qText = item.question || item.text || '';
         let opts = item.options || {};
-        let cIdx = item.correctIndex;
-        if (cIdx === undefined && item.answer) {
-          const ansKey = String(item.answer).trim().toUpperCase();
-          cIdx = ['A','B','C','D'].indexOf(ansKey);
-          if (cIdx === -1) cIdx = 0;
-        }
         return {
           question: qText,
           options: opts,
-          correctIndex: cIdx !== undefined ? cIdx : 0
+          correctIndex: questionBank.resolveCorrectIndex(item)
         };
       });
     } else {
@@ -1003,15 +1007,18 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
       options:      Array.isArray(q.options)
                       ? q.options
                       : ['A','B','C','D'].map(k => q.options?.[k] || ''),
-      correctIndex: q.correctIndex ?? 0,
+      correctIndex: questionBank.resolveCorrectIndex(q),
     }));
+
+    // Optional name for this batch, e.g. "Chương 2"
+    const label = String(req.body?.label || '').trim().slice(0, 60);
 
     let result;
     if (mode === 'append') {
-      result = questionBank.appendBank(element, incoming);
+      result = questionBank.appendBank(element, incoming, label);
     } else {
-      const total = questionBank.replaceBank(element, incoming);
-      result = { total, added: incoming.length, skipped: 0 };
+      const total = questionBank.replaceBank(element, incoming, label);
+      result = { total, added: incoming.length, skipped: 0, batch: 1 };
     }
 
     res.json({
@@ -1019,6 +1026,9 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
       total:   result.total,
       added:   result.added,
       skipped: result.skipped,
+      batch:   result.batch,
+      overview: questionBank.getOverview(element),
+      permanent: db.isMongoConnected(),   // false = lost on the next server restart
       dropped: dropped || [],          // list of "Câu X" labels with no answer marker
     });
   } catch (e) {
@@ -1056,16 +1066,10 @@ app.post('/api/admin/questions/upload-permanent', (req, res) => {
           parsed = arr.map(item => {
             const qText = item.question || item.text || '';
             let opts = item.options || {};
-            let cIdx = item.correctIndex;
-            if (cIdx === undefined && item.answer) {
-              const ansKey = String(item.answer).trim().toUpperCase();
-              cIdx = ['A','B','C','D'].indexOf(ansKey);
-              if (cIdx === -1) cIdx = 0;
-            }
             return {
               question: qText,
               options: opts,
-              correctIndex: cIdx !== undefined ? cIdx : 0
+              correctIndex: questionBank.resolveCorrectIndex(item)
             };
           });
         } else {
@@ -1091,9 +1095,7 @@ app.post('/api/admin/questions/upload-permanent', (req, res) => {
         options:      Array.isArray(q.options)
                         ? q.options
                         : ['A','B','C','D'].map(k => q.options?.[k] || ''),
-        correctIndex: q.correctIndex !== undefined
-                        ? q.correctIndex
-                        : (q.answer ? ['A','B','C','D'].indexOf(String(q.answer).toUpperCase()) : 0),
+        correctIndex: questionBank.resolveCorrectIndex(q),
       }));
 
       // Overwrite and commit directly to data/question/ and data/questions/

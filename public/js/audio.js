@@ -129,8 +129,10 @@ function _ensureAudio() {
   _bgmAudio = new window.Audio();
   _bgmAudio.preload = 'auto';
   _bgmAudio.addEventListener('error', (e) => {
-    const src = _bgmAudio.src || '(unknown)';
-    console.error(`[audio] BGM load error for "${src}":`, e.message || 'media error code ' + _bgmAudio.error?.code);
+    // Use the element that raised the event: _bgmAudio may already have been released
+    const el = e.target || _bgmAudio;
+    const src = el?.src || '(unknown)';
+    console.error(`[audio] BGM load error for "${src}":`, e.message || 'media error code ' + el?.error?.code);
   });
   return _bgmAudio;
 }

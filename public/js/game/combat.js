@@ -617,7 +617,7 @@ export function executeCombatTurn(ev, onDone) {
   const turnSafetyTimer = setTimeout(() => {
     console.warn('[combat] executeCombatTurn safety timeout triggered');
     safeOnDone();
-  }, 7000);
+  }, 11000);
 
   const doneWrapper = () => {
     clearTimeout(turnSafetyTimer);

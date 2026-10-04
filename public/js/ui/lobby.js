@@ -604,10 +604,13 @@ export function init(gameState) {
   // ══════════════════════════════════════════════════════════════════════════
   // ROLE SPLIT: Admin vs Student
   // ══════════════════════════════════════════════════════════════════════════
+  // Everyone, admin included, gets the normal lobby: boss / difficulty, armory and
+  // the button that enters the match. The admin dashboard used to REPLACE it, which
+  // left God Father without any way to start a single-player match (its launch
+  // button needs a room code) or to press "Sẵn sàng" in a 2-player room.
+  _buildStudentLobby(avatarSection, gameState);
   if (window._godFather) {
     _buildAdminDashboard(avatarSection, gameState);
-  } else {
-    _buildStudentLobby(avatarSection, gameState);
   }
 
   // Socket listeners
@@ -1412,7 +1415,7 @@ function _showDroppedWarning(totalInFile, parsedOk, dropped) {
 
 function _buildAdminDashboard(container, gameState) {
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:14px;margin-top:18px;';
 
   // ── Admin header badge ────────────────────────────────────────────────────
   const badge = document.createElement('div');
@@ -1441,14 +1444,26 @@ function _buildAdminDashboard(container, gameState) {
   bankGrid.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
 
   // ── Fetch & refresh all counts ────────────────────────────────────────────
+  const scopeRenderers = {};
+  const applyOverview = (id, ov) => {
+    if (!ov) return;
+    const el = document.getElementById(`adm-count-${id}`);
+    if (el) el.textContent = `📊 Hiện có: ${ov.total ?? 0} câu • ${ov.batches?.length || 0} đợt`;
+    if (scopeRenderers[id]) scopeRenderers[id](ov);
+  };
   const refreshAllCounts = () => {
-    fetch('/api/admin/questions/stats')
+    fetch('/api/admin/questions/overview')
       .then(r => r.json())
       .then(info => {
-        BANK_DEFS.forEach(b => {
-          const el = document.getElementById(`adm-count-${b.id}`);
-          if (el) el.textContent = `📊 Hiện có: ${info[b.id] ?? 0} câu`;
-        });
+        BANK_DEFS.forEach(b => applyOverview(b.id, info[b.id]));
+        const note = document.getElementById('adm-bank-storage-note');
+        if (note) {
+          const permanent = info.storage === 'mongodb';
+          note.textContent = permanent
+            ? '✓ Kho đề được lưu vĩnh viễn trong MongoDB.'
+            : '⚠ Chưa kết nối MongoDB: đề tải lên sẽ mất khi máy chủ khởi động lại.';
+          note.style.color = permanent ? '#06d6a0' : '#ffcc00';
+        }
       })
       .catch(() => {});
   };
@@ -1477,14 +1492,26 @@ function _buildAdminDashboard(container, gameState) {
 
     // Row 2: file input
     const fileInput = document.createElement('input');
-    fileInput.type = 'file'; fileInput.accept = '.docx';
+    fileInput.type = 'file'; fileInput.accept = '.docx,.json';
     fileInput.style.cssText = `width:100%;font-size:10px;color:#ccc;font-family:'Be Vietnam Pro',sans-serif;padding:4px 0;`;
     card.appendChild(fileInput);
+
+    // Name of the batch being uploaded (optional)
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.maxLength = 60;
+    labelInput.placeholder = 'Tên đợt đề (ví dụ: Chương 2) — không bắt buộc';
+    labelInput.style.cssText = `width:100%;box-sizing:border-box;font-size:10px;color:#eee;background:rgba(0,0,0,0.35);border:1px solid rgba(${b.rgb},0.3);border-radius:6px;padding:6px 8px;font-family:'Be Vietnam Pro',sans-serif;`;
+    card.appendChild(labelInput);
 
     // Row 3: mode toggle (append / replace)
     const modeRow = document.createElement('div');
     modeRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
 
+    // The chosen mode is kept in a variable: reading it back from the button colour
+    // never matched (the browser rewrites "#00cfff" as "rgb(...)"), so every upload
+    // silently used "replace".
+    let uploadMode = 'append';
     const mkModeBtn = (value, labelText, defaultActive) => {
       const btn = document.createElement('button');
       btn.dataset.mode = value;
@@ -1505,12 +1532,14 @@ function _buildAdminDashboard(container, gameState) {
         btn.style.background = `rgba(${b.rgb},0.18)`;
         btn.style.color = b.color;
         btn.style.borderColor = `rgba(${b.rgb},0.6)`;
+        uploadMode = value;
       };
       return btn;
     };
 
-    const appendBtn  = mkModeBtn('append',  '[+] Bổ sung thêm đề', false);
-    const replaceBtn = mkModeBtn('replace', '[↻] Ghi đè toàn bộ',  true);
+    // Default: add the file as a NEW batch on top of the existing bank
+    const appendBtn  = mkModeBtn('append',  '[+] Cộng dồn (đợt mới)', true);
+    const replaceBtn = mkModeBtn('replace', '[↻] Ghi đè toàn bộ',  false);
     modeRow.appendChild(appendBtn);
     modeRow.appendChild(replaceBtn);
     card.appendChild(modeRow);
@@ -1547,18 +1576,65 @@ function _buildAdminDashboard(container, gameState) {
     statusEl.style.cssText = `font-size:10px;color:#888;font-family:'Be Vietnam Pro',sans-serif;min-height:14px;`;
     card.appendChild(statusEl);
 
+    // Battle scope: which questions a fight against this boss draws from
+    const scopeLabel = document.createElement('div');
+    scopeLabel.style.cssText = `font-size:10px;font-weight:700;color:#cbd5e1;font-family:'Be Vietnam Pro',sans-serif;margin-top:2px;`;
+    scopeLabel.textContent = '⚔️ Trận đấu lấy câu hỏi từ:';
+    card.appendChild(scopeLabel);
+
+    const scopeRow = document.createElement('div');
+    scopeRow.style.cssText = 'display:flex;gap:8px;';
+    const mkScopeBtn = (value) => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `flex:1;padding:6px 4px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;transition:all .15s;border:1.5px solid rgba(${b.rgb},0.3);background:transparent;color:#777;`;
+      btn.onclick = async () => {
+        try {
+          const r = await fetch('/api/admin/questions/scope', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ element: b.id, scope: value }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error || 'failed');
+          applyOverview(b.id, d.overview);
+          _showToast(value === 'latest'
+            ? `${b.labelFull}: trận đấu chỉ dùng đợt đề mới nhất`
+            : `${b.labelFull}: trận đấu dùng cả kho đề`);
+        } catch (e) {
+          _showToast('Lỗi đổi phạm vi đề: ' + e.message, true);
+        }
+      };
+      return btn;
+    };
+    const latestBtn = mkScopeBtn('latest');
+    const allBtn    = mkScopeBtn('all');
+    scopeRow.appendChild(latestBtn);
+    scopeRow.appendChild(allBtn);
+    card.appendChild(scopeRow);
+
+    scopeRenderers[b.id] = (ov) => {
+      const latestName = ov.latestLabel ? `"${ov.latestLabel}"` : `đợt ${ov.latestBatch || 1}`;
+      latestBtn.textContent = `Đợt mới nhất: ${latestName} (${ov.latestCount || 0} câu)`;
+      allBtn.textContent    = `Cả kho đề (${ov.total || 0} câu)`;
+      [[latestBtn, 'latest'], [allBtn, 'all']].forEach(([btn, value]) => {
+        const active = (ov.scope === value);
+        btn.style.background  = active ? `rgba(${b.rgb},0.18)` : 'transparent';
+        btn.style.color       = active ? b.color : '#777';
+        btn.style.borderColor = active ? b.color : `rgba(${b.rgb},0.3)`;
+      });
+    };
+    scopeRenderers[b.id]({ scope: 'all', total: 0, latestCount: 0, latestBatch: 1 });
+
     bankGrid.appendChild(card);
 
     // ── Wire upload ──────────────────────────────────────────────────────────
     uploadBtn.addEventListener('click', async () => {
       if (!fileInput.files[0]) {
-        statusEl.textContent = '⚠ Hãy chọn file .docx trước!';
+        statusEl.textContent = '⚠ Hãy chọn file .docx hoặc .json trước!';
         statusEl.style.color = '#ffcc00';
         return;
       }
-      const selectedMode = modeRow.querySelector('button[data-mode]')
-        ? [...modeRow.querySelectorAll('button')].find(x => x.style.color === b.color)?.dataset.mode || 'replace'
-        : 'replace';
+      const selectedMode = uploadMode;
 
       statusEl.textContent = '⏳ Đang xử lý…'; statusEl.style.color = '#aaa';
       uploadBtn.disabled = clearBtn.disabled = true;
@@ -1569,15 +1645,19 @@ function _buildAdminDashboard(container, gameState) {
         fd.append('file', fileInput.files[0]);
         fd.append('element', b.id);
         fd.append('mode', selectedMode);
+        fd.append('label', labelInput.value.trim());
 
         const r = await fetch('/api/admin/questions/upload', { method:'POST', body: fd });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Upload failed');
 
-        const modeLabel = selectedMode === 'append' ? 'Bổ sung' : 'Ghi đè';
+        const modeLabel = selectedMode === 'append' ? `Cộng dồn (đợt ${d.batch ?? '—'})` : 'Ghi đè';
         statusEl.style.color = '#06d6a0';
-        statusEl.textContent = `✓ ${modeLabel}: +${d.added} mới, bỏ qua ${d.skipped} trùng`;
+        statusEl.textContent = `✓ ${modeLabel}: +${d.added} mới, bỏ qua ${d.skipped} trùng`
+          + (d.permanent ? '' : ' — chưa lưu vĩnh viễn (thiếu MongoDB)');
         countBadge.textContent = `📊 Hiện có: ${d.total} câu`;
+        applyOverview(b.id, d.overview);
+        labelInput.value = '';
         _showToast(`Đã cập nhật thành công ${b.labelFull}: Hiện có ${d.total} câu hỏi`);
 
         // ── Show dropped-questions warning if any ────────────────────────
@@ -1608,6 +1688,7 @@ function _buildAdminDashboard(container, gameState) {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
         countBadge.textContent = '📊 Hiện có: 0 câu';
+        refreshAllCounts();
         statusEl.style.color = '#ff8888';
         statusEl.textContent = `✓ Đã xóa toàn bộ ${bankName}`;
         _showToast(`Đã xóa toàn bộ câu hỏi trong ${bankName}`, true);
@@ -1620,11 +1701,19 @@ function _buildAdminDashboard(container, gameState) {
   });
 
   wrap.appendChild(bankGrid);
+
+  const storageNote = document.createElement('div');
+  storageNote.id = 'adm-bank-storage-note';
+  storageNote.style.cssText = `font-size:10px;font-weight:700;font-family:'Be Vietnam Pro',sans-serif;`;
+  wrap.appendChild(storageNote);
+
   // Fetch counts on mount
   refreshAllCounts();
 
-  // ── Dev Quick Launch section ──────────────────────────────────────────────
-  wrap.appendChild(mkHead('🧪 Dev Quick Launch'));
+  // ── Dev Quick Launch section (solo test inside a multiplayer room) ────────
+  // It starts the match through the server, so it only exists when there is a room.
+  if (gameState.code) {
+  wrap.appendChild(mkHead('🧪 Dev Quick Launch (thử một mình trong phòng)'));
 
   const BOSSES = [
     { id:'thunder', label:'⚡ Sét', color:'#00cfff', rgb:'0,207,255' },
@@ -1745,6 +1834,7 @@ function _buildAdminDashboard(container, gameState) {
 
   wrap.appendChild(devBtn);
   wrap.appendChild(devStatus);
+  } // end Dev Quick Launch
 
   container.appendChild(wrap);
 
