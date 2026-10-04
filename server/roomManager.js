@@ -496,56 +496,52 @@ class RoomManager {
         const order = [faster, slower];   // the faster player always acts first
         const correctOf = new Map([[faster.id, fasterCorrect], [slower.id, slowerCorrect]]);
 
-        // 1. CẢ HAI NGƯỜI LẦN LƯỢT ĐÁNH BOSS (người nhanh trước)
-        //    Đúng -> Boss mất đúng 1 HP ẩn. Sai / hết giờ -> đánh trượt.
+        // Mỗi người một lượt, người nhanh trước — giống hệt chơi đơn:
+        //   Đúng -> người đó chém Boss, Boss mất đúng 1 HP ẩn, Boss KHÔNG phản đòn.
+        //   Sai / hết giờ -> Boss tấn công người đó (-1 đồ bộ, -2 đồ thường).
         for (const p of order) {
           const hasElem = checkHasElemental(p);
           if (correctOf.get(p.id)) {
             room.bossHp = Math.max(0, room.bossHp - 1);
             p.correctAnswerCount = (p.correctAnswerCount || 0) + 1;
+            combatEvents.push({
+              type: 'attack',
+              isCorrect: true,
+              attackerId: p.id,
+              victimId: 'boss',
+              damage: 1,
+              hasElemental: hasElem,
+              outfit: outfitOf(p),
+              element: hasElem ? outfitOf(p) : null,
+              bossElement: bossEl,
+              questionIndex: room.currentIndex,
+              totalQuestions: room.totalHp,
+              bossMaxHp: room.bossMaxHp,
+              currentBossHp: room.bossHp,
+              remainingPlayerHp: p.hp,
+            });
+          } else {
+            const damageTaken = hasElem ? 1 : 2;
+            p.hp = Math.max(0, p.hp - damageTaken);
+            combatEvents.push({
+              type: 'attack',
+              isCorrect: false,
+              attackerId: 'boss',
+              victimId: p.id,
+              targetId: p.id,
+              damage: damageTaken,
+              playerDamage: damageTaken,
+              hasElemental: hasElem,
+              outfit: outfitOf(p),
+              element: bossEl,
+              bossElement: bossEl,
+              questionIndex: room.currentIndex,
+              remainingPlayerHp: p.hp,
+              currentBossHp: room.bossHp,
+              totalQuestions: room.totalHp,
+              bossMaxHp: room.bossMaxHp,
+            });
           }
-          combatEvents.push({
-            type: correctOf.get(p.id) ? 'attack' : 'miss',
-            isCorrect: correctOf.get(p.id),
-            attackerId: p.id,
-            victimId: 'boss',
-            damage: correctOf.get(p.id) ? 1 : 0,
-            hasElemental: hasElem,
-            outfit: outfitOf(p),
-            element: hasElem ? outfitOf(p) : null,
-            bossElement: bossEl,
-            questionIndex: room.currentIndex,
-            totalQuestions: room.totalHp,
-            bossMaxHp: room.bossMaxHp,
-            currentBossHp: room.bossHp,
-            remainingPlayerHp: p.hp,
-          });
-        }
-
-        // 2. BOSS PHẢN ĐÒN TỪNG NGƯỜI
-        //    Người trả lời đúng né được; người trả lời sai trúng đòn (-1 đồ bộ, -2 đồ thường).
-        for (const p of order) {
-          const hasElem = checkHasElemental(p);
-          const damageTaken = correctOf.get(p.id) ? 0 : (hasElem ? 1 : 2);
-          if (damageTaken > 0) p.hp = Math.max(0, p.hp - damageTaken);
-          combatEvents.push({
-            type: correctOf.get(p.id) ? 'dodge' : 'attack',
-            isCorrect: correctOf.get(p.id),
-            attackerId: 'boss',
-            victimId: p.id,
-            targetId: p.id,
-            damage: damageTaken,
-            playerDamage: damageTaken,
-            hasElemental: hasElem,
-            outfit: outfitOf(p),
-            element: bossEl,
-            bossElement: bossEl,
-            questionIndex: room.currentIndex,
-            remainingPlayerHp: p.hp,
-            currentBossHp: room.bossHp,
-            totalQuestions: room.totalHp,
-            bossMaxHp: room.bossMaxHp,
-          });
         }
       } else {
         // Fallback for single player

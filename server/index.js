@@ -1291,8 +1291,7 @@ const resolveQuestion = (code) => {
   io.to(code).emit('hp_update', { hp, bossHp, bossMaxHp, questionIndex, totalQuestions });
 
   // Time left for the clients to play the combat animations before the next
-  // question. A 2-player team turn has four of them (two attacks, two boss
-  // counters, ~8 s); every other turn has at most two.
+  // question: a turn has at most two of them (one per player).
   const reviewMs = combatEvents.length > 2 ? 9000 : 5000;
 
   setTimeout(() => {
