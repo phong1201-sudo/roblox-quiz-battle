@@ -211,7 +211,9 @@ export function updateHpBars(hp, bossHp) {
 
   // Update Boss HP in Team vs Boss mode
   if (!isPvP && bossHp !== undefined && bossHp !== null) {
-    const pct = Math.max(0, Math.min(100, (bossHp / totalHp) * 100));
+    // The boss has its own maximum (2 HP per question when two players attack)
+    const bossMax = gs?.bossMaxHp || totalHp;
+    const pct = Math.max(0, Math.min(100, (bossHp / bossMax) * 100));
     setBossVisualHpPercent(pct);
   }
 }
