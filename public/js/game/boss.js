@@ -1,5 +1,6 @@
 const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
 import * as Effects from './effects.js';
+import { bossActionPosesToLoad } from './deviceProfile.js';
 import * as Audio from '../audio.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -874,9 +875,10 @@ export async function loadBossPoses(scene, element = 'thunder') {
   }
 
   // 2. Silently fetch remaining action poses in the background asynchronously
+  //    (a low-memory device skips the dense 'angry' pose and shows idle instead)
   const remainingPoses = ['angry', 'attack', 'hit'];
   (async () => {
-    for (const pose of remainingPoses) {
+    for (const pose of bossActionPosesToLoad()) {
       try {
         await loadSingleBossPose(pose);
       } catch (e) {

@@ -697,7 +697,8 @@ export async function startSinglePlayerMatch({ bossElement = 'thunder', difficul
     //    multiplayer until the page is reloaded). Not being in a room, this socket
     //    receives no battle events during a single-player match.
 
-    // 4. Switch to battle screen
+    // 4. Switch to battle screen (first hand the armory's 3D memory over to the arena)
+    Armory.releasePreviews();
     showScreen('game');
     Audio.setInBattle(true);
 
