@@ -327,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     on('game_started', () => {
+        Armory.releasePreviews();   // hand the armory's 3D memory over to the arena
         showScreen('game');
         Audio.setInBattle(true);
         requestAnimationFrame(() => {

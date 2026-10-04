@@ -196,7 +196,46 @@ const VIEW = {
   raf: null,
   angle: 0,
   unavailable: false,
+  generation: 0,         // bumped by releasePreviews(); late model loads are discarded
 };
+
+function disposeObject3D(root) {
+  root?.traverse?.((child) => {
+    child.geometry?.dispose?.();
+    const materials = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+    materials.forEach((mat) => {
+      Object.keys(mat).forEach((key) => { if (mat[key] && mat[key].isTexture) mat[key].dispose(); });
+      mat.dispose?.();
+    });
+  });
+}
+
+/**
+ * Free everything the card previews hold (models, textures, the WebGL context).
+ * Called when a match starts: the arena needs that memory, and phones — iPhones
+ * above all — reload the page when a tab uses too much. The previews are rebuilt
+ * the next time the armory is rendered.
+ */
+export function releasePreviews() {
+  VIEW.generation++;
+  if (VIEW.raf) { cancelAnimationFrame(VIEW.raf); VIEW.raf = null; }
+  VIEW.slots = [];
+  VIEW.models.forEach((model) => { VIEW.scene?.remove(model); disposeObject3D(model); });
+  VIEW.models.clear();
+  VIEW.requested.clear();
+  VIEW.queue = Promise.resolve();
+  disposeObject3D(VIEW.pedestal);
+  disposeObject3D(VIEW.ring);
+  if (VIEW.renderer) {
+    try {
+      VIEW.renderer.dispose();
+      VIEW.renderer.forceContextLoss?.();
+    } catch (e) {
+      console.warn('[armory] Could not release the preview renderer:', e);
+    }
+  }
+  VIEW.renderer = VIEW.scene = VIEW.camera = VIEW.pedestal = VIEW.ring = null;
+}
 
 function getTHREE() {
   return (typeof THREE !== 'undefined') ? THREE : window.THREE;
@@ -292,10 +331,16 @@ function loadIdleModel(key) {
     }
 
     const url = `/assets/character/player_${key}_idle.glb`;
+    const generation = VIEW.generation;
     loader.load(
       url,
       (gltf) => {
         const mesh = gltf.scene || gltf.scenes[0];
+        if (generation !== VIEW.generation || !VIEW.scene) {
+          // The previews were released (a match started) while this file was downloading
+          disposeObject3D(mesh);
+          return resolve();
+        }
 
         // Normalise height and stand the model on the pedestal
         const box = new T.Box3().setFromObject(mesh);
@@ -320,8 +365,10 @@ function loadIdleModel(key) {
       undefined,
       (err) => {
         console.warn(`[armory] Could not load GLB from ${url}`, err);
-        setSlotStatus(key, 'Không tải được mô hình 3D');
-        VIEW.requested.delete(key); // allow a retry on the next render
+        if (generation === VIEW.generation) {
+          setSlotStatus(key, 'Không tải được mô hình 3D');
+          VIEW.requested.delete(key); // allow a retry on the next render
+        }
         resolve();
       }
     );

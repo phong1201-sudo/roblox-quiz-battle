@@ -1,5 +1,7 @@
 // Pure 3D GLB Character & Combat Pipeline with 4-Pose Swapping
 // Uses global window.THREE loaded via CDN
+import { playerPosesToLoad, loadPoses } from './deviceProfile.js';
+
 const THREE = (typeof window !== 'undefined' && window.THREE) ? window.THREE : null;
 
 // Multi-Mesh Pose State & Group Exports (Required by Arena Architecture)
@@ -231,8 +233,8 @@ export async function loadPlayerOutfitPoses(scene, outfit) {
     return null;
   };
 
-  // Strictly await all 4 poses to ensure dodge, slash, and hit models are mounted
-  await Promise.all(['idle', 'dodge', 'slash', 'hit'].map(p => loadSinglePose(p)));
+  // Await the poses this device can afford (all 4, or idle only for a dense outfit on iOS)
+  await loadPoses(playerPosesToLoad(activeElement), loadSinglePose);
 
   if (!playerPoses.idle) {
     const fallback = createFallbackBlockCharacter(activeElement);
@@ -351,7 +353,8 @@ export async function createPlayerInstance(scene, outfit = 'default', homePos = 
     return null;
   };
 
-  await Promise.all(['idle', 'dodge', 'slash', 'hit'].map(p => loadSinglePose(p)));
+  // All 4 poses, or idle only for a dense outfit on a low-memory device (see deviceProfile.js)
+  await loadPoses(playerPosesToLoad(activeOutfit), loadSinglePose);
 
   if (!poses.idle) {
     const fallback = createFallbackBlockCharacter(activeOutfit);
