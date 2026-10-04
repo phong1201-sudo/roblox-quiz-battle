@@ -213,11 +213,13 @@ export async function startGame(gameState) {
     p2Facing = -Math.PI / 2;
   } else if (isTeam && p2Data) {
     // Mode A: Team vs Boss (2 Players vs 1 Elemental Boss)
-    // Player 1 (Host) at (-4.5, 0, 1.6)
-    // Player 2 (Guest) at (-4.5, 0, -1.6)
-    p1Home   = { x: -4.5, y: 0, z: 1.6 };
+    // Staggered so both are clearly visible from the front camera (they used to
+    // share x = -4.5, one hidden behind the other):
+    // Player 1 (Host) at (-5.6, 0, 1.4) — front left
+    // Player 2 (Guest) at (-3.2, 0, -1.4) — back right
+    p1Home   = { x: -5.6, y: 0, z: 1.4 };
     p1Facing = Math.PI / 2;
-    p2Home   = { x: -4.5, y: 0, z: -1.6 };
+    p2Home   = { x: -3.2, y: 0, z: -1.4 };
     p2Facing = Math.PI / 2;
   } else {
     // Single Player vs Boss
