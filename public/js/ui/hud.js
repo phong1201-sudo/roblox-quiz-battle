@@ -626,9 +626,14 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
     scene.onCombatEvent({ events });
   }
 
-  // Auto-progress turn
-  setTimeout(() => {
-    if (window.gameState.bossHp <= 0 || window.gameState.playerHp <= 0 || (qIndex + 1) >= window.gameState.totalQuestions) {
+  // Auto-progress turn — only once the combat animation has fully played and the
+  // HP bars have been updated (milestone turns with cut-in + slow motion take ~7 s).
+  const matchState = window.gameState;
+  const isLastTurn = (matchState.bossHp <= 0 || matchState.playerHp <= 0 || (qIndex + 1) >= matchState.totalQuestions);
+  const turnStartedAt = Date.now();
+  const advance = () => {
+    if (window.gameState !== matchState) return; // a new match was started meanwhile
+    if (isLastTurn) {
       if (typeof window.finishSinglePlayerMatch === 'function') {
         window.finishSinglePlayerMatch();
       }
@@ -637,7 +642,15 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
         window.presentSinglePlayerQuestion(qIndex + 1);
       }
     }
-  }, 2200);
+  };
+  const afterAnimation = () => {
+    // Keep at least the old 2.2 s rhythm; give the final blow an extra beat
+    const minTurnMs = isLastTurn ? 3000 : 2200;
+    const settleMs  = isLastTurn ? 900 : 300;
+    setTimeout(advance, Math.max(settleMs, minTurnMs - (Date.now() - turnStartedAt)));
+  };
+  if (scene && scene.whenCombatIdle) scene.whenCombatIdle(afterAnimation);
+  else afterAnimation();
 }
 
 

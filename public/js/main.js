@@ -384,12 +384,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (results.init) results.init(data, window.gameState);
         };
 
-        // Only display the Victory Modal (Play Again / Next Boss) AFTER the boss death animation has completed (~1.5s delay)
-        if (isVictory) {
-            setTimeout(showVictoryScreen, 1500);
-        } else {
-            showVictoryScreen();
-        }
+        // Show results / rewards only after the last combat animation has finished
+        // and the final HP loss is on screen (then a short beat for the death animation).
+        const showWhenSettled = () => setTimeout(showVictoryScreen, isVictory ? 1500 : 900);
+        if (scene.whenCombatIdle) scene.whenCombatIdle(showWhenSettled, 10000);
+        else showWhenSettled();
     });
 
     on('player_moved', (data) => { if (scene.onPlayerMoved) scene.onPlayerMoved(data); });

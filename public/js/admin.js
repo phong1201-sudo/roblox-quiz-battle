@@ -60,7 +60,7 @@ async function loadQuestionExplorer(element = 'thunder') {
   }
 
   try {
-    const res = await fetch(`/api/questions/${element}`);
+    const res = await fetch(`/api/questions/${element}?all=1`);
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || 'Không tải được câu hỏi');
 
@@ -163,8 +163,44 @@ function setupQuestionManager() {
   const selElement = document.getElementById('q-upload-element');
   const selMode = document.getElementById('q-upload-mode');
 
+  // Battle scope (newest batch only / whole bank) of the selected element
+  const selScope = document.getElementById('q-scope');
+  const refreshScope = async () => {
+    if (!selScope) return;
+    try {
+      const info = await (await fetch('/api/admin/questions/overview')).json();
+      const ov = info[selElement?.value || 'thunder'];
+      if (!ov) return;
+      selScope.value = ov.scope;
+      const latestName = ov.latestLabel ? `"${ov.latestLabel}"` : `đợt ${ov.latestBatch || 1}`;
+      selScope.options[0].textContent = `Cả kho đề (${ov.total} câu, ${ov.batches.length} đợt)`;
+      selScope.options[1].textContent = `Chỉ đợt mới nhất: ${latestName} (${ov.latestCount} câu)`;
+    } catch (e) {
+      console.warn('[admin] Error fetching question overview:', e);
+    }
+  };
+  selScope?.addEventListener('change', async () => {
+    const element = selElement?.value || 'thunder';
+    try {
+      const res = await fetch('/api/admin/questions/scope', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ element, scope: selScope.value }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Đổi phạm vi thất bại');
+      showToast('toast-questions', selScope.value === 'latest'
+        ? '✓ Trận đấu chỉ dùng đợt đề mới nhất' : '✓ Trận đấu dùng cả kho đề', true);
+    } catch (e) {
+      showToast('toast-questions', `Lỗi: ${e.message}`, false);
+    }
+    refreshScope();
+  });
+  refreshScope();
+
   selElement?.addEventListener('change', () => {
     loadQuestionExplorer(selElement.value);
+    refreshScope();
   });
 
   btnUpload?.addEventListener('click', async () => {
@@ -174,7 +210,7 @@ function setupQuestionManager() {
       return;
     }
     const element = selElement?.value || 'thunder';
-    const mode = selMode?.value || 'replace';
+    const mode = selMode?.value || 'append';
 
     btnUpload.disabled = true;
     btnUpload.textContent = 'Đang nạp câu hỏi...';
@@ -183,6 +219,7 @@ function setupQuestionManager() {
     fd.append('file', file);
     fd.append('element', element);
     fd.append('mode', mode);
+    fd.append('label', document.getElementById('q-upload-label')?.value.trim() || '');
 
     try {
       const res = await fetch('/api/admin/questions/upload', { method: 'POST', body: fd });
@@ -191,6 +228,7 @@ function setupQuestionManager() {
 
       showToast('toast-questions', `✓ Đã nạp thành công ${data.added || 0} câu hỏi (Tổng: ${data.total})!`, true);
       refreshQuestionStats();
+      refreshScope();
       loadQuestionExplorer(element);
     } catch (e) {
       showToast('toast-questions', `Lỗi: ${e.message}`, false);
@@ -210,6 +248,7 @@ function setupQuestionManager() {
       if (!res.ok || !data.ok) throw new Error(data.error || 'Xóa thất bại');
       showToast('toast-questions', `✓ Đã xóa sạch ngân hàng câu hỏi hệ ${element.toUpperCase()}!`, true);
       refreshQuestionStats();
+      refreshScope();
       loadQuestionExplorer(element);
     } catch (e) {
       showToast('toast-questions', `Lỗi: ${e.message}`, false);

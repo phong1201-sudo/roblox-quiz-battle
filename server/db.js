@@ -70,6 +70,28 @@ const userSchema = new mongoose.Schema({
 
 const UserModel = mongoose.models.User || mongoose.model('User', userSchema);
 
+// ── Generic key/value documents (question banks, admin settings) ─────────────
+const kvSchema = new mongoose.Schema({
+  key:   { type: String, required: true, unique: true, index: true },
+  value: { type: mongoose.Schema.Types.Mixed },
+}, { timestamps: true, collection: 'gamedata', minimize: false });
+
+const KvModel = mongoose.models.GameData || mongoose.model('GameData', kvSchema);
+
+/** Read a stored value. Returns undefined when MongoDB is not connected or the key is absent. */
+async function kvGet(key) {
+  if (!_mongoConnected) return undefined;
+  const doc = await KvModel.findOne({ key }).lean();
+  return doc ? doc.value : undefined;
+}
+
+/** Store a value permanently. Returns false (and stores nothing) without MongoDB. */
+async function kvSet(key, value) {
+  if (!_mongoConnected) return false;
+  await KvModel.findOneAndUpdate({ key }, { $set: { value } }, { upsert: true });
+  return true;
+}
+
 // ── Seed Admin Account ("God Father") ─────────────────────────────────────────
 async function ensureAdminSeeded() {
   const adminDoc = {
@@ -604,5 +626,7 @@ module.exports = {
   FULL_SET_PIECES,
   isMongoConnected: () => _mongoConnected,
   initDatabase,
-  ready
+  ready,
+  kvGet,
+  kvSet
 };
