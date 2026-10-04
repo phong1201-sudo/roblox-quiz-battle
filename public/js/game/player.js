@@ -386,7 +386,8 @@ export async function createPlayerInstance(scene, outfit = 'default', homePos = 
   }
 
   // Combat animation handlers: Parabolic Leap Arc Tween Sequence
-  const playSlash = ({ targetApex = { x: 1.8, y: 3.2, z: homePos.z }, targetStrike = { x: 3.2, y: 0.6, z: homePos.z }, onHit, onDone } = {}) => {
+  // flinchBoss: false for a missed slash or a duel, where the boss must not react
+  const playSlash = ({ targetApex = { x: 1.8, y: 3.2, z: homePos.z }, targetStrike = { x: 3.2, y: 0.6, z: homePos.z }, flinchBoss = true, onHit, onDone } = {}) => {
     isSlashing = true;
     setPose('dodge');
     group.position.set(homePos.x, homePos.y, homePos.z);
@@ -412,7 +413,7 @@ export async function createPlayerInstance(scene, outfit = 'default', homePos = 
 
               // Switch boss pose: setBossPose('hit') -> hold 300ms -> setBossPose('idle')
               try {
-                if (typeof window !== 'undefined' && window.setBossPose) {
+                if (flinchBoss && typeof window !== 'undefined' && window.setBossPose) {
                   window.setBossPose('hit');
                   setTimeout(() => { try { window.setBossPose('idle'); } catch(e){} }, 300);
                 }
