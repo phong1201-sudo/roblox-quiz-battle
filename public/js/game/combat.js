@@ -807,8 +807,8 @@ export function executeCombatTurn(ev, onDone) {
           Boss.setBossPose('hit');
           Boss.playBossHurt();
 
-          if (ev.currentBossHp !== undefined && ev.totalQuestions) {
-            const pct = (ev.currentBossHp / ev.totalQuestions) * 100;
+          if (ev.currentBossHp !== undefined && (ev.bossMaxHp || ev.totalQuestions)) {
+            const pct = (ev.currentBossHp / (ev.bossMaxHp || ev.totalQuestions)) * 100;
             Boss.setBossHpPercent(pct);
             if (hud.setBossVisualHpPercent) hud.setBossVisualHpPercent(pct);
           }

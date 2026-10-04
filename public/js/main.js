@@ -398,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.gameState) {
             window.gameState.mode      = data.mode;
             window.gameState.totalHp   = data.totalHp;
+            window.gameState.bossMaxHp = data.bossMaxHp || data.totalHp;
             window.gameState.bossIndex = data.bossIndex ?? 0;
             // Derive bossElement from bossIndex so BGM can pick the right track
             const BOSS_ELEMENTS = ['thunder', 'fire', 'frost'];
@@ -427,6 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
     on('combat_event', (data) => { if (scene.onCombatEvent) scene.onCombatEvent(data); });
 
     on('hp_update', (data) => {
+        if (window.gameState && data.bossMaxHp) window.gameState.bossMaxHp = data.bossMaxHp;
         if (hud.updateHpBars)  hud.updateHpBars(data.hp, data.bossHp);
         if (scene.onHpUpdate)  scene.onHpUpdate(data);
     });

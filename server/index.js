@@ -1276,11 +1276,11 @@ const resolveQuestion = (code) => {
   // Mark any player who never answered as timed-out
   roomManager.finaliseAnswers(code);
 
-  const { correctAnswer, answerCounts, combatEvents, hp, bossHp, questionIndex, totalQuestions } =
+  const { correctAnswer, answerCounts, combatEvents, hp, bossHp, bossMaxHp, questionIndex, totalQuestions } =
     roomManager.scoreQuestion(code);
 
   // ① Result + counts (existing flow)
-  io.to(code).emit('answer_result', { correctAnswer, answerCounts, hp, bossHp, questionIndex, totalQuestions });
+  io.to(code).emit('answer_result', { correctAnswer, answerCounts, hp, bossHp, bossMaxHp, questionIndex, totalQuestions });
 
   // ② Combat animations
   if (combatEvents.length > 0) {
@@ -1288,7 +1288,12 @@ const resolveQuestion = (code) => {
   }
 
   // ③ HP snapshot
-  io.to(code).emit('hp_update', { hp, bossHp, questionIndex, totalQuestions });
+  io.to(code).emit('hp_update', { hp, bossHp, bossMaxHp, questionIndex, totalQuestions });
+
+  // Time left for the clients to play the combat animations before the next
+  // question. A 2-player team turn has four of them (two attacks, two boss
+  // counters, ~8 s); every other turn has at most two.
+  const reviewMs = combatEvents.length > 2 ? 9000 : 5000;
 
   setTimeout(() => {
     // The match ends early when a side is out of HP:
@@ -1355,6 +1360,7 @@ const resolveQuestion = (code) => {
       io.to(code).emit('game_over', {
         hp: finalHp,
         bossHp: room.bossHp,
+        bossMaxHp: room.bossMaxHp || room.totalHp,
         totalHp: room.totalHp,
         winner,
         isDraw,
@@ -1368,7 +1374,7 @@ const resolveQuestion = (code) => {
       });
       room.phase = 'GAME_OVER';
     }
-  }, 5000);
+  }, reviewMs);
 };
 
 // Pieces remembered for a PERFECT match, by difficulty (dev runs grant nothing)
@@ -1415,6 +1421,7 @@ function startMatchForRoom(code, options = {}) {
     element: room.stage,
     totalHp: room.totalHp,
     bossHp: room.bossHp,
+    bossMaxHp: room.bossMaxHp || room.totalHp,
     players: Array.from(room.players.values()),
   });
 

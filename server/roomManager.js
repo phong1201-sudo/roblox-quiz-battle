@@ -384,7 +384,13 @@ class RoomManager {
     const total = room.questions.length > 0 ? room.questions.length : 50;
     room.bossHpMultiplier = 1;
     room.totalHp = total;
-    room.bossHp  = total;
+
+    // Boss HP: every correct answer removes 1. In Team vs Boss with two players
+    // BOTH attack on every question, so the boss has 2 HP per question
+    // (it reaches 0 only if both players answer everything correctly).
+    const isTeam = !(room.mode === 'pvp_1v1' || room.mode === 'pvp');
+    room.bossMaxHp = (isTeam && room.players.size >= 2) ? total * 2 : total;
+    room.bossHp    = room.bossMaxHp;
 
     for (const p of room.players.values()) {
       p.hp = total;
@@ -486,89 +492,59 @@ class RoomManager {
         const slowerOutfit = (slower.equipped?.outfit || slower.equippedSet || 'default').toLowerCase();
 
         const bossEl = room.bossElement || room.stage || 'thunder';
+        const outfitOf = (p) => (p.equipped?.outfit || p.equippedSet || 'default').toLowerCase();
+        const order = [faster, slower];   // the faster player always acts first
+        const correctOf = new Map([[faster.id, fasterCorrect], [slower.id, slowerCorrect]]);
 
-        // 1. NGƯỜI NHANH TẤN CÔNG BOSS
-        if (fasterCorrect) {
-          // Trả lời ĐÚNG -> Boss mất đúng 1 HP ẩn (bộ đồ không đổi sát thương thật)
-          const damageDealt = 1; // outfit does not change boss damage (the 2nd hit is visual only)
-          room.bossHp = Math.max(0, room.bossHp - damageDealt);
-          faster.correctAnswerCount = (faster.correctAnswerCount || 0) + 1;
-
+        // 1. CẢ HAI NGƯỜI LẦN LƯỢT ĐÁNH BOSS (người nhanh trước)
+        //    Đúng -> Boss mất đúng 1 HP ẩn. Sai / hết giờ -> đánh trượt.
+        for (const p of order) {
+          const hasElem = checkHasElemental(p);
+          if (correctOf.get(p.id)) {
+            room.bossHp = Math.max(0, room.bossHp - 1);
+            p.correctAnswerCount = (p.correctAnswerCount || 0) + 1;
+          }
           combatEvents.push({
-            type: 'attack',
-            isCorrect: true,
-            attackerId: faster.id,
+            type: correctOf.get(p.id) ? 'attack' : 'miss',
+            isCorrect: correctOf.get(p.id),
+            attackerId: p.id,
             victimId: 'boss',
-            damage: damageDealt,
-            hasElemental: fasterHasElem,
-            outfit: fasterOutfit,
-            element: fasterHasElem ? fasterOutfit : null,
+            damage: correctOf.get(p.id) ? 1 : 0,
+            hasElemental: hasElem,
+            outfit: outfitOf(p),
+            element: hasElem ? outfitOf(p) : null,
             bossElement: bossEl,
             questionIndex: room.currentIndex,
             totalQuestions: room.totalHp,
+            bossMaxHp: room.bossMaxHp,
             currentBossHp: room.bossHp,
-            remainingPlayerHp: faster.hp,
-          });
-        } else {
-          // Trả lời SAI (hoặc hết giờ) -> đòn đánh hụt, Boss không mất máu
-          combatEvents.push({
-            type: 'miss',
-            isCorrect: false,
-            attackerId: faster.id,
-            victimId: 'boss',
-            damage: 0,
-            hasElemental: fasterHasElem,
-            outfit: fasterOutfit,
-            bossElement: bossEl,
-            questionIndex: room.currentIndex,
-            totalQuestions: room.totalHp,
-            currentBossHp: room.bossHp,
-            remainingPlayerHp: faster.hp,
+            remainingPlayerHp: p.hp,
           });
         }
 
-        // 2. BOSS PHẢN ĐÒN VỀ PHÍA NGƯỜI CHẬM — không bao giờ tấn công người nhanh
-        if (slowerCorrect) {
-          // Người chậm trả lời ĐÚNG -> né được, không mất máu
-          slower.correctAnswerCount = (slower.correctAnswerCount || 0) + 1;
+        // 2. BOSS PHẢN ĐÒN TỪNG NGƯỜI
+        //    Người trả lời đúng né được; người trả lời sai trúng đòn (-1 đồ bộ, -2 đồ thường).
+        for (const p of order) {
+          const hasElem = checkHasElemental(p);
+          const damageTaken = correctOf.get(p.id) ? 0 : (hasElem ? 1 : 2);
+          if (damageTaken > 0) p.hp = Math.max(0, p.hp - damageTaken);
           combatEvents.push({
-            type: 'dodge',
-            isCorrect: true,
+            type: correctOf.get(p.id) ? 'dodge' : 'attack',
+            isCorrect: correctOf.get(p.id),
             attackerId: 'boss',
-            victimId: slower.id,
-            targetId: slower.id,
-            damage: 0,
-            playerDamage: 0,
-            hasElemental: slowerHasElem,
-            outfit: slowerOutfit,
-            element: bossEl,
-            bossElement: bossEl,
-            questionIndex: room.currentIndex,
-            remainingPlayerHp: slower.hp,
-            currentBossHp: room.bossHp,
-            totalQuestions: room.totalHp,
-          });
-        } else {
-          // Người chậm trả lời SAI hoặc không trả lời -> trúng đòn (-1 đồ bộ, -2 đồ thường)
-          const damageTaken = slowerHasElem ? 1 : 2;
-          slower.hp = Math.max(0, slower.hp - damageTaken);
-
-          combatEvents.push({
-            type: 'attack',
-            isCorrect: false,
-            attackerId: 'boss',
-            victimId: slower.id,
-            targetId: slower.id,
+            victimId: p.id,
+            targetId: p.id,
             damage: damageTaken,
             playerDamage: damageTaken,
-            hasElemental: slowerHasElem,
-            outfit: slowerOutfit,
+            hasElemental: hasElem,
+            outfit: outfitOf(p),
             element: bossEl,
             bossElement: bossEl,
             questionIndex: room.currentIndex,
-            remainingPlayerHp: slower.hp,
+            remainingPlayerHp: p.hp,
             currentBossHp: room.bossHp,
             totalQuestions: room.totalHp,
+            bossMaxHp: room.bossMaxHp,
           });
         }
       } else {
@@ -721,6 +697,7 @@ class RoomManager {
       combatEvents,
       hp,
       bossHp: room.bossHp,
+      bossMaxHp: room.bossMaxHp || room.totalHp,
       questionIndex: room.currentIndex,
       totalQuestions: room.totalHp,
     };
@@ -783,7 +760,7 @@ class RoomManager {
     const allDead = Array.from(room.players.values()).every(p => (p.hp ?? 0) <= 0);
     if (allDead) return 'DEFEAT';
     if (room.bossHp === 0) return 'PERFECT';
-    if (room.bossHp <= Math.floor(room.totalHp * 0.5)) return 'VICTORY';
+    if (room.bossHp <= Math.floor((room.bossMaxHp || room.totalHp) * 0.5)) return 'VICTORY';
     return 'DEFEAT';
   }
 
