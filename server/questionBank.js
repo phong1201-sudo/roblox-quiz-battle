@@ -317,10 +317,33 @@ function getActiveQuestionBank(element) {
 // ── Public: restore banks & settings saved in MongoDB (call once at boot) ────
 // Uploaded questions live on Render's ephemeral disk; without this they would
 // fall back to the files shipped in the repository after every restart.
+//
+// Exception: when data/question/seed.json carries a version the database has
+// not seen yet, the question files shipped in the repository win — they are
+// written to the database (replacing the old banks) and scopes reset to 'all'.
+// Bump that version whenever a new official question set is committed.
+const SEED_FILE = path.join(BANK_DIR, 'seed.json');
+
+function _repoSeedVersion() {
+  try { return JSON.parse(fs.readFileSync(SEED_FILE, 'utf8')).version || null; }
+  catch (e) { return null; }
+}
+
 async function hydrate(store) {
   _store = store;
   if (!store || !store.kvGet) return;
   try {
+    const repoSeed = _repoSeedVersion();
+    if (repoSeed && (await store.kvGet('question_seed')) !== repoSeed) {
+      for (const el of ELEMENTS) await store.kvSet(`questions:${el}`, _loadBank(el));
+      const settings = {};
+      ELEMENTS.forEach(el => { settings[el] = { scope: 'all' }; });
+      fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+      await store.kvSet('question_settings', settings);
+      await store.kvSet('question_seed', repoSeed);
+      console.log(`[questionBank] Installed question set "${repoSeed}" from the repository.`);
+      return;
+    }
     for (const el of ELEMENTS) {
       const saved = await store.kvGet(`questions:${el}`);
       if (Array.isArray(saved)) {
