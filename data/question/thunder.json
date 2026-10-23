@@ -1,552 +1,702 @@
 [
   {
     "id": 1,
-    "question": "Biến đổi vật lí là hiện tượng trong đó:",
+    "question": "Cho các quá trình: (1) Mùa hè thức ăn bị ôi thiu; (2) Đun đường, đường ngả màu nâu rồi chuyển thành màu đen; (3) Thổi quả bóng bay căng đến phát nổ; (4) Cháy rừng gây ô nhiễm môi trường; (5) Nhiệt độ trái đất nóng lên làm băng ở hai cực tan dần. Những quá trình xảy ra biến đổi hóa học là",
     "options": [
-      "Phân tử chất này biến đổi thành phân tử chất khác.",
-      "Chất chỉ biến đổi về trạng thái, hình dạng nhưng vẫn giữ nguyên bản chất là chất ban đầu.",
-      "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác.",
-      "Nguyên tử bị thay đổi cấu trúc hạt nhân."
+      "(1), (2), (3), (4)",
+      "(1), (2), (4), (5)",
+      "(1), (2), (4)",
+      "(1), (4), (5)"
     ],
-    "answer": 1
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 2,
-    "question": "Biến đổi hoá học khác với biến đổi vật lí ở điểm cốt lõi nào sau đây?",
+    "question": "Trong phản ứng hoá học, yếu tố nào sau đây KHÔNG thay đổi?",
     "options": [
-      "Có sự thay đổi về thể tích của chất.",
-      "Có sự tạo thành chất mới có tính chất khác với chất ban đầu.",
-      "Có sự thay đổi về trạng thái tồn tại (rắn, lỏng, khí).",
-      "Có sự thay đổi về nhiệt độ môi trường xung quanh."
+      "Số phân tử trước và sau phản ứng",
+      "Liên kết giữa các nguyên tử trước và sau phản ứng",
+      "Số nguyên tử của mỗi nguyên tố trước và sau phản ứng",
+      "Trạng thái chất trước và sau phản ứng"
     ],
-    "answer": 1
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 3,
-    "question": "Quá trình nào sau đây mô tả sự biến đổi vật lí?",
+    "question": "Nung đá vôi (CaCO₃) thành vôi sống (CaO) và khí CO₂ cần cung cấp năng lượng dạng nhiệt. Đây là phản ứng gì?",
     "options": [
-      "Đốt than củi sinh ra khí carbon dioxide và tro bếp.",
-      "Sắt để trong không khí ẩm lâu ngày bị gỉ đỏ.",
-      "Nước đá tan chảy thành nước lỏng khi để ở nhiệt độ phòng.",
-      "Cho vôi sống vào nước tạo thành vôi tôi toả nhiều nhiệt."
+      "Tỏa nhiệt",
+      "Thu nhiệt",
+      "Vật lí",
+      "Vừa tỏa nhiệt vừa thu nhiệt"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 4,
-    "question": "Hiện tượng nào dưới đây thể hiện sự biến đổi hoá học?",
+    "question": "Trong 1 mol ZnCl₂ có chứa bao nhiêu nguyên tử chlorine?",
     "options": [
-      "Thức ăn để lâu ngày bị ôi thiu và có mùi hôi.",
-      "Mùi thơm của hoa quả lan toả khắp phòng.",
-      "Cắt nhỏ dây sắt thành các đoạn ngắn.",
-      "Hoà tan muối ăn vào nước thu được nước muối."
+      "1,8066.10²⁴",
+      "9,033.10²³",
+      "1,2044.10²⁴",
+      "6,022.10²³"
     ],
-    "answer": 0
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 5,
-    "question": "Trong một phản ứng hoá học, bản chất của sự biến đổi là gì?",
+    "question": "Công thức chuyển đổi giữa lượng chất và khối lượng chất là",
     "options": [
-      "Số lượng các nguyên tử trong phân tử bị giảm đi.",
-      "Sự phá vỡ liên kết giữa các nguyên tử cũ và hình thành liên kết mới.",
-      "Sự tăng lên về số lượng nguyên tố hoá học.",
-      "Sự thay đổi khối lượng của các nguyên tử."
+      "m = n/M",
+      "m = M/n",
+      "n = m.M",
+      "n = m/M"
     ],
-    "answer": 1
+    "answer": 3,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 6,
-    "question": "Dấu hiệu nào sau đây KHÔNG PHẢI là dấu hiệu nhận biết có biến đổi hoá học xảy ra?",
+    "question": "Công thức chuyển đổi giữa lượng chất và thể tích chất khí ở đkc là",
     "options": [
-      "Chất chuyển từ trạng thái thể lỏng sang thể khí do sôi.",
-      "Có sự thay đổi màu sắc hoặc toả nhiệt, phát sáng.",
-      "Xuất hiện chất khí bốc lên.",
-      "Xuất hiện chất kết tủa không tan."
+      "n = 24,79.V",
+      "n = 24.V",
+      "n = V/24,79",
+      "n = V/24"
     ],
-    "answer": 0
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 7,
-    "question": "Quá trình nào sau đây KHÔNG tạo ra chất mới?",
+    "question": "Khí Y có tỉ khối đối với khí oxygen bằng 2. Khí Y là chất nào? (C = 12; H = 1; N = 14; S = 32; O = 16)",
     "options": [
-      "Cô cạn dung dịch đường thu được đường tinh thể.",
-      "Lên men rượu nếp thành giấm.",
-      "Nung nóng đá vôi thu được vôi sống và khí carbon dioxide.",
-      "Đốt cháy khí methane toả nhiệt mạnh."
+      "CH₄",
+      "NH₃",
+      "H₂S",
+      "SO₂"
     ],
-    "answer": 0
+    "answer": 3,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 8,
-    "question": "Khi cồn ethyl cháy trong không khí sinh ra khí carbon dioxide và hơi nước, quá trình này là:",
+    "question": "Dãy nào gồm các khí đều thu được bằng cách đẩy không khí, đặt ngửa bình (khí nặng hơn không khí)? (N = 14; H = 1; C = 12; O = 16; S = 32)",
     "options": [
-      "Biến đổi hoá học vì cồn phản ứng với oxygen tạo chất mới.",
-      "Quá trình quang hợp.",
-      "Biến đổi vật lí vì cồn bay hơi trước khi cháy.",
-      "Biến đổi sinh học không có phản ứng."
+      "NH₃, CO₂, H₂S",
+      "O₂, SO₂, CO₂",
+      "CO₂, O₂, NH₃",
+      "N₂, CO₂, O₂"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 9,
-    "question": "Khi hoà tan đường vào nước ấm rồi khuấy đều, ta thu được nước đường ngọt. Đây là hiện tượng:",
+    "question": "Có bao nhiêu phát biểu ĐÚNG? (a) Hòa tan muối ăn vào nước, muối tan chứng tỏ có phản ứng hóa học; (b) Trong phản ứng hoá học, số nguyên tử của mỗi nguyên tố được bảo toàn; (c) Thổi hơi thở vào nước vôi trong Ca(OH)₂ thấy vẩn đục chứng tỏ có phản ứng hóa học; (d) Trong quá trình phản ứng, lượng chất phản ứng tăng dần, lượng sản phẩm giảm dần.",
     "options": [
-      "Phản ứng phân huỷ.",
-      "Phản ứng toả nhiệt hoá học.",
-      "Biến đổi hoá học.",
-      "Biến đổi vật lí."
+      "1",
+      "2",
+      "3",
+      "4"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 10,
-    "question": "Phát biểu nào sau đây đúng khi nói về sự biến đổi của chất?",
+    "question": "Có bao nhiêu phát biểu ĐÚNG? (a) Mol là lượng chất có chứa 6,022.10²³ nguyên tử hoặc phân tử chất đó; (b) Ở điều kiện chuẩn, 1 mol chất bất kì đều có thể tích 24,79 lít; (c) Khối lượng của 0,25 mol khí N₂ là 7 gam; (d) Khối lượng của 3,7185 lít khí O₂ (đkc) lớn hơn 4,8 gam magnesium.",
     "options": [
-      "Biến đổi hoá học không bao giờ kèm theo sự toả nhiệt hay thu nhiệt.",
-      "Trong biến đổi vật lí, liên kết giữa các phân tử có thể thay đổi nhưng bản chất phân tử giữ nguyên.",
-      "Trong biến đổi hoá học, liên kết giữa các nguyên tử không bị phá vỡ.",
-      "Trong biến đổi vật lí, hạt phân tử bị phá vỡ hoàn toàn."
+      "1",
+      "2",
+      "3",
+      "4"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 11,
-    "question": "Trong các quá trình dưới đây, quá trình nào thuộc loại biến đổi hoá học?",
+    "question": "Dụng cụ phù hợp nhất để lấy hóa chất rắn dạng bột hoặc hạt nhỏ ra khỏi lọ đựng là",
     "options": [
-      "Giặt quần áo phơi khô.",
-      "Nước sôi bay hơi.",
-      "Cột sắt bị gỉ.",
-      "Băng tan ở hai cực Trái Đất."
+      "kéo",
+      "panh",
+      "thìa thủy tinh",
+      "ống hút nhỏ giọt"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 12,
-    "question": "Khi đun nóng thuỷ tinh mềm ra rồi thổi thành các bình thuỷ tinh có hình dạng khác nhau, đây là hiện tượng:",
+    "question": "Đâu KHÔNG phải là lưu ý để sử dụng điện an toàn?",
     "options": [
-      "Phản ứng oxi hoá.",
-      "Biến đổi hoá học.",
-      "Sự phân huỷ thuỷ tinh.",
-      "Biến đổi vật lí."
+      "Đọc kĩ hướng dẫn sử dụng, các quy định trên mỗi thiết bị điện",
+      "Thực hiện đúng nội quy, hướng dẫn an toàn điện",
+      "Thực hiện lắp ráp mạch điện khi chưa ngắt dòng điện",
+      "Tiến hành thí nghiệm với thiết bị điện sau khi được người hướng dẫn cho phép"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 13,
-    "question": "Đập nhỏ một cục than đá thành các hạt than nhỏ. Quá trình này thể hiện:",
+    "question": "Khối lượng riêng của một chất cho ta biết",
     "options": [
-      "Sự biến đổi vật lí vì chỉ thay đổi kích thước, bản chất chất không đổi.",
-      "Sự đốt cháy than.",
-      "Phản ứng phân huỷ than.",
-      "Sự biến đổi hoá học vì tạo thành các hạt than nhỏ."
+      "khối lượng của một đơn vị thể tích chất đó",
+      "thể tích của một đơn vị thể tích chất đó",
+      "khối lượng của một vật làm từ chất đó",
+      "thể tích của một vật làm từ chất đó"
     ],
-    "answer": 0
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 14,
-    "question": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm mùa đông là ví dụ về:",
+    "question": "Biểu thức xác định khối lượng riêng của một vật là",
     "options": [
-      "Biến đổi vật lí.",
-      "Sự phân huỷ nước trong khí quyển.",
-      "Phản ứng kết tủa hoá học.",
-      "Biến đổi hoá học của hơi nước thành chất mới."
+      "D = m.V",
+      "D = m/V",
+      "D = V/m",
+      "D = m + V"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 15,
-    "question": "Khi xịt nước hoa trong phòng, sau vài giây cả phòng đều có mùi thơm. Hiện tượng này là do:",
+    "question": "Đơn vị nào sau đây là đơn vị đo áp suất?",
     "options": [
-      "Nước hoa bị phân huỷ thành chất khí thơm.",
-      "Sự khuếch tán và bay hơi.",
-      "Phản ứng cháy của hương liệu.",
-      "Nước hoa tác dụng hoá học với không khí."
+      "kg/m²",
+      "N/m²",
+      "kg/m",
+      "N/m"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 16,
-    "question": "Thả một viên vitamin C sủi vào ly nước thấy có sủi bọt khí mạnh và ly nước lạnh đi. Đây là hiện tượng:",
+    "question": "Muốn giảm áp suất thì",
     "options": [
-      "Chỉ đơn thuần là biến đổi vật lí.",
-      "Sự đông đặc dung dịch.",
-      "Biến đổi hoá học.",
-      "Sự bay hơi của nước."
+      "giảm diện tích mặt bị ép và giảm áp lực theo cùng tỉ lệ",
+      "tăng diện tích mặt bị ép và tăng áp lực theo cùng tỉ lệ",
+      "tăng diện tích mặt bị ép và giữ nguyên áp lực",
+      "giảm diện tích mặt bị ép và giữ nguyên áp lực"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 17,
-    "question": "Quá trình làm muối ăn từ nước biển bằng phương pháp phơi nắng dựa trên biến đổi nào?",
+    "question": "Có bao nhiêu phát biểu ĐÚNG? (a) Để xác định khối lượng riêng của một vật, chỉ cần cân để đo; (b) Hai vật rắn đặc cùng loại vật liệu nhưng thể tích khác nhau thì vật khối lượng lớn hơn có khối lượng riêng lớn hơn; (c) Các chất khác nhau có khối lượng riêng như nhau; (d) Khối lượng riêng của nước lớn hơn của sắt.",
     "options": [
-      "Phản ứng oxi hoá dung dịch muối.",
-      "Biến đổi hoá học làm nước biển biến thành muối.",
-      "Biến đổi vật lí.",
-      "Sự kết tủa do phản ứng hoá học."
+      "0",
+      "1",
+      "2",
+      "3"
     ],
-    "answer": 2
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 18,
-    "question": "Hành vi nào sau đây chỉ gây ra sự biến đổi vật lí đối với tờ giấy?",
+    "question": "Phát biểu nào sau đây ĐÚNG?",
     "options": [
-      "Đổ sulfuric acid đặc làm thủng và đen tờ giấy.",
-      "Tẩy màu chữ trên tờ giấy bằng nước Javel.",
-      "Dùng kéo cắt tờ giấy làm đôi.",
-      "Đốt tờ giấy thành tro đen."
+      "Áp suất là lực tác dụng có phương song song với bề mặt bị ép",
+      "Áp suất đặc trưng cho khả năng tác dụng của áp lực lên bề mặt bị ép",
+      "Áp suất có cùng đơn vị đo với khối lượng riêng",
+      "Trời mưa, người ta đặt tấm ván trên đường lầy để tăng áp suất, giảm độ lún"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 19,
-    "question": "Hiện tượng mỡ heo bị đông lại khi để ở nhiệt độ lạnh mùa đông thuộc loại:",
+    "question": "Ở cơ thể người, cơ quan nào nằm trong khoang ngực?",
     "options": [
-      "Biến đổi hoá học.",
-      "Sự oxi hoá chất béo.",
-      "Sự phân huỷ chất béo.",
-      "Biến đổi vật lí."
+      "Bóng đái",
+      "Phổi",
+      "Thận",
+      "Dạ dày"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 20,
-    "question": "Khi quấn dây đồng thành cuộn xoắn, đặc điểm nào của đồng không thay đổi?",
+    "question": "Quá trình tiêu hoá carbohydrate bắt đầu ở bộ phận nào?",
     "options": [
-      "Độ cong của dây.",
-      "Thành phần hoá học và bản chất kim loại đồng.",
-      "Hình dạng ngoài của dây.",
-      "Khoảng cách giữa hai đầu dây."
+      "Ruột non",
+      "Thực quản",
+      "Dạ dày",
+      "Miệng"
     ],
-    "answer": 1
+    "answer": 3,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 21,
-    "question": "Hiện tượng sáp nến chảy lỏng ra khi gặp nhiệt độ cao từ ngọn lửa thuộc loại:",
+    "question": "Nước được hấp thu chủ yếu ở cơ quan nào?",
     "options": [
-      "Biến đổi hoá học.",
-      "Sự cháy tạo khí.",
-      "Phản ứng nhiệt phân.",
-      "Biến đổi vật lí."
+      "Gan",
+      "Dạ dày",
+      "Ruột già",
+      "Thực quản"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 22,
-    "question": "Nhôm (aluminium) được cán mỏng làm màng bọc thực phẩm là ứng dụng của:",
+    "question": "Tuyến vị nằm ở bộ phận nào trong ống tiêu hoá?",
     "options": [
-      "Phản ứng hoá học của nhôm.",
-      "Biến đổi vật lí nhờ tính dẻo của nhôm.",
-      "Sự biến đổi cấu trúc hạt nhân nhôm.",
-      "Tính chất hoá học lưỡng tính."
+      "Dạ dày",
+      "Ruột non",
+      "Ruột già",
+      "Thực quản"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 23,
-    "question": "Quá trình nén khí oxygen vào bình thép ở áp suất cao là hiện tượng:",
+    "question": "Con người có thể tạo miễn dịch nhân tạo cho cơ thể bằng cách sử dụng",
     "options": [
-      "Biến đổi vật lí.",
-      "Sự phân huỷ khí oxygen.",
-      "Phản ứng tổng hợp oxygen.",
-      "Biến đổi hoá học."
+      "vaccine",
+      "kháng sinh",
+      "thuốc đông y",
+      "hóa trị"
     ],
-    "answer": 0
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 24,
-    "question": "Khi đun chảy bơ thực vật trong chảo nóng để rán bánh, đây là quá trình:",
+    "question": "Bộ xương người trưởng thành có khoảng bao nhiêu chiếc xương?",
     "options": [
-      "Sự phân huỷ bơ.",
-      "Biến đổi vật lí.",
-      "Phản ứng cháy.",
-      "Biến đổi hoá học tạo chất béo mới."
+      "200",
+      "206",
+      "208",
+      "216"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 25,
-    "question": "Sự đọng lại của các hạt nước bên ngoài vỏ ly nước đá lạnh là hiện tượng:",
+    "question": "Khi chạy, có bao nhiêu hệ cơ quan trong số sau cùng phối hợp hoạt động: vận động, tuần hoàn, hô hấp, nội tiết, bài tiết, thần kinh, sinh dục?",
     "options": [
-      "Hơi nước trong không khí gặp lạnh ngưng tụ.",
-      "Phản ứng hoá học giữa ly và nước.",
-      "Nước thấm qua thành ly.",
-      "Sự phân huỷ thuỷ tinh làm thoát nước."
+      "3",
+      "5",
+      "7",
+      "6"
     ],
-    "answer": 0
+    "answer": 3,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 26,
-    "question": "Trong các hiện tượng sau, hiện tượng nào là biến đổi vật lí?",
+    "question": "Ở người, khoang bụng và khoang ngực ngăn cách nhau bởi bộ phận nào?",
     "options": [
-      "Quả trứng bị thối.",
-      "Cơm để lâu bị ôi thiu.",
-      "Đốt cháy than đá.",
-      "Đun sôi nước."
+      "Cơ hoành",
+      "Cơ ức đòn chũm",
+      "Cơ liên sườn",
+      "Cơ nhị đầu"
     ],
-    "answer": 3
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 27,
-    "question": "Khi nhỏ vài giọt hydrochloric acid (HCl) vào vỏ trứng (thành phần chính CaCO3), thấy sủi bọt khí mạnh. Hiện tượng này chứng tỏ:",
+    "question": "Các cơ quan trong hệ hô hấp là",
     "options": [
-      "Vỏ trứng bị hoà tan vật lí.",
-      "Vỏ trứng bị nóng chảy.",
-      "Acid bị bay hơi do gặp nóng.",
-      "Đã xảy ra biến đổi hoá học tạo ra chất khí mới (CO2)."
+      "Phổi và thực quản",
+      "Đường dẫn khí và phổi",
+      "Thực quản, đường dẫn khí và phổi",
+      "Phổi, đường dẫn khí và thanh quản"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 28,
-    "question": "Đốt cháy một sợi dây magnesium (Mg) trong không khí, sinh ra bột màu trắng magnesium oxide (MgO) và phát ánh sáng chói. Đây là:",
+    "question": "Phát biểu nào sau đây SAI?",
     "options": [
-      "Sự đông đặc kim loại.",
-      "Quá trình ngưng tụ.",
-      "Biến đổi hoá học có sự toả nhiệt và phát sáng mạnh.",
-      "Biến đổi vật lí do Mg hoá hơi."
+      "Miễn dịch là khả năng cơ thể không mắc bệnh khi ở trong môi trường có mầm bệnh",
+      "Bạch cầu tham gia vào quá trình đông máu",
+      "Kháng thể và kháng nguyên tương tác theo nguyên tắc chìa khóa – ổ khóa",
+      "Kháng thể do một loại bạch cầu tiết ra, liên kết đặc hiệu với kháng nguyên"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 29,
-    "question": "Quá trình lên men rượu từ tinh bột gạo bao gồm các biến đổi chính thuộc loại:",
+    "question": "Về chảy máu động mạch, phát biểu nào sau đây SAI?",
     "options": [
-      "Sự bay hơi đơn thuần.",
-      "Biến đổi hoá học do enzyme phân giải và tạo chất mới (ethanol).",
-      "Chỉ là biến đổi vật lí.",
-      "Sự lắng đọng cơ học."
+      "Máu phun mạnh theo nhịp tim, màu đỏ tươi",
+      "Dùng băng ép trực tiếp là cách duy nhất để cầm máu động mạch hiệu quả",
+      "Khi sơ cứu cần buộc garô ở phía trên vị trí chảy máu",
+      "Nếu không sơ cứu kịp thời có thể dẫn đến sốc và tử vong"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 30,
-    "question": "Hiện tượng ngón tay bị đen khi dính phải dung dịch silver nitrate (AgNO3) khi để ngoài ánh sáng là do:",
+    "question": "Dấu hiệu nào cho thấy đã xảy ra phản ứng hóa học?",
     "options": [
-      "AgNO3 làm bẩn da tay vật lí.",
-      "Ánh sáng làm nóng chảy AgNO3.",
-      "Da tay bị đông đặc.",
-      "AgNO3 bị phân huỷ hoá học tạo bạc kim loại bám vào da."
+      "Chất bị thay đổi hình dạng",
+      "Có chất mới tạo thành",
+      "Chất chuyển từ thể rắn sang thể lỏng",
+      "Chất bị nghiền nhỏ"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 31,
-    "question": "Khi thả một viên sắt vào dung dịch copper(II) sulfate (CuSO4), sau một thời gian thấy có lớp kim loại màu đỏ bám ngoài viên sắt và màu xanh của dung dịch nhạt dần. Hiện tượng này là:",
+    "question": "Quá trình nào sau đây là biến đổi vật lí?",
     "options": [
-      "Sự ngưng tụ của chất lỏng.",
-      "Biến đổi hoá học (sắt đẩy đồng ra khỏi dung dịch muối).",
-      "Sự hoà tan cơ học.",
-      "Biến đổi vật lí dính bám."
+      "Nước đá tan thành nước lỏng",
+      "Đinh sắt để lâu ngoài không khí bị gỉ",
+      "Đốt cháy cồn",
+      "Thức ăn để lâu bị ôi thiu"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 32,
-    "question": "Nung nóng đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí carbon dioxide (CO2). Phản ứng này thuộc loại:",
+    "question": "Trong phản ứng hoá học, các phân tử biến đổi thành phân tử khác là do có sự thay đổi về",
     "options": [
-      "Biến đổi vật lí nóng chảy.",
-      "Sự bay hơi đá vôi.",
-      "Sự ngưng tụ khí.",
-      "Biến đổi hoá học."
+      "số nguyên tử của mỗi nguyên tố",
+      "khối lượng của mỗi nguyên tử",
+      "liên kết giữa các nguyên tử",
+      "số nguyên tố hóa học"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 33,
-    "question": "Dấu hiệu rõ nhất chứng tỏ việc đun nóng đường đến khi chuyển thành chất màu đen (than) và có mùi khét là biến đổi hoá học là gì?",
+    "question": "Phản ứng nào sau đây là phản ứng tỏa nhiệt?",
     "options": [
-      "Nhiệt độ bếp đun tăng lên.",
-      "Xuất hiện chất mới màu đen (carbon), không còn vị ngọt.",
-      "Thể tích đường thay đổi.",
-      "Đường bị chảy lỏng ra."
+      "Nung đá vôi",
+      "Đốt cháy than",
+      "Nhiệt phân potassium permanganate (KMnO₄)",
+      "Nhiệt phân copper(II) hydroxide"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 34,
-    "question": "Cây gỗ đổ lâu năm trong rừng bị vi sinh vật phân huỷ thành gỗ mục là ví dụ về:",
+    "question": "Khối lượng mol của khí carbon dioxide (CO₂) là (C = 12; O = 16)",
     "options": [
-      "Biến đổi hoá học.",
-      "Sự mài mòn cơ học.",
-      "Biến đổi vật lí do mưa bão.",
-      "Sự ngấm nước của gỗ."
+      "28 g/mol",
+      "32 g/mol",
+      "44 g/mol",
+      "60 g/mol"
     ],
-    "answer": 0
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 35,
-    "question": "Khi vôi sống (CaO) tiếp xúc với nước sinh ra vôi tôi (Ca(OH)2) và làm nước sôi ùng ục toả nhiệt rất mạnh. Quá trình này là:",
+    "question": "Số mol có trong 11,2 gam sắt (Fe = 56) là",
     "options": [
-      "Sự nóng chảy của CaO.",
-      "Sự hoà tan vật lí toả nhiệt.",
-      "Sự ngưng tụ hơi nước.",
-      "Biến đổi hoá học toả nhiệt mạnh."
+      "0,1 mol",
+      "0,2 mol",
+      "0,5 mol",
+      "2 mol"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 36,
-    "question": "Tấm sắt để ngoài sân vườn lâu ngày bị phủ một lớp gỉ màu nâu đỏ, xốp và dễ gãy. Hiện tượng này xảy ra do:",
+    "question": "Thể tích của 0,5 mol khí oxygen ở điều kiện chuẩn (25 °C, 1 bar) là",
     "options": [
-      "Sắt bị mài mòn vật lí.",
-      "Sắt bị co giãn vì nhiệt.",
-      "Sắt tác dụng với oxygen và hơi nước trong không khí tạo gỉ sắt.",
-      "Sắt bị dính bụi bẩn từ môi trường."
+      "11,2 lít",
+      "12 lít",
+      "12,395 lít",
+      "24,79 lít"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 37,
-    "question": "Quá trình quang hợp của cây xanh hấp thụ CO2 và nước dưới ánh sáng mặt trời tạo ra glucose và O2 là:",
+    "question": "Công thức tính tỉ khối của khí A đối với không khí là",
     "options": [
-      "Quá trình ngưng tụ.",
-      "Sự khuếch tán khí đơn thuần.",
-      "Biến đổi hoá học.",
-      "Biến đổi vật lí."
+      "d = M_A × 29",
+      "d = M_A / 29",
+      "d = 29 / M_A",
+      "d = M_A + 29"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 38,
-    "question": "Nhỏ dung dịch iodine (i-ốt) vào hồ tinh bột thấy xuất hiện màu xanh tím đặc trưng. Đây là hiện tượng:",
+    "question": "Khí nào sau đây nhẹ hơn không khí? (H = 1; C = 12; O = 16; S = 32; Cl = 35,5)",
     "options": [
-      "Biến đổi vật lí nhuộm màu.",
-      "Biến đổi hoá học.",
-      "Sự bay hơi của i-ốt.",
-      "Sự hoà tan tinh bột."
+      "H₂",
+      "CO₂",
+      "SO₂",
+      "Cl₂"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 39,
-    "question": "Quá trình đốt cháy dải ruy băng nylon toả mùi hôi nồng và để lại giọt nhựa đen cặn là:",
+    "question": "Số phân tử nước có trong 0,5 mol H₂O là",
     "options": [
-      "Biến đổi hoá học.",
-      "Sự mài mòn cơ học.",
-      "Biến đổi vật lí chảy dẻo.",
-      "Sự đông đặc nylon."
+      "6,022.10²³",
+      "3,011.10²³",
+      "1,2044.10²⁴",
+      "3,011.10²²"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 40,
-    "question": "Khi nhỏ dung dịch barium chloride (BaCl2) vào dung dịch sodium sulfate (Na2SO4) thấy xuất hiện kết tủa trắng không tan. Dấu hiệu này chứng tỏ:",
+    "question": "Khi đun nóng hóa chất lỏng trong ống nghiệm, cần",
     "options": [
-      "Chất lỏng bị đông đặc.",
-      "Dung dịch bị sôi.",
-      "Đã xảy ra phản ứng hoá học tạo chất kết tủa mới (BaSO4).",
-      "Sự lắng đọng vật lí của dung dịch."
+      "hướng miệng ống nghiệm về phía mình để dễ quan sát",
+      "hướng miệng ống nghiệm về phía không có người",
+      "đổ đầy hóa chất vào ống nghiệm",
+      "đun tập trung ở đáy ống nghiệm ngay từ đầu, không hơ nóng đều"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 41,
-    "question": "Khi đốt một ngọn nến paraffin, giai đoạn nào dưới đây biểu diễn sự biến đổi hoá học?",
+    "question": "Đơn vị đo khối lượng riêng trong hệ SI là",
     "options": [
-      "Nến paraffin rắn bị nóng chảy thành paraffin lỏng.",
-      "Paraffin lỏng thấm theo bấc nến và hoá hơi.",
-      "Hơi paraffin phản ứng với oxygen trong không khí tạo thành CO2 và hơi nước.",
-      "Cả giai đoạn nóng chảy và hoá hơi của nến."
+      "kg/m³",
+      "g/m³",
+      "N/m²",
+      "kg/m²"
     ],
-    "answer": 2
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 42,
-    "question": "Quá trình tiêu hoá thức ăn ở cơ thể người bao gồm cả biến đổi vật lí và hoá học. Quá trình nào dưới đây là biến đổi vật lí?",
+    "question": "Áp lực là",
     "options": [
-      "Răng nhai nghiền nát thức ăn và dạ dày co bóp đảo trộn thức ăn.",
-      "Enzyme amylase trong nước bọt phân giải tinh bột thành đường maltose.",
-      "Acid HCl trong dạ dày biến đổi tính chất thức ăn.",
-      "Enzyme pepsin trong dạ dày phân giải protein."
+      "lực ép có phương song song với mặt bị ép",
+      "lực ép có phương vuông góc với mặt bị ép",
+      "lực kéo của vật theo phương ngang",
+      "trọng lượng riêng của vật"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 43,
-    "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi hoá học là:",
+    "question": "Công thức tính áp suất là",
     "options": [
-      "Nước đóng đá, rác thải phân huỷ, cồn bay hơi.",
-      "Hoà tan đường, nướng bánh mì, xé giấy.",
-      "Cháy rừng, làm giấm ăn từ rượu, xích sắt bị gỉ.",
-      "Cắt tóc, luộc trứng chín, đập vỡ cốc thuỷ tinh."
+      "p = F.S",
+      "p = S/F",
+      "p = F/S",
+      "p = F + S"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 44,
-    "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi vật lí là:",
+    "question": "Lưỡi dao, lưỡi kéo thường được mài sắc để",
     "options": [
-      "Đốt than, đun nóng đường đến cháy đen, cơm bị thiu.",
-      "Sắt bị gỉ, nung vôi, băng tan.",
-      "Sữa chua lên men, phơi khô quần áo, cháy nến.",
-      "Đun nóng dầu ăn, hoà tan muối vào nước, uốn cong dây thép."
+      "giảm áp suất khi cắt",
+      "tăng áp suất do giảm diện tích bị ép",
+      "tăng diện tích bị ép",
+      "giảm áp lực tác dụng"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 45,
-    "question": "Khi quan sát hiện tượng đun sôi nước đường đến khi cạn khô thu được lớp cặn màu đen, học sinh kết luận:- Giai đoạn 1: Nước bay hơi là biến đổi vật lí.- Giai đoạn 2: Đường bị cháy đen là biến đổi hoá học.Kết luận trên đúng hay sai?",
+    "question": "Hệ cơ quan có chức năng vận chuyển chất dinh dưỡng, oxygen đến các tế bào là",
     "options": [
-      "Sai, giai đoạn 1 là hoá học, giai đoạn 2 là vật lí.",
-      "Sai, cả hai giai đoạn đều là biến đổi hoá học.",
-      "Đúng hoàn toàn.",
-      "Sai, cả hai giai đoạn đều là biến đổi vật lí."
+      "hệ tiêu hóa",
+      "hệ hô hấp",
+      "hệ tuần hoàn",
+      "hệ bài tiết"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 46,
-    "question": "Vì sao việc dùng nước tẩy Javel làm mất vết mực trên áo được xếp vào biến đổi hoá học?",
+    "question": "Hệ tuần hoàn ở người gồm",
     "options": [
-      "Vì chất trong nước tẩy phản ứng hoá học phá huỷ cấu trúc màu của mực.",
-      "Vì nước tẩy làm hoà tan mực vật lí.",
-      "Vì nước tẩy làm mực bay hơi vào không khí.",
-      "Vì nước tẩy làm mực đông đặc lại."
+      "tim và hệ mạch",
+      "tim và phổi",
+      "phổi và hệ mạch",
+      "gan và tim"
     ],
-    "answer": 0
+    "answer": 0,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 47,
-    "question": "Trong các hành vi sau, hành vi nào làm biến đổi chất từ hữu ích thành có hại do sự biến đổi hoá học xảy ra?",
+    "question": "Tế bào máu có chức năng vận chuyển O₂ và CO₂ là",
     "options": [
-      "Để thức ăn qua đêm ở nhiệt độ cao làm thức ăn bị thiu sinh độc tố.",
-      "Cắt nhỏ quần áo cũ làm giẻ lau.",
-      "Mài sắc dao làm bếp.",
-      "Làm rơi vỡ chiếc lọ hoa bằng sứ."
+      "bạch cầu",
+      "tiểu cầu",
+      "hồng cầu",
+      "tế bào lympho"
     ],
-    "answer": 0
+    "answer": 2,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 48,
-    "question": "Để phân biệt biến đổi vật lí và biến đổi hoá học trong phòng thí nghiệm một cách chính xác nhất, người ta căn cứ vào:",
+    "question": "Thành phần nào của máu tham gia vào quá trình đông máu?",
     "options": [
-      "Khối lượng của toàn bộ hệ thí nghiệm.",
-      "Sự xuất hiện của chất mới.",
-      "Thể tích và nhiệt độ của hệ phản ứng.",
-      "Màu sắc của các chất trước và sau thí nghiệm."
+      "Hồng cầu",
+      "Tiểu cầu",
+      "Bạch cầu",
+      "Huyết tương không có chất sinh tơ máu"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 49,
-    "question": "Trong quá trình sản xuất gang thép, quặng sắt được nung trong lò cao với than cốc ở nhiệt độ cao thu được sắt tự do. Quá trình này thuộc loại:",
+    "question": "Quá trình tiêu hóa và hấp thụ chất dinh dưỡng diễn ra chủ yếu ở",
     "options": [
-      "Quá trình đông đặc kim loại.",
-      "Quá trình khuếch tán cơ học.",
-      "Biến đổi vật lí nóng chảy quặng.",
-      "Biến đổi hoá học."
+      "dạ dày",
+      "ruột non",
+      "ruột già",
+      "thực quản"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   },
   {
     "id": 50,
-    "question": "Biện pháp nào sau đây dựa trên việc ngăn chặn biến đổi hoá học có hại xảy ra trong đời sống?",
+    "question": "Để phòng tránh cong vẹo cột sống, học sinh cần",
     "options": [
-      "Bào nhẵn bề mặt gỗ làm bàn ghế.",
-      "Xay xát gạo để loại bỏ vỏ cám.",
-      "Đập nhỏ đá hộc để xây nhà.",
-      "Sơn phủ bề mặt đồ vật bằng sắt để chống gỉ sét."
+      "mang cặp lệch về một bên vai",
+      "ngồi học đúng tư thế, mang vác vừa sức",
+      "ít vận động, ngồi nhiều",
+      "nằm đọc sách trong thời gian dài"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "KHTN",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – KHTN"
   }
 ]

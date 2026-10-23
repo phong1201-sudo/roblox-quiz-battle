@@ -1,552 +1,702 @@
 [
   {
     "id": 1,
-    "question": "Khối lượng riêng của một chất là gì?",
+    "question": "Lực lượng nào mới xuất hiện trong xã hội nước Anh vào cuối thế kỉ XVI – đầu thế kỉ XVII?",
     "options": [
-      "Trọng lượng của một mét khối chất đó.",
-      "Khối lượng của một thể tích bất kì chất đó.",
-      "Thể tích của một kilôgam chất đó.",
-      "Khối lượng của một đơn vị thể tích (1 m³) chất đó."
+      "Tăng lữ",
+      "Nông dân",
+      "Quý tộc mới",
+      "Thợ thủ công"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 2,
-    "question": "Công thức tính khối lượng riêng D theo khối lượng m và thể tích V là:",
+    "question": "Cách mạng tư sản Anh (1642 – 1688) diễn ra dưới hình thức nào?",
     "options": [
-      "D = P / V",
-      "D = V / m",
-      "D = m . V",
-      "D = m / V"
+      "Chiến tranh giải phóng dân tộc",
+      "Đấu tranh thống nhất đất nước",
+      "Cải cách, duy tân đất nước",
+      "Một cuộc nội chiến"
     ],
-    "answer": 3
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 3,
-    "question": "Đơn vị hợp pháp của khối lượng riêng trong hệ đo lường SI là:",
+    "question": "So với chế độ quân chủ chuyên chế, chế độ quân chủ lập hiến có điểm gì khác biệt?",
     "options": [
-      "kg/m²",
-      "kg/m³",
-      "N/m³",
-      "g/cm²"
+      "Không tồn tại ngôi vua",
+      "Quyền lực của vua bị hạn chế",
+      "Quyền lực của vua là tối cao và tuyệt đối",
+      "Không thừa nhận vai trò của Nghị viện"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 4,
-    "question": "Mối liên hệ giữa khối lượng riêng D và trọng lượng riêng d là gì?",
+    "question": "Văn kiện nào đã xác định quyền con người và quyền độc lập của 13 thuộc địa Anh ở Bắc Mỹ?",
     "options": [
-      "D = 10 . d",
-      "d = 10 . D",
-      "d = D + 10",
-      "d = D / 10"
+      "Tuyên ngôn Nhân quyền và Dân quyền",
+      "Tuyên ngôn Giải phóng",
+      "Tuyên ngôn Độc lập",
+      "Tuyên ngôn hòa bình"
     ],
-    "answer": 1
+    "answer": 2,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 5,
-    "question": "Đơn vị của trọng lượng riêng d là:",
+    "question": "Nguyên nhân sâu xa dẫn đến Chiến tranh giành độc lập của 13 thuộc địa Anh ở Bắc Mỹ là gì?",
     "options": [
-      "kg/m³",
-      "J/m³",
-      "N/m³",
-      "N/m²"
+      "Chính phủ Anh ra lệnh đóng cửa cảng Bô-xtơn sau sự kiện \"chè Bô-xtơn\"",
+      "Chính phủ Anh cho công ty Đông Ấn độc quyền buôn bán chè ở Bắc Mỹ",
+      "Thực dân Anh tấn công Bắc Mỹ khi các thuộc địa tuyên bố tách khỏi Anh",
+      "Chính sách cai trị của Anh xâm phạm quyền tự do và sự phát triển của các thuộc địa"
     ],
-    "answer": 2
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 6,
-    "question": "Biết khối lượng riêng của nhôm là 2700 kg/m³. Điều này có ý nghĩa gì?",
+    "question": "Phát minh đầu tiên trong cách mạng công nghiệp ở Anh là ở ngành nào?",
     "options": [
-      "1 m³ nhôm có khối lượng là 2700 kg.",
-      "2700 m³ nhôm nặng 1 kg.",
-      "1 kg nhôm có thể tích là 2700 m³.",
-      "1 cm³ nhôm nặng 2700 N."
+      "Ngành điện",
+      "Ngành dệt",
+      "Ngành thông tin",
+      "Ngành giao thông vận tải"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 7,
-    "question": "Một khối sắt có thể tích 0,02 m³ và khối lượng 156 kg. Khối lượng riêng của sắt là:",
+    "question": "Đến đầu thế kỉ XIX, nhờ cách mạng công nghiệp, nước Anh đã vươn lên trở thành",
     "options": [
-      "7800 kg/m³",
-      "780 kg/m³",
-      "3120 kg/m³",
-      "1560 kg/m³"
+      "nông trường của thế giới",
+      "cường quốc nông nghiệp",
+      "cường quốc quân sự",
+      "\"Công xưởng của thế giới\""
     ],
-    "answer": 0
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 8,
-    "question": "Khối lượng riêng của nước nguyên chất ở 4°C bằng bao nhiêu?",
+    "question": "Động cơ hơi nước là phát minh của ai?",
     "options": [
-      "10000 kg/m³",
-      "100 kg/m³",
-      "1 kg/m³",
-      "1000 kg/m³"
+      "Giêm Ha-gri-vơ",
+      "Ét-mơn Các-rai",
+      "Hen-ri Cót",
+      "Giêm Oát"
     ],
-    "answer": 3
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 9,
-    "question": "Để đo khối lượng riêng của một hòn đá nhỏ hình dạng bất kì, ta cần dùng những dụng cụ nào?",
+    "question": "Cách mạng công nghiệp ở Đức có những phát minh trong ngành nào?",
     "options": [
-      "Thước dây và lực kế.",
-      "Chỉ cần lực kế.",
-      "Chỉ cần bình chia độ.",
-      "Cân và bình chia độ (hoặc bình tràn)."
+      "Dệt may",
+      "Công nghiệp nhẹ",
+      "Luyện kim và hóa chất",
+      "Giao thông vận tải"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 10,
-    "question": "Muốn tăng khối lượng riêng của một khối khí nhốt trong bình kín, ta có thể:",
+    "question": "Cách mạng công nghiệp lần thứ nhất (cuối XVIII – đầu XIX) đã đưa con người bước sang thời đại",
     "options": [
-      "Bơm thêm cùng loại khí đó vào bình.",
-      "Đun nóng bình khí.",
-      "Làm lạnh bình khí.",
-      "Mở nắp bình cho khí thoát ra."
+      "\"Văn minh thông tin\"",
+      "\"Văn minh trí tuệ\"",
+      "\"Văn minh công nghiệp\"",
+      "\"Văn minh nông nghiệp\""
     ],
-    "answer": 0
+    "answer": 2,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 11,
-    "question": "Áp lực là gì?",
+    "question": "Kết quả của cuộc cách mạng công nghiệp ở Pháp là",
     "options": [
-      "Lực ma sát xuất hiện ở mặt tiếp xúc.",
-      "Lực kéo có phương song song với mặt bị ép.",
-      "Lực hút của Trái Đất tác dụng lên vật.",
-      "Lực ép có phương vuông góc với mặt bị ép."
+      "Kinh tế Pháp đứng đầu thế giới",
+      "Kinh tế Pháp đứng thứ hai thế giới",
+      "Kinh tế Pháp đứng thứ tư thế giới",
+      "Kinh tế Pháp đứng đầu châu Âu"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 12,
-    "question": "Công thức tính áp suất p trên diện tích bị ép S khi có áp lực F tác dụng là:",
+    "question": "Một thành tựu nổi bật trong cách mạng công nghiệp ở Mỹ là",
     "options": [
-      "p = F / S",
-      "p = F . S",
-      "p = F + S",
-      "p = S / F"
+      "Phát minh ra máy kéo sợi",
+      "Phát minh ra máy cán thép",
+      "Phát minh ra máy dệt",
+      "Phát minh ra máy tách hạt bông, máy thu hoạch bông"
     ],
-    "answer": 0
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 13,
-    "question": "Đơn vị của áp suất là Pascal (Pa). 1 Pa tương đương với:",
+    "question": "Ý nào KHÔNG phản ánh đúng chính sách KINH TẾ của thực dân phương Tây ở Đông Nam Á?",
     "options": [
-      "1 N.m",
-      "1 N/cm²",
-      "1 N/m²",
-      "1 kg/m²"
+      "Vơ vét, bóc lột người dân, chủ yếu xây dựng công nghiệp nhẹ",
+      "Mở rộng đường giao thông phục vụ khai thác kinh tế và đàn áp",
+      "Thực hiện chính sách nô dịch nhằm đồng hóa và ngu dân",
+      "Cướp đoạt ruộng đất lập đồn điền"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 14,
-    "question": "Để tăng áp suất tác dụng lên một bề mặt, ta có thể:",
+    "question": "Cách mạng tư sản Anh mang tính chất không triệt để vì",
     "options": [
-      "Giảm áp lực F và giảm diện tích S.",
-      "Giảm áp lực F và tăng diện tích bị ép S.",
-      "Tăng áp lực F và giảm diện tích bị ép S.",
-      "Tăng áp lực F và tăng diện tích S."
+      "Đưa giai cấp tư sản và quý tộc mới lên nắm quyền",
+      "Không xóa bỏ tận gốc chế độ phong kiến, chưa giải quyết ruộng đất cho nông dân",
+      "Xác lập nền cộng hòa",
+      "Mới chỉ mở đường cho chủ nghĩa tư bản phát triển"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 15,
-    "question": "Tại sao lưỡi dao, lưỡi kéo càng mỏng thì cắt đồ vật càng dễ dàng?",
+    "question": "Nguyên nhân trực tiếp dẫn đến Chiến tranh giành độc lập của 13 thuộc địa Anh ở Bắc Mỹ là",
     "options": [
-      "Vì diện tích bị ép S nhỏ giúp làm tăng áp suất.",
-      "Vì làm tăng diện tích bị ép S làm giảm áp suất.",
-      "Vì làm khối lượng lưỡi dao giảm đi.",
-      "Vì làm giảm lực tác dụng của tay."
+      "Thực dân Anh đặt ra thuế chè",
+      "Nhân dân thuộc địa muốn buôn bán với nhiều nước",
+      "Đại hội lục địa lần hai thông qua Tuyên ngôn Độc lập",
+      "Nhân dân Bô-xtơn tấn công tàu chở chè, Anh phong tỏa cảng và điều quân chiếm đóng"
     ],
-    "answer": 0
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 16,
-    "question": "Tại sao bánh xe máy kéo chở nặng lại thường làm rất to và rộng bản?",
+    "question": "Vì sao Anh là nước tiến hành cách mạng công nghiệp đầu tiên?",
     "options": [
-      "Để làm tăng áp lực tác dụng lên mặt đường.",
-      "Để làm tăng áp suất lên mặt đường.",
-      "Để tăng diện tích bị ép, giúp giảm áp suất lên mặt đường tránh bị lún.",
-      "Để bánh xe quay nhanh hơn."
+      "Có vốn và kĩ thuật",
+      "Có nguồn nhân công dồi dào",
+      "Anh có nhiều thuộc địa",
+      "Có vốn, nhân công và sự phát triển kĩ thuật"
     ],
-    "answer": 2
+    "answer": 3,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 17,
-    "question": "Một người đứng bằng cả hai chân tác dụng lên mặt đất áp suất p. Khi người đó co một chân lên thì áp suất tác dụng lên mặt đất sẽ:",
+    "question": "Sự kiện nào là đỉnh cao của cách mạng tư sản Anh?",
     "options": [
-      "Không đổi vì khối lượng không đổi.",
-      "Tăng lên gấp đôi.",
-      "Giảm đi một nửa.",
-      "Tăng lên gấp bốn lần."
+      "Vua Sác-lơ I bị bắt",
+      "Chế độ quân chủ lập hiến ra đời",
+      "Vua Sác-lơ I bị xử tử",
+      "Nền quân chủ chuyên chế được phục hồi"
     ],
-    "answer": 1
+    "answer": 2,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 18,
-    "question": "Tác dụng một áp lực F = 500 N lên diện tích bị ép S = 0,2 m². Áp suất gây ra là:",
+    "question": "Ý nghĩa thắng lợi của cách mạng tư sản Anh (1642 – 1688) là",
     "options": [
-      "250 Pa",
-      "2500 Pa",
-      "100 Pa",
-      "1000 Pa"
+      "Mở đường cho chủ nghĩa tư bản phát triển ở Anh",
+      "Thiết lập chế độ quân chủ chuyên chế",
+      "Lật đổ chế độ quân chủ lập hiến ở Anh",
+      "Đưa nhân dân lao động lên nắm chính quyền"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 19,
-    "question": "Đặt một khối bê tông nặng 4000 N lên sàn nhà, áp suất khối bê tông gây ra là 20 000 Pa. Diện tích tiếp xúc S là:",
+    "question": "Ý nào SAI khi nói về nguyên nhân Đông Nam Á trở thành đối tượng xâm lược của phương Tây?",
     "options": [
-      "5 m²",
-      "2 m²",
-      "0,2 m²",
-      "0,05 m²"
+      "Đông Nam Á giàu tài nguyên, đông dân",
+      "Chế độ phong kiến Đông Nam Á vừa mới thành lập còn non yếu",
+      "Chế độ phong kiến Đông Nam Á suy yếu, khủng hoảng",
+      "Đông Nam Á có vị trí chiến lược quan trọng"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 20,
-    "question": "Trường hợp nào sau đây có mục đích giảm áp suất?",
+    "question": "Sự kiện chính biến năm 1688 ở Anh, mở đường cho chế độ quân chủ lập hiến, được gọi là",
     "options": [
-      "Làm gai thô ráp trên đế giày.",
-      "Mài sắc lưỡi dao.",
-      "Đặt tấm gỗ phẳng rộng bên dưới chân đống gạch nặng.",
-      "Mài nhọn đầu đinh."
+      "Cuộc \"Cách mạng Vinh quang\"",
+      "Cuộc \"Cách mạng Hoa hồng\"",
+      "Cuộc \"Cách mạng Tháng Bảy\"",
+      "Cuộc \"Cách mạng Nhung\""
     ],
-    "answer": 2
+    "answer": 0,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 21,
-    "question": "Chất lỏng gây ra áp suất theo phương nào?",
+    "question": "Tuyên ngôn Độc lập của 13 thuộc địa Anh ở Bắc Mỹ được thông qua vào ngày",
     "options": [
-      "Chỉ theo phương nằm ngang tác dụng lên thành bình.",
-      "Chỉ theo phương thẳng đứng từ trên xuống.",
-      "Theo mọi phương lên đáy bình, thành bình và các vật trong lòng chất lỏng.",
-      "Chỉ tác dụng lên vật chìm ở đáy bình."
+      "14/7/1789",
+      "4/7/1776",
+      "3/9/1783",
+      "19/4/1775"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "Lịch sử",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 22,
-    "question": "Công thức tính áp suất chất lỏng p tại một điểm ở độ sâu h là:",
+    "question": "Việt Nam nằm ở khu vực nào?",
     "options": [
-      "p = d / h",
-      "p = D . h",
-      "p = d . S",
-      "p = d . h"
+      "Đông Á",
+      "Đông Nam Á",
+      "Nam Á",
+      "Tây Nam Á"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 23,
-    "question": "Trong công thức p = d . h của áp suất chất lỏng, h đại diện cho:",
+    "question": "Việt Nam có chung đường biên giới trên đất liền với những quốc gia nào?",
     "options": [
-      "Đường kính của bình chứa.",
-      "Độ sâu từ mặt thoáng chất lỏng đến điểm tính áp suất.",
-      "Khoảng cách từ điểm tính áp suất đến đáy bình.",
-      "Chiều cao toàn phần của cột chất lỏng."
+      "Trung Quốc, Lào, Thái Lan",
+      "Trung Quốc, Lào, Campuchia",
+      "Trung Quốc, Campuchia, Thái Lan",
+      "Lào, Campuchia, Mi-an-ma"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 24,
-    "question": "Tại sao chân đập thuỷ điện lại luôn được xây rộng và dày hơn rất nhiều so với đỉnh đập?",
+    "question": "Phần đất liền nước ta nằm trong khoảng vĩ độ nào?",
     "options": [
-      "Vì nước ở trên đỉnh đập chảy mạnh hơn nước ở đáy đập.",
-      "Để làm đẹp cho công trình.",
-      "Để tiết kiệm vật liệu xây dựng.",
-      "Vì càng xuống sâu áp suất chất lỏng càng lớn, thành đập cần chịu lực lớn hơn."
+      "Từ 8°34'B đến 23°23'B",
+      "Từ 8°34'B đến 23°23'N",
+      "Từ 6°34'B đến 21°23'B",
+      "Từ 10°34'B đến 25°23'B"
     ],
-    "answer": 3
+    "answer": 0,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 25,
-    "question": "Một thợ lặn ở độ sâu 30 m dưới mặt nước biển. Cho trọng lượng riêng của nước biển là 10 300 N/m³. Áp suất nước biển tác dụng lên thợ lặn là:",
+    "question": "Vị trí địa lí làm cho thiên nhiên Việt Nam mang tính chất chủ yếu nào?",
     "options": [
-      "309 000 Pa",
-      "30 900 Pa",
-      "343,3 Pa",
-      "10 330 Pa"
+      "Ôn đới hải dương",
+      "Nhiệt đới gió mùa",
+      "Cận cực lục địa",
+      "Hoang mạc nhiệt đới"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 26,
-    "question": "Hai bình A và B chứa cùng một loại nước. Bình A có cột nước cao 0,8 m, bình B có cột nước cao 0,5 m. So sánh áp suất đáy pA và pB:",
+    "question": "Lãnh thổ Việt Nam gồm các bộ phận nào?",
     "options": [
-      "pA < pB",
-      "pA = pB",
-      "pA > pB",
-      "Không so sánh được."
+      "Vùng đất và vùng biển",
+      "Vùng đất và vùng trời",
+      "Vùng đất, vùng biển và vùng trời",
+      "Vùng biển và vùng trời"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 27,
-    "question": "Trong một bình thông nhau chứa cùng một chất lỏng đứng yên, mực chất lỏng ở các nhánh như thế nào?",
+    "question": "Biển Đông có vai trò như thế nào đối với vị trí địa lí Việt Nam?",
     "options": [
-      "Luôn ở cùng một độ cao.",
-      "Tùy thuộc vào hình dạng của các nhánh.",
-      "Ở nhánh to mực nước cao hơn nhánh nhỏ.",
-      "Ở nhánh nhỏ mực nước cao hơn nhánh to."
+      "Làm nước ta hoàn toàn tách biệt với các quốc gia khác",
+      "Tạo điều kiện phát triển kinh tế biển và giao lưu quốc tế",
+      "Làm khí hậu nước ta mang tính chất ôn đới",
+      "Làm giảm sự đa dạng của thiên nhiên"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 28,
-    "question": "Thiết bị/ứng dụng nào sau đây hoạt động dựa trên nguyên lí bình thông nhau?",
+    "question": "Đặc điểm nổi bật của địa hình Việt Nam là gì?",
     "options": [
-      "Khinh khí cầu bay trên không.",
-      "Ống thuỷ (ống nhựa trong chứa nước) thợ xây dùng để xác định các điểm cùng độ cao.",
-      "Ống hút dùng để uống nước.",
-      "Đèn xì hơi gas."
+      "Chủ yếu là đồng bằng",
+      "Chủ yếu là đồi núi nhưng phần lớn là đồi núi thấp",
+      "Chủ yếu là núi cao",
+      "Hoàn toàn là địa hình cao nguyên"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 29,
-    "question": "Nguyên lí Pascal áp dụng cho chất lỏng phát biểu rằng:",
+    "question": "Đồi núi chiếm khoảng bao nhiêu diện tích phần đất liền nước ta?",
     "options": [
-      "Áp suất chất lỏng phụ thuộc vào hình dạng bình chứa.",
-      "Chất lỏng chỉ truyền áp suất theo phương đứng.",
-      "Áp suất tăng thêm tác dụng lên chất lỏng kín được truyền nguyên vẹn theo mọi hướng.",
-      "Áp suất tác dụng lên chất lỏng bị giảm dần theo độ sâu."
+      "1/4",
+      "1/3",
+      "3/4",
+      "1/2"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 30,
-    "question": "Một máy nén dùng chất lỏng có diện tích pít-tông nhỏ s = 2 cm², pít-tông lớn S = 100 cm². Tác dụng lực f = 100 N lên pít-tông nhỏ thì lực nâng F ở pít-tông lớn là:",
+    "question": "Hai hướng chính của địa hình Việt Nam là gì?",
     "options": [
-      "50 N",
-      "5000 N",
-      "200 N",
-      "1000 N"
+      "Tây bắc – đông nam và vòng cung",
+      "Đông bắc – tây nam và đông – tây",
+      "Đông – tây và bắc – nam",
+      "Bắc – nam và vòng cung"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 31,
-    "question": "Khí quyển xung quanh Trái Đất gây ra áp suất theo hướng nào?",
+    "question": "Hướng núi vòng cung thể hiện rõ nhất ở khu vực nào?",
     "options": [
-      "Chỉ tác dụng lên bề mặt đại dương.",
-      "Theo mọi hướng lên mọi vật trên Trái Đất.",
-      "Chỉ tác dụng theo phương ngang.",
-      "Chỉ tác dụng từ trên xuống mặt đất."
+      "Tây Bắc",
+      "Đông Bắc",
+      "Trường Sơn Bắc",
+      "Trường Sơn Nam"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 32,
-    "question": "Hiện tượng nào sau đây chứng tỏ sự tồn tại của áp suất khí quyển?",
+    "question": "Từ tây sang đông, nước ta có các dạng địa hình nào?",
     "options": [
-      "Nước chảy từ trên cao xuống.",
-      "Quả bóng cao su bơm căng bị xẹp khi bấm vào.",
-      "Hút bớt không khí trong hộp sữa giấy làm hộp bị móp vào mọi phía.",
-      "Đá chìm xuống đáy ly nước."
+      "Đồng bằng, núi đồi, bờ biển, thềm lục địa",
+      "Thềm lục địa, bờ biển, đồng bằng, núi đồi",
+      "Bờ biển, thềm lục địa, núi đồi, đồng bằng",
+      "Núi đồi, đồng bằng, bờ biển, thềm lục địa"
     ],
-    "answer": 2
+    "answer": 3,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 33,
-    "question": "Càng lên cao so với mặt nước biển, áp suất khí quyển sẽ:",
+    "question": "Nguyên nhân chủ yếu hình thành địa hình các-xtơ ở nước ta là gì?",
     "options": [
-      "Càng tăng lên.",
-      "Tăng rồi lại giảm.",
-      "Không thay đổi.",
-      "Càng giảm đi."
+      "Hoạt động của núi lửa",
+      "Hiện tượng băng tan",
+      "Sự hòa tan đá vôi của nước",
+      "Sự phun trào của mắc ma"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 34,
-    "question": "Thí nghiệm lịch sử nổi tiếng minh chứng cho sức mạnh áp suất khí quyển sử dụng hai bán cầu bằng đồng là thí nghiệm nào?",
+    "question": "Quá trình nào tác động mạnh mẽ đến sự biến đổi địa hình nước ta?",
     "options": [
-      "Thí nghiệm Torricelli.",
-      "Thí nghiệm Galileo.",
-      "Thí nghiệm Archimedes.",
-      "Thí nghiệm bán cầu Magdeburg."
+      "Xâm thực và bồi tụ",
+      "Hoạt động của núi lửa",
+      "Đóng băng và băng tan",
+      "Băng hà xâm thực"
     ],
-    "answer": 3
+    "answer": 0,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 35,
-    "question": "Khi leo lên núi cao hoặc đi máy bay cất cánh nhanh, ta thường có cảm giác bị ù tai. Nguyên nhân là do:",
+    "question": "Tác động của khí hậu nhiệt đới gió mùa tới địa hình Việt Nam là",
     "options": [
-      "Gió trên núi cao quá mạnh.",
-      "Áp suất khí quyển bên ngoài giảm đột ngột, tạo chênh lệch với áp suất không khí trong tai giữa.",
-      "Nhiệt độ trên cao quá thấp.",
-      "Áp suất khí quyển bên ngoài tăng nhanh."
+      "Quá trình xâm thực ở miền núi diễn ra mạnh",
+      "Địa hình hoàn toàn không bị biến đổi",
+      "Quá trình bồi tụ không xảy ra ở đồng bằng",
+      "Địa hình chỉ chịu tác động của nội lực"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 36,
-    "question": "Áp suất khí quyển tiêu chuẩn ở mặt nước biển có giá trị khoảng:",
+    "question": "Địa hình nước ta được chia thành các khu vực lớn nào?",
     "options": [
-      "760 cmHg",
-      "76 cmHg (khoảng 101 300 Pa)",
-      "10 000 Pa",
-      "100 Pa"
+      "Đồi núi, đồng bằng, bờ biển và thềm lục địa",
+      "Đồi núi, đồng bằng, bờ biển",
+      "Đồng bằng, bờ biển, thềm lục địa",
+      "Đồi núi, bờ biển, thềm lục địa"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 37,
-    "question": "Dụng cụ dùng để đo áp suất khí quyển được gọi là:",
+    "question": "Có bao nhiêu nhận định ĐÚNG về khu vực đồng bằng? (a) ĐB sông Cửu Long rộng nhất, có hệ thống đê ven sông ngăn lũ; (b) ĐB ven biển miền Trung hẹp ngang, bị núi chia cắt thành nhiều đồng bằng nhỏ; (c) ĐB châu thổ gồm ĐB sông Hồng, ĐB sông Cửu Long và dải ĐB duyên hải miền Trung; (d) ĐB thuận lợi phát triển cây công nghiệp hằng năm, cây ăn quả, thủy sản.",
     "options": [
-      "Nhiệt kế.",
-      "Khí áp kế.",
-      "Lực kế.",
-      "Ampe kế."
+      "1",
+      "2",
+      "3",
+      "4"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 38,
-    "question": "Tại sao các phi hành gia khi làm việc ngoài không gian bắt buộc phải mặc trang phục vũ trụ đặc biệt?",
+    "question": "Có bao nhiêu nhận định ĐÚNG về khu vực đồi núi? (a) Vùng núi Đông Bắc chủ yếu là núi cao với dãy Hoàng Liên Sơn; (b) Đồi núi chiếm ¾ diện tích, chủ yếu là đồi núi cao trên 2000 m; (c) Trường Sơn Nam nổi bật với các cao nguyên đất đỏ badan rộng lớn, bằng phẳng; (d) Địa hình các-xtơ phổ biến ở đồi núi, tạo nhiều hang động đẹp.",
     "options": [
-      "Để tránh bị mưa rơi vào người.",
-      "Để chống lại lực hút quá lớn của Trái Đất.",
-      "Chỉ để giúp phi hành gia dễ di chuyển.",
-      "Để giữ ấm và duy trì áp suất ổn định cho cơ thể vì ngoài không gian là môi trường chân không."
+      "1",
+      "2",
+      "3",
+      "4"
     ],
-    "answer": 3
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 39,
-    "question": "Một vật nhúng chìm trong chất lỏng chịu tác dụng của lực đẩy Archimedes có phương và chiều như thế nào?",
+    "question": "Về ảnh hưởng của vị trí địa lí tới thiên nhiên nước ta, nhận định nào SAI?",
     "options": [
-      "Phương thẳng đứng, chiều từ trên xuống dưới.",
-      "Phương thẳng đứng, chiều từ dưới lên trên.",
-      "Phương xiên theo góc nhúng vật.",
-      "Phương nằm ngang, chiều từ trái sang phải."
+      "Thiên nhiên nhiệt đới ẩm gió mùa, chịu ảnh hưởng sâu sắc của biển",
+      "Rừng nhiệt đới gió mùa trên đất phù sa là cảnh quan tiêu biểu",
+      "Khí hậu phân hóa theo bắc – nam, đông – tây và theo độ cao",
+      "Sinh vật và đất phong phú, đa dạng"
     ],
-    "answer": 1
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 40,
-    "question": "Công thức tính độ lớn lực đẩy Archimedes FA là:",
+    "question": "Về đặc điểm chung của địa hình Việt Nam, nhận định nào SAI?",
     "options": [
-      "FA = d . V",
-      "FA = m . V",
-      "FA = d / V",
-      "FA = D . V"
+      "Địa hình đồi núi chiếm ưu thế",
+      "Có hai hướng chính là tây – nam, đông – bắc và vòng cung",
+      "Địa hình có tính chất phân bậc khá rõ rệt",
+      "Chịu tác động của khí hậu nhiệt đới ẩm gió mùa và con người"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 41,
-    "question": "Trong công thức FA = d . V, V là đại diện cho:",
+    "question": "Diện tích phần đất liền của Việt Nam khoảng",
     "options": [
-      "Thể tích của bình chứa chất lỏng.",
-      "Thể tích toàn phần của vật.",
-      "Thể tích phần chất lỏng bị vật chiếm chỗ.",
-      "Khối lượng phần lỏng dâng lên."
+      "231 nghìn km²",
+      "331 nghìn km²",
+      "431 nghìn km²",
+      "1 triệu km²"
     ],
-    "answer": 2
+    "answer": 1,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 42,
-    "question": "Lực đẩy Archimedes tác dụng lên vật phụ thuộc vào những yếu tố nào?",
+    "question": "Đỉnh núi cao nhất Việt Nam là",
     "options": [
-      "Trọng lượng riêng của chất lỏng và thể tích phần chất lỏng bị chiếm chỗ.",
-      "Trọng lượng riêng của vật và nhiệt độ môi trường.",
-      "Khối lượng của vật và độ sâu của vật.",
-      "Hình dạng của vật và chất làm nên vật."
+      "Phan-xi-păng",
+      "Ngọc Linh",
+      "Pu Si Lung",
+      "Bà Đen"
     ],
-    "answer": 0
+    "answer": 0,
+    "subject": "Địa lí",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 43,
-    "question": "Thả một quả cầu kim loại chìm hoàn toàn vào trong nước. Khi thả quả cầu ở độ sâu 1 m và độ sâu 3 m thì lực đẩy Archimedes tác dụng lên nó sẽ:",
+    "question": "Những giá trị vật chất, tinh thần trong lịch sử lâu dài của một dân tộc, được truyền từ thế hệ này sang thế hệ khác là",
     "options": [
-      "Giảm dần khi xuống sâu.",
-      "Bằng nhau.",
-      "Ở độ sâu 3 m lớn hơn gấp 3 lần.",
-      "Ở độ sâu 1 m lớn hơn."
+      "Truyền thống dân tộc",
+      "Truyền thống dòng họ",
+      "Truyền thống gia đình",
+      "Truyền thống quê hương"
     ],
-    "answer": 1
+    "answer": 0,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 44,
-    "question": "Gọi P là trọng lượng của vật, FA là lực đẩy Archimedes. Điều kiện để vật chìm xuống đáy chất lỏng là:",
+    "question": "Cần tôn trọng sự đa dạng văn hóa của các dân tộc vì mỗi dân tộc đều",
     "options": [
-      "P > FA",
-      "P = 0,5 FA",
-      "P < FA",
-      "P = FA"
+      "giống nhau về văn hóa, ẩm thực, trang phục",
+      "có những nét đẹp văn hóa, truyền thống riêng",
+      "giống nhau về trang phục và lễ hội",
+      "có nghề thủ công truyền thống giống nhau"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 45,
-    "question": "Điều kiện để một vật lơ lửng trong lòng chất lỏng là:",
+    "question": "Biểu hiện nào KHÔNG thể hiện sự tự hào về truyền thống dân tộc?",
     "options": [
-      "Hình dạng vật phải là khối cầu.",
-      "Trọng lượng riêng dvật > dchất lỏng.",
-      "P < FA.",
-      "Trọng lượng P của vật bằng lực đẩy Archimedes FA."
+      "Học hành chăm chỉ, đạt nhiều giải thưởng",
+      "Chung tay xoa dịu mất mát cùng đồng bào gặp lũ lụt",
+      "Tham gia nghĩa vụ quân sự",
+      "Xuyên tạc, châm biếm các sự kiện lịch sử"
     ],
-    "answer": 3
+    "answer": 3,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 46,
-    "question": "Khi một vật nổi trên mặt chất lỏng và đứng yên, lực đẩy Archimedes FA có độ lớn như thế nào so với trọng lượng P của vật?",
+    "question": "Ca dao \"Muốn no thì phải chăm làm / Một hạt thóc vàng, chín giọt mồ hôi\" phản ánh đức tính nào?",
     "options": [
-      "Đúng bằng trọng lượng P của vật.",
-      "Lớn hơn trọng lượng P của vật.",
-      "Bằng 0.",
-      "Nhỏ hơn trọng lượng P của vật."
+      "Tinh thần hiếu học",
+      "Lao động cần cù",
+      "Tinh thần đoàn kết",
+      "Lao động sáng tạo"
     ],
-    "answer": 0
+    "answer": 1,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 47,
-    "question": "Một miếng gỗ nổi trên mặt nước. Nếu thả miếng gỗ đó vào dầu hỏa (có trọng lượng riêng nhỏ hơn nước) thì phần gỗ chìm trong dầu hỏa sẽ:",
+    "question": "Tình huống nào thể hiện tôn trọng sự đa dạng của các dân tộc?",
     "options": [
-      "Nhiều hơn phần gỗ chìm trong nước.",
-      "Không thay đổi.",
-      "Miếng gỗ sẽ bị chìm hoàn toàn xuống đáy.",
-      "Ít hơn phần gỗ chìm trong nước."
+      "H sưu tầm tư liệu để giới thiệu truyền thống Việt Nam với bạn bè",
+      "M nói các nước đang phát triển không có gì đáng học vì lạc hậu",
+      "G nói chỉ nên học hỏi các nước châu Âu và châu Mỹ",
+      "K khuyên bạn chỉ xem giải trí Hàn Quốc thay vì của Việt Nam"
     ],
-    "answer": 0
+    "answer": 0,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 48,
-    "question": "Nguyên tắc giúp tàu thuỷ bằng thép (chất liệu nặng hơn nước rất nhiều) vẫn có thể nổi trên mặt nước biển là gì?",
+    "question": "Lao động cần cù được thể hiện qua hành vi nào?",
     "options": [
-      "Tàu được thiết kế rỗng bên trong nên trọng lượng riêng trung bình của cả con tàu nhỏ hơn trọng lượng riêng của nước biển.",
-      "Do muối biển nâng tàu lên.",
-      "Nhờ chân vịt đẩy tàu nổi lên.",
-      "Tàu được sơn lớp sơn chống thấm đặc biệt."
+      "Làm việc thường xuyên, không ngừng nỗ lực vượt khó",
+      "Cải tiến phương pháp để nâng cao hiệu quả",
+      "Tìm ra cách làm mới để có kết quả cao hơn",
+      "Tìm cách giải quyết tối ưu để nâng chất lượng"
     ],
-    "answer": 0
+    "answer": 0,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 49,
-    "question": "Thể tích của một khối sắt là 0,002 m³. Nhúng chìm khối sắt này vào trong nước có d = 10 000 N/m³. Lực đẩy Archimedes tác dụng lên khối sắt là:",
+    "question": "Hùng và các bạn phân công hợp lí, thu gom rác nhanh hơn và phân loại để tái chế. Nhận định nào SAI?",
     "options": [
-      "200 N",
-      "2 N",
-      "20 N",
-      "5 N"
+      "Hùng và các bạn đã vận dụng sáng tạo để nâng cao hiệu quả lao động",
+      "Lao động dù đơn giản hay phức tạp đều cần nghiêm túc, trách nhiệm",
+      "Chỉ cần hoàn thành việc được giao, không cần quan tâm cách thức và hiệu quả",
+      "Phân công hợp lí, tìm cách làm hiệu quả là biểu hiện đáng khuyến khích"
     ],
-    "answer": 2
+    "answer": 2,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   },
   {
     "id": 50,
-    "question": "Thả một hòn đá có khối lượng 0,5 kg vào bình chia độ làm nước dâng lên 200 cm³. Lực đẩy Archimedes tác dụng lên hòn đá là (cho dnước = 10 000 N/m³):",
+    "question": "Về \"Ngày hội văn hóa các dân tộc\" ở trường Minh, nhận định nào SAI?",
     "options": [
-      "20 N",
-      "0,2 N",
-      "5 N",
-      "2 N"
+      "Tìm hiểu văn hóa dân tộc khác thể hiện tôn trọng sự đa dạng văn hóa",
+      "Mỗi dân tộc có nét văn hóa riêng, tạo nên sự phong phú của cộng đồng",
+      "Chỉ những phong tục giống dân tộc mình mới đáng được tôn trọng",
+      "Tôn trọng sự đa dạng giúp tăng đoàn kết, hiểu biết giữa mọi người"
     ],
-    "answer": 3
+    "answer": 2,
+    "subject": "GDCD",
+    "batch": 1,
+    "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
   }
 ]

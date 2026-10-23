@@ -1,1658 +1,2108 @@
 {
-  "thunder": [
-    {
-      "id": 1,
-      "question": "Biến đổi vật lí là hiện tượng trong đó:",
-      "options": [
-        "Phân tử chất này biến đổi thành phân tử chất khác.",
-        "Chất chỉ biến đổi về trạng thái, hình dạng nhưng vẫn giữ nguyên bản chất là chất ban đầu.",
-        "Chất bị biến đổi thành chất mới có tính chất hoàn toàn khác.",
-        "Nguyên tử bị thay đổi cấu trúc hạt nhân."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 2,
-      "question": "Biến đổi hoá học khác với biến đổi vật lí ở điểm cốt lõi nào sau đây?",
-      "options": [
-        "Có sự thay đổi về thể tích của chất.",
-        "Có sự tạo thành chất mới có tính chất khác với chất ban đầu.",
-        "Có sự thay đổi về trạng thái tồn tại (rắn, lỏng, khí).",
-        "Có sự thay đổi về nhiệt độ môi trường xung quanh."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 3,
-      "question": "Quá trình nào sau đây mô tả sự biến đổi vật lí?",
-      "options": [
-        "Đốt than củi sinh ra khí carbon dioxide và tro bếp.",
-        "Sắt để trong không khí ẩm lâu ngày bị gỉ đỏ.",
-        "Nước đá tan chảy thành nước lỏng khi để ở nhiệt độ phòng.",
-        "Cho vôi sống vào nước tạo thành vôi tôi toả nhiều nhiệt."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 4,
-      "question": "Hiện tượng nào dưới đây thể hiện sự biến đổi hoá học?",
-      "options": [
-        "Thức ăn để lâu ngày bị ôi thiu và có mùi hôi.",
-        "Mùi thơm của hoa quả lan toả khắp phòng.",
-        "Cắt nhỏ dây sắt thành các đoạn ngắn.",
-        "Hoà tan muối ăn vào nước thu được nước muối."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 5,
-      "question": "Trong một phản ứng hoá học, bản chất của sự biến đổi là gì?",
-      "options": [
-        "Số lượng các nguyên tử trong phân tử bị giảm đi.",
-        "Sự phá vỡ liên kết giữa các nguyên tử cũ và hình thành liên kết mới.",
-        "Sự tăng lên về số lượng nguyên tố hoá học.",
-        "Sự thay đổi khối lượng của các nguyên tử."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 6,
-      "question": "Dấu hiệu nào sau đây KHÔNG PHẢI là dấu hiệu nhận biết có biến đổi hoá học xảy ra?",
-      "options": [
-        "Chất chuyển từ trạng thái thể lỏng sang thể khí do sôi.",
-        "Có sự thay đổi màu sắc hoặc toả nhiệt, phát sáng.",
-        "Xuất hiện chất khí bốc lên.",
-        "Xuất hiện chất kết tủa không tan."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 7,
-      "question": "Quá trình nào sau đây KHÔNG tạo ra chất mới?",
-      "options": [
-        "Cô cạn dung dịch đường thu được đường tinh thể.",
-        "Lên men rượu nếp thành giấm.",
-        "Nung nóng đá vôi thu được vôi sống và khí carbon dioxide.",
-        "Đốt cháy khí methane toả nhiệt mạnh."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 8,
-      "question": "Khi cồn ethyl cháy trong không khí sinh ra khí carbon dioxide và hơi nước, quá trình này là:",
-      "options": [
-        "Biến đổi hoá học vì cồn phản ứng với oxygen tạo chất mới.",
-        "Quá trình quang hợp.",
-        "Biến đổi vật lí vì cồn bay hơi trước khi cháy.",
-        "Biến đổi sinh học không có phản ứng."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 9,
-      "question": "Khi hoà tan đường vào nước ấm rồi khuấy đều, ta thu được nước đường ngọt. Đây là hiện tượng:",
-      "options": [
-        "Phản ứng phân huỷ.",
-        "Phản ứng toả nhiệt hoá học.",
-        "Biến đổi hoá học.",
-        "Biến đổi vật lí."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 10,
-      "question": "Phát biểu nào sau đây đúng khi nói về sự biến đổi của chất?",
-      "options": [
-        "Biến đổi hoá học không bao giờ kèm theo sự toả nhiệt hay thu nhiệt.",
-        "Trong biến đổi vật lí, liên kết giữa các phân tử có thể thay đổi nhưng bản chất phân tử giữ nguyên.",
-        "Trong biến đổi hoá học, liên kết giữa các nguyên tử không bị phá vỡ.",
-        "Trong biến đổi vật lí, hạt phân tử bị phá vỡ hoàn toàn."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 11,
-      "question": "Trong các quá trình dưới đây, quá trình nào thuộc loại biến đổi hoá học?",
-      "options": [
-        "Giặt quần áo phơi khô.",
-        "Nước sôi bay hơi.",
-        "Cột sắt bị gỉ.",
-        "Băng tan ở hai cực Trái Đất."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 12,
-      "question": "Khi đun nóng thuỷ tinh mềm ra rồi thổi thành các bình thuỷ tinh có hình dạng khác nhau, đây là hiện tượng:",
-      "options": [
-        "Phản ứng oxi hoá.",
-        "Biến đổi hoá học.",
-        "Sự phân huỷ thuỷ tinh.",
-        "Biến đổi vật lí."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 13,
-      "question": "Đập nhỏ một cục than đá thành các hạt than nhỏ. Quá trình này thể hiện:",
-      "options": [
-        "Sự biến đổi vật lí vì chỉ thay đổi kích thước, bản chất chất không đổi.",
-        "Sự đốt cháy than.",
-        "Phản ứng phân huỷ than.",
-        "Sự biến đổi hoá học vì tạo thành các hạt than nhỏ."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 14,
-      "question": "Hiện tượng sương mù xuất hiện vào buổi sáng sớm mùa đông là ví dụ về:",
-      "options": [
-        "Biến đổi vật lí.",
-        "Sự phân huỷ nước trong khí quyển.",
-        "Phản ứng kết tủa hoá học.",
-        "Biến đổi hoá học của hơi nước thành chất mới."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 15,
-      "question": "Khi xịt nước hoa trong phòng, sau vài giây cả phòng đều có mùi thơm. Hiện tượng này là do:",
-      "options": [
-        "Nước hoa bị phân huỷ thành chất khí thơm.",
-        "Sự khuếch tán và bay hơi.",
-        "Phản ứng cháy của hương liệu.",
-        "Nước hoa tác dụng hoá học với không khí."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 16,
-      "question": "Thả một viên vitamin C sủi vào ly nước thấy có sủi bọt khí mạnh và ly nước lạnh đi. Đây là hiện tượng:",
-      "options": [
-        "Chỉ đơn thuần là biến đổi vật lí.",
-        "Sự đông đặc dung dịch.",
-        "Biến đổi hoá học.",
-        "Sự bay hơi của nước."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 17,
-      "question": "Quá trình làm muối ăn từ nước biển bằng phương pháp phơi nắng dựa trên biến đổi nào?",
-      "options": [
-        "Phản ứng oxi hoá dung dịch muối.",
-        "Biến đổi hoá học làm nước biển biến thành muối.",
-        "Biến đổi vật lí.",
-        "Sự kết tủa do phản ứng hoá học."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 18,
-      "question": "Hành vi nào sau đây chỉ gây ra sự biến đổi vật lí đối với tờ giấy?",
-      "options": [
-        "Đổ sulfuric acid đặc làm thủng và đen tờ giấy.",
-        "Tẩy màu chữ trên tờ giấy bằng nước Javel.",
-        "Dùng kéo cắt tờ giấy làm đôi.",
-        "Đốt tờ giấy thành tro đen."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 19,
-      "question": "Hiện tượng mỡ heo bị đông lại khi để ở nhiệt độ lạnh mùa đông thuộc loại:",
-      "options": [
-        "Biến đổi hoá học.",
-        "Sự oxi hoá chất béo.",
-        "Sự phân huỷ chất béo.",
-        "Biến đổi vật lí."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 20,
-      "question": "Khi quấn dây đồng thành cuộn xoắn, đặc điểm nào của đồng không thay đổi?",
-      "options": [
-        "Độ cong của dây.",
-        "Thành phần hoá học và bản chất kim loại đồng.",
-        "Hình dạng ngoài của dây.",
-        "Khoảng cách giữa hai đầu dây."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 21,
-      "question": "Hiện tượng sáp nến chảy lỏng ra khi gặp nhiệt độ cao từ ngọn lửa thuộc loại:",
-      "options": [
-        "Biến đổi hoá học.",
-        "Sự cháy tạo khí.",
-        "Phản ứng nhiệt phân.",
-        "Biến đổi vật lí."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 22,
-      "question": "Nhôm (aluminium) được cán mỏng làm màng bọc thực phẩm là ứng dụng của:",
-      "options": [
-        "Phản ứng hoá học của nhôm.",
-        "Biến đổi vật lí nhờ tính dẻo của nhôm.",
-        "Sự biến đổi cấu trúc hạt nhân nhôm.",
-        "Tính chất hoá học lưỡng tính."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 23,
-      "question": "Quá trình nén khí oxygen vào bình thép ở áp suất cao là hiện tượng:",
-      "options": [
-        "Biến đổi vật lí.",
-        "Sự phân huỷ khí oxygen.",
-        "Phản ứng tổng hợp oxygen.",
-        "Biến đổi hoá học."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 24,
-      "question": "Khi đun chảy bơ thực vật trong chảo nóng để rán bánh, đây là quá trình:",
-      "options": [
-        "Sự phân huỷ bơ.",
-        "Biến đổi vật lí.",
-        "Phản ứng cháy.",
-        "Biến đổi hoá học tạo chất béo mới."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 25,
-      "question": "Sự đọng lại của các hạt nước bên ngoài vỏ ly nước đá lạnh là hiện tượng:",
-      "options": [
-        "Hơi nước trong không khí gặp lạnh ngưng tụ.",
-        "Phản ứng hoá học giữa ly và nước.",
-        "Nước thấm qua thành ly.",
-        "Sự phân huỷ thuỷ tinh làm thoát nước."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 26,
-      "question": "Trong các hiện tượng sau, hiện tượng nào là biến đổi vật lí?",
-      "options": [
-        "Quả trứng bị thối.",
-        "Cơm để lâu bị ôi thiu.",
-        "Đốt cháy than đá.",
-        "Đun sôi nước."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 27,
-      "question": "Khi nhỏ vài giọt hydrochloric acid (HCl) vào vỏ trứng (thành phần chính CaCO3), thấy sủi bọt khí mạnh. Hiện tượng này chứng tỏ:",
-      "options": [
-        "Vỏ trứng bị hoà tan vật lí.",
-        "Vỏ trứng bị nóng chảy.",
-        "Acid bị bay hơi do gặp nóng.",
-        "Đã xảy ra biến đổi hoá học tạo ra chất khí mới (CO2)."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 28,
-      "question": "Đốt cháy một sợi dây magnesium (Mg) trong không khí, sinh ra bột màu trắng magnesium oxide (MgO) và phát ánh sáng chói. Đây là:",
-      "options": [
-        "Sự đông đặc kim loại.",
-        "Quá trình ngưng tụ.",
-        "Biến đổi hoá học có sự toả nhiệt và phát sáng mạnh.",
-        "Biến đổi vật lí do Mg hoá hơi."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 29,
-      "question": "Quá trình lên men rượu từ tinh bột gạo bao gồm các biến đổi chính thuộc loại:",
-      "options": [
-        "Sự bay hơi đơn thuần.",
-        "Biến đổi hoá học do enzyme phân giải và tạo chất mới (ethanol).",
-        "Chỉ là biến đổi vật lí.",
-        "Sự lắng đọng cơ học."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 30,
-      "question": "Hiện tượng ngón tay bị đen khi dính phải dung dịch silver nitrate (AgNO3) khi để ngoài ánh sáng là do:",
-      "options": [
-        "AgNO3 làm bẩn da tay vật lí.",
-        "Ánh sáng làm nóng chảy AgNO3.",
-        "Da tay bị đông đặc.",
-        "AgNO3 bị phân huỷ hoá học tạo bạc kim loại bám vào da."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 31,
-      "question": "Khi thả một viên sắt vào dung dịch copper(II) sulfate (CuSO4), sau một thời gian thấy có lớp kim loại màu đỏ bám ngoài viên sắt và màu xanh của dung dịch nhạt dần. Hiện tượng này là:",
-      "options": [
-        "Sự ngưng tụ của chất lỏng.",
-        "Biến đổi hoá học (sắt đẩy đồng ra khỏi dung dịch muối).",
-        "Sự hoà tan cơ học.",
-        "Biến đổi vật lí dính bám."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 32,
-      "question": "Nung nóng đá vôi (CaCO3) ở nhiệt độ cao thu được vôi sống (CaO) và khí carbon dioxide (CO2). Phản ứng này thuộc loại:",
-      "options": [
-        "Biến đổi vật lí nóng chảy.",
-        "Sự bay hơi đá vôi.",
-        "Sự ngưng tụ khí.",
-        "Biến đổi hoá học."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 33,
-      "question": "Dấu hiệu rõ nhất chứng tỏ việc đun nóng đường đến khi chuyển thành chất màu đen (than) và có mùi khét là biến đổi hoá học là gì?",
-      "options": [
-        "Nhiệt độ bếp đun tăng lên.",
-        "Xuất hiện chất mới màu đen (carbon), không còn vị ngọt.",
-        "Thể tích đường thay đổi.",
-        "Đường bị chảy lỏng ra."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 34,
-      "question": "Cây gỗ đổ lâu năm trong rừng bị vi sinh vật phân huỷ thành gỗ mục là ví dụ về:",
-      "options": [
-        "Biến đổi hoá học.",
-        "Sự mài mòn cơ học.",
-        "Biến đổi vật lí do mưa bão.",
-        "Sự ngấm nước của gỗ."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 35,
-      "question": "Khi vôi sống (CaO) tiếp xúc với nước sinh ra vôi tôi (Ca(OH)2) và làm nước sôi ùng ục toả nhiệt rất mạnh. Quá trình này là:",
-      "options": [
-        "Sự nóng chảy của CaO.",
-        "Sự hoà tan vật lí toả nhiệt.",
-        "Sự ngưng tụ hơi nước.",
-        "Biến đổi hoá học toả nhiệt mạnh."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 36,
-      "question": "Tấm sắt để ngoài sân vườn lâu ngày bị phủ một lớp gỉ màu nâu đỏ, xốp và dễ gãy. Hiện tượng này xảy ra do:",
-      "options": [
-        "Sắt bị mài mòn vật lí.",
-        "Sắt bị co giãn vì nhiệt.",
-        "Sắt tác dụng với oxygen và hơi nước trong không khí tạo gỉ sắt.",
-        "Sắt bị dính bụi bẩn từ môi trường."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 37,
-      "question": "Quá trình quang hợp của cây xanh hấp thụ CO2 và nước dưới ánh sáng mặt trời tạo ra glucose và O2 là:",
-      "options": [
-        "Quá trình ngưng tụ.",
-        "Sự khuếch tán khí đơn thuần.",
-        "Biến đổi hoá học.",
-        "Biến đổi vật lí."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 38,
-      "question": "Nhỏ dung dịch iodine (i-ốt) vào hồ tinh bột thấy xuất hiện màu xanh tím đặc trưng. Đây là hiện tượng:",
-      "options": [
-        "Biến đổi vật lí nhuộm màu.",
-        "Biến đổi hoá học.",
-        "Sự bay hơi của i-ốt.",
-        "Sự hoà tan tinh bột."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 39,
-      "question": "Quá trình đốt cháy dải ruy băng nylon toả mùi hôi nồng và để lại giọt nhựa đen cặn là:",
-      "options": [
-        "Biến đổi hoá học.",
-        "Sự mài mòn cơ học.",
-        "Biến đổi vật lí chảy dẻo.",
-        "Sự đông đặc nylon."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 40,
-      "question": "Khi nhỏ dung dịch barium chloride (BaCl2) vào dung dịch sodium sulfate (Na2SO4) thấy xuất hiện kết tủa trắng không tan. Dấu hiệu này chứng tỏ:",
-      "options": [
-        "Chất lỏng bị đông đặc.",
-        "Dung dịch bị sôi.",
-        "Đã xảy ra phản ứng hoá học tạo chất kết tủa mới (BaSO4).",
-        "Sự lắng đọng vật lí của dung dịch."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 41,
-      "question": "Khi đốt một ngọn nến paraffin, giai đoạn nào dưới đây biểu diễn sự biến đổi hoá học?",
-      "options": [
-        "Nến paraffin rắn bị nóng chảy thành paraffin lỏng.",
-        "Paraffin lỏng thấm theo bấc nến và hoá hơi.",
-        "Hơi paraffin phản ứng với oxygen trong không khí tạo thành CO2 và hơi nước.",
-        "Cả giai đoạn nóng chảy và hoá hơi của nến."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 42,
-      "question": "Quá trình tiêu hoá thức ăn ở cơ thể người bao gồm cả biến đổi vật lí và hoá học. Quá trình nào dưới đây là biến đổi vật lí?",
-      "options": [
-        "Răng nhai nghiền nát thức ăn và dạ dày co bóp đảo trộn thức ăn.",
-        "Enzyme amylase trong nước bọt phân giải tinh bột thành đường maltose.",
-        "Acid HCl trong dạ dày biến đổi tính chất thức ăn.",
-        "Enzyme pepsin trong dạ dày phân giải protein."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 43,
-      "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi hoá học là:",
-      "options": [
-        "Nước đóng đá, rác thải phân huỷ, cồn bay hơi.",
-        "Hoà tan đường, nướng bánh mì, xé giấy.",
-        "Cháy rừng, làm giấm ăn từ rượu, xích sắt bị gỉ.",
-        "Cắt tóc, luộc trứng chín, đập vỡ cốc thuỷ tinh."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 44,
-      "question": "Dãy gồm tất cả các hiện tượng đều là biến đổi vật lí là:",
-      "options": [
-        "Đốt than, đun nóng đường đến cháy đen, cơm bị thiu.",
-        "Sắt bị gỉ, nung vôi, băng tan.",
-        "Sữa chua lên men, phơi khô quần áo, cháy nến.",
-        "Đun nóng dầu ăn, hoà tan muối vào nước, uốn cong dây thép."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 45,
-      "question": "Khi quan sát hiện tượng đun sôi nước đường đến khi cạn khô thu được lớp cặn màu đen, học sinh kết luận:- Giai đoạn 1: Nước bay hơi là biến đổi vật lí.- Giai đoạn 2: Đường bị cháy đen là biến đổi hoá học.Kết luận trên đúng hay sai?",
-      "options": [
-        "Sai, giai đoạn 1 là hoá học, giai đoạn 2 là vật lí.",
-        "Sai, cả hai giai đoạn đều là biến đổi hoá học.",
-        "Đúng hoàn toàn.",
-        "Sai, cả hai giai đoạn đều là biến đổi vật lí."
-      ],
-      "answer": 2
-    },
-    {
-      "id": 46,
-      "question": "Vì sao việc dùng nước tẩy Javel làm mất vết mực trên áo được xếp vào biến đổi hoá học?",
-      "options": [
-        "Vì chất trong nước tẩy phản ứng hoá học phá huỷ cấu trúc màu của mực.",
-        "Vì nước tẩy làm hoà tan mực vật lí.",
-        "Vì nước tẩy làm mực bay hơi vào không khí.",
-        "Vì nước tẩy làm mực đông đặc lại."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 47,
-      "question": "Trong các hành vi sau, hành vi nào làm biến đổi chất từ hữu ích thành có hại do sự biến đổi hoá học xảy ra?",
-      "options": [
-        "Để thức ăn qua đêm ở nhiệt độ cao làm thức ăn bị thiu sinh độc tố.",
-        "Cắt nhỏ quần áo cũ làm giẻ lau.",
-        "Mài sắc dao làm bếp.",
-        "Làm rơi vỡ chiếc lọ hoa bằng sứ."
-      ],
-      "answer": 0
-    },
-    {
-      "id": 48,
-      "question": "Để phân biệt biến đổi vật lí và biến đổi hoá học trong phòng thí nghiệm một cách chính xác nhất, người ta căn cứ vào:",
-      "options": [
-        "Khối lượng của toàn bộ hệ thí nghiệm.",
-        "Sự xuất hiện của chất mới.",
-        "Thể tích và nhiệt độ của hệ phản ứng.",
-        "Màu sắc của các chất trước và sau thí nghiệm."
-      ],
-      "answer": 1
-    },
-    {
-      "id": 49,
-      "question": "Trong quá trình sản xuất gang thép, quặng sắt được nung trong lò cao với than cốc ở nhiệt độ cao thu được sắt tự do. Quá trình này thuộc loại:",
-      "options": [
-        "Quá trình đông đặc kim loại.",
-        "Quá trình khuếch tán cơ học.",
-        "Biến đổi vật lí nóng chảy quặng.",
-        "Biến đổi hoá học."
-      ],
-      "answer": 3
-    },
-    {
-      "id": 50,
-      "question": "Biện pháp nào sau đây dựa trên việc ngăn chặn biến đổi hoá học có hại xảy ra trong đời sống?",
-      "options": [
-        "Bào nhẵn bề mặt gỗ làm bàn ghế.",
-        "Xay xát gạo để loại bỏ vỏ cám.",
-        "Đập nhỏ đá hộc để xây nhà.",
-        "Sơn phủ bề mặt đồ vật bằng sắt để chống gỉ sét."
-      ],
-      "answer": 3
-    }
-  ],
   "fire": [
     {
       "id": 1,
-      "question": "Khối lượng riêng của một chất là gì?",
+      "question": "Lực lượng nào mới xuất hiện trong xã hội nước Anh vào cuối thế kỉ XVI – đầu thế kỉ XVII?",
       "options": [
-        "Trọng lượng của một mét khối chất đó.",
-        "Khối lượng của một thể tích bất kì chất đó.",
-        "Thể tích của một kilôgam chất đó.",
-        "Khối lượng của một đơn vị thể tích (1 m³) chất đó."
+        "Tăng lữ",
+        "Nông dân",
+        "Quý tộc mới",
+        "Thợ thủ công"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 2,
-      "question": "Công thức tính khối lượng riêng D theo khối lượng m và thể tích V là:",
+      "question": "Cách mạng tư sản Anh (1642 – 1688) diễn ra dưới hình thức nào?",
       "options": [
-        "D = P / V",
-        "D = V / m",
-        "D = m . V",
-        "D = m / V"
+        "Chiến tranh giải phóng dân tộc",
+        "Đấu tranh thống nhất đất nước",
+        "Cải cách, duy tân đất nước",
+        "Một cuộc nội chiến"
       ],
-      "answer": 3
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 3,
-      "question": "Đơn vị hợp pháp của khối lượng riêng trong hệ đo lường SI là:",
+      "question": "So với chế độ quân chủ chuyên chế, chế độ quân chủ lập hiến có điểm gì khác biệt?",
       "options": [
-        "kg/m²",
-        "kg/m³",
-        "N/m³",
-        "g/cm²"
+        "Không tồn tại ngôi vua",
+        "Quyền lực của vua bị hạn chế",
+        "Quyền lực của vua là tối cao và tuyệt đối",
+        "Không thừa nhận vai trò của Nghị viện"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 4,
-      "question": "Mối liên hệ giữa khối lượng riêng D và trọng lượng riêng d là gì?",
+      "question": "Văn kiện nào đã xác định quyền con người và quyền độc lập của 13 thuộc địa Anh ở Bắc Mỹ?",
       "options": [
-        "D = 10 . d",
-        "d = 10 . D",
-        "d = D + 10",
-        "d = D / 10"
+        "Tuyên ngôn Nhân quyền và Dân quyền",
+        "Tuyên ngôn Giải phóng",
+        "Tuyên ngôn Độc lập",
+        "Tuyên ngôn hòa bình"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 5,
-      "question": "Đơn vị của trọng lượng riêng d là:",
+      "question": "Nguyên nhân sâu xa dẫn đến Chiến tranh giành độc lập của 13 thuộc địa Anh ở Bắc Mỹ là gì?",
       "options": [
-        "kg/m³",
-        "J/m³",
-        "N/m³",
-        "N/m²"
+        "Chính phủ Anh ra lệnh đóng cửa cảng Bô-xtơn sau sự kiện \"chè Bô-xtơn\"",
+        "Chính phủ Anh cho công ty Đông Ấn độc quyền buôn bán chè ở Bắc Mỹ",
+        "Thực dân Anh tấn công Bắc Mỹ khi các thuộc địa tuyên bố tách khỏi Anh",
+        "Chính sách cai trị của Anh xâm phạm quyền tự do và sự phát triển của các thuộc địa"
       ],
-      "answer": 2
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 6,
-      "question": "Biết khối lượng riêng của nhôm là 2700 kg/m³. Điều này có ý nghĩa gì?",
+      "question": "Phát minh đầu tiên trong cách mạng công nghiệp ở Anh là ở ngành nào?",
       "options": [
-        "1 m³ nhôm có khối lượng là 2700 kg.",
-        "2700 m³ nhôm nặng 1 kg.",
-        "1 kg nhôm có thể tích là 2700 m³.",
-        "1 cm³ nhôm nặng 2700 N."
+        "Ngành điện",
+        "Ngành dệt",
+        "Ngành thông tin",
+        "Ngành giao thông vận tải"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 7,
-      "question": "Một khối sắt có thể tích 0,02 m³ và khối lượng 156 kg. Khối lượng riêng của sắt là:",
+      "question": "Đến đầu thế kỉ XIX, nhờ cách mạng công nghiệp, nước Anh đã vươn lên trở thành",
       "options": [
-        "7800 kg/m³",
-        "780 kg/m³",
-        "3120 kg/m³",
-        "1560 kg/m³"
+        "nông trường của thế giới",
+        "cường quốc nông nghiệp",
+        "cường quốc quân sự",
+        "\"Công xưởng của thế giới\""
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 8,
-      "question": "Khối lượng riêng của nước nguyên chất ở 4°C bằng bao nhiêu?",
+      "question": "Động cơ hơi nước là phát minh của ai?",
       "options": [
-        "10000 kg/m³",
-        "100 kg/m³",
-        "1 kg/m³",
-        "1000 kg/m³"
+        "Giêm Ha-gri-vơ",
+        "Ét-mơn Các-rai",
+        "Hen-ri Cót",
+        "Giêm Oát"
       ],
-      "answer": 3
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 9,
-      "question": "Để đo khối lượng riêng của một hòn đá nhỏ hình dạng bất kì, ta cần dùng những dụng cụ nào?",
+      "question": "Cách mạng công nghiệp ở Đức có những phát minh trong ngành nào?",
       "options": [
-        "Thước dây và lực kế.",
-        "Chỉ cần lực kế.",
-        "Chỉ cần bình chia độ.",
-        "Cân và bình chia độ (hoặc bình tràn)."
+        "Dệt may",
+        "Công nghiệp nhẹ",
+        "Luyện kim và hóa chất",
+        "Giao thông vận tải"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 10,
-      "question": "Muốn tăng khối lượng riêng của một khối khí nhốt trong bình kín, ta có thể:",
+      "question": "Cách mạng công nghiệp lần thứ nhất (cuối XVIII – đầu XIX) đã đưa con người bước sang thời đại",
       "options": [
-        "Bơm thêm cùng loại khí đó vào bình.",
-        "Đun nóng bình khí.",
-        "Làm lạnh bình khí.",
-        "Mở nắp bình cho khí thoát ra."
+        "\"Văn minh thông tin\"",
+        "\"Văn minh trí tuệ\"",
+        "\"Văn minh công nghiệp\"",
+        "\"Văn minh nông nghiệp\""
       ],
-      "answer": 0
+      "answer": 2,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 11,
-      "question": "Áp lực là gì?",
+      "question": "Kết quả của cuộc cách mạng công nghiệp ở Pháp là",
       "options": [
-        "Lực ma sát xuất hiện ở mặt tiếp xúc.",
-        "Lực kéo có phương song song với mặt bị ép.",
-        "Lực hút của Trái Đất tác dụng lên vật.",
-        "Lực ép có phương vuông góc với mặt bị ép."
+        "Kinh tế Pháp đứng đầu thế giới",
+        "Kinh tế Pháp đứng thứ hai thế giới",
+        "Kinh tế Pháp đứng thứ tư thế giới",
+        "Kinh tế Pháp đứng đầu châu Âu"
       ],
-      "answer": 3
+      "answer": 1,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 12,
-      "question": "Công thức tính áp suất p trên diện tích bị ép S khi có áp lực F tác dụng là:",
+      "question": "Một thành tựu nổi bật trong cách mạng công nghiệp ở Mỹ là",
       "options": [
-        "p = F / S",
-        "p = F . S",
-        "p = F + S",
-        "p = S / F"
+        "Phát minh ra máy kéo sợi",
+        "Phát minh ra máy cán thép",
+        "Phát minh ra máy dệt",
+        "Phát minh ra máy tách hạt bông, máy thu hoạch bông"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 13,
-      "question": "Đơn vị của áp suất là Pascal (Pa). 1 Pa tương đương với:",
+      "question": "Ý nào KHÔNG phản ánh đúng chính sách KINH TẾ của thực dân phương Tây ở Đông Nam Á?",
       "options": [
-        "1 N.m",
-        "1 N/cm²",
-        "1 N/m²",
-        "1 kg/m²"
+        "Vơ vét, bóc lột người dân, chủ yếu xây dựng công nghiệp nhẹ",
+        "Mở rộng đường giao thông phục vụ khai thác kinh tế và đàn áp",
+        "Thực hiện chính sách nô dịch nhằm đồng hóa và ngu dân",
+        "Cướp đoạt ruộng đất lập đồn điền"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 14,
-      "question": "Để tăng áp suất tác dụng lên một bề mặt, ta có thể:",
+      "question": "Cách mạng tư sản Anh mang tính chất không triệt để vì",
       "options": [
-        "Giảm áp lực F và giảm diện tích S.",
-        "Giảm áp lực F và tăng diện tích bị ép S.",
-        "Tăng áp lực F và giảm diện tích bị ép S.",
-        "Tăng áp lực F và tăng diện tích S."
+        "Đưa giai cấp tư sản và quý tộc mới lên nắm quyền",
+        "Không xóa bỏ tận gốc chế độ phong kiến, chưa giải quyết ruộng đất cho nông dân",
+        "Xác lập nền cộng hòa",
+        "Mới chỉ mở đường cho chủ nghĩa tư bản phát triển"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 15,
-      "question": "Tại sao lưỡi dao, lưỡi kéo càng mỏng thì cắt đồ vật càng dễ dàng?",
+      "question": "Nguyên nhân trực tiếp dẫn đến Chiến tranh giành độc lập của 13 thuộc địa Anh ở Bắc Mỹ là",
       "options": [
-        "Vì diện tích bị ép S nhỏ giúp làm tăng áp suất.",
-        "Vì làm tăng diện tích bị ép S làm giảm áp suất.",
-        "Vì làm khối lượng lưỡi dao giảm đi.",
-        "Vì làm giảm lực tác dụng của tay."
+        "Thực dân Anh đặt ra thuế chè",
+        "Nhân dân thuộc địa muốn buôn bán với nhiều nước",
+        "Đại hội lục địa lần hai thông qua Tuyên ngôn Độc lập",
+        "Nhân dân Bô-xtơn tấn công tàu chở chè, Anh phong tỏa cảng và điều quân chiếm đóng"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 16,
-      "question": "Tại sao bánh xe máy kéo chở nặng lại thường làm rất to và rộng bản?",
+      "question": "Vì sao Anh là nước tiến hành cách mạng công nghiệp đầu tiên?",
       "options": [
-        "Để làm tăng áp lực tác dụng lên mặt đường.",
-        "Để làm tăng áp suất lên mặt đường.",
-        "Để tăng diện tích bị ép, giúp giảm áp suất lên mặt đường tránh bị lún.",
-        "Để bánh xe quay nhanh hơn."
+        "Có vốn và kĩ thuật",
+        "Có nguồn nhân công dồi dào",
+        "Anh có nhiều thuộc địa",
+        "Có vốn, nhân công và sự phát triển kĩ thuật"
       ],
-      "answer": 2
+      "answer": 3,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 17,
-      "question": "Một người đứng bằng cả hai chân tác dụng lên mặt đất áp suất p. Khi người đó co một chân lên thì áp suất tác dụng lên mặt đất sẽ:",
+      "question": "Sự kiện nào là đỉnh cao của cách mạng tư sản Anh?",
       "options": [
-        "Không đổi vì khối lượng không đổi.",
-        "Tăng lên gấp đôi.",
-        "Giảm đi một nửa.",
-        "Tăng lên gấp bốn lần."
+        "Vua Sác-lơ I bị bắt",
+        "Chế độ quân chủ lập hiến ra đời",
+        "Vua Sác-lơ I bị xử tử",
+        "Nền quân chủ chuyên chế được phục hồi"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 18,
-      "question": "Tác dụng một áp lực F = 500 N lên diện tích bị ép S = 0,2 m². Áp suất gây ra là:",
+      "question": "Ý nghĩa thắng lợi của cách mạng tư sản Anh (1642 – 1688) là",
       "options": [
-        "250 Pa",
-        "2500 Pa",
-        "100 Pa",
-        "1000 Pa"
+        "Mở đường cho chủ nghĩa tư bản phát triển ở Anh",
+        "Thiết lập chế độ quân chủ chuyên chế",
+        "Lật đổ chế độ quân chủ lập hiến ở Anh",
+        "Đưa nhân dân lao động lên nắm chính quyền"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 19,
-      "question": "Đặt một khối bê tông nặng 4000 N lên sàn nhà, áp suất khối bê tông gây ra là 20 000 Pa. Diện tích tiếp xúc S là:",
+      "question": "Ý nào SAI khi nói về nguyên nhân Đông Nam Á trở thành đối tượng xâm lược của phương Tây?",
       "options": [
-        "5 m²",
-        "2 m²",
-        "0,2 m²",
-        "0,05 m²"
+        "Đông Nam Á giàu tài nguyên, đông dân",
+        "Chế độ phong kiến Đông Nam Á vừa mới thành lập còn non yếu",
+        "Chế độ phong kiến Đông Nam Á suy yếu, khủng hoảng",
+        "Đông Nam Á có vị trí chiến lược quan trọng"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 20,
-      "question": "Trường hợp nào sau đây có mục đích giảm áp suất?",
+      "question": "Sự kiện chính biến năm 1688 ở Anh, mở đường cho chế độ quân chủ lập hiến, được gọi là",
       "options": [
-        "Làm gai thô ráp trên đế giày.",
-        "Mài sắc lưỡi dao.",
-        "Đặt tấm gỗ phẳng rộng bên dưới chân đống gạch nặng.",
-        "Mài nhọn đầu đinh."
+        "Cuộc \"Cách mạng Vinh quang\"",
+        "Cuộc \"Cách mạng Hoa hồng\"",
+        "Cuộc \"Cách mạng Tháng Bảy\"",
+        "Cuộc \"Cách mạng Nhung\""
       ],
-      "answer": 2
+      "answer": 0,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 21,
-      "question": "Chất lỏng gây ra áp suất theo phương nào?",
+      "question": "Tuyên ngôn Độc lập của 13 thuộc địa Anh ở Bắc Mỹ được thông qua vào ngày",
       "options": [
-        "Chỉ theo phương nằm ngang tác dụng lên thành bình.",
-        "Chỉ theo phương thẳng đứng từ trên xuống.",
-        "Theo mọi phương lên đáy bình, thành bình và các vật trong lòng chất lỏng.",
-        "Chỉ tác dụng lên vật chìm ở đáy bình."
+        "14/7/1789",
+        "4/7/1776",
+        "3/9/1783",
+        "19/4/1775"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Lịch sử",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 22,
-      "question": "Công thức tính áp suất chất lỏng p tại một điểm ở độ sâu h là:",
+      "question": "Việt Nam nằm ở khu vực nào?",
       "options": [
-        "p = d / h",
-        "p = D . h",
-        "p = d . S",
-        "p = d . h"
+        "Đông Á",
+        "Đông Nam Á",
+        "Nam Á",
+        "Tây Nam Á"
       ],
-      "answer": 3
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 23,
-      "question": "Trong công thức p = d . h của áp suất chất lỏng, h đại diện cho:",
+      "question": "Việt Nam có chung đường biên giới trên đất liền với những quốc gia nào?",
       "options": [
-        "Đường kính của bình chứa.",
-        "Độ sâu từ mặt thoáng chất lỏng đến điểm tính áp suất.",
-        "Khoảng cách từ điểm tính áp suất đến đáy bình.",
-        "Chiều cao toàn phần của cột chất lỏng."
+        "Trung Quốc, Lào, Thái Lan",
+        "Trung Quốc, Lào, Campuchia",
+        "Trung Quốc, Campuchia, Thái Lan",
+        "Lào, Campuchia, Mi-an-ma"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 24,
-      "question": "Tại sao chân đập thuỷ điện lại luôn được xây rộng và dày hơn rất nhiều so với đỉnh đập?",
+      "question": "Phần đất liền nước ta nằm trong khoảng vĩ độ nào?",
       "options": [
-        "Vì nước ở trên đỉnh đập chảy mạnh hơn nước ở đáy đập.",
-        "Để làm đẹp cho công trình.",
-        "Để tiết kiệm vật liệu xây dựng.",
-        "Vì càng xuống sâu áp suất chất lỏng càng lớn, thành đập cần chịu lực lớn hơn."
+        "Từ 8°34'B đến 23°23'B",
+        "Từ 8°34'B đến 23°23'N",
+        "Từ 6°34'B đến 21°23'B",
+        "Từ 10°34'B đến 25°23'B"
       ],
-      "answer": 3
+      "answer": 0,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 25,
-      "question": "Một thợ lặn ở độ sâu 30 m dưới mặt nước biển. Cho trọng lượng riêng của nước biển là 10 300 N/m³. Áp suất nước biển tác dụng lên thợ lặn là:",
+      "question": "Vị trí địa lí làm cho thiên nhiên Việt Nam mang tính chất chủ yếu nào?",
       "options": [
-        "309 000 Pa",
-        "30 900 Pa",
-        "343,3 Pa",
-        "10 330 Pa"
+        "Ôn đới hải dương",
+        "Nhiệt đới gió mùa",
+        "Cận cực lục địa",
+        "Hoang mạc nhiệt đới"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 26,
-      "question": "Hai bình A và B chứa cùng một loại nước. Bình A có cột nước cao 0,8 m, bình B có cột nước cao 0,5 m. So sánh áp suất đáy pA và pB:",
+      "question": "Lãnh thổ Việt Nam gồm các bộ phận nào?",
       "options": [
-        "pA < pB",
-        "pA = pB",
-        "pA > pB",
-        "Không so sánh được."
+        "Vùng đất và vùng biển",
+        "Vùng đất và vùng trời",
+        "Vùng đất, vùng biển và vùng trời",
+        "Vùng biển và vùng trời"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 27,
-      "question": "Trong một bình thông nhau chứa cùng một chất lỏng đứng yên, mực chất lỏng ở các nhánh như thế nào?",
+      "question": "Biển Đông có vai trò như thế nào đối với vị trí địa lí Việt Nam?",
       "options": [
-        "Luôn ở cùng một độ cao.",
-        "Tùy thuộc vào hình dạng của các nhánh.",
-        "Ở nhánh to mực nước cao hơn nhánh nhỏ.",
-        "Ở nhánh nhỏ mực nước cao hơn nhánh to."
+        "Làm nước ta hoàn toàn tách biệt với các quốc gia khác",
+        "Tạo điều kiện phát triển kinh tế biển và giao lưu quốc tế",
+        "Làm khí hậu nước ta mang tính chất ôn đới",
+        "Làm giảm sự đa dạng của thiên nhiên"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 28,
-      "question": "Thiết bị/ứng dụng nào sau đây hoạt động dựa trên nguyên lí bình thông nhau?",
+      "question": "Đặc điểm nổi bật của địa hình Việt Nam là gì?",
       "options": [
-        "Khinh khí cầu bay trên không.",
-        "Ống thuỷ (ống nhựa trong chứa nước) thợ xây dùng để xác định các điểm cùng độ cao.",
-        "Ống hút dùng để uống nước.",
-        "Đèn xì hơi gas."
+        "Chủ yếu là đồng bằng",
+        "Chủ yếu là đồi núi nhưng phần lớn là đồi núi thấp",
+        "Chủ yếu là núi cao",
+        "Hoàn toàn là địa hình cao nguyên"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 29,
-      "question": "Nguyên lí Pascal áp dụng cho chất lỏng phát biểu rằng:",
+      "question": "Đồi núi chiếm khoảng bao nhiêu diện tích phần đất liền nước ta?",
       "options": [
-        "Áp suất chất lỏng phụ thuộc vào hình dạng bình chứa.",
-        "Chất lỏng chỉ truyền áp suất theo phương đứng.",
-        "Áp suất tăng thêm tác dụng lên chất lỏng kín được truyền nguyên vẹn theo mọi hướng.",
-        "Áp suất tác dụng lên chất lỏng bị giảm dần theo độ sâu."
+        "1/4",
+        "1/3",
+        "3/4",
+        "1/2"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 30,
-      "question": "Một máy nén dùng chất lỏng có diện tích pít-tông nhỏ s = 2 cm², pít-tông lớn S = 100 cm². Tác dụng lực f = 100 N lên pít-tông nhỏ thì lực nâng F ở pít-tông lớn là:",
+      "question": "Hai hướng chính của địa hình Việt Nam là gì?",
       "options": [
-        "50 N",
-        "5000 N",
-        "200 N",
-        "1000 N"
+        "Tây bắc – đông nam và vòng cung",
+        "Đông bắc – tây nam và đông – tây",
+        "Đông – tây và bắc – nam",
+        "Bắc – nam và vòng cung"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 31,
-      "question": "Khí quyển xung quanh Trái Đất gây ra áp suất theo hướng nào?",
+      "question": "Hướng núi vòng cung thể hiện rõ nhất ở khu vực nào?",
       "options": [
-        "Chỉ tác dụng lên bề mặt đại dương.",
-        "Theo mọi hướng lên mọi vật trên Trái Đất.",
-        "Chỉ tác dụng theo phương ngang.",
-        "Chỉ tác dụng từ trên xuống mặt đất."
+        "Tây Bắc",
+        "Đông Bắc",
+        "Trường Sơn Bắc",
+        "Trường Sơn Nam"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 32,
-      "question": "Hiện tượng nào sau đây chứng tỏ sự tồn tại của áp suất khí quyển?",
+      "question": "Từ tây sang đông, nước ta có các dạng địa hình nào?",
       "options": [
-        "Nước chảy từ trên cao xuống.",
-        "Quả bóng cao su bơm căng bị xẹp khi bấm vào.",
-        "Hút bớt không khí trong hộp sữa giấy làm hộp bị móp vào mọi phía.",
-        "Đá chìm xuống đáy ly nước."
+        "Đồng bằng, núi đồi, bờ biển, thềm lục địa",
+        "Thềm lục địa, bờ biển, đồng bằng, núi đồi",
+        "Bờ biển, thềm lục địa, núi đồi, đồng bằng",
+        "Núi đồi, đồng bằng, bờ biển, thềm lục địa"
       ],
-      "answer": 2
+      "answer": 3,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 33,
-      "question": "Càng lên cao so với mặt nước biển, áp suất khí quyển sẽ:",
+      "question": "Nguyên nhân chủ yếu hình thành địa hình các-xtơ ở nước ta là gì?",
       "options": [
-        "Càng tăng lên.",
-        "Tăng rồi lại giảm.",
-        "Không thay đổi.",
-        "Càng giảm đi."
+        "Hoạt động của núi lửa",
+        "Hiện tượng băng tan",
+        "Sự hòa tan đá vôi của nước",
+        "Sự phun trào của mắc ma"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 34,
-      "question": "Thí nghiệm lịch sử nổi tiếng minh chứng cho sức mạnh áp suất khí quyển sử dụng hai bán cầu bằng đồng là thí nghiệm nào?",
+      "question": "Quá trình nào tác động mạnh mẽ đến sự biến đổi địa hình nước ta?",
       "options": [
-        "Thí nghiệm Torricelli.",
-        "Thí nghiệm Galileo.",
-        "Thí nghiệm Archimedes.",
-        "Thí nghiệm bán cầu Magdeburg."
+        "Xâm thực và bồi tụ",
+        "Hoạt động của núi lửa",
+        "Đóng băng và băng tan",
+        "Băng hà xâm thực"
       ],
-      "answer": 3
+      "answer": 0,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 35,
-      "question": "Khi leo lên núi cao hoặc đi máy bay cất cánh nhanh, ta thường có cảm giác bị ù tai. Nguyên nhân là do:",
+      "question": "Tác động của khí hậu nhiệt đới gió mùa tới địa hình Việt Nam là",
       "options": [
-        "Gió trên núi cao quá mạnh.",
-        "Áp suất khí quyển bên ngoài giảm đột ngột, tạo chênh lệch với áp suất không khí trong tai giữa.",
-        "Nhiệt độ trên cao quá thấp.",
-        "Áp suất khí quyển bên ngoài tăng nhanh."
+        "Quá trình xâm thực ở miền núi diễn ra mạnh",
+        "Địa hình hoàn toàn không bị biến đổi",
+        "Quá trình bồi tụ không xảy ra ở đồng bằng",
+        "Địa hình chỉ chịu tác động của nội lực"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 36,
-      "question": "Áp suất khí quyển tiêu chuẩn ở mặt nước biển có giá trị khoảng:",
+      "question": "Địa hình nước ta được chia thành các khu vực lớn nào?",
       "options": [
-        "760 cmHg",
-        "76 cmHg (khoảng 101 300 Pa)",
-        "10 000 Pa",
-        "100 Pa"
+        "Đồi núi, đồng bằng, bờ biển và thềm lục địa",
+        "Đồi núi, đồng bằng, bờ biển",
+        "Đồng bằng, bờ biển, thềm lục địa",
+        "Đồi núi, bờ biển, thềm lục địa"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 37,
-      "question": "Dụng cụ dùng để đo áp suất khí quyển được gọi là:",
+      "question": "Có bao nhiêu nhận định ĐÚNG về khu vực đồng bằng? (a) ĐB sông Cửu Long rộng nhất, có hệ thống đê ven sông ngăn lũ; (b) ĐB ven biển miền Trung hẹp ngang, bị núi chia cắt thành nhiều đồng bằng nhỏ; (c) ĐB châu thổ gồm ĐB sông Hồng, ĐB sông Cửu Long và dải ĐB duyên hải miền Trung; (d) ĐB thuận lợi phát triển cây công nghiệp hằng năm, cây ăn quả, thủy sản.",
       "options": [
-        "Nhiệt kế.",
-        "Khí áp kế.",
-        "Lực kế.",
-        "Ampe kế."
+        "1",
+        "2",
+        "3",
+        "4"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 38,
-      "question": "Tại sao các phi hành gia khi làm việc ngoài không gian bắt buộc phải mặc trang phục vũ trụ đặc biệt?",
+      "question": "Có bao nhiêu nhận định ĐÚNG về khu vực đồi núi? (a) Vùng núi Đông Bắc chủ yếu là núi cao với dãy Hoàng Liên Sơn; (b) Đồi núi chiếm ¾ diện tích, chủ yếu là đồi núi cao trên 2000 m; (c) Trường Sơn Nam nổi bật với các cao nguyên đất đỏ badan rộng lớn, bằng phẳng; (d) Địa hình các-xtơ phổ biến ở đồi núi, tạo nhiều hang động đẹp.",
       "options": [
-        "Để tránh bị mưa rơi vào người.",
-        "Để chống lại lực hút quá lớn của Trái Đất.",
-        "Chỉ để giúp phi hành gia dễ di chuyển.",
-        "Để giữ ấm và duy trì áp suất ổn định cho cơ thể vì ngoài không gian là môi trường chân không."
+        "1",
+        "2",
+        "3",
+        "4"
       ],
-      "answer": 3
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 39,
-      "question": "Một vật nhúng chìm trong chất lỏng chịu tác dụng của lực đẩy Archimedes có phương và chiều như thế nào?",
+      "question": "Về ảnh hưởng của vị trí địa lí tới thiên nhiên nước ta, nhận định nào SAI?",
       "options": [
-        "Phương thẳng đứng, chiều từ trên xuống dưới.",
-        "Phương thẳng đứng, chiều từ dưới lên trên.",
-        "Phương xiên theo góc nhúng vật.",
-        "Phương nằm ngang, chiều từ trái sang phải."
+        "Thiên nhiên nhiệt đới ẩm gió mùa, chịu ảnh hưởng sâu sắc của biển",
+        "Rừng nhiệt đới gió mùa trên đất phù sa là cảnh quan tiêu biểu",
+        "Khí hậu phân hóa theo bắc – nam, đông – tây và theo độ cao",
+        "Sinh vật và đất phong phú, đa dạng"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 40,
-      "question": "Công thức tính độ lớn lực đẩy Archimedes FA là:",
+      "question": "Về đặc điểm chung của địa hình Việt Nam, nhận định nào SAI?",
       "options": [
-        "FA = d . V",
-        "FA = m . V",
-        "FA = d / V",
-        "FA = D . V"
+        "Địa hình đồi núi chiếm ưu thế",
+        "Có hai hướng chính là tây – nam, đông – bắc và vòng cung",
+        "Địa hình có tính chất phân bậc khá rõ rệt",
+        "Chịu tác động của khí hậu nhiệt đới ẩm gió mùa và con người"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 41,
-      "question": "Trong công thức FA = d . V, V là đại diện cho:",
+      "question": "Diện tích phần đất liền của Việt Nam khoảng",
       "options": [
-        "Thể tích của bình chứa chất lỏng.",
-        "Thể tích toàn phần của vật.",
-        "Thể tích phần chất lỏng bị vật chiếm chỗ.",
-        "Khối lượng phần lỏng dâng lên."
+        "231 nghìn km²",
+        "331 nghìn km²",
+        "431 nghìn km²",
+        "1 triệu km²"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 42,
-      "question": "Lực đẩy Archimedes tác dụng lên vật phụ thuộc vào những yếu tố nào?",
+      "question": "Đỉnh núi cao nhất Việt Nam là",
       "options": [
-        "Trọng lượng riêng của chất lỏng và thể tích phần chất lỏng bị chiếm chỗ.",
-        "Trọng lượng riêng của vật và nhiệt độ môi trường.",
-        "Khối lượng của vật và độ sâu của vật.",
-        "Hình dạng của vật và chất làm nên vật."
+        "Phan-xi-păng",
+        "Ngọc Linh",
+        "Pu Si Lung",
+        "Bà Đen"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "Địa lí",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 43,
-      "question": "Thả một quả cầu kim loại chìm hoàn toàn vào trong nước. Khi thả quả cầu ở độ sâu 1 m và độ sâu 3 m thì lực đẩy Archimedes tác dụng lên nó sẽ:",
+      "question": "Những giá trị vật chất, tinh thần trong lịch sử lâu dài của một dân tộc, được truyền từ thế hệ này sang thế hệ khác là",
       "options": [
-        "Giảm dần khi xuống sâu.",
-        "Bằng nhau.",
-        "Ở độ sâu 3 m lớn hơn gấp 3 lần.",
-        "Ở độ sâu 1 m lớn hơn."
+        "Truyền thống dân tộc",
+        "Truyền thống dòng họ",
+        "Truyền thống gia đình",
+        "Truyền thống quê hương"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 44,
-      "question": "Gọi P là trọng lượng của vật, FA là lực đẩy Archimedes. Điều kiện để vật chìm xuống đáy chất lỏng là:",
+      "question": "Cần tôn trọng sự đa dạng văn hóa của các dân tộc vì mỗi dân tộc đều",
       "options": [
-        "P > FA",
-        "P = 0,5 FA",
-        "P < FA",
-        "P = FA"
+        "giống nhau về văn hóa, ẩm thực, trang phục",
+        "có những nét đẹp văn hóa, truyền thống riêng",
+        "giống nhau về trang phục và lễ hội",
+        "có nghề thủ công truyền thống giống nhau"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 45,
-      "question": "Điều kiện để một vật lơ lửng trong lòng chất lỏng là:",
+      "question": "Biểu hiện nào KHÔNG thể hiện sự tự hào về truyền thống dân tộc?",
       "options": [
-        "Hình dạng vật phải là khối cầu.",
-        "Trọng lượng riêng dvật > dchất lỏng.",
-        "P < FA.",
-        "Trọng lượng P của vật bằng lực đẩy Archimedes FA."
+        "Học hành chăm chỉ, đạt nhiều giải thưởng",
+        "Chung tay xoa dịu mất mát cùng đồng bào gặp lũ lụt",
+        "Tham gia nghĩa vụ quân sự",
+        "Xuyên tạc, châm biếm các sự kiện lịch sử"
       ],
-      "answer": 3
+      "answer": 3,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 46,
-      "question": "Khi một vật nổi trên mặt chất lỏng và đứng yên, lực đẩy Archimedes FA có độ lớn như thế nào so với trọng lượng P của vật?",
+      "question": "Ca dao \"Muốn no thì phải chăm làm / Một hạt thóc vàng, chín giọt mồ hôi\" phản ánh đức tính nào?",
       "options": [
-        "Đúng bằng trọng lượng P của vật.",
-        "Lớn hơn trọng lượng P của vật.",
-        "Bằng 0.",
-        "Nhỏ hơn trọng lượng P của vật."
+        "Tinh thần hiếu học",
+        "Lao động cần cù",
+        "Tinh thần đoàn kết",
+        "Lao động sáng tạo"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 47,
-      "question": "Một miếng gỗ nổi trên mặt nước. Nếu thả miếng gỗ đó vào dầu hỏa (có trọng lượng riêng nhỏ hơn nước) thì phần gỗ chìm trong dầu hỏa sẽ:",
+      "question": "Tình huống nào thể hiện tôn trọng sự đa dạng của các dân tộc?",
       "options": [
-        "Nhiều hơn phần gỗ chìm trong nước.",
-        "Không thay đổi.",
-        "Miếng gỗ sẽ bị chìm hoàn toàn xuống đáy.",
-        "Ít hơn phần gỗ chìm trong nước."
+        "H sưu tầm tư liệu để giới thiệu truyền thống Việt Nam với bạn bè",
+        "M nói các nước đang phát triển không có gì đáng học vì lạc hậu",
+        "G nói chỉ nên học hỏi các nước châu Âu và châu Mỹ",
+        "K khuyên bạn chỉ xem giải trí Hàn Quốc thay vì của Việt Nam"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 48,
-      "question": "Nguyên tắc giúp tàu thuỷ bằng thép (chất liệu nặng hơn nước rất nhiều) vẫn có thể nổi trên mặt nước biển là gì?",
+      "question": "Lao động cần cù được thể hiện qua hành vi nào?",
       "options": [
-        "Tàu được thiết kế rỗng bên trong nên trọng lượng riêng trung bình của cả con tàu nhỏ hơn trọng lượng riêng của nước biển.",
-        "Do muối biển nâng tàu lên.",
-        "Nhờ chân vịt đẩy tàu nổi lên.",
-        "Tàu được sơn lớp sơn chống thấm đặc biệt."
+        "Làm việc thường xuyên, không ngừng nỗ lực vượt khó",
+        "Cải tiến phương pháp để nâng cao hiệu quả",
+        "Tìm ra cách làm mới để có kết quả cao hơn",
+        "Tìm cách giải quyết tối ưu để nâng chất lượng"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 49,
-      "question": "Thể tích của một khối sắt là 0,002 m³. Nhúng chìm khối sắt này vào trong nước có d = 10 000 N/m³. Lực đẩy Archimedes tác dụng lên khối sắt là:",
+      "question": "Hùng và các bạn phân công hợp lí, thu gom rác nhanh hơn và phân loại để tái chế. Nhận định nào SAI?",
       "options": [
-        "200 N",
-        "2 N",
-        "20 N",
-        "5 N"
+        "Hùng và các bạn đã vận dụng sáng tạo để nâng cao hiệu quả lao động",
+        "Lao động dù đơn giản hay phức tạp đều cần nghiêm túc, trách nhiệm",
+        "Chỉ cần hoàn thành việc được giao, không cần quan tâm cách thức và hiệu quả",
+        "Phân công hợp lí, tìm cách làm hiệu quả là biểu hiện đáng khuyến khích"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
     },
     {
       "id": 50,
-      "question": "Thả một hòn đá có khối lượng 0,5 kg vào bình chia độ làm nước dâng lên 200 cm³. Lực đẩy Archimedes tác dụng lên hòn đá là (cho dnước = 10 000 N/m³):",
+      "question": "Về \"Ngày hội văn hóa các dân tộc\" ở trường Minh, nhận định nào SAI?",
       "options": [
-        "20 N",
-        "0,2 N",
-        "5 N",
-        "2 N"
+        "Tìm hiểu văn hóa dân tộc khác thể hiện tôn trọng sự đa dạng văn hóa",
+        "Mỗi dân tộc có nét văn hóa riêng, tạo nên sự phong phú của cộng đồng",
+        "Chỉ những phong tục giống dân tộc mình mới đáng được tôn trọng",
+        "Tôn trọng sự đa dạng giúp tăng đoàn kết, hiểu biết giữa mọi người"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "GDCD",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+    }
+  ],
+  "thunder": [
+    {
+      "id": 1,
+      "question": "Cho các quá trình: (1) Mùa hè thức ăn bị ôi thiu; (2) Đun đường, đường ngả màu nâu rồi chuyển thành màu đen; (3) Thổi quả bóng bay căng đến phát nổ; (4) Cháy rừng gây ô nhiễm môi trường; (5) Nhiệt độ trái đất nóng lên làm băng ở hai cực tan dần. Những quá trình xảy ra biến đổi hóa học là",
+      "options": [
+        "(1), (2), (3), (4)",
+        "(1), (2), (4), (5)",
+        "(1), (2), (4)",
+        "(1), (4), (5)"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 2,
+      "question": "Trong phản ứng hoá học, yếu tố nào sau đây KHÔNG thay đổi?",
+      "options": [
+        "Số phân tử trước và sau phản ứng",
+        "Liên kết giữa các nguyên tử trước và sau phản ứng",
+        "Số nguyên tử của mỗi nguyên tố trước và sau phản ứng",
+        "Trạng thái chất trước và sau phản ứng"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 3,
+      "question": "Nung đá vôi (CaCO₃) thành vôi sống (CaO) và khí CO₂ cần cung cấp năng lượng dạng nhiệt. Đây là phản ứng gì?",
+      "options": [
+        "Tỏa nhiệt",
+        "Thu nhiệt",
+        "Vật lí",
+        "Vừa tỏa nhiệt vừa thu nhiệt"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 4,
+      "question": "Trong 1 mol ZnCl₂ có chứa bao nhiêu nguyên tử chlorine?",
+      "options": [
+        "1,8066.10²⁴",
+        "9,033.10²³",
+        "1,2044.10²⁴",
+        "6,022.10²³"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 5,
+      "question": "Công thức chuyển đổi giữa lượng chất và khối lượng chất là",
+      "options": [
+        "m = n/M",
+        "m = M/n",
+        "n = m.M",
+        "n = m/M"
+      ],
+      "answer": 3,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 6,
+      "question": "Công thức chuyển đổi giữa lượng chất và thể tích chất khí ở đkc là",
+      "options": [
+        "n = 24,79.V",
+        "n = 24.V",
+        "n = V/24,79",
+        "n = V/24"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 7,
+      "question": "Khí Y có tỉ khối đối với khí oxygen bằng 2. Khí Y là chất nào? (C = 12; H = 1; N = 14; S = 32; O = 16)",
+      "options": [
+        "CH₄",
+        "NH₃",
+        "H₂S",
+        "SO₂"
+      ],
+      "answer": 3,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 8,
+      "question": "Dãy nào gồm các khí đều thu được bằng cách đẩy không khí, đặt ngửa bình (khí nặng hơn không khí)? (N = 14; H = 1; C = 12; O = 16; S = 32)",
+      "options": [
+        "NH₃, CO₂, H₂S",
+        "O₂, SO₂, CO₂",
+        "CO₂, O₂, NH₃",
+        "N₂, CO₂, O₂"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 9,
+      "question": "Có bao nhiêu phát biểu ĐÚNG? (a) Hòa tan muối ăn vào nước, muối tan chứng tỏ có phản ứng hóa học; (b) Trong phản ứng hoá học, số nguyên tử của mỗi nguyên tố được bảo toàn; (c) Thổi hơi thở vào nước vôi trong Ca(OH)₂ thấy vẩn đục chứng tỏ có phản ứng hóa học; (d) Trong quá trình phản ứng, lượng chất phản ứng tăng dần, lượng sản phẩm giảm dần.",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 10,
+      "question": "Có bao nhiêu phát biểu ĐÚNG? (a) Mol là lượng chất có chứa 6,022.10²³ nguyên tử hoặc phân tử chất đó; (b) Ở điều kiện chuẩn, 1 mol chất bất kì đều có thể tích 24,79 lít; (c) Khối lượng của 0,25 mol khí N₂ là 7 gam; (d) Khối lượng của 3,7185 lít khí O₂ (đkc) lớn hơn 4,8 gam magnesium.",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 11,
+      "question": "Dụng cụ phù hợp nhất để lấy hóa chất rắn dạng bột hoặc hạt nhỏ ra khỏi lọ đựng là",
+      "options": [
+        "kéo",
+        "panh",
+        "thìa thủy tinh",
+        "ống hút nhỏ giọt"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 12,
+      "question": "Đâu KHÔNG phải là lưu ý để sử dụng điện an toàn?",
+      "options": [
+        "Đọc kĩ hướng dẫn sử dụng, các quy định trên mỗi thiết bị điện",
+        "Thực hiện đúng nội quy, hướng dẫn an toàn điện",
+        "Thực hiện lắp ráp mạch điện khi chưa ngắt dòng điện",
+        "Tiến hành thí nghiệm với thiết bị điện sau khi được người hướng dẫn cho phép"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 13,
+      "question": "Khối lượng riêng của một chất cho ta biết",
+      "options": [
+        "khối lượng của một đơn vị thể tích chất đó",
+        "thể tích của một đơn vị thể tích chất đó",
+        "khối lượng của một vật làm từ chất đó",
+        "thể tích của một vật làm từ chất đó"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 14,
+      "question": "Biểu thức xác định khối lượng riêng của một vật là",
+      "options": [
+        "D = m.V",
+        "D = m/V",
+        "D = V/m",
+        "D = m + V"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 15,
+      "question": "Đơn vị nào sau đây là đơn vị đo áp suất?",
+      "options": [
+        "kg/m²",
+        "N/m²",
+        "kg/m",
+        "N/m"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 16,
+      "question": "Muốn giảm áp suất thì",
+      "options": [
+        "giảm diện tích mặt bị ép và giảm áp lực theo cùng tỉ lệ",
+        "tăng diện tích mặt bị ép và tăng áp lực theo cùng tỉ lệ",
+        "tăng diện tích mặt bị ép và giữ nguyên áp lực",
+        "giảm diện tích mặt bị ép và giữ nguyên áp lực"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 17,
+      "question": "Có bao nhiêu phát biểu ĐÚNG? (a) Để xác định khối lượng riêng của một vật, chỉ cần cân để đo; (b) Hai vật rắn đặc cùng loại vật liệu nhưng thể tích khác nhau thì vật khối lượng lớn hơn có khối lượng riêng lớn hơn; (c) Các chất khác nhau có khối lượng riêng như nhau; (d) Khối lượng riêng của nước lớn hơn của sắt.",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 18,
+      "question": "Phát biểu nào sau đây ĐÚNG?",
+      "options": [
+        "Áp suất là lực tác dụng có phương song song với bề mặt bị ép",
+        "Áp suất đặc trưng cho khả năng tác dụng của áp lực lên bề mặt bị ép",
+        "Áp suất có cùng đơn vị đo với khối lượng riêng",
+        "Trời mưa, người ta đặt tấm ván trên đường lầy để tăng áp suất, giảm độ lún"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 19,
+      "question": "Ở cơ thể người, cơ quan nào nằm trong khoang ngực?",
+      "options": [
+        "Bóng đái",
+        "Phổi",
+        "Thận",
+        "Dạ dày"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 20,
+      "question": "Quá trình tiêu hoá carbohydrate bắt đầu ở bộ phận nào?",
+      "options": [
+        "Ruột non",
+        "Thực quản",
+        "Dạ dày",
+        "Miệng"
+      ],
+      "answer": 3,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 21,
+      "question": "Nước được hấp thu chủ yếu ở cơ quan nào?",
+      "options": [
+        "Gan",
+        "Dạ dày",
+        "Ruột già",
+        "Thực quản"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 22,
+      "question": "Tuyến vị nằm ở bộ phận nào trong ống tiêu hoá?",
+      "options": [
+        "Dạ dày",
+        "Ruột non",
+        "Ruột già",
+        "Thực quản"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 23,
+      "question": "Con người có thể tạo miễn dịch nhân tạo cho cơ thể bằng cách sử dụng",
+      "options": [
+        "vaccine",
+        "kháng sinh",
+        "thuốc đông y",
+        "hóa trị"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 24,
+      "question": "Bộ xương người trưởng thành có khoảng bao nhiêu chiếc xương?",
+      "options": [
+        "200",
+        "206",
+        "208",
+        "216"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 25,
+      "question": "Khi chạy, có bao nhiêu hệ cơ quan trong số sau cùng phối hợp hoạt động: vận động, tuần hoàn, hô hấp, nội tiết, bài tiết, thần kinh, sinh dục?",
+      "options": [
+        "3",
+        "5",
+        "7",
+        "6"
+      ],
+      "answer": 3,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 26,
+      "question": "Ở người, khoang bụng và khoang ngực ngăn cách nhau bởi bộ phận nào?",
+      "options": [
+        "Cơ hoành",
+        "Cơ ức đòn chũm",
+        "Cơ liên sườn",
+        "Cơ nhị đầu"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 27,
+      "question": "Các cơ quan trong hệ hô hấp là",
+      "options": [
+        "Phổi và thực quản",
+        "Đường dẫn khí và phổi",
+        "Thực quản, đường dẫn khí và phổi",
+        "Phổi, đường dẫn khí và thanh quản"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 28,
+      "question": "Phát biểu nào sau đây SAI?",
+      "options": [
+        "Miễn dịch là khả năng cơ thể không mắc bệnh khi ở trong môi trường có mầm bệnh",
+        "Bạch cầu tham gia vào quá trình đông máu",
+        "Kháng thể và kháng nguyên tương tác theo nguyên tắc chìa khóa – ổ khóa",
+        "Kháng thể do một loại bạch cầu tiết ra, liên kết đặc hiệu với kháng nguyên"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 29,
+      "question": "Về chảy máu động mạch, phát biểu nào sau đây SAI?",
+      "options": [
+        "Máu phun mạnh theo nhịp tim, màu đỏ tươi",
+        "Dùng băng ép trực tiếp là cách duy nhất để cầm máu động mạch hiệu quả",
+        "Khi sơ cứu cần buộc garô ở phía trên vị trí chảy máu",
+        "Nếu không sơ cứu kịp thời có thể dẫn đến sốc và tử vong"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 30,
+      "question": "Dấu hiệu nào cho thấy đã xảy ra phản ứng hóa học?",
+      "options": [
+        "Chất bị thay đổi hình dạng",
+        "Có chất mới tạo thành",
+        "Chất chuyển từ thể rắn sang thể lỏng",
+        "Chất bị nghiền nhỏ"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 31,
+      "question": "Quá trình nào sau đây là biến đổi vật lí?",
+      "options": [
+        "Nước đá tan thành nước lỏng",
+        "Đinh sắt để lâu ngoài không khí bị gỉ",
+        "Đốt cháy cồn",
+        "Thức ăn để lâu bị ôi thiu"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 32,
+      "question": "Trong phản ứng hoá học, các phân tử biến đổi thành phân tử khác là do có sự thay đổi về",
+      "options": [
+        "số nguyên tử của mỗi nguyên tố",
+        "khối lượng của mỗi nguyên tử",
+        "liên kết giữa các nguyên tử",
+        "số nguyên tố hóa học"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 33,
+      "question": "Phản ứng nào sau đây là phản ứng tỏa nhiệt?",
+      "options": [
+        "Nung đá vôi",
+        "Đốt cháy than",
+        "Nhiệt phân potassium permanganate (KMnO₄)",
+        "Nhiệt phân copper(II) hydroxide"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 34,
+      "question": "Khối lượng mol của khí carbon dioxide (CO₂) là (C = 12; O = 16)",
+      "options": [
+        "28 g/mol",
+        "32 g/mol",
+        "44 g/mol",
+        "60 g/mol"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 35,
+      "question": "Số mol có trong 11,2 gam sắt (Fe = 56) là",
+      "options": [
+        "0,1 mol",
+        "0,2 mol",
+        "0,5 mol",
+        "2 mol"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 36,
+      "question": "Thể tích của 0,5 mol khí oxygen ở điều kiện chuẩn (25 °C, 1 bar) là",
+      "options": [
+        "11,2 lít",
+        "12 lít",
+        "12,395 lít",
+        "24,79 lít"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 37,
+      "question": "Công thức tính tỉ khối của khí A đối với không khí là",
+      "options": [
+        "d = M_A × 29",
+        "d = M_A / 29",
+        "d = 29 / M_A",
+        "d = M_A + 29"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 38,
+      "question": "Khí nào sau đây nhẹ hơn không khí? (H = 1; C = 12; O = 16; S = 32; Cl = 35,5)",
+      "options": [
+        "H₂",
+        "CO₂",
+        "SO₂",
+        "Cl₂"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 39,
+      "question": "Số phân tử nước có trong 0,5 mol H₂O là",
+      "options": [
+        "6,022.10²³",
+        "3,011.10²³",
+        "1,2044.10²⁴",
+        "3,011.10²²"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 40,
+      "question": "Khi đun nóng hóa chất lỏng trong ống nghiệm, cần",
+      "options": [
+        "hướng miệng ống nghiệm về phía mình để dễ quan sát",
+        "hướng miệng ống nghiệm về phía không có người",
+        "đổ đầy hóa chất vào ống nghiệm",
+        "đun tập trung ở đáy ống nghiệm ngay từ đầu, không hơ nóng đều"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 41,
+      "question": "Đơn vị đo khối lượng riêng trong hệ SI là",
+      "options": [
+        "kg/m³",
+        "g/m³",
+        "N/m²",
+        "kg/m²"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 42,
+      "question": "Áp lực là",
+      "options": [
+        "lực ép có phương song song với mặt bị ép",
+        "lực ép có phương vuông góc với mặt bị ép",
+        "lực kéo của vật theo phương ngang",
+        "trọng lượng riêng của vật"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 43,
+      "question": "Công thức tính áp suất là",
+      "options": [
+        "p = F.S",
+        "p = S/F",
+        "p = F/S",
+        "p = F + S"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 44,
+      "question": "Lưỡi dao, lưỡi kéo thường được mài sắc để",
+      "options": [
+        "giảm áp suất khi cắt",
+        "tăng áp suất do giảm diện tích bị ép",
+        "tăng diện tích bị ép",
+        "giảm áp lực tác dụng"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 45,
+      "question": "Hệ cơ quan có chức năng vận chuyển chất dinh dưỡng, oxygen đến các tế bào là",
+      "options": [
+        "hệ tiêu hóa",
+        "hệ hô hấp",
+        "hệ tuần hoàn",
+        "hệ bài tiết"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 46,
+      "question": "Hệ tuần hoàn ở người gồm",
+      "options": [
+        "tim và hệ mạch",
+        "tim và phổi",
+        "phổi và hệ mạch",
+        "gan và tim"
+      ],
+      "answer": 0,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 47,
+      "question": "Tế bào máu có chức năng vận chuyển O₂ và CO₂ là",
+      "options": [
+        "bạch cầu",
+        "tiểu cầu",
+        "hồng cầu",
+        "tế bào lympho"
+      ],
+      "answer": 2,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 48,
+      "question": "Thành phần nào của máu tham gia vào quá trình đông máu?",
+      "options": [
+        "Hồng cầu",
+        "Tiểu cầu",
+        "Bạch cầu",
+        "Huyết tương không có chất sinh tơ máu"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 49,
+      "question": "Quá trình tiêu hóa và hấp thụ chất dinh dưỡng diễn ra chủ yếu ở",
+      "options": [
+        "dạ dày",
+        "ruột non",
+        "ruột già",
+        "thực quản"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
+    },
+    {
+      "id": 50,
+      "question": "Để phòng tránh cong vẹo cột sống, học sinh cần",
+      "options": [
+        "mang cặp lệch về một bên vai",
+        "ngồi học đúng tư thế, mang vác vừa sức",
+        "ít vận động, ngồi nhiều",
+        "nằm đọc sách trong thời gian dài"
+      ],
+      "answer": 1,
+      "subject": "KHTN",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – KHTN"
     }
   ],
   "frost": [
     {
       "id": 1,
-      "question": "Cơ thể người được chia thành mấy phần chính?",
+      "question": "Bản vẽ kĩ thuật trình bày thông tin kĩ thuật của sản phẩm dưới dạng hình vẽ và kí hiệu theo",
       "options": [
-        "4 phần (Đầu, cổ, thân, chi).",
-        "5 phần (Đầu, ngực, bụng, tay, chân).",
-        "3 phần (Đầu, thân, các chi).",
-        "2 phần (Đầu và thân)."
+        "các quy tắc chung, vẽ theo đúng kích thước",
+        "các quy tắc chung, vẽ theo tỉ lệ",
+        "các quy tắc thống nhất, vẽ theo đúng kích thước",
+        "các quy tắc thống nhất, vẽ theo tỉ lệ"
       ],
-      "answer": 2
+      "answer": 3,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 2,
-      "question": "Hệ cơ quan nào dưới đây có chức năng nâng đỡ, bảo vệ cơ thể và tạo khung vận động?",
+      "question": "Tại sao mỗi máy hoặc thiết bị đều đi kèm bản hướng dẫn sử dụng?",
       "options": [
-        "Hệ bài tiết.",
-        "Hệ tuần hòan.",
-        "Hệ vận động.",
-        "Hệ hô hấp."
+        "Tăng hiệu quả sử dụng sản phẩm",
+        "Giúp sử dụng sản phẩm an toàn",
+        "Giúp sử dụng sản phẩm an toàn và hiệu quả",
+        "Giúp sử dụng sản phẩm an toàn hoặc hiệu quả"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 3,
-      "question": "Bộ xương người trưởng thành có khoảng bao nhiêu chiếc xương?",
+      "question": "Khổ giấy A3 có kích thước gấp khổ giấy A4",
       "options": [
-        "106 chiếc.",
-        "156 chiếc.",
-        "206 chiếc.",
-        "306 chiếc."
+        "2 lần",
+        "4 lần",
+        "8 lần",
+        "16 lần"
       ],
-      "answer": 2
+      "answer": 0,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 4,
-      "question": "Khớp nào sau đây thuộc loại khớp động?",
+      "question": "Khổ giấy A0 có kích thước gấp khổ giấy A4",
       "options": [
-        "Khớp đầu gối.",
-        "Khớp xương hộp sọ.",
-        "Khớp giữa xương chậu và xương cùng.",
-        "Khớp giữa các đốt sống."
+        "2 lần",
+        "4 lần",
+        "8 lần",
+        "16 lần"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 5,
-      "question": "Để phòng chống tật cong vẹo cột sống ở học sinh, biện pháp nào sau đây là đúng?",
+      "question": "Theo tiêu chuẩn, tỉ lệ 1:2 được gọi là",
       "options": [
-        "Hạn chế tập thể dục thể thao.",
-        "Ngồi học đúng tư thế, bàn ghế hợp kích thước.",
-        "Mang cặp sách nặng về một bên tay.",
-        "Thường xuyên cúi sát mắt xuống mặt bàn."
+        "tỉ lệ thu nhỏ",
+        "tỉ lệ giữ nguyên",
+        "tỉ lệ phóng to",
+        "tỉ lệ thức"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 6,
-      "question": "Khi sơ cứu người bị gãy xương cẳng tay, hành động nào sau đây là cần thiết nhất?",
+      "question": "Theo tiêu chuẩn, tỉ lệ 2:1 được gọi là",
       "options": [
-        "Cho nạn nhân đi lại tự do.",
-        "Nẹp cố định vị trí xương gãy trước khi di chuyển.",
-        "Cố gắng nắn lại chỗ xương gãy.",
-        "Chườm nóng trực tiếp lên chỗ gãy."
+        "tỉ lệ thu nhỏ",
+        "tỉ lệ giữ nguyên",
+        "tỉ lệ phóng to",
+        "tỉ lệ thức"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 7,
-      "question": "Tinh bột bắt đầu được biến đổi hóa học tại cơ quan nào trong hệ tiêu hóa?",
+      "question": "Trong bản vẽ kĩ thuật, nét liền đậm thể hiện",
       "options": [
-        "Dạ dày.",
-        "Ruột non.",
-        "Thực quản.",
-        "Khoang miệng."
+        "đường bao thấy, cạnh thấy",
+        "đường kích thước, đường gióng",
+        "đường bao khuất, cạnh khuất",
+        "đường tâm, đường trục"
       ],
-      "answer": 3
+      "answer": 0,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 8,
-      "question": "Enzyme amylase trong nước bọt có tác dụng phân giải tinh bột chín thành loại đường nào?",
+      "question": "Trong bản vẽ kĩ thuật, nét đứt mảnh thể hiện",
       "options": [
-        "Đường sucrose.",
-        "Đường maltose.",
-        "Đường fructose.",
-        "Đường glucose."
+        "đường bao thấy, cạnh thấy",
+        "đường kích thước, đường gióng",
+        "đường bao khuất, cạnh khuất",
+        "đường tâm, đường trục"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 9,
-      "question": "Cơ quan nào là nơi diễn ra quá trình hấp thụ chất dinh dưỡng chủ yếu nhất?",
+      "question": "Đơn vị dùng để đo kích thước dài trên bản vẽ kĩ thuật là",
       "options": [
-        "Ruột non.",
-        "Dạ dày.",
-        "Ruột già.",
-        "Khoang miệng."
+        "mm",
+        "cm",
+        "dm",
+        "m"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 10,
-      "question": "Tuyến tiêu hóa nào lớn nhất trong cơ thể người, tiết ra dịch mật?",
+      "question": "Vị trí các hình chiếu trên bản vẽ kĩ thuật được quy định thế nào?",
       "options": [
-        "Tuyến vị.",
-        "Tuyến tụy.",
-        "Tuyến nước bọt.",
-        "Gan."
+        "Hình chiếu bằng ở trên hình chiếu đứng",
+        "Hình chiếu cạnh ở bên trái hình chiếu đứng",
+        "Hình chiếu cạnh ở dưới hình chiếu đứng",
+        "Hình chiếu bằng ở dưới, hình chiếu cạnh ở bên phải hình chiếu đứng"
       ],
-      "answer": 3
+      "answer": 3,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 11,
-      "question": "Biện pháp nào sau đây giúp bảo vệ hệ tiêu hóa khỏe mạnh?",
+      "question": "Ba hình chiếu đứng, bằng, cạnh đều là hình chữ nhật. Đó là khối đa diện nào?",
       "options": [
-        "Thường xuyên ăn đồ cay nóng và ôi thiu.",
-        "Ăn quá no vào buổi tối.",
-        "Vừa ăn vừa vận động mạnh.",
-        "Ăn chín uống sôi, vệ sinh răng miệng sạch sẽ."
+        "Hình hộp chữ nhật",
+        "Hình lập phương",
+        "Hình chóp đều",
+        "Hình lăng trụ đều"
       ],
-      "answer": 3
+      "answer": 0,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 12,
-      "question": "Thành phần nào của máu chiếm khoảng 55% thể tích và có vai trò duy trì máu ở trạng thái lỏng?",
+      "question": "Hình chiếu đứng và cạnh là hình chữ nhật, hình chiếu bằng là tam giác. Đó là khối đa diện nào?",
       "options": [
-        "Bạch cầu.",
-        "Hồng cầu.",
-        "Tiểu cầu.",
-        "Huyết tương."
+        "Hình hộp chữ nhật",
+        "Hình lập phương",
+        "Hình chóp đều",
+        "Hình lăng trụ đều"
       ],
-      "answer": 3
+      "answer": 3,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 13,
-      "question": "Loại tế bào máu nào có chứa hemoglobin (huyết cầu tố) giúp vận chuyển O2 và CO2?",
+      "question": "Hình chiếu đứng và cạnh là tam giác, hình chiếu bằng là hình vuông có hai đường chéo. Đó là khối đa diện nào?",
       "options": [
-        "Bạch cầu.",
-        "Hồng cầu.",
-        "Tiểu cầu.",
-        "Tế bào lympho."
+        "Hình hộp chữ nhật",
+        "Hình lập phương",
+        "Hình chóp đều",
+        "Hình lăng trụ đều"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 14,
-      "question": "Loại tế bào máu nào đóng vai trò cốt lõi trong cơ chế đông máu?",
+      "question": "Hình chiếu đứng và cạnh là hình chữ nhật, hình chiếu bằng là hình tròn. Đó là khối tròn xoay nào?",
       "options": [
-        "Đại thực bào.",
-        "Tiểu cầu.",
-        "Hồng cầu.",
-        "Bạch cầu."
+        "Hình cầu",
+        "Hình nón",
+        "Hình trụ",
+        "Hình chóp"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 15,
-      "question": "Người có nhóm máu O có thể truyền máu cho người thuộc nhóm máu nào?",
+      "question": "Hình chiếu đứng và cạnh là tam giác cân, hình chiếu bằng là hình tròn. Đó là khối tròn xoay nào?",
       "options": [
-        "Chỉ nhóm máu A và B.",
-        "Chỉ nhóm máu AB.",
-        "Chỉ nhóm máu O.",
-        "Mọi nhóm máu (O, A, B, AB)."
+        "Hình cầu",
+        "Hình nón",
+        "Hình trụ",
+        "Hình chóp"
       ],
-      "answer": 3
+      "answer": 1,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 16,
-      "question": "Người có nhóm máu AB có thể nhận máu từ những nhóm máu nào (theo nguyên tắc không gây ngưng kết)?",
+      "question": "Cả ba hình chiếu đều là hình tròn bằng nhau. Đó là khối tròn xoay nào?",
       "options": [
-        "Chỉ nhận được nhóm máu AB.",
-        "Chỉ nhận được từ nhóm O.",
-        "Không thể nhận máu từ ai.",
-        "Nhận được từ tất cả các nhóm máu (O, A, B, AB)."
+        "Hình cầu",
+        "Hình nón",
+        "Hình trụ",
+        "Hình chóp"
       ],
-      "answer": 3
+      "answer": 0,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 17,
-      "question": "Tim người được cấu tạo gồm mấy ngăn?",
+      "question": "Khổ giấy A4 có kích thước là",
       "options": [
-        "2 ngăn.",
-        "3 ngăn.",
-        "4 ngăn (2 tâm nhĩ, 2 tâm thất).",
-        "6 ngăn."
+        "420 × 297 mm",
+        "297 × 210 mm",
+        "210 × 148 mm",
+        "594 × 420 mm"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 18,
-      "question": "Mạch máu nào có chức năng dẫn máu từ các cơ quan trở về tim?",
+      "question": "Hình chiếu đứng có hướng chiếu",
       "options": [
-        "Động mạch.",
-        "Mao mạch.",
-        "Động mạch chủ.",
-        "Tĩnh mạch."
+        "từ trên xuống",
+        "từ trái sang",
+        "từ trước tới",
+        "từ dưới lên"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 19,
-      "question": "Khi vết thương bị chảy máu phun thành tia đỏ tươi, đó là dấu hiệu tổn thương loại mạch máu nào?",
+      "question": "Nét gạch dài – chấm – mảnh trên bản vẽ kĩ thuật thể hiện",
       "options": [
-        "Mạch lympho.",
-        "Mao mạch.",
-        "Tĩnh mạch.",
-        "Động mạch."
+        "đường bao thấy",
+        "đường bao khuất",
+        "đường kích thước",
+        "đường tâm, đường trục"
       ],
-      "answer": 3
+      "answer": 3,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 20,
-      "question": "Biện pháp sơ cứu khẩn cấp khi bị chảy máu động mạch ở tay hoặc chân là gì?",
+      "question": "Thành phần nào KHÔNG thuộc phần ghi kích thước trên bản vẽ?",
       "options": [
-        "Chườm nóng lên chỗ chảy máu.",
-        "Bóp chặt động mạch và dùng dây garo buộc phía trên vết thương.",
-        "Bôi xà phòng trực tiếp lên vết thương.",
-        "Dùng nước rửa sạch rồi để tự khỏi."
+        "Đường gióng",
+        "Đường kích thước",
+        "Chữ số kích thước",
+        "Đường bao khuất"
       ],
-      "answer": 1
+      "answer": 3,
+      "subject": "Công nghệ",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 21,
-      "question": "Hệ cơ quan nào đảm nhận chức năng trao đổi khí giữa cơ thể và môi trường ngoài?",
+      "question": "Máy tính thế hệ thứ tư (1974 – 1990) sử dụng loại bộ nhớ nào?",
       "options": [
-        "Hệ hô hấp.",
-        "Hệ tuần hòan.",
-        "Hệ bài tiết.",
-        "Hệ tiêu hóa."
+        "RAM, ROM và CD",
+        "Trống từ",
+        "Băng từ",
+        "Bộ nhớ flash"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 22,
-      "question": "Cơ quan nào là nơi diễn ra sự trao đổi khí trực tiếp giữa máu và không khí ở phổi?",
+      "question": "Đặc điểm nào là của máy tính thế hệ thứ ba (1965 – 1974)?",
       "options": [
-        "Phế nang.",
-        "Khí quản.",
-        "Thanh quản.",
-        "Phế quản."
+        "Sử dụng mạch tích hợp (IC)",
+        "Kích thước nhỏ gọn như điện thoại di động",
+        "Chưa có thiết bị vào – ra như bàn phím, màn hình",
+        "Chỉ sử dụng bóng đèn chân không để xử lí dữ liệu"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 23,
-      "question": "Hoạt động hít vào bình thường được thực hiện nhờ sự co của các cơ nào?",
+      "question": "Theo kiến trúc Von Neumann, bộ phận nào KHÔNG là thành phần bắt buộc?",
       "options": [
-        "Cơ liên sườn ngoài và cơ hòanh.",
-        "Cơ liên sườn trong và cơ tay.",
-        "Cơ bụng và cơ tim.",
-        "Cơ lưng và cơ cổ."
+        "Bộ xử lí (CPU)",
+        "Bộ nhớ chính",
+        "Thiết bị vào – ra",
+        "Bộ xử lí đồ hoạ (GPU)"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 24,
-      "question": "Chất độc nicotine và CO trong khói thuốc lá gây hại nghiêm trọng nhất cho hệ cơ quan nào?",
+      "question": "Thiết bị vào – ra chủ yếu của máy tính thế hệ thứ hai là gì?",
       "options": [
-        "Hệ vận động.",
-        "Hệ hô hấp và hệ tuần hòan.",
-        "Hệ tiêu hóa.",
-        "Hệ bài tiết."
+        "Máy đọc và in băng đục lỗ",
+        "Bàn phím và màn hình",
+        "Chuột và giao diện đồ hoạ",
+        "Cảm biến nhận dạng vân tay"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 25,
-      "question": "Việc trồng nhiều cây xanh xung quanh khu dân cư có lợi gì đối với hệ hô hấp?",
+      "question": "Đâu KHÔNG phải đặc trưng của máy tính thế hệ thứ năm (1990 – nay)?",
       "options": [
-        "Tăng nhiệt độ môi trường sống.",
-        "Tăng lượng khí CO2 trong không khí.",
-        "Lọc bụi, cung cấp O2 và làm sạch không khí.",
-        "Giảm độ ẩm không khí xuống mức cực thấp."
+        "Sử dụng mạch tích hợp cỡ siêu lớn (ULSI)",
+        "Kích thước nhỏ gọn, mang theo người được",
+        "Quản lý được khoảng 8MB bộ nhớ",
+        "Có thiết bị nhận dạng tiếng nói, hình ảnh"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 26,
-      "question": "Cơ quan quan trọng nhất của hệ bài tiết nước tiểu là gì?",
+      "question": "Đặc điểm nào KHÔNG phải của máy tính thế hệ thứ nhất (1945 – 1955)?",
       "options": [
-        "Ống dẫn nước tiểu.",
-        "Bóng đái (bàng quang).",
-        "Thận.",
-        "Ống đái."
+        "Sử dụng đèn điện tử chân không",
+        "Bộ nhớ chính là trống từ",
+        "Kích thước nhỏ gọn, tiện lợi",
+        "Vào – ra chủ yếu bằng máy đọc và tạo thẻ đục lỗ"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 27,
-      "question": "Mỗi quả thận ở người chứa khoảng bao nhiêu đơn vị chức năng (nephron)?",
+      "question": "Thông tin số có thể được lưu trữ như thế nào?",
       "options": [
-        "100 đơn vị.",
-        "10.000 đơn vị.",
-        "1 triệu đơn vị.",
-        "10 triệu đơn vị."
+        "Chỉ được lưu trữ trên máy tính cá nhân",
+        "Chỉ các tổ chức lớn mới lưu trữ được",
+        "Được lưu trữ với dung lượng lớn bởi nhiều tổ chức và cá nhân",
+        "Không thể lưu trữ lâu dài vì tốn dung lượng"
       ],
-      "answer": 2
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 28,
-      "question": "Quá trình lọc máu để tạo thành nước tiểu đầu diễn ra tại vị trí nào của thận?",
+      "question": "Đặc điểm quan trọng của thông tin số là",
       "options": [
-        "Ống góp.",
-        "Bể thận.",
-        "Ống thận.",
-        "Cầu thận."
+        "Không thể tìm kiếm hoặc chỉnh sửa sau khi đăng tải",
+        "Chỉ tồn tại trong thiết bị cá nhân, khó chia sẻ",
+        "Có thể sao chép nhanh, dễ lan truyền và chỉnh sửa",
+        "Luôn được xác minh trước khi chia sẻ"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 29,
-      "question": "Nước tiểu chính thức khác nước tiểu đầu ở đặc điểm cơ bản nào?",
+      "question": "Thông tin trong môi trường số có thể gồm những dạng nào?",
       "options": [
-        "Chứa nhiều đường glucose hơn.",
-        "Có màu trắng đục.",
-        "Nồng độ chất cặn bã đậm đặc hơn, hầu như không còn chất dinh dưỡng.",
-        "Chứa nhiều tế bào máu đỏ."
+        "Văn bản, hình ảnh, âm thanh, video",
+        "Chỉ có văn bản và số liệu",
+        "Hình ảnh và âm thanh, không có văn bản",
+        "Chỉ có dữ liệu thô chưa xử lí"
       ],
-      "answer": 2
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 30,
-      "question": "Thói quen nào sau đây giúp hạn chế nguy cơ hình thành sỏi thận?",
+      "question": "Phát biểu nào đúng về việc tìm kiếm thông tin số?",
       "options": [
-        "Thường xuyên nhịn đi tiểu.",
-        "Ăn nhiều thức ăn chứa chất cặn bã.",
-        "Ăn quá mặn và uống ít nước.",
-        "Uống đủ nước hàng ngày và không nhịn tiểu."
+        "Chỉ tìm được nếu biết chính xác địa chỉ trang web",
+        "Mọi thông tin tự hiển thị khi cần, không cần tìm",
+        "Công cụ tìm kiếm giúp tra cứu nhanh chóng, thuận tiện",
+        "Không có công cụ nào hỗ trợ tìm kiếm"
       ],
-      "answer": 3
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 31,
-      "question": "Đơn vị cấu tạo và chức năng cơ bản của hệ thần kinh là gì?",
+      "question": "Phần mềm nào phù hợp để gửi tệp văn bản cho bạn bè hoặc thầy cô?",
       "options": [
-        "Tế bào cơ.",
-        "Tế bào thần kinh (neuron).",
-        "Tế bào tuyến.",
-        "Tế bào biểu mô."
+        "Gmail",
+        "Paint",
+        "Windows Media Player",
+        "Calculator"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 32,
-      "question": "Hệ thần kinh trung ương ở người bao gồm những cơ quan nào?",
+      "question": "Phát biểu nào đúng về bản quyền của thông tin số?",
       "options": [
-        "Tủy sống và hạch thần kinh.",
-        "Não và các dây thần kinh.",
-        "Các dây thần kinh và hạch thần kinh.",
-        "Bộ não và tủy sống."
+        "Ai cũng có thể sao chép, sử dụng mà không cần xin phép",
+        "Một số thông tin có người sở hữu và cần được bảo vệ",
+        "Mọi thông tin trên Internet đều miễn phí, không ai sở hữu",
+        "Chỉ thông tin có dấu bản quyền mới được bảo vệ"
       ],
-      "answer": 3
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 33,
-      "question": "Bộ phận nào của mắt có vai trò như một thấu kính hội tụ, có thể điều tiết để ảnh hiện rõ trên màng lưới?",
+      "question": "Phát biểu nào đúng về tính bản quyền của thông tin số?",
       "options": [
-        "Màng lưới (võng mạc).",
-        "Thể thủy tinh.",
-        "Màng giác (giác mạc).",
-        "Lòng đen."
+        "Mọi thông tin trên Internet đều dùng tự do không cần xin phép",
+        "Tác giả có quyền sở hữu nội dung do mình tạo ra trên không gian số",
+        "Chỉ tác phẩm đã đăng kí bản quyền mới được pháp luật bảo vệ",
+        "Sao chép nội dung cho mục đích cá nhân luôn hợp pháp"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 34,
-      "question": "Người bị tật cận thị thường nhìn rõ các vật ở cự ly nào?",
+      "question": "Trong kiến trúc Von Neumann, phát biểu nào KHÔNG đúng về chương trình?",
       "options": [
-        "Ở gần, khó nhìn rõ vật ở xa.",
-        "Không nhìn rõ vật ở bất kỳ khoảng cách nào.",
-        "Ở xa, khó nhìn rõ vật ở gần.",
-        "Chỉ nhìn rõ vật vào buổi tối."
+        "Mỗi chương trình tương ứng để thực hiện một nhiệm vụ",
+        "Được lưu trữ trong bộ nhớ giống như dữ liệu",
+        "Được nạp vào bộ nhớ và thực hiện tuần tự từng lệnh",
+        "Máy tự động thay đổi nội dung chương trình sau mỗi lần chạy"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 35,
-      "question": "Để khắc phục tật cận thị, người bệnh cần đeo loại kính nào?",
+      "question": "Đâu KHÔNG phải là thay đổi sâu sắc trong giáo dục do máy tính mang lại?",
       "options": [
-        "Kính phân kỳ (kính lõm).",
-        "Kính râm.",
-        "Kính hội tụ (kính lồi).",
-        "Không cần đeo kính, chỉ cần nghỉ ngơi."
+        "Học trực tuyến thuận tiện hơn",
+        "Giáo viên thiết kế bài giảng dễ dàng, phong phú",
+        "Học liệu trên Internet đa dạng, dễ tìm",
+        "Học sinh giao tiếp tốt hơn và sức khoẻ cải thiện rõ rệt"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 36,
-      "question": "Cơ quan thính giác giúp cơ thể nhận biết âm thanh bao gồm các phần chính nào?",
+      "question": "Trong y tế, đâu KHÔNG phải ưu điểm của việc sử dụng máy tính?",
       "options": [
-        "Vành tai và các dây thần kinh.",
-        "Tai ngoài, tai giữa và tai trong.",
-        "Màng nhĩ và vành tai.",
-        "Ốc tai và ống nghe."
+        "Đặt lịch hẹn khám trước, tiết kiệm thời gian chờ",
+        "Khám bệnh từ xa, theo dõi sức khoẻ bằng thiết bị thông minh",
+        "Tạo ra ngày càng nhiều loại thuốc mới chữa bệnh hiểm nghèo",
+        "Quản lí hồ sơ bệnh án điện tử an toàn, lâu dài"
       ],
-      "answer": 1
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 37,
-      "question": "Hệ nội tiết điều hòa các quá trình sinh lý trong cơ thể thông qua chất hóa học nào?",
+      "question": "Trong kinh tế, đâu KHÔNG phải ưu điểm của việc sử dụng máy tính?",
       "options": [
-        "Hormone.",
-        "Kháng thể.",
-        "Enzyme.",
-        "Vitamin."
+        "Giao dịch tài chính nhanh chóng, an toàn hơn",
+        "Quản lí, phân tích dữ liệu kinh doanh hiệu quả",
+        "Tiếp cận khách hàng toàn cầu qua thương mại điện tử",
+        "Tự động hồi phục tài nguyên thiên nhiên"
       ],
-      "answer": 0
+      "answer": 3,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 38,
-      "question": "Tuyến nội tiết nào được coi là tuyến chỉ huy, điều tiết hoạt động của các tuyến nội tiết khác?",
+      "question": "Ưu điểm của thông tin số khi lưu trữ được dưới nhiều định dạng là gì?",
       "options": [
-        "Tuyến yên.",
-        "Tuyến tụy.",
-        "Tuyến trên thận.",
-        "Tuyến giáp."
+        "Giảm dung lượng lưu trữ và tăng tốc độ xử lí",
+        "Người dùng dễ chọn định dạng phù hợp, tiếp cận linh hoạt hơn",
+        "Thông tin khó sử dụng hơn vì nhiều định dạng",
+        "Chỉ dùng được trên một số thiết bị nhất định"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 39,
-      "question": "Bệnh bướu cổ do thiếu hụt nguyên tố vi lượng nào trong khẩu phần ăn hàng ngày?",
+      "question": "Phát biểu nào đúng về độ tin cậy của thông tin số?",
       "options": [
-        "Calcium (Canxi).",
-        "Zinc (Kẽm).",
-        "Iodine (I-ốt).",
-        "Iron (Sắt)."
+        "Mọi thông tin trên Internet đều chính xác, đáng tin",
+        "Thông tin số có độ tin cậy khác nhau, có thể đúng hoặc sai",
+        "Chỉ thông tin nhiều lượt xem mới đáng tin",
+        "Thông tin số luôn được kiểm duyệt trước khi xuất hiện"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 40,
-      "question": "Tuyến tụy tiết ra hai loại hormone nào để điều hòa lượng đường (glucose) trong máu?",
+      "question": "Hành vi nào vi phạm đạo đức khi sử dụng công nghệ số?",
       "options": [
-        "Adrenaline và noradrenaline.",
-        "Thyroxine và oxytocin.",
-        "Insulin và glucagon.",
-        "Estrogen và progesterone."
+        "Đọc kĩ điều khoản trước khi đăng kí tài khoản",
+        "Dùng hình ảnh người khác để đăng bài chế giễu trên mạng xã hội",
+        "Kiểm tra tính chính xác của thông tin trước khi chia sẻ",
+        "Báo cáo nội dung độc hại trên mạng xã hội"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 41,
-      "question": "Khi lượng đường trong máu tăng cao sau bữa ăn, tuyến tụy tiết hormone nào để hạ đường huyết?",
+      "question": "Hành vi nào thể hiện sự thiếu văn hoá khi sử dụng công nghệ số?",
       "options": [
-        "Insulin.",
-        "Glucagon.",
-        "Thyroxine.",
-        "Testosterone."
+        "Liên tục đăng bình luận vô nghĩa vào bài viết của người khác",
+        "Tranh luận bằng ngôn từ hoà nhã khi khác ý kiến",
+        "Đăng lời cảm ơn khi được bạn bè giúp đỡ qua mạng",
+        "Chia sẻ bài viết hữu ích về quản lí thời gian"
       ],
-      "answer": 0
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 42,
-      "question": "Lớp ngoài cùng của da có vai trò chống thấm nước và ngăn vi khuẩn xâm nhập là lớp nào?",
+      "question": "Nguồn nào đảm bảo chính xác khi tìm hình ảnh di tích lịch sử cho bài trình chiếu?",
       "options": [
-        "Lớp cơ.",
-        "Lớp bì.",
-        "Lớp mỡ dưới da.",
-        "Lớp biểu bì (lớp sừng)."
+        "Trang web chính thức của Bảo tàng Lịch sử Quốc gia Việt Nam",
+        "Bài đăng Facebook của một người yêu thích lịch sử",
+        "Ảnh chia sẻ trên mạng xã hội không rõ nguồn gốc",
+        "Một ảnh hoạt hình vui nhộn về sự kiện lịch sử"
       ],
-      "answer": 3
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 43,
-      "question": "Sắc tố melanin quyết định màu da ở người nằm ở lớp nào của da?",
+      "question": "Lan làm bài trình chiếu về hiện tượng băng giá ở miền núi. Lan nên tìm thông tin chính xác bằng cách nào?",
       "options": [
-        "Lớp bì.",
-        "Lớp biểu bì.",
-        "Lớp mỡ dưới da.",
-        "Tuyến mồ hôi."
+        "Chọn ngay trang web đầu tiên trên Google, không kiểm tra nguồn",
+        "Tra cứu trang web chính thức như Cục Khí tượng Thuỷ văn Việt Nam",
+        "Đăng lên mạng xã hội hỏi ý kiến bạn bè",
+        "Xem video ngắn trên YouTube, không kiểm tra nguồn"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 44,
-      "question": "Thân nhiệt bình thường của người khỏe mạnh dao động quanh mức bao nhiêu?",
+      "question": "Mai cần cắt phần đầu không cần thiết và chèn chú thích vào video thí nghiệm. Mai nên làm gì?",
       "options": [
-        "35°C.",
-        "37°C.",
-        "39°C.",
-        "40°C."
+        "Dùng phần mềm chỉnh sửa video như CapCut hoặc iMovie",
+        "Mở bằng Windows Media Player và tua nhanh phần đầu",
+        "Chụp ảnh từ video, chèn vào văn bản và thêm chú thích",
+        "Báo cô không thể chỉnh vì quay bằng điện thoại"
       ],
-      "answer": 1
+      "answer": 0,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 45,
-      "question": "Khi trời nóng, cơ thể thực hiện phản ứng nào sau đây để tỏa nhiệt ra môi trường?",
+      "question": "Xem phim có bản quyền, yêu cầu trả phí nhưng lại xem trên trang web miễn phí là",
       "options": [
-        "Dãn mạch máu dưới da và tăng tiết mồ hôi.",
-        "Co các cơ dựng lông.",
-        "Giảm tiết mồ hôi và thở chậm.",
-        "Co mạch máu dưới da và run giật."
+        "Không sao vì chỉ xem trực tuyến, không tải về",
+        "Hợp lệ vì phim đã được đăng lên Internet",
+        "Vi phạm bản quyền vì trang web không được phép phân phối phim",
+        "Chỉ vi phạm nếu tải về và chia sẻ lại"
       ],
-      "answer": 0
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 46,
-      "question": "Khi gặp người bị say nắng (sốc nhiệt), hành động sơ cứu đúng đắn là gì?",
+      "question": "Nhóm chat lớp có bài đăng chế giễu một bạn. Hành vi nào KHÔNG bị xem là thiếu văn hoá hay vi phạm đạo đức?",
       "options": [
-        "Đưa vào nơi thóang mát, nới lỏng quần áo và chườm mát.",
-        "Cho uống ngay nước đá lạnh.",
-        "Cho nạn nhân chạy bộ nhẹ nhàng.",
-        "Phủ chăn kín người cho toát mồ hôi."
+        "Không bình luận nhưng vẫn nhấn \"thích\" vì thấy hài hước",
+        "Tải bài đăng xuống gửi cho các nhóm khác",
+        "Báo cáo bài đăng với quản trị viên nhóm hoặc giáo viên chủ nhiệm",
+        "Bình luận \"đồng tình\" cho vui"
       ],
-      "answer": 0
+      "answer": 2,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 47,
-      "question": "Tuyến sinh dục nam (tinh hòan) có chức năng tiết ra hormone sinh dục nào?",
+      "question": "Khi dùng máy tính ở phòng máy của trường, hành động nào là đúng?",
       "options": [
-        "Insulin.",
-        "Testosterone.",
-        "Estrogen.",
-        "Progesterone."
+        "Tự cài phần mềm không có bản quyền vào máy của trường",
+        "Truy cập Internet để tìm thông tin phục vụ học tập",
+        "Chia sẻ tài khoản cá nhân cho bạn đăng nhập hệ thống",
+        "Dùng tài khoản của người khác đang mở sẵn trên máy"
       ],
-      "answer": 1
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 48,
-      "question": "Tuyến sinh dục nữ (buồng trứng) tiết ra hormone nào quyết định các đặc tính sinh dục nữ?",
+      "question": "Lời khuyên làm bài trình chiếu: (a) Dùng đa dạng hình ảnh, sơ đồ tư duy, video ngắn giúp tăng hiệu quả; (b) Dùng Google với từ khoá phù hợp để có thêm tài liệu; (c) Mọi nội dung tìm được từ bất kì trang web nào đều hữu ích; (d) Phần mềm biên tập video trả phí đắt nên dùng bộ cài bẻ khoá. Có bao nhiêu lời khuyên ĐÚNG?",
       "options": [
-        "Thyroxine.",
-        "Adrenaline.",
-        "Estrogen.",
-        "Testosterone."
+        "1",
+        "2",
+        "3",
+        "4"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 49,
-      "question": "Quá trình thụ tinh giữa tinh trùng và trứng thường diễn ra ở vị trí nào?",
+      "question": "Nam mượn máy tính của mẹ để làm bài tập trực tuyến. Việc làm nào ĐÚNG?",
       "options": [
-        "Tại buồng trứng.",
-        "Trong tử cung.",
-        "Ở 1/3 phía ngoài của ống dẫn trứng.",
-        "Tại âm đạo."
+        "Làm bài thật nhanh rồi chơi game thêm 15 phút cho đúng giờ hẹn",
+        "Dù được mượn máy, Nam không tuỳ ý dùng mọi ứng dụng trên máy",
+        "Đọc và trả lời tin nhắn Zalo thay mẹ vì tài khoản đang đăng nhập sẵn",
+        "Gửi ảnh của mẹ lên Drive của nhóm mà không cần xin phép vì ảnh đẹp"
       ],
-      "answer": 2
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     },
     {
       "id": 50,
-      "question": "Việc sử dụng bao cao su khi quan hệ tình dục có tác dụng quan trọng gì?",
+      "question": "Khoa đăng ảnh tự chụp để trêu một bạn trong nhóm lớp mà chưa được đồng ý: (a) Hành động của Khoa là thiếu văn hoá trên môi trường số; (b) Các bạn trêu theo là bình thường vì chỉ trêu trong thời gian ngắn; (c) Ảnh do Khoa tự chụp nên chỉ vi phạm đạo đức, không có gì khác; (d) Trước khi đăng ảnh người khác vẫn cần xin phép người trong ảnh. Có bao nhiêu nhận định ĐÚNG?",
       "options": [
-        "Vừa giúp tránh thai hiệu quả vừa phòng ngừa các bệnh lây truyền qua đường tình dục.",
-        "Chỉ giúp tránh thai ngoài ý muốn.",
-        "Chỉ ngăn ngừa bệnh lây truyền qua đường tình dục.",
-        "Tăng cường chức năng của hệ bài tiết."
+        "1",
+        "2",
+        "3",
+        "4"
       ],
-      "answer": 0
+      "answer": 1,
+      "subject": "Tin học",
+      "batch": 1,
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
     }
   ]
 }
