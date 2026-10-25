@@ -231,11 +231,12 @@ input[type=color] {
     font-family: 'Be Vietnam Pro', 'Nunito', sans-serif;
     text-shadow: 0 1px 3px rgba(0,0,0,0.7);
     flex-shrink: 0;
-    /* Allow wrap but cap at 2 lines max to save space */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    /* Show the whole question (long "Đúng/Sai" items run 5-7 lines on phones);
+       the answer grid below shrinks to make room, and a very long text scrolls
+       inside its own box instead of being cut off. */
+    display: block;
+    max-height: 50%;
+    overflow-y: auto;
 }
 
 /* ── Answer buttons: 2×2 grid ──────────────────────────────────────────────── */
@@ -505,12 +506,11 @@ input[type=color] {
         flex-shrink: 0 !important;
     }
 
-    /* Question text: 2 lines max, readable */
+    /* Question text: shown in full, readable */
     #question-text {
         font-size: 13px !important;
         line-height: 1.35 !important;
         padding: 4px 10px 3px !important;
-        -webkit-line-clamp: 2 !important;
         flex-shrink: 0 !important;
         margin-bottom: 0 !important;
     }
@@ -601,7 +601,6 @@ input[type=color] {
     #question-text {
         font-size: 12px !important;
         padding: 3px 8px !important;
-        -webkit-line-clamp: 2 !important;
     }
 
     #answer-btns {
@@ -1840,3 +1839,16 @@ button[disabled] {
   padding-right: 4px;
 }
 
+
+/* ── Phones held sideways (short landscape screens) ─────────────────────────
+   25vh is only ~95px there, too small for long questions; give the quiz
+   console almost half the height so question + 4 answers stay readable. */
+@media (orientation: landscape) and (max-height: 500px) {
+    #arena-viewport { height: 54vh !important; max-height: 54vh !important; }
+    #quiz-card { height: 46vh !important; min-height: 0 !important; }
+    #question-header { padding: 2px 12px; }
+    #question-text { font-size: 12px; line-height: 1.3; padding: 3px 12px 2px; max-height: 48%; }
+    #answer-btns { gap: 4px; padding: 3px 10px 4px; }
+    .answer-btn { font-size: 12px; padding: 3px 8px; }
+    .opt-badge { width: 22px; height: 22px; min-width: 22px; }
+}
