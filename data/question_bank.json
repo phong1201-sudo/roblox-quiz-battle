@@ -12,7 +12,8 @@
       "answer": 2,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cuối thế kỉ XVI – đầu XVII, một bộ phận quý tộc chuyển sang kinh doanh theo lối tư bản (nuôi cừu lấy lông, rào đất) nên gọi là quý tộc mới."
     },
     {
       "id": 2,
@@ -26,7 +27,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cách mạng tư sản Anh diễn ra dưới hình thức nội chiến giữa phe Vua và phe Quốc hội (1642 – 1648)."
     },
     {
       "id": 3,
@@ -40,7 +42,8 @@
       "answer": 1,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Trong quân chủ lập hiến, vua vẫn còn nhưng quyền lực bị Hiến pháp và Quốc hội hạn chế; quân chủ chuyên chế thì vua nắm quyền tuyệt đối."
     },
     {
       "id": 4,
@@ -54,7 +57,8 @@
       "answer": 2,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Tuyên ngôn Độc lập (1776) khẳng định quyền con người và tuyên bố 13 thuộc địa tách khỏi Anh, thành lập Hợp chúng quốc Mỹ."
     },
     {
       "id": 5,
@@ -68,7 +72,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Nguyên nhân sâu xa là chính sách cai trị của Anh kìm hãm sự phát triển và xâm phạm quyền tự do của thuộc địa. Sự kiện chè Bô-xtơn chỉ là nguyên nhân trực tiếp."
     },
     {
       "id": 6,
@@ -82,7 +87,8 @@
       "answer": 1,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cách mạng công nghiệp ở Anh bắt đầu từ ngành dệt, với máy kéo sợi Gien-ni năm 1764."
     },
     {
       "id": 7,
@@ -96,7 +102,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Nhờ cách mạng công nghiệp, Anh sản xuất hàng hóa nhiều nhất và xuất khẩu đi khắp nơi, nên được gọi là \"Công xưởng của thế giới\"."
     },
     {
       "id": 8,
@@ -110,7 +117,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Giêm Oát (James Watt) cải tiến và hoàn thiện động cơ hơi nước năm 1784, tạo động lực cho máy móc thay sức người."
     },
     {
       "id": 9,
@@ -124,7 +132,8 @@
       "answer": 2,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Ở Đức, cách mạng công nghiệp nổi bật với các phát minh trong ngành luyện kim và hóa chất."
     },
     {
       "id": 10,
@@ -138,7 +147,8 @@
       "answer": 2,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Máy móc thay lao động thủ công, đưa loài người từ văn minh nông nghiệp sang văn minh công nghiệp."
     },
     {
       "id": 11,
@@ -152,7 +162,8 @@
       "answer": 1,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Đến giữa thế kỉ XIX, Pháp trở thành nước công nghiệp đứng thứ hai thế giới, chỉ sau Anh."
     },
     {
       "id": 12,
@@ -166,7 +177,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Ở Mỹ, máy tách hạt bông và máy thu hoạch bông giúp nông nghiệp và công nghiệp dệt phát triển mạnh."
     },
     {
       "id": 13,
@@ -180,7 +192,8 @@
       "answer": 2,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Nô dịch, đồng hóa và ngu dân là chính sách về văn hóa – giáo dục, không phải chính sách kinh tế."
     },
     {
       "id": 14,
@@ -194,7 +207,8 @@
       "answer": 1,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cách mạng không triệt để vì vẫn giữ ngôi vua, không xóa bỏ tận gốc phong kiến và nông dân không được chia ruộng đất."
     },
     {
       "id": 15,
@@ -208,7 +222,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Năm 1773, nhân dân Bô-xtơn đổ chè của tàu Anh xuống biển; Anh phong tỏa cảng và đưa quân tới. Đây là ngòi nổ trực tiếp của chiến tranh."
     },
     {
       "id": 16,
@@ -222,7 +237,8 @@
       "answer": 3,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Anh có đủ ba điều kiện: vốn (từ buôn bán, thuộc địa), nhân công (nông dân mất ruộng ra thành thị) và kĩ thuật phát triển."
     },
     {
       "id": 17,
@@ -236,7 +252,8 @@
       "answer": 2,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Năm 1649, vua Sác-lơ I bị xử tử và Anh trở thành nước cộng hòa. Đây là đỉnh cao của cách mạng."
     },
     {
       "id": 18,
@@ -250,7 +267,8 @@
       "answer": 0,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cách mạng xóa bỏ chế độ quân chủ chuyên chế, mở đường cho chủ nghĩa tư bản ở Anh phát triển."
     },
     {
       "id": 19,
@@ -264,7 +282,8 @@
       "answer": 1,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Lúc đó chế độ phong kiến ở Đông Nam Á đã tồn tại lâu và đang suy yếu, khủng hoảng, chứ không phải mới thành lập."
     },
     {
       "id": 20,
@@ -278,7 +297,8 @@
       "answer": 0,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Chính biến năm 1688 không đổ máu, được gọi là \"Cách mạng Vinh quang\"; sau đó Anh trở thành nước quân chủ lập hiến."
     },
     {
       "id": 21,
@@ -292,7 +312,8 @@
       "answer": 1,
       "subject": "Lịch sử",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Ngày 4/7/1776, Đại hội lục địa lần thứ hai thông qua Tuyên ngôn Độc lập; ngày này thành Quốc khánh của Mỹ."
     },
     {
       "id": 22,
@@ -306,7 +327,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Việt Nam nằm ở rìa phía đông bán đảo Đông Dương, thuộc khu vực Đông Nam Á."
     },
     {
       "id": 23,
@@ -320,7 +342,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Trên đất liền, Việt Nam giáp Trung Quốc ở phía bắc, Lào và Campuchia ở phía tây."
     },
     {
       "id": 24,
@@ -334,7 +357,8 @@
       "answer": 0,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Điểm cực Bắc ở Lũng Cú (23°23'B), điểm cực Nam ở Đất Mũi, Cà Mau (8°34'B); B là vĩ độ Bắc."
     },
     {
       "id": 25,
@@ -348,7 +372,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Nước ta nằm trong vùng nội chí tuyến, gần trung tâm gió mùa châu Á và giáp biển, nên thiên nhiên mang tính nhiệt đới gió mùa."
     },
     {
       "id": 26,
@@ -362,7 +387,8 @@
       "answer": 2,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Lãnh thổ là một khối thống nhất gồm vùng đất, vùng biển và vùng trời."
     },
     {
       "id": 27,
@@ -376,7 +402,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Biển Đông mở lối ra đại dương, thuận lợi cho đánh bắt, giao thông, du lịch biển và giao lưu với các nước."
     },
     {
       "id": 28,
@@ -390,7 +417,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Đồi núi chiếm khoảng 3/4 diện tích, nhưng phần lớn là đồi núi thấp dưới 1 000 m."
     },
     {
       "id": 29,
@@ -404,7 +432,8 @@
       "answer": 2,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Đồi núi chiếm khoảng 3/4 diện tích phần đất liền, đồng bằng chỉ khoảng 1/4."
     },
     {
       "id": 30,
@@ -418,7 +447,8 @@
       "answer": 0,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Hai hướng chính là tây bắc – đông nam (Hoàng Liên Sơn, Trường Sơn Bắc) và vòng cung (các cánh cung Đông Bắc)."
     },
     {
       "id": 31,
@@ -432,7 +462,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Vùng núi Đông Bắc có các cánh cung lớn như Sông Gâm, Ngân Sơn, Bắc Sơn, Đông Triều."
     },
     {
       "id": 32,
@@ -446,7 +477,8 @@
       "answer": 3,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Địa hình thấp dần từ tây sang đông: núi đồi, rồi đồng bằng, bờ biển, ra tới thềm lục địa."
     },
     {
       "id": 33,
@@ -460,7 +492,8 @@
       "answer": 2,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Nước mưa có hòa tan khí CO₂ làm tan dần đá vôi, tạo hang động và núi đá vôi (địa hình các-xtơ), ví dụ Phong Nha."
     },
     {
       "id": 34,
@@ -474,7 +507,8 @@
       "answer": 0,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Khí hậu nóng ẩm làm đồi núi bị xâm thực, bào mòn mạnh; vật liệu bị cuốn xuống bồi tụ thành đồng bằng."
     },
     {
       "id": 35,
@@ -488,7 +522,8 @@
       "answer": 0,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Mưa nhiều, tập trung theo mùa làm đất đá miền núi bị xói mòn, cắt xẻ mạnh."
     },
     {
       "id": 36,
@@ -502,7 +537,8 @@
       "answer": 0,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Địa hình nước ta chia thành 4 khu vực: đồi núi, đồng bằng, bờ biển và thềm lục địa."
     },
     {
       "id": 37,
@@ -516,7 +552,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Đúng: đồng bằng miền Trung hẹp ngang; đồng bằng thuận lợi cho cây công nghiệp hằng năm, cây ăn quả, thủy sản. Sai: hệ thống đê là ở đồng bằng sông Hồng; duyên hải miền Trung không phải đồng bằng châu thổ."
     },
     {
       "id": 38,
@@ -530,7 +567,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Đúng: Trường Sơn Nam có cao nguyên badan; các-xtơ tạo nhiều hang động. Sai: Hoàng Liên Sơn thuộc vùng Tây Bắc; đồi núi nước ta chủ yếu là đồi núi thấp."
     },
     {
       "id": 39,
@@ -544,7 +582,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cảnh quan tiêu biểu là rừng nhiệt đới ẩm gió mùa phát triển trên đất feralit đồi núi, không phải trên đất phù sa."
     },
     {
       "id": 40,
@@ -558,7 +597,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Hai hướng chính của địa hình là tây bắc – đông nam và vòng cung."
     },
     {
       "id": 41,
@@ -572,7 +612,8 @@
       "answer": 1,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Diện tích phần đất liền nước ta khoảng 331 nghìn km²."
     },
     {
       "id": 42,
@@ -586,7 +627,8 @@
       "answer": 0,
       "subject": "Địa lí",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Phan-xi-păng cao khoảng 3 143 m, nằm trên dãy Hoàng Liên Sơn, được gọi là \"nóc nhà Đông Dương\"."
     },
     {
       "id": 43,
@@ -600,7 +642,8 @@
       "answer": 0,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Truyền thống dân tộc là những giá trị vật chất, tinh thần hình thành trong lịch sử và được truyền từ đời này sang đời khác."
     },
     {
       "id": 44,
@@ -614,7 +657,8 @@
       "answer": 1,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Mỗi dân tộc có nét đẹp văn hóa riêng; tôn trọng sự khác biệt giúp các dân tộc hiểu nhau và đoàn kết."
     },
     {
       "id": 45,
@@ -628,7 +672,8 @@
       "answer": 3,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Xuyên tạc, châm biếm lịch sử là xúc phạm truyền thống dân tộc; các việc còn lại đều thể hiện lòng tự hào."
     },
     {
       "id": 46,
@@ -642,7 +687,8 @@
       "answer": 1,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Câu ca dao nói phải chăm chỉ làm lụng, đổ mồ hôi mới có cái ăn: đó là đức tính lao động cần cù."
     },
     {
       "id": 47,
@@ -656,7 +702,8 @@
       "answer": 0,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Tìm hiểu và giới thiệu văn hóa với bạn bè là tôn trọng sự đa dạng; chê bai hay chỉ thích một nền văn hóa là thiếu tôn trọng."
     },
     {
       "id": 48,
@@ -670,7 +717,8 @@
       "answer": 0,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Cần cù là chăm chỉ, làm việc thường xuyên, không ngại khó. Cải tiến cách làm, tìm cách mới là biểu hiện của sáng tạo."
     },
     {
       "id": 49,
@@ -684,7 +732,8 @@
       "answer": 2,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Lao động cần quan tâm cả cách làm và hiệu quả; chỉ làm cho xong là thiếu trách nhiệm."
     },
     {
       "id": 50,
@@ -698,7 +747,8 @@
       "answer": 2,
       "subject": "GDCD",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD"
+      "batchLabel": "Lớp 8 GK1 – Sử, Địa, GDCD",
+      "explanation": "Mọi phong tục của các dân tộc đều đáng tôn trọng, không chỉ những phong tục giống dân tộc mình."
     }
   ],
   "thunder": [
@@ -714,7 +764,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Biến đổi hóa học tạo ra chất mới: thức ăn ôi thiu, đường cháy thành than, gỗ cháy. Bóng bay nổ và băng tan chỉ là biến đổi vật lí."
     },
     {
       "id": 2,
@@ -728,7 +779,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Trong phản ứng, liên kết giữa các nguyên tử thay đổi nhưng số nguyên tử của mỗi nguyên tố được giữ nguyên."
     },
     {
       "id": 3,
@@ -742,7 +794,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Phản ứng phải cung cấp nhiệt liên tục mới xảy ra là phản ứng thu nhiệt."
     },
     {
       "id": 4,
@@ -756,7 +809,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "1 phân tử ZnCl₂ có 2 nguyên tử Cl, nên 1 mol có 2 × 6,022.10²³ = 1,2044.10²⁴ nguyên tử Cl."
     },
     {
       "id": 5,
@@ -770,7 +824,8 @@
       "answer": 3,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Số mol bằng khối lượng chia cho khối lượng mol: n = m/M."
     },
     {
       "id": 6,
@@ -784,7 +839,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Ở điều kiện chuẩn (25 °C, 1 bar), 1 mol khí chiếm 24,79 lít, nên n = V/24,79."
     },
     {
       "id": 7,
@@ -798,7 +854,8 @@
       "answer": 3,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "M(Y) = 2 × 32 = 64 g/mol; SO₂ có M = 32 + 2 × 16 = 64."
     },
     {
       "id": 8,
@@ -812,7 +869,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Đặt ngửa bình để thu khí nặng hơn không khí (M > 29): O₂ = 32, SO₂ = 64, CO₂ = 44. NH₃ và N₂ nhẹ hơn không khí."
     },
     {
       "id": 9,
@@ -826,7 +884,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Đúng: số nguyên tử được bảo toàn; nước vôi vẩn đục vì tạo chất mới. Sai: muối tan chỉ là biến đổi vật lí; chất phản ứng giảm dần còn sản phẩm tăng dần."
     },
     {
       "id": 10,
@@ -840,7 +899,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Đúng: định nghĩa mol; 0,25 × 28 = 7 g N₂. Sai: 24,79 lít chỉ đúng với chất khí; 3,7185 lít O₂ là 0,15 mol = 4,8 g, bằng chứ không lớn hơn."
     },
     {
       "id": 11,
@@ -854,7 +914,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Hóa chất rắn dạng bột hay hạt nhỏ được lấy bằng thìa (muỗng) thủy tinh; panh dùng cho mẩu rắn to, ống hút dùng cho chất lỏng."
     },
     {
       "id": 12,
@@ -868,7 +929,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Phải ngắt nguồn điện trước khi lắp ráp mạch; lắp khi còn điện rất dễ bị điện giật."
     },
     {
       "id": 13,
@@ -882,7 +944,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Khối lượng riêng là khối lượng của một đơn vị thể tích (1 m³) chất đó."
     },
     {
       "id": 14,
@@ -896,7 +959,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "D = m/V: khối lượng chia cho thể tích."
     },
     {
       "id": 15,
@@ -910,7 +974,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Áp suất p = F/S nên đơn vị là N/m², còn gọi là pascal (Pa)."
     },
     {
       "id": 16,
@@ -924,7 +989,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "p = F/S: giữ nguyên áp lực F và tăng diện tích S thì áp suất giảm."
     },
     {
       "id": 17,
@@ -938,7 +1004,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Cả bốn đều sai: cần đo cả khối lượng và thể tích; cùng một chất thì cùng khối lượng riêng; các chất khác nhau có khối lượng riêng khác nhau; nước (1 000 kg/m³) nhẹ hơn sắt (khoảng 7 800 kg/m³)."
     },
     {
       "id": 18,
@@ -952,7 +1019,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Áp suất cho biết tác dụng của áp lực lên bề mặt mạnh hay yếu. Áp lực có phương vuông góc với mặt bị ép, và tấm ván đặt trên đường lầy là để giảm áp suất."
     },
     {
       "id": 19,
@@ -966,7 +1034,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Khoang ngực chứa tim và phổi; dạ dày, thận, bóng đái nằm trong khoang bụng."
     },
     {
       "id": 20,
@@ -980,7 +1049,8 @@
       "answer": 3,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Ở miệng có enzyme amylase trong nước bọt bắt đầu biến tinh bột thành đường."
     },
     {
       "id": 21,
@@ -994,7 +1064,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Ruột già hấp thụ nước và muối khoáng còn lại, rồi tạo thành phân."
     },
     {
       "id": 22,
@@ -1008,7 +1079,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Tuyến vị nằm ở niêm mạc dạ dày, tiết dịch vị để tiêu hóa thức ăn."
     },
     {
       "id": 23,
@@ -1022,7 +1094,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Tiêm vaccine giúp cơ thể tự tạo kháng thể, tức là miễn dịch nhân tạo. Kháng sinh chỉ dùng để chữa bệnh do vi khuẩn."
     },
     {
       "id": 24,
@@ -1036,7 +1109,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Bộ xương người trưởng thành có khoảng 206 chiếc xương."
     },
     {
       "id": 25,
@@ -1050,7 +1124,8 @@
       "answer": 3,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Khi chạy có 6 hệ cùng phối hợp: vận động, tuần hoàn, hô hấp, nội tiết, bài tiết, thần kinh. Hệ sinh dục không tham gia."
     },
     {
       "id": 26,
@@ -1064,7 +1139,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Cơ hoành là tấm cơ hình vòm ngăn khoang ngực với khoang bụng và giúp ta hít thở."
     },
     {
       "id": 27,
@@ -1078,7 +1154,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Hệ hô hấp gồm đường dẫn khí (mũi, họng, thanh quản, khí quản, phế quản) và hai lá phổi."
     },
     {
       "id": 28,
@@ -1092,7 +1169,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Tiểu cầu mới tham gia đông máu; bạch cầu làm nhiệm vụ bảo vệ cơ thể."
     },
     {
       "id": 29,
@@ -1106,7 +1184,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Băng ép không phải cách duy nhất; chảy máu động mạch ở tay chân còn phải buộc garô phía trên vết thương."
     },
     {
       "id": 30,
@@ -1120,7 +1199,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Có chất mới tạo thành (đổi màu, sinh khí, kết tủa, tỏa nhiệt) là dấu hiệu của phản ứng hóa học."
     },
     {
       "id": 31,
@@ -1134,7 +1214,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Nước đá tan chỉ đổi từ thể rắn sang thể lỏng, vẫn là nước, nên là biến đổi vật lí."
     },
     {
       "id": 32,
@@ -1148,7 +1229,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Liên kết giữa các nguyên tử thay đổi nên phân tử này biến thành phân tử khác; số nguyên tử vẫn giữ nguyên."
     },
     {
       "id": 33,
@@ -1162,7 +1244,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Than cháy tỏa ra nhiều nhiệt nên là phản ứng tỏa nhiệt; nung đá vôi, nhiệt phân là phản ứng thu nhiệt."
     },
     {
       "id": 34,
@@ -1176,7 +1259,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "M(CO₂) = 12 + 2 × 16 = 44 g/mol."
     },
     {
       "id": 35,
@@ -1190,7 +1274,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "n = m/M = 11,2 : 56 = 0,2 mol."
     },
     {
       "id": 36,
@@ -1204,7 +1289,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "V = n × 24,79 = 0,5 × 24,79 = 12,395 lít."
     },
     {
       "id": 37,
@@ -1218,7 +1304,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Khối lượng mol trung bình của không khí là 29 g/mol, nên d = M_A/29."
     },
     {
       "id": 38,
@@ -1232,7 +1319,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "M(H₂) = 2, nhỏ hơn 29 nên nhẹ hơn không khí; CO₂, SO₂, Cl₂ đều nặng hơn."
     },
     {
       "id": 39,
@@ -1246,7 +1334,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Số phân tử = n × 6,022.10²³ = 0,5 × 6,022.10²³ = 3,011.10²³."
     },
     {
       "id": 40,
@@ -1260,7 +1349,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Hóa chất có thể sôi trào, bắn ra ngoài, nên miệng ống nghiệm phải hướng về phía không có người."
     },
     {
       "id": 41,
@@ -1274,7 +1364,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Khối lượng tính bằng kg, thể tích bằng m³, nên khối lượng riêng có đơn vị kg/m³."
     },
     {
       "id": 42,
@@ -1288,7 +1379,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Áp lực là lực ép có phương vuông góc với mặt bị ép."
     },
     {
       "id": 43,
@@ -1302,7 +1394,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "p = F/S: áp lực chia cho diện tích bị ép."
     },
     {
       "id": 44,
@@ -1316,7 +1409,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Lưỡi sắc có diện tích tiếp xúc rất nhỏ, làm áp suất lớn nên cắt dễ hơn."
     },
     {
       "id": 45,
@@ -1330,7 +1424,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Hệ tuần hoàn đưa chất dinh dưỡng và oxygen tới tế bào, đồng thời mang chất thải đi."
     },
     {
       "id": 46,
@@ -1344,7 +1439,8 @@
       "answer": 0,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Hệ tuần hoàn gồm tim (máy bơm) và hệ mạch (động mạch, tĩnh mạch, mao mạch)."
     },
     {
       "id": 47,
@@ -1358,7 +1454,8 @@
       "answer": 2,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Hồng cầu chứa hemoglobin, kết hợp với O₂ và CO₂ để vận chuyển chúng."
     },
     {
       "id": 48,
@@ -1372,7 +1469,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Tiểu cầu tụ lại ở vết thương và giúp tạo cục máu đông bịt kín chỗ chảy máu."
     },
     {
       "id": 49,
@@ -1386,7 +1484,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Ruột non dài, có nhiều nếp gấp và lông ruột, là nơi tiêu hóa và hấp thụ chất dinh dưỡng chủ yếu."
     },
     {
       "id": 50,
@@ -1400,7 +1499,8 @@
       "answer": 1,
       "subject": "KHTN",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – KHTN"
+      "batchLabel": "Lớp 8 GK1 – KHTN",
+      "explanation": "Ngồi sai tư thế và mang vác lệch, quá nặng lâu ngày làm cột sống cong vẹo."
     }
   ],
   "frost": [
@@ -1416,7 +1516,8 @@
       "answer": 3,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Bản vẽ kĩ thuật vẽ theo quy tắc thống nhất (tiêu chuẩn) và theo tỉ lệ để ai đọc cũng hiểu giống nhau."
     },
     {
       "id": 2,
@@ -1430,7 +1531,8 @@
       "answer": 2,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Bản hướng dẫn giúp người dùng vừa an toàn vừa dùng đúng cách, đạt hiệu quả."
     },
     {
       "id": 3,
@@ -1444,7 +1546,8 @@
       "answer": 0,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Mỗi khổ giấy gấp đôi khổ nhỏ hơn liền sau: A3 = 2 lần A4."
     },
     {
       "id": 4,
@@ -1458,7 +1561,8 @@
       "answer": 3,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "A0 → A1 → A2 → A3 → A4, mỗi bước chia đôi 4 lần: 2 × 2 × 2 × 2 = 16."
     },
     {
       "id": 5,
@@ -1472,7 +1576,8 @@
       "answer": 0,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Tỉ lệ 1:2 nghĩa là hình vẽ bằng một nửa vật thật, tức là thu nhỏ."
     },
     {
       "id": 6,
@@ -1486,7 +1591,8 @@
       "answer": 2,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Tỉ lệ 2:1 nghĩa là hình vẽ to gấp đôi vật thật, tức là phóng to."
     },
     {
       "id": 7,
@@ -1500,7 +1606,8 @@
       "answer": 0,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Nét liền đậm vẽ đường bao thấy và cạnh thấy của vật thể."
     },
     {
       "id": 8,
@@ -1514,7 +1621,8 @@
       "answer": 2,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Nét đứt mảnh vẽ đường bao khuất và cạnh khuất (phần bị che)."
     },
     {
       "id": 9,
@@ -1528,7 +1636,8 @@
       "answer": 0,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Kích thước dài trên bản vẽ ghi theo milimét (mm) và không ghi đơn vị."
     },
     {
       "id": 10,
@@ -1542,7 +1651,8 @@
       "answer": 3,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Hình chiếu bằng đặt dưới hình chiếu đứng, hình chiếu cạnh đặt bên phải hình chiếu đứng."
     },
     {
       "id": 11,
@@ -1556,7 +1666,8 @@
       "answer": 0,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Mọi mặt của hình hộp chữ nhật đều là hình chữ nhật nên cả ba hình chiếu đều là hình chữ nhật."
     },
     {
       "id": 12,
@@ -1570,7 +1681,8 @@
       "answer": 3,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Lăng trụ tam giác đều có đáy là tam giác: nhìn từ trên thấy tam giác, nhìn ngang thấy hình chữ nhật."
     },
     {
       "id": 13,
@@ -1584,7 +1696,8 @@
       "answer": 2,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Chóp đều đáy vuông: nhìn ngang thấy tam giác, nhìn từ trên thấy hình vuông có hai đường chéo (các cạnh bên)."
     },
     {
       "id": 14,
@@ -1598,7 +1711,8 @@
       "answer": 2,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Hình trụ nhìn ngang là hình chữ nhật, nhìn từ trên là hình tròn."
     },
     {
       "id": 15,
@@ -1612,7 +1726,8 @@
       "answer": 1,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Hình nón nhìn ngang là tam giác cân, nhìn từ trên là hình tròn."
     },
     {
       "id": 16,
@@ -1626,7 +1741,8 @@
       "answer": 0,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Hình cầu nhìn từ hướng nào cũng là hình tròn bằng nhau."
     },
     {
       "id": 17,
@@ -1640,7 +1756,8 @@
       "answer": 1,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Khổ A4 có kích thước 297 × 210 mm."
     },
     {
       "id": 18,
@@ -1654,7 +1771,8 @@
       "answer": 2,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Hình chiếu đứng có hướng chiếu từ trước tới; hình chiếu bằng từ trên xuống; hình chiếu cạnh từ trái sang."
     },
     {
       "id": 19,
@@ -1668,7 +1786,8 @@
       "answer": 3,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Nét gạch dài – chấm – mảnh dùng vẽ đường tâm và đường trục."
     },
     {
       "id": 20,
@@ -1682,7 +1801,8 @@
       "answer": 3,
       "subject": "Công nghệ",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Phần ghi kích thước gồm đường kích thước, đường gióng và chữ số kích thước. Đường bao khuất là nét vẽ vật thể."
     },
     {
       "id": 21,
@@ -1696,7 +1816,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính thế hệ thứ tư dùng mạch tích hợp cỡ lớn, bộ nhớ RAM, ROM và đĩa CD."
     },
     {
       "id": 22,
@@ -1710,7 +1831,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Thế hệ thứ ba bắt đầu dùng mạch tích hợp (IC), giúp máy nhỏ hơn và nhanh hơn."
     },
     {
       "id": 23,
@@ -1724,7 +1846,8 @@
       "answer": 3,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Theo Von Neumann, máy tính cần bộ xử lí, bộ nhớ và thiết bị vào – ra. GPU chỉ là bộ phận bổ sung."
     },
     {
       "id": 24,
@@ -1738,7 +1861,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính thế hệ thứ hai dùng máy đọc và in băng đục lỗ để nhập, xuất dữ liệu."
     },
     {
       "id": 25,
@@ -1752,7 +1876,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính thế hệ thứ năm có bộ nhớ rất lớn (hàng GB trở lên); khoảng 8 MB là con số của các thế hệ trước."
     },
     {
       "id": 26,
@@ -1766,7 +1891,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính thế hệ thứ nhất dùng đèn điện tử chân không nên rất to, chiếm cả một căn phòng."
     },
     {
       "id": 27,
@@ -1780,7 +1906,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Thông tin số được nhiều tổ chức và cá nhân lưu trữ với dung lượng rất lớn (ổ cứng, máy chủ, đám mây)."
     },
     {
       "id": 28,
@@ -1794,7 +1921,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Thông tin số dễ sao chép, lan truyền rất nhanh và dễ chỉnh sửa. Vì vậy cần kiểm tra trước khi tin và chia sẻ."
     },
     {
       "id": 29,
@@ -1808,7 +1936,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Thông tin số gồm nhiều dạng: văn bản, hình ảnh, âm thanh, video."
     },
     {
       "id": 30,
@@ -1822,7 +1951,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Công cụ tìm kiếm (như Google) giúp tra cứu nhanh qua từ khóa, không cần biết trước địa chỉ trang web."
     },
     {
       "id": 31,
@@ -1836,7 +1966,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Gmail là phần mềm thư điện tử, gửi được tệp đính kèm. Paint để vẽ, Media Player để xem phim, nghe nhạc."
     },
     {
       "id": 32,
@@ -1850,7 +1981,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Nhiều thông tin số có tác giả sở hữu và được pháp luật bảo vệ, không phải muốn dùng là dùng."
     },
     {
       "id": 33,
@@ -1864,7 +1996,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Người tạo ra nội dung là tác giả, có quyền sở hữu, kể cả khi chưa đăng kí bản quyền."
     },
     {
       "id": 34,
@@ -1878,7 +2011,8 @@
       "answer": 3,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Chương trình được lưu trong bộ nhớ và thực hiện tuần tự từng lệnh; máy không tự thay đổi chương trình."
     },
     {
       "id": 35,
@@ -1892,7 +2026,8 @@
       "answer": 3,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính giúp học trực tuyến và học liệu phong phú hơn, nhưng không tự làm sức khỏe tốt lên. Dùng quá nhiều còn có hại."
     },
     {
       "id": 36,
@@ -1906,7 +2041,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính hỗ trợ đặt lịch, khám từ xa, lưu bệnh án; còn thuốc mới do các nhà khoa học nghiên cứu ra."
     },
     {
       "id": 37,
@@ -1920,7 +2056,8 @@
       "answer": 3,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Máy tính không thể làm tài nguyên thiên nhiên tự hồi phục."
     },
     {
       "id": 38,
@@ -1934,7 +2071,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Nhiều định dạng (chữ, ảnh, video, âm thanh) giúp người dùng chọn cách tiếp cận phù hợp với mình."
     },
     {
       "id": 39,
@@ -1948,7 +2086,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Thông tin trên mạng có cái đúng, cái sai; cần kiểm tra nguồn trước khi tin."
     },
     {
       "id": 40,
@@ -1962,7 +2101,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Dùng ảnh người khác để chế giễu là xúc phạm người đó và vi phạm đạo đức."
     },
     {
       "id": 41,
@@ -1976,7 +2116,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Đăng bình luận vô nghĩa liên tục (spam) làm phiền người khác, là thiếu văn hóa."
     },
     {
       "id": 42,
@@ -1990,7 +2131,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Trang web chính thức của bảo tàng là nguồn tin cậy; bài cá nhân hay ảnh không rõ nguồn có thể sai."
     },
     {
       "id": 43,
@@ -2004,7 +2146,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Thông tin thời tiết, khí tượng nên lấy từ cơ quan chính thức như Cục Khí tượng Thủy văn."
     },
     {
       "id": 44,
@@ -2018,7 +2161,8 @@
       "answer": 0,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Muốn cắt video và chèn chú thích thì dùng phần mềm chỉnh sửa video như CapCut, iMovie."
     },
     {
       "id": 45,
@@ -2032,7 +2176,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Trang web không có quyền phân phối phim; xem phim trên đó là tiếp tay cho vi phạm bản quyền."
     },
     {
       "id": 46,
@@ -2046,7 +2191,8 @@
       "answer": 2,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Báo cho quản trị viên hoặc giáo viên là cách đúng để bảo vệ bạn; thích, chia sẻ hay bình luận theo đều là hùa theo bắt nạt."
     },
     {
       "id": 47,
@@ -2060,7 +2206,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Dùng Internet ở phòng máy để học tập là đúng mục đích; cài phần mềm lậu hay dùng tài khoản người khác là sai."
     },
     {
       "id": 48,
@@ -2074,7 +2221,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Đúng: dùng hình ảnh, sơ đồ, video; tìm bằng từ khóa phù hợp. Sai: không phải trang web nào cũng đáng tin; dùng phần mềm bẻ khóa là vi phạm bản quyền."
     },
     {
       "id": 49,
@@ -2088,7 +2236,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Được mượn máy chỉ để làm bài; không tự ý dùng ứng dụng, tài khoản hay ảnh của người khác khi chưa được phép."
     },
     {
       "id": 50,
@@ -2102,7 +2251,8 @@
       "answer": 1,
       "subject": "Tin học",
       "batch": 1,
-      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học"
+      "batchLabel": "Lớp 8 GK1 – Công nghệ, Tin học",
+      "explanation": "Đúng: Khoa thiếu văn hóa; muốn đăng ảnh người khác phải xin phép. Sai: trêu theo cũng là bắt nạt; ảnh tự chụp vẫn xâm phạm quyền của người trong ảnh khi đăng lên mà chưa xin phép."
     }
   ]
 }

@@ -4,6 +4,7 @@ node_modules/
 # Runtime user data — ephemeral on Render, local-only
 data/users.json
 data/users.json.tmp
+data/notebooks.json
 
 # Uploaded temp files
 uploads/

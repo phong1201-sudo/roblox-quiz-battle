@@ -139,7 +139,15 @@ function _normalise(q, i) {
     correctIndex,
     batch:        _batchOf(q),
     batchLabel:   q.batchLabel || '',
+    subject:      q.subject || '',
+    explanation:  explanationOf(q),
   };
+}
+
+// ── Public: the explanation of an item, whatever the field is called ─────────
+function explanationOf(q) {
+  const text = q && (q.explanation ?? q.giaiThich ?? q.giai_thich ?? q.explain);
+  return typeof text === 'string' ? text.trim().slice(0, 600) : '';
 }
 
 // ── Settings: which part of the bank a battle draws from ─────────────────────
@@ -209,6 +217,17 @@ function getAllQuestions(element) {
   return _loadBank(element).map(_normalise);
 }
 
+// ── Public: find a question by its text in any bank (notebook lookups) ────────
+function findByText(text) {
+  const key = _norm(text);
+  if (!key) return null;
+  for (const el of ELEMENTS) {
+    const q = _loadBank(el).find(item => _norm(item.text || item.question) === key);
+    if (q) return { element: el, subject: q.subject || '', explanation: explanationOf(q) };
+  }
+  return null;
+}
+
 // ── Public: get question count for a bank ────────────────────────────────────
 function getBankSize(element) {
   return _loadBank(element).length;
@@ -236,6 +255,8 @@ function sampleQuestions(element, difficulty) {
       options:      shuffledOpts.map(o => o.text),
       correctIndex: newCorrectIndex,
       answer:       LETTERS[newCorrectIndex] || 'A',
+      subject:      q.subject,
+      explanation:  q.explanation,
     };
   });
 }
@@ -329,6 +350,21 @@ function _repoSeedVersion() {
   catch (e) { return null; }
 }
 
+// Explanations and subjects added to the repository files later are copied
+// onto the matching questions (same text) of a bank restored from MongoDB,
+// without touching anything the admin uploaded. Returns how many were filled.
+function _fillFromRepo(bank, repoBank) {
+  const byText = new Map(repoBank.map(q => [_norm(q.text || q.question), q]));
+  let added = 0;
+  bank.forEach((q) => {
+    const src = byText.get(_norm(q.text || q.question));
+    if (!src) return;
+    if (!explanationOf(q) && explanationOf(src)) { q.explanation = explanationOf(src); added++; }
+    if (!q.subject && src.subject) q.subject = src.subject;
+  });
+  return added;
+}
+
 async function hydrate(store) {
   _store = store;
   if (!store || !store.kvGet) return;
@@ -345,11 +381,15 @@ async function hydrate(store) {
       return;
     }
     for (const el of ELEMENTS) {
+      const repoBank = _loadBank(el);   // the files shipped in the repository
       const saved = await store.kvGet(`questions:${el}`);
       if (Array.isArray(saved)) {
+        const added = _fillFromRepo(saved, repoBank);
         _saveToDirs(el, saved);
         _syncUnifiedBankFile(el, saved);
-        console.log(`[questionBank] Restored ${saved.length} "${el}" questions from the database.`);
+        if (added > 0) await store.kvSet(`questions:${el}`, saved);
+        console.log(`[questionBank] Restored ${saved.length} "${el}" questions from the database` +
+          (added ? ` (+${added} explanations from the repository).` : '.'));
       }
     }
     const settings = await store.kvGet('question_settings');
@@ -371,6 +411,8 @@ module.exports = {
   getPlayableQuestions,
   getAllQuestions,
   resolveCorrectIndex,
+  explanationOf,
+  findByText,
   replaceBank,
   appendBank,
   clearBank,

@@ -2,11 +2,14 @@ import { socket } from '../socket.js';
 import { applyThunderSet, addUnlockedSet } from './lobby.js';
 import * as Audio from '../audio.js';
 import * as scene from '../game/scene.js';
+import * as Notebook from './notebook.js';
 
 let currentState;
 let currentTimer = null;
 let timerInterval = null;
 let myAnswer = null;
+// The question on screen, as displayed (for the notebook and the explanation)
+let shownQuestion = null;
 
 // Helper: fade quiz card after answering
 function collapseQuizCard() {
@@ -25,6 +28,7 @@ export function init(gameState) {
   currentState = gameState;
   myAnswer = null;
   _answerLock = false;
+  Notebook.hideExplanation();
   restoreQuizCard();
 
   const buttons = ['A', 'B', 'C', 'D'];
@@ -244,6 +248,7 @@ export function showQuestion(data) {
 
     const qText = document.getElementById('question-text');
     if (qText) qText.textContent = data.question || '(Câu hỏi không có nội dung)';
+    Notebook.hideExplanation();
 
     const LABELS  = ['A', 'B', 'C', 'D'];
     const CLASSES = ['opt-a', 'opt-b', 'opt-c', 'opt-d'];
@@ -253,6 +258,7 @@ export function showQuestion(data) {
     const optsArray = Array.isArray(data.options)
       ? data.options
       : LABELS.map(l => (data.options && data.options[l]) || '');
+    shownQuestion = { question: data.question || '', options: optsArray.map(o => String(o ?? '')) };
 
     LABELS.forEach((opt, i) => {
       const btn = document.getElementById(`btn-answer-${opt.toLowerCase()}`);
@@ -310,6 +316,8 @@ export function showResult(data) {
   const isThunder = window.gameState?.thunderSet;
   const dmg       = window.gameState?.damagePerHit || 1;
 
+  explainAndRecord(data);
+
   if (myAnswer === data.correctAnswer) {
     showFeedback(true);
     try { Audio.playCorrect(); } catch(e) {}
@@ -351,6 +359,36 @@ export function showResult(data) {
 }
 
 export function getMyAnswer() { return myAnswer; }
+
+// Explanation sheet + notebook entry for the answer just given.
+// Returns a promise that resolves when the player may move on (single player
+// waits for "Đã hiểu" after a wrong answer; multiplayer never blocks).
+let explanationGate = Promise.resolve();
+export function whenExplanationRead() { return explanationGate; }
+
+function explainAndRecord(data) {
+  const correctIdx = LETTERS_ABCD.indexOf(String(data.correctAnswer || '').toUpperCase());
+  const chosenIdx  = myAnswer ? LETTERS_ABCD.indexOf(myAnswer) : null;
+  const isCorrect  = myAnswer != null && myAnswer === data.correctAnswer;
+  const q = shownQuestion || { question: '', options: [] };
+  const element = window.gameState?.bossElement || window.gameState?.stage || '';
+  const reported = Notebook.recordAnswer({
+    game: 'battle', element, question: q.question, options: q.options,
+    correctIndex: correctIdx, chosenIndex: chosenIdx, correct: isCorrect,
+  });
+  const saved = reported && !isCorrect;
+  const isSingle = Boolean(currentState && currentState.isSinglePlayer);
+  explanationGate = Notebook.showExplanation({
+    isCorrect,
+    timedOut: myAnswer == null,
+    correctLetter: correctIdx >= 0 ? LETTERS_ABCD[correctIdx] : '',
+    correctText: q.options[correctIdx] || '',
+    explanation: data.explanation || '',
+    blocking: isSingle && !isCorrect,
+    saved,
+  });
+}
+const LETTERS_ABCD = ['A', 'B', 'C', 'D'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚡ MILESTONE LOOT DROP POPUP
@@ -616,6 +654,7 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
 
   // Update HUD
   showResult({
+    explanation: q.explanation || '',
     correctAnswer: correctAns,
     hp: { single_player: currentPlayerHp },
     bossHp: currentBossHp,
@@ -651,8 +690,11 @@ export function evaluateSinglePlayerAnswer(selectedOpt) {
     const settleMs  = isLastTurn ? 900 : 300;
     setTimeout(advance, Math.max(settleMs, minTurnMs - (Date.now() - turnStartedAt)));
   };
-  if (scene && scene.whenCombatIdle) scene.whenCombatIdle(afterAnimation);
-  else afterAnimation();
+  // ...and, after a wrong answer, once the player has read the explanation
+  const gate = whenExplanationRead();
+  const afterAnimationAndReading = () => gate.then(afterAnimation);
+  if (scene && scene.whenCombatIdle) scene.whenCombatIdle(afterAnimationAndReading);
+  else afterAnimationAndReading();
 }
 
 

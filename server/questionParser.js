@@ -12,6 +12,7 @@ const mammoth = require('mammoth');
 //   • Explicit answer line: "Đáp án: B" / "Answer: B" / "ANS: B"
 //   • Bold via HTML enrichment from mammoth
 //   • Answer-key block at file bottom: "1. A   2. B ..."
+//   • Explanation line after the options: "Giải thích: ..."
 //   • Falls back to correctIndex=0 (option A) when no answer detected —
 //     never silently drops a question that has 4 valid options.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,15 +36,25 @@ function parseText(rawText) {
   // ── Utility: strip asterisks and trim ───────────────────────────────────
   const strip = (s) => (s || '').replace(/\*/g, '').trim();
 
-  // ── Answer-key block at the bottom ──────────────────────────────────────
-  // Matches: "Đáp án: 1.A 2.B..." or "Answer key: 1-A ..."
+  // ── Answer-key lines ("1.A 2.B 3.C", usually at the bottom) ─────────────
+  // A line is an answer key when it holds at least two "number + letter"
+  // pairs and no real words, e.g. "Đáp án: 1.A 2-B 3/C". A single
+  // "Đáp án: B" under one question is an explicit answer, not a key.
   const answerKey = {};
-  const ansKeyBlockRe = /(?:đ[aá]p\s*[aá]n|answer\s*key|answers?)\s*[:\-]?\s*([\s\S]+)/i;
-  const keyMatch = text.match(ansKeyBlockRe);
-  if (keyMatch) {
-    const tokens = keyMatch[1].matchAll(/(\d+)\s*[-–./]?\s*([A-Da-d])/gi);
-    for (const t of tokens) answerKey[t[1]] = t[2].toUpperCase();
+  const PAIR_RE = /(\d+)\s*[-./]?\s*([A-Da-d])(?![\p{L}])/gu;
+  const KEY_WORDS_RE = /đ[aá]p\s*[aá]n|answer\s*key|answers?|[:\-.,;\/\s\d]/gi;
+  const isKeyLine = (line) => {
+    const pairs = [...line.matchAll(PAIR_RE)];
+    if (pairs.length < 2) return false;
+    return line.replace(PAIR_RE, '').replace(KEY_WORDS_RE, '').trim() === '';
+  };
+  for (const line of text.split('\n')) {
+    if (!isKeyLine(line.trim())) continue;
+    for (const t of line.matchAll(PAIR_RE)) answerKey[t[1]] = t[2].toUpperCase();
   }
+
+  // Explanation line: "Giải thích: ..." (also "Explanation: ...")
+  const explainLineRe = /^(?:gi[aả]i\s*th[ií]ch|explanation|explain)\s*[:\-]\s*(.*)$/i;
 
   // ── Option separator: inject newlines before "A." "B)" etc. so that
   //    single-line quizzes parse identically to multi-line ones.
@@ -100,12 +111,13 @@ function parseText(rawText) {
     const { num, lines: bLines } = block;
 
     // Skip the answer-key block itself
-    if (bLines.some(l => ansKeyBlockRe.test(l))) continue;
+    if (isKeyLine(bLines[0])) continue;
 
     let qText          = '';
     const options      = {};
     let detectedAnswer = null;
     let answerDetected = false;   // track whether we found an explicit marker
+    let explanation    = null;    // set once a "Giải thích:" line is seen
 
     for (let i = 0; i < bLines.length; i++) {
       const line = bLines[i];
@@ -125,6 +137,17 @@ function parseText(rawText) {
           answerDetected = true;
           qText = qText.replace(/\bANS\s*:.*$/i, '').trim();
         }
+        continue;
+      }
+
+      // ── Explanation: this line and everything after it in the block ───────
+      if (explanation !== null) {
+        explanation += ' ' + line;
+        continue;
+      }
+      const explM = line.match(explainLineRe);
+      if (explM) {
+        explanation = explM[1].trim();
         continue;
       }
 
@@ -194,6 +217,7 @@ function parseText(rawText) {
         options,
         answer:        detectedAnswer,
         correctIndex,
+        explanation:   explanation ? explanation.replace(/\s+/g, ' ').trim() : '',
         _num:          num,            // original question number (for drop reporting)
         _answerDetected: answerDetected,
       });
@@ -250,8 +274,8 @@ async function parseDocx(filePath) {
   }
 
   // Strip internal meta fields before returning
-  const clean = questions.map(({ question, options, answer, correctIndex }) =>
-    ({ question, options, answer, correctIndex })
+  const clean = questions.map(({ question, options, answer, correctIndex, explanation }) =>
+    ({ question, options, answer, correctIndex, explanation })
   );
 
   return { questions: clean, dropped };
