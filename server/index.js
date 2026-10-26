@@ -9,6 +9,7 @@ const roomManager    = require('./roomManager');
 const questionParser = require('./questionParser');
 const db             = require('./db');
 const questionBank   = require('./questionBank');
+const notebook       = require('./notebook');
 
 const app    = express();
 const server = http.createServer(app);
@@ -38,6 +39,7 @@ app.use(express.static(publicDir, staticOptions));
 // existing accounts as missing and force players to register again.
 // The question banks uploaded by the admin are restored from MongoDB as well.
 const appReady = db.ready
+  .then(() => notebook.init(db))
   .then(() => questionBank.hydrate(db))
   .catch(err => console.error('[boot] startup restore failed:', err));
 app.use('/api', (req, res, next) => { appReady.then(() => next()); });
@@ -852,6 +854,74 @@ app.post('/api/save-score', (req, res) => {
   res.json(result);
 });
 
+// ── Sổ ghi nhớ (notebook of wrong answers, shared by every game) ──────────────
+
+const knownUser = (userId) => Number(userId) > 0 && !!db.getUser(Number(userId));
+
+/**
+ * POST /api/notebook/answer
+ * { userId, element, game, question, options[], correctText, chosenText, correct }
+ * Report one answer: a wrong one is written to the notebook, a right one counts
+ * towards ticking off a question already in it. Explanation and subject are
+ * taken from the question bank when the question is found there.
+ */
+app.post('/api/notebook/answer', async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!knownUser(b.userId)) return res.status(400).json({ ok: false, error: 'unknown user' });
+    const fromBank = questionBank.findByText(b.question);
+    const result = await notebook.record(Number(b.userId), {
+      element:     b.element || (fromBank && fromBank.element),
+      game:        b.game,
+      question:    b.question,
+      options:     b.options,
+      correctText: b.correctText,
+      chosenText:  b.chosenText,
+      correct:     Boolean(b.correct),
+      subject:     (fromBank && fromBank.subject) || b.subject,
+      explanation: (fromBank && fromBank.explanation) || b.explanation,
+    });
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (e) {
+    console.error('[notebook/answer]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/** GET /api/notebook/:userId → { ok, entries } (to review first, then mastered) */
+app.get('/api/notebook/:userId', async (req, res) => {
+  if (!knownUser(req.params.userId)) return res.status(400).json({ ok: false, error: 'unknown user' });
+  try {
+    res.json({ ok: true, streakToMaster: notebook.STREAK_TO_MASTER, entries: await notebook.list(Number(req.params.userId)) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/** GET /api/admin/notebooks → per player: counts and the questions missed most */
+app.get('/api/admin/notebooks', async (req, res) => {
+  try {
+    const rows = [];
+    for (const [id, entries] of await notebook.allNotebooks()) {
+      const user = db.getUser(Number(id));
+      const open = entries.filter(e => !e.mastered);
+      rows.push({
+        userId: Number(id),
+        username: user ? user.username : `#${id}`,
+        toReview: open.length,
+        mastered: entries.length - open.length,
+        lastWrongAt: entries.reduce((m, e) => (String(e.lastWrongAt) > m ? String(e.lastWrongAt) : m), ''),
+        topMissed: open.slice().sort((a, b) => (b.wrongCount || 0) - (a.wrongCount || 0)).slice(0, 10)
+          .map(e => ({ question: e.question, correctText: e.correctText, wrongCount: e.wrongCount, subject: e.subject, element: e.element })),
+      });
+    }
+    rows.sort((a, b) => b.toReview - a.toReview);
+    res.json({ ok: true, players: rows });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── Admin Question Bank Endpoints ─────────────────────────────────────────────
 
 const VALID_ELEMENTS = ['thunder', 'fire', 'frost'];
@@ -990,7 +1060,9 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
         return {
           question: qText,
           options: opts,
-          correctIndex: questionBank.resolveCorrectIndex(item)
+          correctIndex: questionBank.resolveCorrectIndex(item),
+          explanation: questionBank.explanationOf(item),
+          subject: String(item.subject || item.mon || '').trim().slice(0, 40),
         };
       });
     } else {
@@ -1008,6 +1080,8 @@ app.post('/api/admin/questions/upload', docxUpload.single('file'), async (req, r
                       ? q.options
                       : ['A','B','C','D'].map(k => q.options?.[k] || ''),
       correctIndex: questionBank.resolveCorrectIndex(q),
+      ...(questionBank.explanationOf(q) ? { explanation: questionBank.explanationOf(q) } : {}),
+      ...(q.subject ? { subject: q.subject } : {}),
     }));
 
     // Optional name for this batch, e.g. "Chương 2"
@@ -1069,7 +1143,9 @@ app.post('/api/admin/questions/upload-permanent', (req, res) => {
             return {
               question: qText,
               options: opts,
-              correctIndex: questionBank.resolveCorrectIndex(item)
+              correctIndex: questionBank.resolveCorrectIndex(item),
+              explanation: questionBank.explanationOf(item),
+              subject: String(item.subject || item.mon || '').trim().slice(0, 40),
             };
           });
         } else {
@@ -1096,6 +1172,8 @@ app.post('/api/admin/questions/upload-permanent', (req, res) => {
                         ? q.options
                         : ['A','B','C','D'].map(k => q.options?.[k] || ''),
         correctIndex: questionBank.resolveCorrectIndex(q),
+        ...(questionBank.explanationOf(q) ? { explanation: questionBank.explanationOf(q) } : {}),
+        ...(q.subject ? { subject: q.subject } : {}),
       }));
 
       // Overwrite and commit directly to data/question/ and data/questions/
@@ -1279,8 +1357,15 @@ const resolveQuestion = (code) => {
   const { correctAnswer, answerCounts, combatEvents, hp, bossHp, bossMaxHp, questionIndex, totalQuestions } =
     roomManager.scoreQuestion(code);
 
-  // ① Result + counts (existing flow)
-  io.to(code).emit('answer_result', { correctAnswer, answerCounts, hp, bossHp, bossMaxHp, questionIndex, totalQuestions });
+  // ① Result + counts, with the explanation now that everyone has answered
+  const answered = room.questions[room.currentIndex] || {};
+  const explanation = questionBank.explanationOf(answered);
+  const anyWrong = Array.from(room.players.values())
+    .some(p => String(p.answer || '').toUpperCase() !== correctAnswer);
+  io.to(code).emit('answer_result', {
+    correctAnswer, answerCounts, hp, bossHp, bossMaxHp, questionIndex, totalQuestions,
+    explanation, subject: answered.subject || '',
+  });
 
   // ② Combat animations
   if (combatEvents.length > 0) {
@@ -1292,7 +1377,8 @@ const resolveQuestion = (code) => {
 
   // Time left for the clients to play the combat animations before the next
   // question: a turn has at most two of them (one per player).
-  const reviewMs = combatEvents.length > 2 ? 9000 : 5000;
+  // A wrong answer with an explanation gets 4 more seconds so it can be read.
+  const reviewMs = (combatEvents.length > 2 ? 9000 : 5000) + (anyWrong && explanation ? 4000 : 0);
 
   setTimeout(() => {
     // The match ends early when a side is out of HP:

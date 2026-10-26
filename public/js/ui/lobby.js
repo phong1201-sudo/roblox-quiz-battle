@@ -7,6 +7,7 @@ import * as scene from '../game/scene.js';
 import * as results from './results.js';
 import * as Auth from '../auth.js';
 import * as Armory from '../armory.js';
+import * as Notebook from './notebook.js';
 // THREE is available as a global from the CDN script tag
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1431,6 +1432,15 @@ function _buildAdminDashboard(container, gameState) {
     h.textContent = text;
     return h;
   };
+
+  // ── Notebooks of the players ──────────────────────────────────────────────
+  wrap.appendChild(mkHead('📒 Sổ ghi nhớ của các con'));
+  const nbBtn = document.createElement('button');
+  nbBtn.type = 'button';
+  nbBtn.textContent = '📒 Xem các con hay sai câu nào';
+  nbBtn.style.cssText = 'padding:10px;border-radius:8px;border:1.5px solid #06d6a0;background:rgba(6,214,160,0.12);color:#06d6a0;font-family:"Be Vietnam Pro",sans-serif;font-weight:800;font-size:12px;cursor:pointer;';
+  nbBtn.onclick = () => Notebook.openAdminOverview();
+  wrap.appendChild(nbBtn);
 
   // ── Question Bank Management ──────────────────────────────────────────────
   wrap.appendChild(mkHead('📚 Ngân hàng câu hỏi'));

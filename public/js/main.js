@@ -9,6 +9,7 @@ import * as Multiplayer from './multiplayer.js';
 import { initSplashScreen } from './splash.js';
 import { initBgmSelector } from './ui/bgmSelector.js';
 import * as Armory from './armory.js';
+import * as Notebook from './ui/notebook.js';
 
 // ─── Track whether Three.js scene has been initialised yet ───────────────────
 let sceneReady = false;
@@ -234,6 +235,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('multi-hub');
         });
     }
+
+    // Sổ ghi nhớ: from the main menu and from the results screen
+    ['btn-notebook', 'btn-notebook-results'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.addEventListener('click', () => {
+            if (!Auth.getCurrentUser()) { Auth.showAuthModal(); return; }
+            Notebook.openNotebook();
+        });
+    });
 
     const btnHubCreate = document.getElementById('btn-hub-create');
     if (btnHubCreate) {

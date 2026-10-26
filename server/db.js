@@ -92,6 +92,13 @@ async function kvSet(key, value) {
   return true;
 }
 
+/** All key/value documents whose key starts with `prefix` (empty without MongoDB). */
+async function kvList(prefix) {
+  if (!_mongoConnected) return [];
+  const docs = await KvModel.find({ key: { $regex: '^' + escapeRegex(prefix) } }).lean();
+  return docs.map(d => ({ key: d.key, value: d.value }));
+}
+
 // ── Seed Admin Account ("God Father") ─────────────────────────────────────────
 async function ensureAdminSeeded() {
   const adminDoc = {
@@ -628,5 +635,6 @@ module.exports = {
   initDatabase,
   ready,
   kvGet,
-  kvSet
+  kvSet,
+  kvList
 };
