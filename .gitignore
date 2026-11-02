@@ -5,6 +5,8 @@ node_modules/
 data/users.json
 data/users.json.tmp
 data/notebooks.json
+data/tapviet.json
+data/tapviet.json.tmp
 
 # Uploaded temp files
 uploads/

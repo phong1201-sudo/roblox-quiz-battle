@@ -10,6 +10,7 @@ const questionParser = require('./questionParser');
 const db             = require('./db');
 const questionBank   = require('./questionBank');
 const notebook       = require('./notebook');
+const tapviet        = require('./tapviet');
 
 const app    = express();
 const server = http.createServer(app);
@@ -40,6 +41,7 @@ app.use(express.static(publicDir, staticOptions));
 // The question banks uploaded by the admin are restored from MongoDB as well.
 const appReady = db.ready
   .then(() => notebook.init(db))
+  .then(() => tapviet.init(db))
   .then(() => questionBank.hydrate(db))
   .catch(err => console.error('[boot] startup restore failed:', err));
 app.use('/api', (req, res, next) => { appReady.then(() => next()); });
@@ -884,6 +886,40 @@ app.post('/api/notebook/answer', async (req, res) => {
     res.status(result.ok ? 200 : 400).json(result);
   } catch (e) {
     console.error('[notebook/answer]', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── Rồng Con Tập Viết (handwriting game) ─────────────────────────────────────
+/** GET /api/tapviet/:userId → { ok, progress } */
+app.get('/api/tapviet/:userId', async (req, res) => {
+  if (!knownUser(req.params.userId)) return res.status(400).json({ ok: false, error: 'unknown user' });
+  try {
+    res.json({ ok: true, progress: await tapviet.get(Number(req.params.userId)) });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/** POST /api/tapviet/save { userId, progress } → { ok, progress } (merged, never loses stars) */
+app.post('/api/tapviet/save', async (req, res) => {
+  const b = req.body || {};
+  if (!knownUser(b.userId)) return res.status(400).json({ ok: false, error: 'unknown user' });
+  try {
+    const result = await tapviet.save(Number(b.userId), b.progress);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+/** POST /api/tapviet/reset { userId } → { ok, progress } (parent-confirmed in the game) */
+app.post('/api/tapviet/reset', async (req, res) => {
+  const b = req.body || {};
+  if (!knownUser(b.userId)) return res.status(400).json({ ok: false, error: 'unknown user' });
+  try {
+    res.json(await tapviet.reset(Number(b.userId)));
+  } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
